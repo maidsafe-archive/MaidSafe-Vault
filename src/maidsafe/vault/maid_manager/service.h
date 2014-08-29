@@ -97,7 +97,7 @@ class MaidManagerService {
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
                      const typename MessageType::Receiver& receiver);
 
-  void HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change);
+  void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
   void Stop() {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -494,8 +494,13 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
             routing_.kNodeId()));
         return;
       } catch(const maidsafe_error& error) {
-        LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: "
-                   << boost::diagnostic_information(error);
+        if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+          LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: ";
+        } else {
+          LOG(kError) << "MaidManagerService::HandlePut encountered unknown error : "
+                      << boost::diagnostic_information(error);
+          throw error;
+        }
       }
       dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
 //    } else {
@@ -559,10 +564,13 @@ void MaidManagerService::HandlePutVersionRequest(
     const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
   try {
     group_db_.GetMetadata(maid_name);
+    LOG(kVerbose) << "MaidManagerService::HandlePutVersionRequest put new version "
+                  << DebugId(new_version.id) << " after old version "
+                  << DebugId(old_version.id) << " for " << HexSubstr(data_name.value);
     dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
   }
   catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePutVersion faied to get metadata"
+    LOG(kError) << "MaidManagerService::HandlePutVersion failed to get metadata"
                 << boost::diagnostic_information(error);
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;

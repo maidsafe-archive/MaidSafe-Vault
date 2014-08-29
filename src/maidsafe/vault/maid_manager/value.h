@@ -43,6 +43,7 @@ class MaidManagerValue {
   int32_t Delete();
   int32_t count() const { return count_; }
   int64_t total_cost() const { return total_cost_; }
+  std::string Print() const;
 
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
 

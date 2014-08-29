@@ -37,6 +37,7 @@ class VersionHandlerValue {
   VersionHandlerValue(VersionHandlerValue&& other) MAIDSAFE_NOEXCEPT;
   VersionHandlerValue& operator=(VersionHandlerValue other);
   std::string Serialise() const;
+  std::string Print() const;
 
   boost::optional<StructuredDataVersions::VersionName> Put(
       const StructuredDataVersions::VersionName& old_version,

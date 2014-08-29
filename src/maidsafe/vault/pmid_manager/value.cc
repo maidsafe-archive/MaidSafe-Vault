@@ -65,5 +65,11 @@ void swap(PmidManagerValue& lhs, PmidManagerValue& rhs) {
   swap(lhs.size_, rhs.size_);;
 }
 
+std::string PmidManagerValue::Print() const {
+  std::stringstream stream;
+  stream << "[size_," << size_ << "]";
+  return stream.str();
+}
+
 }  // namespace vault
 }  // namespace maidsafe

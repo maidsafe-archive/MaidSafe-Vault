@@ -88,14 +88,13 @@ void PmidManagerMetadata::PutData(int32_t size) {
 }
 
 void PmidManagerMetadata::DeleteData(int32_t size) {
-  stored_total_size -= size;
-  --stored_count;
-
-  if ((stored_total_size < 0) || (stored_count < 0)) {
+  if ((stored_total_size < size) || (stored_count < 1)) {
     LOG(kError) << "invalid stored_total_size " << stored_total_size
                 << " or stored_count " << stored_count;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
+  stored_total_size -= size;
+  --stored_count;
 }
 
 void PmidManagerMetadata::HandleLostData(int32_t size) {
@@ -136,6 +135,15 @@ bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) 
          lhs.stored_total_size == rhs.stored_total_size && lhs.lost_count == rhs.lost_count &&
          lhs.lost_total_size == rhs.lost_total_size &&
          lhs.claimed_available_size == rhs.claimed_available_size;
+}
+
+std::string PmidManagerMetadata::Print() const {
+  std::stringstream stream;
+  stream << "\t[pmid_name," << DebugId(pmid_name) << "] [stored_count," << stored_count
+         << "] [stored_total_size," << stored_total_size << "] [lost_count," << lost_count
+         << "] [lost_total_size," << lost_total_size << "] [claimed_available_size,"
+         << claimed_available_size << "]";
+  return stream.str();
 }
 
 }  // namespace vault

@@ -110,6 +110,12 @@ bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
   return lhs.count() == rhs.count() && lhs.total_cost() == rhs.total_cost();
 }
 
+std::string MaidManagerValue::Print() const {
+  std::stringstream stream;
+  stream << "[count_," << count_ << "] [total_cost_," << total_cost_ << "]";
+  return stream.str();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

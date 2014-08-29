@@ -47,11 +47,11 @@ namespace vault {
 template <typename Key, typename Action>
 struct UnresolvedAccountTransferAction {
  public:
-  UnresolvedAccountTransferAction(
-     const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in);
+  UnresolvedAccountTransferAction(const Key& key_in, const nfs::MessageId& id_in,
+                                  const std::vector<Action>& actions_in);
   explicit UnresolvedAccountTransferAction(const std::string& serialised_copy);
-//   UnresolvedAccountTransferAction(const UnresolvedAction& other);
-//   UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
+  //   UnresolvedAccountTransferAction(const UnresolvedAction& other);
+  //   UnresolvedAccountTransferAction(UnresolvedAccountTransfer&& other);
 
   void Merge(const UnresolvedAccountTransferAction& other, routing::SingleId sender);
 
@@ -69,19 +69,25 @@ struct UnresolvedAccountTransferAction {
   std::map<Action, std::pair<bool, std::set<routing::SingleId>>> entries;
   boost::posix_time::ptime time_tag;
 
-//   UnresolvedAccountTransferAction& operator=(UnresolvedAction other);
+  //   UnresolvedAccountTransferAction& operator=(UnresolvedAction other);
 };
 
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
     const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in)
-  : key(key_in), id(id_in), actions(actions_in), entries(),
-    time_tag(boost::posix_time::microsec_clock::universal_time()) {}
+    : key(key_in),
+      id(id_in),
+      actions(actions_in),
+      entries(),
+      time_tag(boost::posix_time::microsec_clock::universal_time()) {}
 
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
-      const std::string& serialised_copy)
-    : key(), id(), actions(), entries(),
+    const std::string& serialised_copy)
+    : key(),
+      id(),
+      actions(),
+      entries(),
       time_tag(boost::posix_time::microsec_clock::universal_time()) {
   protobuf::UnresolvedAccountTransferAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);
@@ -112,7 +118,7 @@ void UnresolvedAccountTransferAction<Key, Action>::Merge(
 
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>
-    UnresolvedAccountTransferAction<Key, Action>::GetResolvedActions(size_t resolve_num) {
+UnresolvedAccountTransferAction<Key, Action>::GetResolvedActions(size_t resolve_num) {
   std::vector<Action> resolved;
   for (auto& entry : entries) {
     LOG(kVerbose) << "before check isresolved = " << std::boolalpha << entry.second.first;
@@ -129,7 +135,7 @@ template <typename Key, typename Action>
 std::set<routing::SingleId> UnresolvedAccountTransferAction<Key, Action>::GetSenders() const {
   std::set<routing::SingleId> senders;
   for (auto& entry : entries)
-    if  ((!entry.second.first) && (entry.second.second.size() > senders.size())) {
+    if ((!entry.second.first) && (entry.second.second.size() > senders.size())) {
       senders.clear();
       for (auto& sender : entry.second.second)
         senders.insert(sender);

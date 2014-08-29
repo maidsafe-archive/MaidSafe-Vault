@@ -32,7 +32,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/visualiser_log.h"
-#include "maidsafe/routing/matrix_change.h"
+#include "maidsafe/routing/close_nodes_change.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
@@ -54,7 +54,7 @@ class Db {
   // if functor returns DbAction::kDelete, the value is deleted from db
   std::unique_ptr<Value> Commit(
       const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor);
-  TransferInfo GetTransferInfo(std::shared_ptr<routing::MatrixChange> matrix_change);
+  TransferInfo GetTransferInfo(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
  private:
@@ -72,8 +72,7 @@ class Db {
 
 template <typename Key, typename Value>
 Db<Key, Value>::Db(const boost::filesystem::path& db_path)
-    : kDbPath_(db_path),
-      mutex_(), leveldb_() {
+    : kDbPath_(db_path), mutex_(), leveldb_() {
   leveldb::DB* db;
   leveldb::Options options;
   options.create_if_missing = true;
@@ -88,8 +87,7 @@ Db<Key, Value>::Db(const boost::filesystem::path& db_path)
   // this is just a check to avoid copy constructor unless we require it
   static_assert(!std::is_copy_constructible<Value>::value,
                 "value should not be copy constructible !");
-  static_assert(std::is_move_constructible<Value>::value,
-                "value should be move constructible !");
+  static_assert(std::is_move_constructible<Value>::value, "value should be move constructible !");
 #endif
 }
 
@@ -98,20 +96,22 @@ Db<Key, Value>::~Db() {
   try {
     leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
     boost::filesystem::remove_all(kDbPath_);
-  } catch (const std::exception& e) {
-    LOG (kError) << "Failed to remove db : " << boost::diagnostic_information(e);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
   }
 }
 
 template <typename Key, typename Value>
-std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
-    std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor) {
+std::unique_ptr<Value> Db<Key, Value>::Commit(
+    const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor) {
   assert(functor);
   std::lock_guard<std::mutex> lock(mutex_);
   std::unique_ptr<Value> value;
   try {
     value.reset(new Value(Get(key)));
-  } catch (const maidsafe_error& error) {
+  }
+  catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "Db<Key, Value>::Commit unknown db error "
                   << boost::diagnostic_information(error);
@@ -138,44 +138,38 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(const Key& key,
 // option 2 : create a map<NodeId, std::vector<std::pair<Key, value>>> and return after pruning
 template <typename Key, typename Value>
 typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   std::lock_guard<std::mutex> lock(mutex_);
   std::vector<std::string> prune_vector;
   TransferInfo transfer_info;
-  {
-    LOG(kVerbose) << "Db::GetTransferInfo";
-    std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-    for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
-      Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
-      auto check_holder_result = matrix_change->CheckHolders(NodeId(key.name.string()));
-      if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
-        LOG(kVerbose) << "Db::GetTransferInfo in range ";
-        if (check_holder_result.new_holders.size() != 0) {
-          LOG(kVerbose) << "Db::GetTransferInfo having new node "
-                        << DebugId(check_holder_result.new_holders.at(0));
-//           assert(check_holder_result.new_holders.size() == 1);
-          if (check_holder_result.new_holders.size() != 1)
-            LOG(kError) << "having " << check_holder_result.new_holders.size()
-                        << " new holders, only the first one got processed";
-          auto found_itr = transfer_info.find(check_holder_result.new_holders.at(0));
-          if (found_itr != transfer_info.end()) {
-            found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
-          } else {  // create
-            LOG(kInfo) << "Db::GetTransferInfo transfering account "
-                       << HexSubstr(key.name.string()) << " to "
-                       << DebugId(check_holder_result.new_holders.at(0));
-            std::vector<KvPair> kv_pair;
-            kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
-            transfer_info.insert(std::make_pair(check_holder_result.new_holders.at(0),
-                                                std::move(kv_pair)));
-          }
-        }
-      } else {
-        VLOG(VisualiserAction::kRemoveAccount, Identity{ db_iter->key().data() });
-        prune_vector.push_back(db_iter->key().data());
+  LOG(kVerbose) << "Db::GetTransferInfo";
+  std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
+    Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
+    auto check_holder_result = close_nodes_change->CheckHolders(NodeId(key.name.string()));
+    if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
+      LOG(kVerbose) << "Db::GetTransferInfo in range";
+      if (check_holder_result.new_holder == NodeId())
+        continue;
+      LOG(kVerbose) << "Db::GetTransferInfo having new holder " << check_holder_result.new_holder;
+      auto found_itr = transfer_info.find(check_holder_result.new_holder);
+      if (found_itr != transfer_info.end()) {
+        LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
+                   << HexSubstr(key.name.string()) << " to " << check_holder_result.new_holder;
+        found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+      } else {  // create
+        LOG(kInfo) << "Db::GetTransferInfo create transfering account "
+                   << HexSubstr(key.name.string()) << " to " << check_holder_result.new_holder;
+        std::vector<KvPair> kv_pair;
+        kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+        transfer_info.insert(std::make_pair(check_holder_result.new_holder, std::move(kv_pair)));
       }
+    } else {
+      VLOG(VisualiserAction::kRemoveAccount, key.name);
+      prune_vector.push_back(db_iter->key().data());
     }
   }
+  db_iter.reset();
 
   for (const auto& key_string : prune_vector)
     leveldb_->Delete(leveldb::WriteOptions(), key_string);  // Ignore Delete failure here ?
@@ -189,11 +183,12 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
   for (const auto& kv_pair : contents) {
     try {
       Get(kv_pair.first);
-    } catch (const maidsafe_error& error) {
+    }
+    catch (const maidsafe_error& error) {
       LOG(kInfo) << error.what();
       if ((error.code() != make_error_code(CommonErrors::no_such_element)) &&
           (error.code() != make_error_code(VaultErrors::no_such_account)))
-        throw error;  // For db errors
+        throw;  // For db errors
       else
         Put(kv_pair);
     }

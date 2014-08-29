@@ -42,15 +42,15 @@ PmidNodeHandler::PmidNodeHandler(const boost::filesystem::path vault_root_dir,
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
-      permanent_data_store_(vault_root_dir / "pmid_node" / "permanent", max_disk_usage) {}
+      chunk_store_(vault_root_dir / "pmid_node" / "permanent", max_disk_usage) {}
 // TODO(Fraser) BEFORE_RELEASE need to decide on propertion of max_disk_usage. As leveldb and cache
 // will be using a share of it
 boost::filesystem::path PmidNodeHandler::GetDiskPath() const {
-  return permanent_data_store_.GetDiskPath();
+  return chunk_store_.GetDiskPath();
 }
 
 std::vector<DataNameVariant> PmidNodeHandler::GetAllDataNames() const {
-  return permanent_data_store_.GetKeys();
+  return chunk_store_.GetKeys();
 }
 
 DiskUsage PmidNodeHandler::AvailableSpace() const {

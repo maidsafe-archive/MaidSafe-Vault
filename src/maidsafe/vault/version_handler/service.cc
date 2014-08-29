@@ -64,10 +64,10 @@ VersionHandlerService::VersionHandlerService(const passport::Pmid& pmid,
     : routing_(routing),
       dispatcher_(routing),
       accumulator_mutex_(),
-      matrix_change_mutex_(),
+      close_nodes_change_mutex_(),
       stopped_(false),
       accumulator_(),
-      matrix_change_(),
+      close_nodes_change_(),
       db_(UniqueDbPath(vault_root_dir)),
       kThisNodeId_(routing_.kNodeId()),
       sync_create_version_tree_(NodeId(pmid.name()->string())),
@@ -184,7 +184,8 @@ void VersionHandlerService::HandleMessage(
     const SynchroniseFromVersionHandlerToVersionHandler& message,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Sender& sender,
     const typename SynchroniseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "VersionHandler::HandleMessage SynchroniseFromVersionHandlerToVersionHandler";
+  LOG(kVerbose) << "VersionHandler::HandleMessage SynchroniseFromVersionHandlerToVersionHandler "
+                << message.id;
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -218,19 +219,19 @@ void VersionHandlerService::HandleMessage(
       VersionHandler::UnresolvedPutVersion unresolved_action(
                                                proto_sync.serialised_unresolved_action(),
                                                sender.sender_id, routing_.kNodeId());
-      LOG(kVerbose) << "VersionHandlerSync: " << message.id;
+      LOG(kVerbose) << "VersionHandlerSyncPut: " << message.id;
       auto resolved_action(sync_put_versions_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         try {
-          LOG(kInfo) << "VersionHandlerSync-Commit: " << message.id;
+          LOG(kInfo) << "VersionHandlerSyncPut-Commit: " << message.id;
           db_.Commit(resolved_action->key, resolved_action->action);
           StructuredDataVersions::VersionName tip_of_tree;
           if (resolved_action->action.tip_of_tree) {
             tip_of_tree = *resolved_action->action.tip_of_tree;
-            dispatcher_.SendPutVersionResponse(
-                resolved_action->action.originator, resolved_action->key, tip_of_tree,
-                maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
           }
+          dispatcher_.SendPutVersionResponse(
+              resolved_action->action.originator, resolved_action->key, tip_of_tree,
+              maidsafe_error(CommonErrors::success), resolved_action->action.message_id);
         }
         catch (const maidsafe_error& error) {
           LOG(kError) << message.id << " Failed to put version: "
@@ -270,11 +271,14 @@ void VersionHandlerService::HandlePutVersion(
     const VersionHandler::VersionName& new_version,
     const Identity& originator,
     nfs::MessageId message_id) {
-  LOG(kVerbose) << "VersionHandlerService::HandlePutVersion: " << message_id;
+  LOG(kVerbose) << "VersionHandlerService::HandlePutVersion put new version "
+                << DebugId(new_version.id) << " after old version " << DebugId(old_version.id)
+                << " with message ID : "  << message_id;
   try {
     db_.Get(key);
   }
   catch (const maidsafe_error& error) {
+    LOG(kWarning) << "error handling put version request " << message_id;
     dispatcher_.SendPutVersionResponse(originator, key, VersionHandler::VersionName(), error,
                                        message_id);
     return;
@@ -386,12 +390,11 @@ void VersionHandlerService::HandleAccountTransfer(
     try {
       protobuf::VersionHandlerKeyValuePair kv_msg;
       if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         VersionHandler::Key key(kv_msg.key());
         VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kGotAccountTransferred, key.name);
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         VersionHandlerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+        LOG(kVerbose) << "VersionHandlerService got account " << DebugId(key.name)
+                      << " transferred, having vaule " << value.Print();
         kv_pairs.push_back(std::make_pair(key, std::move(value)));
       }
     } catch(...) {
@@ -402,29 +405,29 @@ void VersionHandlerService::HandleAccountTransfer(
 }
 
 void VersionHandlerService::HandleChurnEvent(
-    std::shared_ptr<routing::MatrixChange> matrix_change) {
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";
-//   matrix_change_.Print();
-  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info before : ";
+//   close_nodes_change_.Print();
+  std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
   if (stopped_)
     return;
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change containing following info : ";
-//   matrix_change->Print();
-  matrix_change_ = *matrix_change;
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change containing following info : ";
+//   close_nodes_change->Print();
+  close_nodes_change_ = *close_nodes_change;
 
   Db<VersionHandler::Key, VersionHandler::Value>::TransferInfo transfer_info(
-      db_.GetTransferInfo(matrix_change));
+      db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info after : ";
-//   matrix_change_.Print();
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
+//   close_nodes_change_.Print();
 
 
 //  auto record_names(version_handler_db_.GetKeys());
 //  auto itr(std::begin(record_names));
 //  while (itr != std::end(record_names)) {
 //    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), *itr));
-//    auto check_holders_result(CheckHolders(matrix_change, routing_.kNodeId(),
+//    auto check_holders_result(CheckHolders(close_nodes_change, routing_.kNodeId(),
 //                                           NodeId(result.second)));
 //    // Delete records for which this node is no longer responsible.
 //    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
@@ -451,7 +454,7 @@ void VersionHandlerService::HandleChurnEvent(
 void VersionHandlerService::TransferAccount(const NodeId& dest,
     const std::vector<Db<VersionHandler::Key, VersionHandler::Value>::KvPair>& accounts) {
   // If account just received, shall not pass it out as may under a startup procedure
-  // i.e. existing DM will be seen as new_node in matrix_change
+  // i.e. existing DM will be seen as new_node in close_nodes_change
   if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
     LOG(kWarning) << "VersionHandler account just received";
     return;
@@ -464,6 +467,9 @@ void VersionHandlerService::TransferAccount(const NodeId& dest,
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());
     actions.push_back(kv_msg.SerializeAsString());
+    LOG(kVerbose) << "VersionHandler sent account " << DebugId(account.first.name)
+                  << " to " << HexSubstr(dest.string())
+                  << " with vaule " << account.second.Print();
   }
   nfs::MessageId message_id(HashStringToMessageId(dest.string()));
   VersionHandler::UnresolvedAccountTransfer account_transfer(

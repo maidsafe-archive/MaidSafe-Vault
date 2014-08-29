@@ -159,6 +159,18 @@ void DataManagerValue::PrintRecords() {
   }
 }
 
+std::string DataManagerValue::Print() const {
+  std::stringstream stream;
+  stream << "\n\t[size_," << size_ << "] [subscribers_," << subscribers_ << "]";
+  stream << "\n\t\t online_pmids_ now having : ";
+  for (auto pmid : online_pmids_)
+    stream << "\n\t\t     ----     " << HexSubstr(pmid.value.string());
+  stream << "\n\t\t offline_pmids_ now having : ";
+  for (auto pmid : offline_pmids_)
+    stream << "\n\t\t     ----     " << HexSubstr(pmid.value.string());
+  return stream.str();
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

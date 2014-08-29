@@ -56,6 +56,7 @@ class DataManagerValue {
   int64_t Subscribers() const { return subscribers_; }
   std::set<PmidName> AllPmids() const;
   std::set<PmidName> online_pmids() const { return online_pmids_; }
+  std::string Print() const;
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 

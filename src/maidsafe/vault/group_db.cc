@@ -28,11 +28,14 @@ GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup
   LOG(kVerbose) << "GroupDb<PmidManager>::FindOrCreateGroup " << HexSubstr(group_name->string());
   try {
     return FindGroup(group_name);
-  } catch (const maidsafe_error& error) {
-    LOG(kInfo) << "Account doesn't exist for group "
-               << HexSubstr(group_name->string()) << ", error : "
-               << boost::diagnostic_information(error)
-               << ". -- Creating Account --";
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(VaultErrors::no_such_account))
+      LOG(kInfo) << "Account doesn't exist for group " << HexSubstr(group_name->string())
+                 << ". -- Creating Account --";
+    else
+      LOG(kError) << "GroupDb<PmidManager>::FindOrCreateGroup encountered unknown error "
+                  << boost::diagnostic_information(error);
     return AddGroupToMap(group_name, Metadata(group_name));
   }
 }

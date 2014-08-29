@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+option optimize_for = LITE_RUNTIME;
+
 package maidsafe.vault.protobuf;
 
-message MetadataKey {
-  required bytes group_name = 1;
-}
+message MetadataKey { required bytes group_name = 1; }

@@ -21,8 +21,8 @@
 
 #include <type_traits>
 
-#include "maidsafe/common/data_stores/data_store.h"
-#include "maidsafe/common/data_stores/memory_buffer.h"
+#include "maidsafe/vault/chunk_store.h"
+#include "maidsafe/vault/memory_fifo.h"
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/nfs/message_wrapper.h"
@@ -93,8 +93,8 @@ class CacheHandlerService {
   routing::Routing& routing_;
   CacheHandlerDispatcher dispatcher_;
   DiskUsage cache_size_;
-  data_stores::DataStore<data_stores::DataBuffer<DataNameVariant>> cache_data_store_;
-  data_stores::MemoryBuffer mem_only_cache_;
+  ChunkStore cache_data_store_;
+  MemoryFIFO mem_only_cache_;
 };
 
 template <typename MessageType>
@@ -210,8 +210,8 @@ void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
   try {
     LOG(kVerbose) << "CacheHandlerService::CacheStore: cache_data_store: "
                   << HexSubstr(data.name().value) << " on " << DebugId(routing_.kNodeId());
-    cache_data_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
-                            data.Serialise().data);
+    cache_data_store_.Put(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+                          data.Serialise().data);
   }
   catch (const std::exception&) {
     LOG(kError) << "Failed to store data in to the cache";

@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,20 +16,51 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/db.h"
+#ifndef MAIDSAFE_VAULT_MEMORY_FIFO_H_
+#define MAIDSAFE_VAULT_MEMORY_FIFO_H_
 
-#include "boost/filesystem/operations.hpp"
 
-#include "leveldb/status.h"
+#include <mutex>
+#include <utility>
 
-#include "maidsafe/vault/utils.h"
+#include "boost/circular_buffer.hpp"
+
+#include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-// const int Db::kPrefixWidth_(2);
+namespace test {
+
+class MemoryFIFOTest;
+
+}  // namespace test
+
+class MemoryFIFO {
+ public:
+  typedef DataNameVariant KeyType;
+  typedef boost::circular_buffer<std::pair<KeyType, NonEmptyString>> MemoryFIFOType;
+
+  explicit MemoryFIFO(MemoryUsage max_memory_usage);
+  MemoryFIFO(const MemoryFIFO&) = delete;
+  MemoryFIFO& operator=(const MemoryFIFO&) = delete;
+  ~MemoryFIFO() = default;
+
+  void Store(const KeyType& key, const NonEmptyString& value);
+  NonEmptyString Get(const KeyType& key);
+  void Delete(const KeyType& key);
+
+ private:
+  MemoryFIFOType::iterator Find(const KeyType& key);
+
+  MemoryFIFOType memory_fifo_;
+  mutable std::mutex mutex_;
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_MEMORY_FIFO_H_
