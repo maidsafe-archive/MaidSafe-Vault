@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,30 +16,31 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-option optimize_for = LITE_RUNTIME;
+#ifndef MAIDSAFE_VAULT_TESTS_CHUNK_STORE_TEST_UTILS_H_
+#define MAIDSAFE_VAULT_TESTS_CHUNK_STORE_TEST_UTILS_H_
 
-package maidsafe.vault.protobuf;
+#include <cstdint>
+#include <utility>
+#include <vector>
 
-message MaidManagerValue {
-  required int64 total_cost = 1;
-  required int32 count = 2;
-}
+#include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/common/types.h"
 
-message MaidManagerKeyValuePair {
-  required bytes key = 1;
-  required bytes value = 2;
-}
+namespace maidsafe {
 
-message MaidManagerMetadata {
-  message PmidTotal {
-    required bytes serialised_pmid_registration = 1;
-    required bytes serialised_pmid_metadata = 2;  // this is a serialised PmidManagerMetadata
-  }
-  repeated PmidTotal pmid_totals = 1;
-  required int64 total_put_data = 2;
-}
+namespace vault {
 
-// Used as data field in MM's Reply to Put request.
-message Cost {
-  required int32 cost = 1;
-}
+namespace test {
+
+void AddRandomKeyValuePairs(std::vector<std::pair<DataNameVariant, NonEmptyString>>& container,
+                            uint32_t number, uint32_t size);
+
+DataNameVariant GetRandomDataNameType();
+
+}  // namespace test
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_TESTS_CHUNK_STORE_TEST_UTILS_H_

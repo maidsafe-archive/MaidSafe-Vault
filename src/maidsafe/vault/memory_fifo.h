@@ -16,15 +16,51 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-option optimize_for = LITE_RUNTIME;
+#ifndef MAIDSAFE_VAULT_MEMORY_FIFO_H_
+#define MAIDSAFE_VAULT_MEMORY_FIFO_H_
 
-package maidsafe.vault.protobuf;
 
-message VersionHandlerKeyValuePair {
-  required bytes key = 1;
-  required bytes value = 2;
-}
+#include <mutex>
+#include <utility>
 
-message VersionHandlerValue {
-  required bytes serialised_structured_data_versions = 1;
-}
+#include "boost/circular_buffer.hpp"
+
+#include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
+
+namespace maidsafe {
+
+namespace vault {
+
+namespace test {
+
+class MemoryFIFOTest;
+
+}  // namespace test
+
+class MemoryFIFO {
+ public:
+  typedef DataNameVariant KeyType;
+  typedef boost::circular_buffer<std::pair<KeyType, NonEmptyString>> MemoryFIFOType;
+
+  explicit MemoryFIFO(MemoryUsage max_memory_usage);
+  MemoryFIFO(const MemoryFIFO&) = delete;
+  MemoryFIFO& operator=(const MemoryFIFO&) = delete;
+  ~MemoryFIFO() = default;
+
+  void Store(const KeyType& key, const NonEmptyString& value);
+  NonEmptyString Get(const KeyType& key);
+  void Delete(const KeyType& key);
+
+ private:
+  MemoryFIFOType::iterator Find(const KeyType& key);
+
+  MemoryFIFOType memory_fifo_;
+  mutable std::mutex mutex_;
+};
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_MEMORY_FIFO_H_

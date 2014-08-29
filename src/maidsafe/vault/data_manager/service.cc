@@ -56,10 +56,10 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       asio_service_(2),
       data_getter_(data_getter),
       accumulator_mutex_(),
-      matrix_change_mutex_(),
+      close_nodes_change_mutex_(),
       stopped_(false),
       accumulator_(),
-      matrix_change_(),
+      close_nodes_change_(),
       dispatcher_(routing_, pmid),
       get_timer_(asio_service_),
       get_cached_response_timer_(asio_service_),
@@ -182,20 +182,19 @@ template<>
 void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterPartialToDataManager& message,
     const typename nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterPartialToDataManager"
+    const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& receiver) {
+  LOG(kVerbose) << "nfs::GetRequestFromDataGetterPartialToDataManager"
                 << " from " << HexSubstr(sender.node_id->string())
                 << " relayed via : " << HexSubstr(sender.relay_node->string())
                 << " for chunk " << HexSubstr(message.contents->raw_name.string())
                 << " with message id " << message.id;
-  if (!this->ValidateSender(message, sender))
-    return;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  typedef nfs::GetRequestFromDataGetterPartialToDataManager::SourcePersona SourceType;
-  detail::PartialRequestor<SourceType> requestor(sender);
-  detail::GetRequestVisitor<DataManagerService, detail::PartialRequestor<SourceType>>
-      get_request_visitor(this, requestor, message.id);
-  boost::apply_visitor(get_request_visitor, data_name);
+  typedef nfs::GetRequestFromDataGetterPartialToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 template<>
@@ -240,14 +239,19 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
   try {
     get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
   }
-  catch (maidsafe_error& error) {
+  catch (const maidsafe_error& error) {
     // There is scenario that during the procedure of Get, the request side will get timed out
     // earlier than the response side (when they use same time out parameter).
     // So the task will be cleaned out before the time-out response from responder
     // arrived. The policy shall change to keep timer muted instead of throwing.
     // BEFORE_RELEASE handle
-    LOG(kError) << "Caught an error when received a get response "
-                << boost::diagnostic_information(error);
+    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+      LOG(kInfo) << "DataManagerService::HandleGetResponse task has been removed due to timed out";
+    } else {
+      LOG(kError) << "DataManagerService::HandleGetResponse encountered unknown error : "
+                  << boost::diagnostic_information(error);
+      throw;
+    }
   }
 }
 
@@ -446,12 +450,11 @@ void DataManagerService::HandleAccountTransfer(
     try {
       protobuf::DataManagerKeyValuePair kv_msg;
       if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
         DataManager::Key key(kv_msg.key());
         VLOG(nfs::Persona::kDataManager, VisualiserAction::kGotAccountTransferred, key.name);
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
         DataManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+        LOG(kVerbose) << "DataManager got account " << DebugId(key.name)
+                      << " transferred, having vaule " << value.Print();
         kv_pairs.push_back(std::make_pair(key, std::move(value)));
       }
     } catch(...) {
@@ -462,28 +465,29 @@ void DataManagerService::HandleAccountTransfer(
 }
 
 
-void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info before : ";
-//   matrix_change_.Print();
-  std::lock_guard<std::mutex> lock(matrix_change_mutex_);
+void DataManagerService::HandleChurnEvent(
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info before : ";
+//   close_nodes_change_.Print();
+  std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
   if (stopped_)
     return;
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change containing following info : ";
-//   matrix_change->Print();
-  matrix_change_ = *matrix_change;
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change containing following info : ";
+//   close_nodes_change->Print();
+  close_nodes_change_ = *close_nodes_change;
 
   Db<DataManager::Key, DataManager::Value>::TransferInfo transfer_info(
-      db_.GetTransferInfo(matrix_change));
+      db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
-//   LOG(kVerbose) << "HandleChurnEvent matrix_change_ containing following info after : ";
-//   matrix_change_.Print();
+//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
+//   close_nodes_change_.Print();
 }
 
 void DataManagerService::TransferAccount(const NodeId& dest,
     const std::vector<Db<DataManager::Key, DataManager::Value>::KvPair>& accounts) {
   // If account just received, shall not pass it out as may under a startup procedure
-  // i.e. existing DM will be seen as new_node in matrix_change
+  // i.e. existing DM will be seen as new_node in close_nodes_change
   if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
     LOG(kWarning) << "DataManager account just received";
     return;
@@ -496,6 +500,9 @@ void DataManagerService::TransferAccount(const NodeId& dest,
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());
     actions.push_back(kv_msg.SerializeAsString());
+    LOG(kVerbose) << "DataManager sent account " << DebugId(account.first.name)
+                  << " to " << HexSubstr(dest.string())
+                  << " with vaule " << account.second.Print();
   }
   nfs::MessageId message_id(HashStringToMessageId(dest.string()));
   DataManager::UnresolvedAccountTransfer account_transfer(
@@ -538,13 +545,14 @@ void DataManagerService::HandleMessage(
 }
 
 
-// void DataManagerService::HandleChurnEvent(std::shared_ptr<routing::MatrixChange> matrix_change) {
+// void DataManagerService::HandleChurnEvent(
+//     std::shared_ptr<routing::MatrixChange> close_nodes_change) {
 //  auto record_names(metadata_handler_.GetRecordNames());
 //  auto itr(std::begin(record_names));
 //  auto name(itr->name());
 //  while (itr != std::end(record_names)) {
 //    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), name));
-//    auto check_holders_result(matrix_change->(NodeId(result.second)));
+//    auto check_holders_result(close_nodes_change->(NodeId(result.second)));
 //    // Delete records for which this node is no longer responsible.
 //    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
 //      metadata_handler_.DeleteRecord(itr->name());

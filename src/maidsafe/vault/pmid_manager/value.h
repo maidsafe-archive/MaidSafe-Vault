@@ -38,6 +38,8 @@ class PmidManagerValue {
   std::string Serialise() const;
   int32_t size() const { return size_; }
 
+  std::string Print() const;
+
   friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
   friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 

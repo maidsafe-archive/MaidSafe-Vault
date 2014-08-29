@@ -52,12 +52,12 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
   template <typename Name>
   void operator()(const Name& data_name) {
     LOG(kVerbose) << "MaidManagerPutVisitor HandlePut for chunk "
-                  << HexSubstr(data_name.value.string())
-                  << " to PmidHint " << HexSubstr(kPmidHint_.string());
-    kService_->HandlePut(MaidName(Identity(kSender_.string())),
-                                  typename Name::data_type(data_name,
-                                      typename Name::data_type::serialised_type(kContent_)),
-                                  PmidName(kPmidHint_), kMessageId_);
+                  << HexSubstr(data_name.value.string()) << " to PmidHint "
+                  << HexSubstr(kPmidHint_.string());
+    kService_->HandlePut(
+        MaidName(Identity(kSender_.string())),
+        typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
+        PmidName(kPmidHint_), kMessageId_);
   }
 
  private:
@@ -162,8 +162,7 @@ template <typename ServiceHandlerType>
 class MaidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
  public:
   MaidManagerPutResponseFailureVisitor(ServiceHandlerType* service, const MaidName& maid_node,
-                                       const maidsafe_error& return_code,
-                                       nfs::MessageId message_id)
+                                       const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
         kMaidNode_(maid_node),
         kReturnCode_(return_code),
@@ -210,8 +209,8 @@ class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(kMaidNode_, data_name,
-                                                                    kCost_, kMessageId_);
+    kService_->template HandlePutResponse<typename Name::data_type>(kMaidNode_, data_name, kCost_,
+                                                                    kMessageId_);
   }
 
  private:
@@ -230,8 +229,8 @@ class DataManagerPutResponseVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kPmidNode_,
-                                                                    kSize_, kMessageId_);
+    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kPmidNode_, kSize_,
+                                                                    kMessageId_);
   }
 
  private:
@@ -262,19 +261,19 @@ class GetRequestVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:
   DataManagerSendDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
                                nfs::MessageId message_id)
       : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     LOG(kWarning) << "DataManagerSendDeleteVisitor::operator() send delete request to node "
                   << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string())
-                  << " bearing message id " << kMessageId_.data;
+                  << HexSubstr(data_name.value.string()) << " bearing message id "
+                  << kMessageId_.data;
     kService_->template SendDeleteRequest<typename Name::data_type>(kPmidNode_, data_name,
                                                                     kMessageId_);
   }
@@ -285,19 +284,19 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
   nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class DataManagerSetPmidOnlineVisitor : public boost::static_visitor<> {
  public:
   DataManagerSetPmidOnlineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
                                   nfs::MessageId message_id)
       : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     LOG(kWarning) << "DataManagerSetPmidOnlineVisitor::operator() set pmid_node online "
                   << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string())
-                  << " bearing message id " << kMessageId_.data;
+                  << HexSubstr(data_name.value.string()) << " bearing message id "
+                  << kMessageId_.data;
     kService_->MarkNodeUp(kPmidNode_, data_name);
   }
 
@@ -307,19 +306,19 @@ class DataManagerSetPmidOnlineVisitor : public boost::static_visitor<> {
   nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class DataManagerSetPmidOfflineVisitor : public boost::static_visitor<> {
  public:
   DataManagerSetPmidOfflineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                                  nfs::MessageId message_id)
+                                   nfs::MessageId message_id)
       : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     LOG(kWarning) << "DataManagerSetPmidOfflineVisitor::operator() set pmid_node offline "
                   << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string())
-                  << " bearing message id " << kMessageId_.data;
+                  << HexSubstr(data_name.value.string()) << " bearing message id "
+                  << kMessageId_.data;
     kService_->MarkNodeDown(kPmidNode_, data_name);
   }
 
@@ -329,15 +328,16 @@ class DataManagerSetPmidOfflineVisitor : public boost::static_visitor<> {
   nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class PmidNodeGetVisitor : public boost::static_visitor<> {
  public:
   PmidNodeGetVisitor(ServiceHandlerType* service, const routing::SingleId& data_manager_node_id,
                      nfs::MessageId message_id)
-      : kService_(service), kDataManagerNodeId_(data_manager_node_id.data),
+      : kService_(service),
+        kDataManagerNodeId_(data_manager_node_id.data),
         kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleGet<typename Name::data_type>(data_name, kDataManagerNodeId_,
                                                             kMessageId_);
@@ -349,11 +349,10 @@ class PmidNodeGetVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
  public:
-  PmidNodeIntegrityCheckVisitor(ServiceHandlerType* service,
-                                const NonEmptyString& random_string,
+  PmidNodeIntegrityCheckVisitor(ServiceHandlerType* service, const NonEmptyString& random_string,
                                 const routing::SingleSource& data_manager_node_id,
                                 nfs::MessageId message_id)
       : kService_(service),
@@ -361,11 +360,10 @@ class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
         kDataManagerNodeId_(data_manager_node_id.data),
         kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandleIntegrityCheck<typename Name::data_type>(data_name, kRandomString_,
-                                                                       kDataManagerNodeId_,
-                                                                       kMessageId_);
+    kService_->template HandleIntegrityCheck<typename Name::data_type>(
+        data_name, kRandomString_, kDataManagerNodeId_, kMessageId_);
   }
 
  private:
@@ -375,12 +373,12 @@ class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class PmidNodeDeleteVisitor : public boost::static_visitor<> {
  public:
   explicit PmidNodeDeleteVisitor(ServiceHandlerType* service) : kService_(service) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleDelete<typename Name::data_type>(data_name);
   }
@@ -389,14 +387,14 @@ class PmidNodeDeleteVisitor : public boost::static_visitor<> {
   ServiceHandlerType* const kService_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class MaidManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   MaidManagerDeleteVisitor(ServiceHandlerType* service, const MaidName& maid_name,
                            nfs::MessageId message_id)
       : kService_(service), kMaidName_(maid_name), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleDelete<typename Name::data_type>(kMaidName_, data_name, kMessageId_);
   }
@@ -407,17 +405,20 @@ class MaidManagerDeleteVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class MaidManagerPutVersionRequestVisitor : public boost::static_visitor<> {
  public:
   MaidManagerPutVersionRequestVisitor(ServiceHandlerType* service, const MaidName& maid_name,
                                       StructuredDataVersions::VersionName old_version,
                                       StructuredDataVersions::VersionName new_version,
                                       nfs::MessageId message_id)
-      : kService_(service), kMaidName_(maid_name), kOldVersion_(std::move(old_version)),
-        kNewVersion_(std::move(new_version)), kMessageId_(message_id) {}
+      : kService_(service),
+        kMaidName_(maid_name),
+        kOldVersion_(std::move(old_version)),
+        kNewVersion_(std::move(new_version)),
+        kMessageId_(message_id) {}
 
-  template<typename DataNameType>
+  template <typename DataNameType>
   void operator()(const DataNameType& data_name) {
     kService_->HandlePutVersionRequest(kMaidName_, data_name, kOldVersion_, kNewVersion_,
                                        kMessageId_);
@@ -430,16 +431,18 @@ class MaidManagerPutVersionRequestVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class MaidManagerDeleteBranchUntilForkVisitor : public boost::static_visitor<> {
  public:
   MaidManagerDeleteBranchUntilForkVisitor(ServiceHandlerType* service, const MaidName& maid_name,
                                           StructuredDataVersions::VersionName version,
                                           nfs::MessageId message_id)
-      : kService_(service), kMaidName_(maid_name), kVersion_(std::move(version)),
+      : kService_(service),
+        kMaidName_(maid_name),
+        kVersion_(std::move(version)),
         kMessageId_(message_id) {}
 
-  template<typename DataNameType>
+  template <typename DataNameType>
   void operator()(const DataNameType& data_name) {
     kService_->HandleDeleteBranchUntilFork(kMaidName_, data_name, kVersion_, kMessageId_);
   }
@@ -451,17 +454,21 @@ class MaidManagerDeleteBranchUntilForkVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class MaidManagerCreateVersionTreeRequestVisitor : public boost::static_visitor<> {
  public:
   MaidManagerCreateVersionTreeRequestVisitor(ServiceHandlerType* service, const MaidName& maid_name,
-                                      StructuredDataVersions::VersionName version,
-                                      uint32_t max_versions, uint32_t max_branches,
-                                      nfs::MessageId message_id)
-      : kService_(service), kMaidName_(maid_name), kVersion_(std::move(version)),
-        kMaxVersions_(max_versions), kMaxBranches_(max_branches), kMessageId_(message_id) {}
+                                             StructuredDataVersions::VersionName version,
+                                             uint32_t max_versions, uint32_t max_branches,
+                                             nfs::MessageId message_id)
+      : kService_(service),
+        kMaidName_(maid_name),
+        kVersion_(std::move(version)),
+        kMaxVersions_(max_versions),
+        kMaxBranches_(max_branches),
+        kMessageId_(message_id) {}
 
-  template<typename DataNameType>
+  template <typename DataNameType>
   void operator()(const DataNameType& data_name) {
     kService_->HandleCreateVersionTreeRequest(kMaidName_, data_name, kVersion_, kMaxVersions_,
                                               kMaxBranches_, kMessageId_);
@@ -475,16 +482,19 @@ class MaidManagerCreateVersionTreeRequestVisitor : public boost::static_visitor<
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class MaidManagerCreateVersionTreeResponseVisitor : public boost::static_visitor<> {
  public:
-  MaidManagerCreateVersionTreeResponseVisitor(
-      ServiceHandlerType* service, const MaidName& maid_name, const maidsafe_error& return_code,
-      nfs::MessageId message_id)
-      : kService_(service), kMaidName_(maid_name), kReturnCode_(return_code),
+  MaidManagerCreateVersionTreeResponseVisitor(ServiceHandlerType* service,
+                                              const MaidName& maid_name,
+                                              const maidsafe_error& return_code,
+                                              nfs::MessageId message_id)
+      : kService_(service),
+        kMaidName_(maid_name),
+        kReturnCode_(return_code),
         kMessageId_(message_id) {}
 
-  template<typename DataNameType>
+  template <typename DataNameType>
   void operator()(const DataNameType& data_name) {
     kService_->HandleCreateVersionTreeResponse(kMaidName_, data_name, kReturnCode_, kMessageId_);
   }
@@ -496,13 +506,13 @@ class MaidManagerCreateVersionTreeResponseVisitor : public boost::static_visitor
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class DataManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   DataManagerDeleteVisitor(ServiceHandlerType* service, nfs::MessageId message_id)
       : kService_(service), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleDelete<typename Name::data_type>(data_name, kMessageId_);
   }
@@ -512,14 +522,14 @@ class DataManagerDeleteVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class PmidManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   PmidManagerDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
                            nfs::MessageId message_id)
       : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleDelete<typename Name::data_type>(kPmidName_, data_name, kMessageId_);
   }
@@ -530,14 +540,14 @@ class PmidManagerDeleteVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
  public:
   PmidManagerPutResponseVisitor(ServiceHandlerType* service, int32_t size,
                                 const PmidName& pmid_name, nfs::MessageId message_id)
       : kService_(service), kPmidName_(pmid_name), kSize_(size), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template SendPutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
                                                                   kMessageId_);
@@ -555,8 +565,7 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
  public:
   PmidManagerPutResponseFailureVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
                                        const int64_t available_size,
-                                       const maidsafe_error& return_code,
-                                       nfs::MessageId message_id)
+                                       const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
         kPmidName_(pmid_name),
         kAvailableSize_(available_size),
@@ -565,9 +574,8 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutFailure<typename Name::data_type>(data_name, kPmidName_,
-                                                                   kAvailableSize_,
-                                                                   kReturnCode_, kMessageId_);
+    kService_->template HandlePutFailure<typename Name::data_type>(
+        data_name, kPmidName_, kAvailableSize_, kReturnCode_, kMessageId_);
   }
 
  private:
@@ -578,17 +586,17 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template<typename ServiceHandlerType>
+template <typename ServiceHandlerType>
 class PmidManagerFalseNotificationVisitor : public boost::static_visitor<> {
  public:
   PmidManagerFalseNotificationVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
                                       nfs::MessageId message_id)
       : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
 
-  template<typename Name>
+  template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandleFalseNotification<typename Name::data_type>(
-        data_name, kPmidName_, kMessageId_);
+    kService_->template HandleFalseNotification<typename Name::data_type>(data_name, kPmidName_,
+                                                                          kMessageId_);
   }
 
  private:
@@ -604,7 +612,8 @@ class VersionHandlerGetVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerGetVisitor(VersionHandlerService* service, const Identity& originator,
                            nfs::MessageId message_id)
-      : kService_(service), kRequestor_(NodeId(std::move(originator.string()))),
+      : kService_(service),
+        kRequestor_(NodeId(std::move(originator.string()))),
         kMessageId_(message_id) {}
 
   template <typename Name>
@@ -625,8 +634,10 @@ class VersionHandlerGetBranchVisitor : public boost::static_visitor<> {
   VersionHandlerGetBranchVisitor(VersionHandlerService* service,
                                  const StructuredDataVersions::VersionName version_name,
                                  const Identity& originator, nfs::MessageId message_id)
-      : kService_(service), kVersionName_(std::move(version_name)),
-        kRequestor_(NodeId(std::move(originator.string()))), kMessageId_(std::move(message_id)) {}
+      : kService_(service),
+        kVersionName_(std::move(version_name)),
+        kRequestor_(NodeId(std::move(originator.string()))),
+        kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
@@ -646,10 +657,12 @@ class VersionHandlerPutVisitor : public boost::static_visitor<> {
   VersionHandlerPutVisitor(VersionHandlerService* service,
                            const StructuredDataVersions::VersionName& old_version,
                            const StructuredDataVersions::VersionName& new_version,
-                           const Identity& originator,
-                           nfs::MessageId message_id)
-      : kService_(service), kOldVersion_(old_version), kNewVersion_(new_version),
-        kMessageId_(message_id), kOriginator_(std::move(originator)) {}
+                           const Identity& originator, nfs::MessageId message_id)
+      : kService_(service),
+        kOldVersion_(old_version),
+        kNewVersion_(new_version),
+        kMessageId_(message_id),
+        kOriginator_(std::move(originator)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
@@ -669,13 +682,12 @@ class VersionHandlerDeleteBranchVisitor : public boost::static_visitor<> {
   VersionHandlerDeleteBranchVisitor(VersionHandlerService* service,
                                     const StructuredDataVersions::VersionName& version_name,
                                     const Identity& originator)
-      : kService_(service), kVersionName_(version_name),
-        kOriginator_(std::move(originator)) {}
+      : kService_(service), kVersionName_(version_name), kOriginator_(std::move(originator)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandleDeleteBranchUntilFork(Key(data_name, Name::data_type::Tag::kValue),
-                                               kVersionName_, kOriginator_);
+                                           kVersionName_, kOriginator_);
   }
 
  private:
@@ -688,13 +700,16 @@ class VersionHandlerCreateVersionTreeVisitor : public boost::static_visitor<> {
  public:
   VersionHandlerCreateVersionTreeVisitor(VersionHandlerService* service,
                                          const StructuredDataVersions::VersionName& version,
-                                         const Identity& originator,
-                                         uint32_t max_versions, uint32_t max_branches,
-                                         nfs::MessageId message_id)
-      : kService_(service), kVersion_(version), kMaxVersions_(max_versions),
-        kMaxBranches_(max_branches), kMessageId_(message_id), kOriginator_(Identity(originator)) {}
+                                         const Identity& originator, uint32_t max_versions,
+                                         uint32_t max_branches, nfs::MessageId message_id)
+      : kService_(service),
+        kVersion_(version),
+        kMaxVersions_(max_versions),
+        kMaxBranches_(max_branches),
+        kMessageId_(message_id),
+        kOriginator_(Identity(originator)) {}
 
-  template<typename DataNameType>
+  template <typename DataNameType>
   void operator()(const DataNameType& data_name) {
     kService_->HandleCreateVersionTree(Key(data_name, DataNameType::data_type::Tag::kValue),
                                        kVersion_, kOriginator_, kMaxVersions_, kMaxBranches_,
@@ -718,7 +733,7 @@ class CheckDataNameVisitor : public boost::static_visitor<bool> {
     try {
       return (typename DataNameType::data_type(
                   data_name, typename DataNameType::data_type::serialised_type(kContent_)).name() ==
-                                  data_name);
+              data_name);
     }
     catch (const maidsafe_error& error) {
       LOG(kWarning) << "Failed to deserialise data" << error.code();

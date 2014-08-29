@@ -39,14 +39,10 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 2U << 10;
+static const size_t kTestChunkSize = 1024 * 1024;
 static const size_t kAverageChunksStored = 1000;
 
-passport::Maid MakeMaid();
-passport::Pmid MakePmid();
-passport::PublicPmid MakePublicPmid();
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
-
 
 template <typename ContentType>
 ContentType CreateContent() {
@@ -59,7 +55,7 @@ nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>();
 
 template <>
 nfs_client::DataNameAndSpaceAndReturnCode
-CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>();
+    CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>();
 
 template <>
 nfs_vault::DataName CreateContent<nfs_vault::DataName>();
@@ -81,11 +77,11 @@ nfs_client::DataNameAndReturnCode CreateContent<nfs_client::DataNameAndReturnCod
 
 template <>
 nfs_vault::DataNameAndContentOrCheckResult
-CreateContent<nfs_vault::DataNameAndContentOrCheckResult>();
+    CreateContent<nfs_vault::DataNameAndContentOrCheckResult>();
 
 template <>
 nfs_client::DataNameAndContentOrReturnCode
-CreateContent<nfs_client::DataNameAndContentOrReturnCode>();
+    CreateContent<nfs_client::DataNameAndContentOrReturnCode>();
 
 template <>
 nfs_vault::DataNameAndCost CreateContent<nfs_vault::DataNameAndCost>();
@@ -159,15 +155,14 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
 }
 
 template <typename ServiceType, typename UnresolvedActionType, typename PersonaSyncType>
-void AddLocalActionAndSendGroupActions(
-    ServiceType* service, Sync<UnresolvedActionType>& /*sync*/,
-    const std::vector<UnresolvedActionType>& unresolved_actions,
-    const std::vector<routing::GroupSource>& group_source) {
+void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActionType>& /*sync*/,
+                                       const std::vector<UnresolvedActionType>& unresolved_actions,
+                                       const std::vector<routing::GroupSource>& group_source) {
   for (uint32_t index(0); index < unresolved_actions.size(); ++index) {
     auto proto_sync(CreateProtoSync(UnresolvedActionType::ActionType::kActionId,
                                     unresolved_actions[index].Serialise()));
-    auto sync_message(CreateMessage<PersonaSyncType>(
-                          nfs_vault::Content(proto_sync.SerializeAsString())));
+    auto sync_message(
+        CreateMessage<PersonaSyncType>(nfs_vault::Content(proto_sync.SerializeAsString())));
     service->HandleMessage(sync_message, group_source[index], group_source[index].group_id);
   }
 }

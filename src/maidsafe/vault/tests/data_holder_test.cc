@@ -14,8 +14,7 @@
     OF ANY KIND, either express or implied.
 
     See the Licences for the specific language governing permissions and limitations relating to
-    use of the MaidSafe Software.
- */
+    use of the MaidSafe Software.                                                                 */
 
 // #include "maidsafe/vault/pmid_node/service.h"
 
@@ -208,7 +207,7 @@
 // TYPED_TEST_CASE_P(DataHolderTest);
 
 // TYPED_TEST_P(DataHolderTest, BEH_HandlePutMessage) {
-//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
+//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::IdType::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
 //                          name_and_content.first,
@@ -225,7 +224,7 @@
 // }
 
 // TYPED_TEST_P(DataHolderTest, BEH_HandleGetMessage) {
-//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
+//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::IdType::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
 //                          name_and_content.first,
@@ -241,7 +240,7 @@
 // }
 
 // TYPED_TEST_P(DataHolderTest, BEH_HandleDeleteMessage) {
-//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
+//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::IdType::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
 //                          name_and_content.first,
@@ -282,7 +281,7 @@
 //  NameContentContainer name_content_pairs;
 
 //  for (uint32_t i = 0; i != events; ++i) {
-//    nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
+//    nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::IdType::kRandomId));
 //    std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //    name_content_pairs.push_back(name_and_content);
 
@@ -436,7 +435,7 @@
 // TYPED_TEST_CASE_P(DataHolderCacheableTest);
 
 // TYPED_TEST_P(DataHolderCacheableTest, BEH_StoreInCache) {
-//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::kRandomId));
+//  nfs::PersonaId source(nfs::Persona::kPmidManager, NodeId(NodeId::IdType::kRandomId));
 //  std::pair<Identity, NonEmptyString> name_and_content(GetNameAndContent<TypeParam>());
 //  nfs::Message::Data data(TypeParam::Tag::kValue,
 //                          name_and_content.first,

@@ -133,8 +133,7 @@ UnresolvedAction<Key, Action>::UnresolvedAction(const UnresolvedAction& other)
       seen_list(other.seen_list) {
   if (other.this_node_and_entry_id)
     this_node_and_entry_id = std::make_shared<std::pair<NodeId, int32_t>>(
-                                 other.this_node_and_entry_id->first,
-                                 other.this_node_and_entry_id->second);
+        other.this_node_and_entry_id->first, other.this_node_and_entry_id->second);
 }
 
 template <typename Key, typename Action>
