@@ -48,11 +48,16 @@ struct UsedSpace {
 
 UsedSpace GetUsedSpace(fs::path directory) {
   UsedSpace used_space;
-  for (fs::directory_iterator it(directory); it != fs::directory_iterator(); ++it) {
-    if (fs::is_directory(*it))
-      used_space.directories.push_back(it->path());
-    else
-      used_space.disk_usage.data += fs::file_size(*it);
+  try {
+    for (fs::directory_iterator it(directory); it != fs::directory_iterator(); ++it) {
+      if (fs::is_directory(*it))
+        used_space.directories.push_back(it->path());
+      else
+        used_space.disk_usage.data += fs::file_size(*it);
+    }
+  } catch (const std::exception& e) {
+    LOG(kError) << "GetUsedSpace when handling " << directory
+                << " caught an error : " << boost::diagnostic_information(e);
   }
   return used_space;
 }
@@ -71,7 +76,10 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
     while (!dirs_to_do.empty()) {
       std::vector<std::future<UsedSpace>> futures;
       for (uint32_t i = 0; i < 16 && !dirs_to_do.empty(); ++i) {
-        auto future = std::async(&GetUsedSpace, dirs_to_do.back());
+        auto temp_copy(dirs_to_do.back());
+        LOG(kVerbose) << "temp_copy : " << temp_copy;
+        auto future = std::async(std::launch::async,
+                                 [=] { return GetUsedSpace(temp_copy); });
         dirs_to_do.pop_back();
         futures.push_back(std::move(future));
       }
@@ -81,7 +89,7 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
           futures.pop_back();
           UsedSpace result = future.get();
           disk_usage.data += result.disk_usage.data;
-          std::copy(result.directories.begin(), result.directories.end(),
+          std::move(result.directories.begin(), result.directories.end(),
                     std::back_inserter(dirs_to_do));
         }
       }
@@ -107,8 +115,11 @@ ChunkStore::ChunkStore(const fs::path& disk_path, DiskUsage max_disk_usage)
       kDepth_(5),
       mutex_(),
       get_identity_visitor_() {
-  if (current_disk_usage_ > max_disk_usage_)
+  if (current_disk_usage_ > max_disk_usage_) {
+    LOG(kError) << "current disk usage " << current_disk_usage_
+                << " is greater than max disk usage " << max_disk_usage_;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::cannot_exceed_limit));
+  }
 }
 
 ChunkStore::~ChunkStore() {}
