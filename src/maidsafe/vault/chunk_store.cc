@@ -70,6 +70,9 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
       LOG(kError) << "Can't create disk root at " << disk_root << ": " << error_code.message();
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     }
+  } else if (fs::is_regular_file(disk_root)) {
+    LOG(kError) << "Can't use file " << disk_root << " as disk root ";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   } else {
     std::vector<fs::path> dirs_to_do;
     dirs_to_do.push_back(disk_root);
