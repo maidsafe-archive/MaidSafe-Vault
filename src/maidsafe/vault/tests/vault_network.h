@@ -110,8 +110,13 @@ class VaultEnvironment : public testing::Environment {
   VaultEnvironment() {}
 
   void SetUp() override {
-    g_env_.reset(new VaultNetwork());
-    g_env_->SetUp();
+    try {
+      g_env_ = std::make_shared<VaultNetwork>();
+      g_env_->SetUp();
+    }
+    catch (const std::exception& e) {
+      GTEST_FAIL() << e.what();
+    }
   }
 
   void TearDown() override { g_env_->TearDown(); }
