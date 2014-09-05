@@ -52,20 +52,6 @@ class MaidManagerServiceTest : public testing::Test {
 
   NodeId MaidNodeId() { return NodeId(maid_.name()->string()); }
 
-  routing::TaskId GetTaskId(const DataNameVariant& data_name) const {
-    for (auto iter(std::begin(maid_manager_service_.data_getter_.get_handler_.get_info_));
-         iter != std::end(maid_manager_service_.data_getter_.get_handler_.get_info_); ++iter) {
-      if (std::get<2>(iter->second) == data_name)
-        return std::get<1>(iter->second);
-    }
-    return 0;
-  }
-
-  void AddResponse(routing::TaskId task_id,
-                   const nfs_client::DataNameAndContentOrReturnCode& response) {
-    maid_manager_service_.data_getter_.get_handler_.AddResponse(task_id, response);
-  }
-
   MaidManager::Metadata GetMetadata(const MaidManager::GroupName& group_name) {
     return maid_manager_service_.group_db_.GetMetadata(group_name);
   }
@@ -389,47 +375,6 @@ TEST_F(MaidManagerServiceTest, BEH_Delete) {
   auto group_unresolved_action(
       CreateGroupUnresolvedAction<MaidManager::UnresolvedDelete>(key, action_delete, group_source));
   SendSync<MaidManager::UnresolvedDelete>(group_unresolved_action, group_source);
-}
-
-TEST_F(MaidManagerServiceTest, BEH_RegistedPmid) {
-  CreateAccount();
-  nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
-  ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration,
-                                                     nfs::MessageId(RandomUint32()));
-  MaidManager::MetadataKey metadata_key(public_maid_.name());
-  auto group_source(CreateGroupSource(MaidNodeId()));
-  auto group_unresolved_action(CreateGroupUnresolvedAction<MaidManager::UnresolvedRegisterPmid>(
-      metadata_key, action_register_pmid, group_source));
-  auto future(std::async(std::launch::async,
-                         [=] {
-                           SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action,
-                                                                         group_source);
-                         }));
-  Sleep(std::chrono::seconds(1));
-  AddResponse(GetTaskId(GetDataNameVariant(passport::PublicMaid::Tag::kValue, maid_.name())),
-              nfs_client::DataNameAndContentOrReturnCode(public_maid_));
-  AddResponse(GetTaskId(GetDataNameVariant(passport::PublicPmid::Tag::kValue, pmid_.name())),
-              nfs_client::DataNameAndContentOrReturnCode(public_pmid_));
-  future.get();
-  Sleep(std::chrono::seconds(1));
-  MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-  EXPECT_TRUE(MetadataPmidTotals(metadata).size() == 1);
-}
-
-TEST_F(MaidManagerServiceTest, BEH_UnregistedPmid) {
-  CreateAccount();
-  RegisterPmid();
-  MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-  EXPECT_TRUE(MetadataPmidTotals(metadata).size() == 1);
-  ActionMaidManagerUnregisterPmid action_unregister_pmid(
-      PmidName(Identity(pmid_.name()->string())));
-  MaidManager::MetadataKey metadata_key(public_maid_.name());
-  auto group_source(CreateGroupSource(MaidNodeId()));
-  auto group_unresolved_action(CreateGroupUnresolvedAction<MaidManager::UnresolvedUnregisterPmid>(
-      metadata_key, action_unregister_pmid, group_source));
-  SendSync<MaidManager::UnresolvedUnregisterPmid>(group_unresolved_action, group_source);
-  metadata = GetMetadata(public_maid_.name());
-  EXPECT_TRUE(MetadataPmidTotals(metadata).empty());
 }
 
 TEST_F(MaidManagerServiceTest, BEH_UpdatePmid) {
