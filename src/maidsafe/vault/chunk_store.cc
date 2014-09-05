@@ -58,6 +58,7 @@ UsedSpace GetUsedSpace(fs::path directory) {
   } catch (const std::exception& e) {
     LOG(kError) << "GetUsedSpace when handling " << directory
                 << " caught an error : " << boost::diagnostic_information(e);
+    throw;
   }
   return used_space;
 }
@@ -77,7 +78,6 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
       std::vector<std::future<UsedSpace>> futures;
       for (uint32_t i = 0; i < 16 && !dirs_to_do.empty(); ++i) {
         auto temp_copy(dirs_to_do.back());
-        LOG(kVerbose) << "temp_copy : " << temp_copy;
         auto future = std::async(std::launch::async,
                                  [=] { return GetUsedSpace(temp_copy); });
         dirs_to_do.pop_back();
