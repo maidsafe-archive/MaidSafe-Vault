@@ -87,9 +87,6 @@ class VaultNetwork {
   std::vector<passport::PublicPmid> public_pmids_;
   fs::path vault_dir_;
   size_t network_size_;
-#ifndef MAIDSAFE_WIN32
-  long kUlimitFileSize;  // NOLINT
-#endif
 };
 
 template <typename Data>
