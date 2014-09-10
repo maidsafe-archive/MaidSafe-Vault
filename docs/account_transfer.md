@@ -30,7 +30,7 @@ The routing library will present an interface that allows upper layers to query 
 
 The implementation of the account transfer is presented in pseudo code below
 
-
+'''
 struct Record {
   Identity key;
   NonEmptyString value;
@@ -40,5 +40,5 @@ struct Record {
 std::vector<Nodes> proximity_group;
 std::vector<Record> all_account_info;
 std::pair<Node, Node>; first = new node second = old node 
-
+'''
 
