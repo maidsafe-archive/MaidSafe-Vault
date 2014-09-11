@@ -48,24 +48,40 @@ struct Record {
 Action routing::node_change(Record); or
 Action routing::node_change(Record::key);
 
-
-
 ```
+
 The action will determin whether to delete, send or ignore any action to be taken on this key. 
 
 Prior to calling this method in routing the node must provide a method similar to the accumulator in a normal message flow. This means that a vector or container similar will 'collect' account transfer messages and match them to call this method. 
 
 This takes the form
 ```
+struct MessageQueue {
+  Message message;
+  int count;
+}
 class OnMessage {
  public:
-    Action account_transfer__recieved(Message);
+    void account_transfer__recieved(Message); // add to Queue
  private:
-  std::map<Messages> messages_;
+  std::vector<MessageQueue> messages_;
 };
 
- IncomingMessage
-
+void OnMessage::account_transfer__recieved(Message) {
+  auto found messages_.find(message)
+  if (found != std::end(messages_) {
+    ++found->count;
+    if (count == routing::parameteres::close_group / 2)
+     TryAddToDataBase(Message) // fail if already in database
+    if (count == routing::parameteres::close_group -1)
+     messages_.erase(found); // all transferred now
+  } else {
+    messages_.push_back(Message);
+  }
+}
+ 
+ // Add in a mechanism to prune this list in a similar fashion to that which will be applied in routing firewall.
+ 
 ```
-The OnMessage::Action routing::node_change(Record); will return a value that triggers an action (such as delete, send to one/many etc or ignore) on adding to this map. The map itself may require a timer to clear itself after a period defined by a magic number for now (say 20 minutes). This timer is a mistake and should not matter too much in this mechanism. It shoud be noted that account transfers could happen at any time for any node and any persona. 
+The OnMessage::Action routing::node_change(Record); will return a value that triggers an action (such as delete, send to one/many etc or ignore) on adding to this map. It shoud be noted that account transfers could happen at any time for any node and any persona. 
 
