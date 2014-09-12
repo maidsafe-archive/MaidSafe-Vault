@@ -24,6 +24,8 @@ Account transfer resembles network sync with a noticeable exception that there i
 
 The reason we always consider a node less is rather complex, but if a node 'moves in' to the group then one is pushed out, so why not use it's account? The reason is that as this change occurs we cannot know did the 5th node get a new message or the new node. To alleviate this concern there is a hard rule in place; if a node syncronises any action it writes it to the database. If a later account transfer happens on that key and there is already a record in the database, it's condered the latest as it happened via a sync message. If the new node missed the sync message the remaining threee should (may) have synced that action and will transfer it via an account transfer message, which will be written to the database. This rule covers a huge amount of edge cases, but may leave a very small amount of error in the account transfer. This error is aniticipated to be resolved in further account transfers where the error will be outvoted (so to speak) by the remaining correct values of the majority of the nodes. 
 
+In cases of conflict, which is determined to be the case where the consensus reuqired is not achived, either through lack of copies or the copies not matching then the resolutions shall be; Send a synchronisation request on the key in question. i.e. if a key does reach consensus ie.the first X copes are all mathcing and X == min required match, then the key/value is accepted and written to the database if there is no key of that name already in place. 
+
 The routing library will present an interface that allows upper layers to query any changes to the proximity group. This is defined in the section below.
 
 ##Assumptions
@@ -55,6 +57,11 @@ Prior to calling this method in routing the node must provide a method similar t
 
 This takes the form
 ```
+struct Message {
+  Identity key;
+  NonEmptyString value;
+};
+
 struct MessageQueue {
   Message message;
   int count;
@@ -67,11 +74,17 @@ class OnMessage {
 };
 
 void OnMessage::account_transfer_received(Message) {
-  auto found messages_.find(message);
+  auto found messages_.find(message.key);
   if (found != std::end(messages_) {
     ++found->count;
+    if(found.value != message.value) {
+      messages_.erase(found);
+      DoSyncRequest(message.key);
+    }
     if (count == (routing::parameters::close_group + 1) / 2)
+
      TryAddToDataBase(Message) // fail if already in database
+    
     if (count == routing::parameteres::close_group -1)
      messages_.erase(found); // all transferred now
   } else {
