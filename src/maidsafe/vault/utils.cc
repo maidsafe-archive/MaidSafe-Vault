@@ -134,20 +134,6 @@ boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_d
   return (db_root_path / boost::filesystem::unique_path());
 }
 
-std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
-  if (boost::filesystem::exists(db_path))
-    boost::filesystem::remove_all(db_path);
-  leveldb::DB* db(nullptr);
-  leveldb::Options options;
-  options.create_if_missing = true;
-  options.error_if_exists = true;
-  leveldb::Status status(leveldb::DB::Open(options, db_path.string(), &db));
-  if (!status.ok())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
-  assert(db);
-  return std::move(std::unique_ptr<leveldb::DB>(db));
-}
-
 nfs::MessageId HashStringToMessageId(const std::string& input) {
   std::hash<std::string> hash_fn;
   return nfs::MessageId(static_cast<nfs::MessageId::value_type>(hash_fn(input)));

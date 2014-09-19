@@ -33,7 +33,6 @@
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include "leveldb/db.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/on_scope_exit.h"
@@ -42,6 +41,7 @@
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/database_operations.h"
 
 namespace maidsafe {
 
@@ -117,16 +117,16 @@ class GroupDb {
   Value Get(const Key& key, const GroupId& group_id);
   void Put(const KvPair& key_value_pair, const GroupId& group_id);
   void Delete(const Key& key, const GroupId& group_id);
-  std::string MakeLevelDbKey(const GroupId& group_id, const Key& key);
-  Key MakeKey(const GroupName group_name, const leveldb::Slice& level_db_key);
-  uint32_t GetGroupId(const leveldb::Slice& level_db_key) const;
+  std::string MakeSqliteDbKey(const GroupId& group_id, const Key& key);
+  Key MakeKey(const GroupName group_name, const VaultDataBase::KEY& sqlite_db_key);
+  uint32_t GetGroupId(const VaultDataBase::KEY& sqlite_db_key) const;
   typename GroupMap::iterator FindGroup(const GroupName& group_name);
   typename GroupMap::iterator FindOrCreateGroup(const GroupName& group_name);
 
   static const int kPrefixWidth_ = 2;
   const boost::filesystem::path kDbPath_;
   std::mutex mutex_;
-  std::unique_ptr<leveldb::DB> leveldb_;
+  std::unique_ptr<VaultDataBase> sqlitedb_;
   GroupMap group_map_;
 };
 
@@ -170,7 +170,8 @@ void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
 
 template <typename Persona>
 GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
-    : kDbPath_(db_path), mutex_(), leveldb_(InitialiseLevelDb(kDbPath_)), group_map_() {
+    : kDbPath_(db_path), mutex_(), sqlitedb_(), group_map_() {
+  sqlitedb_.reset(new VaultDataBase(kDbPath_));
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
@@ -187,7 +188,7 @@ GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
 template <typename Persona>
 GroupDb<Persona>::~GroupDb() {
   try {
-    leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+    sqlitedb_.reset();
     boost::filesystem::remove_all(kDbPath_);
   }
   catch (const std::exception& e) {
@@ -307,15 +308,13 @@ typename GroupDb<Persona>::Contents GroupDb<Persona>::GetContents(typename Group
   contents.group_name = it->first;
   contents.metadata = it->second.second;
   // get db entry
-  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
+  std::pair<std::string, std::string> db_iter;
   const auto group_id = it->second.first;
-  const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
-  for (iter->Seek(group_id_str); (iter->Valid() && (GetGroupId(iter->key()) == group_id));
-       iter->Next()) {
-    contents.kv_pairs.push_back(
-        std::make_pair(MakeKey(contents.group_name, iter->key()), Value(iter->value().ToString())));
+  while (sqlitedb_->SeekNext(db_iter)) {
+    if (GetGroupId(db_iter.first) == group_id)
+      contents.kv_pairs.push_back(
+          std::make_pair(MakeKey(contents.group_name, db_iter.first), Value(db_iter.second)));
   }
-  iter.reset();
   return contents;
 }
 
@@ -427,22 +426,17 @@ template <typename Persona>
 void GroupDb<Persona>::DeleteGroupEntries(typename GroupMap::iterator it) {
   assert(it != group_map_.end());
   std::vector<std::string> group_db_keys;
+  std::pair<std::string, std::string> db_iter;
   const auto group_id = it->second.first;
-  const auto group_id_str = detail::ToFixedWidthString<kPrefixWidth_>(group_id);
-  std::unique_ptr<leveldb::Iterator> iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  for (iter->Seek(group_id_str); (iter->Valid() && (GetGroupId(iter->key()) == group_id));
-       iter->Next())
-    group_db_keys.push_back(iter->key().ToString());
-
-  iter.reset();
-
-  for (const auto& key : group_db_keys) {
-    leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), key));
-    if (!status.ok())
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+  while (sqlitedb_->SeekNext(db_iter)) {
+    if (GetGroupId(db_iter.first) == group_id)
+      group_db_keys.push_back(db_iter.first);
   }
+
+  for (const auto& key : group_db_keys)
+    sqlitedb_->Delete(key);
+
   group_map_.erase(it);
-  leveldb_->CompactRange(nullptr, nullptr);
 }
 
 // throws
@@ -451,21 +445,15 @@ typename GroupDb<Persona>::Value GroupDb<Persona>::Get(const Key& key, const Gro
   LOG(kVerbose) << "GroupDb<Persona>::Get group_id : " << group_id
                 << " group_name : " << HexSubstr(key.group_name()->string())
                 << " name : " << DebugId(key.name);
-  leveldb::ReadOptions read_options;
-  read_options.verify_checksums = true;
   std::string value_string;
-  leveldb::Status status(leveldb_->Get(read_options, MakeLevelDbKey(group_id, key), &value_string));
-  if (status.ok()) {
-    assert(!value_string.empty());
-    return Value(value_string);
-  } else if (status.IsNotFound()) {
+  sqlitedb_->Get(MakeSqliteDbKey(group_id, key), value_string);
+  if (value_string.empty()) {
     LOG(kError) << "cann't find such element for get, group_id : " << group_id
                 << " group_name : " << HexSubstr(key.group_name()->string())
                 << " name : " << DebugId(key.name);
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
-  LOG(kError) << "unknown error";
-  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+  return Value(value_string);
 }
 
 template <typename Persona>
@@ -473,39 +461,30 @@ void GroupDb<Persona>::Put(const KvPair& key_value_pair, const GroupId& group_id
   LOG(kVerbose) << "GroupDb<Persona>::Put group_id : " << group_id
                 << " group_name : " << HexSubstr(key_value_pair.first.group_name()->string())
                 << " name : " << DebugId(key_value_pair.first.name);
-  leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
-                                       MakeLevelDbKey(group_id, key_value_pair.first),
-                                       key_value_pair.second.Serialise()));
-  if (!status.ok()) {
-    LOG(kError) << "GroupDb<Persona>::Put failure in put group_id : " << group_id
-                << "key_value->key : " << HexSubstr(key_value_pair.first.group_name()->string());
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
-  }
+  sqlitedb_->Put(MakeSqliteDbKey(group_id, key_value_pair.first),
+                 key_value_pair.second.Serialise());
 }
 
 template <typename Persona>
 void GroupDb<Persona>::Delete(const Key& key, const GroupId& group_id) {
-  leveldb::Status status(leveldb_->Delete(leveldb::WriteOptions(), MakeLevelDbKey(group_id, key)));
-  if (!status.ok())
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+  sqlitedb_->Delete(MakeSqliteDbKey(group_id, key));
 }
 
 template <typename Persona>
-std::string GroupDb<Persona>::MakeLevelDbKey(const GroupId& group_id, const Key& key) {
+std::string GroupDb<Persona>::MakeSqliteDbKey(const GroupId& group_id, const Key& key) {
   return detail::ToFixedWidthString<kPrefixWidth_>(group_id) + key.ToFixedWidthString().string();
 }
 
 template <typename Persona>
 typename Persona::Key GroupDb<Persona>::MakeKey(const GroupName group_name,
-                                                const leveldb::Slice& level_db_key) {
-  return Key(group_name, typename Persona::Key::FixedWidthString(
-                             (level_db_key.ToString()).substr(kPrefixWidth_)));
+                                                const VaultDataBase::KEY& sqlite_db_key) {
+  return Key(group_name,
+             typename Persona::Key::FixedWidthString(sqlite_db_key.substr(kPrefixWidth_)));
 }
 
 template <typename Persona>
-uint32_t GroupDb<Persona>::GetGroupId(const leveldb::Slice& level_db_key) const {
-  return detail::FromFixedWidthString<kPrefixWidth_>(
-      (level_db_key.ToString()).substr(0, kPrefixWidth_));
+uint32_t GroupDb<Persona>::GetGroupId(const VaultDataBase::KEY& sqlite_db_key) const {
+  return detail::FromFixedWidthString<kPrefixWidth_>(sqlite_db_key.substr(0, kPrefixWidth_));
 }
 
 // throws

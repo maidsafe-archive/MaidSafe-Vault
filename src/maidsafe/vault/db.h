@@ -28,13 +28,12 @@
 
 #include "boost/filesystem.hpp"
 
-#include "leveldb/db.h"
-
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/routing/close_nodes_change.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/database_operations.h"
 
 
 namespace maidsafe {
@@ -67,21 +66,13 @@ class Db {
 
   const boost::filesystem::path kDbPath_;
   mutable std::mutex mutex_;
-  std::unique_ptr<leveldb::DB> leveldb_;
+  std::unique_ptr<VaultDataBase> sqlitedb_;
 };
 
 template <typename Key, typename Value>
 Db<Key, Value>::Db(const boost::filesystem::path& db_path)
-    : kDbPath_(db_path), mutex_(), leveldb_() {
-  leveldb::DB* db;
-  leveldb::Options options;
-  options.create_if_missing = true;
-  options.error_if_exists = true;
-  leveldb::Status status(leveldb::DB::Open(options, kDbPath_.string(), &db));
-  if (!status.ok())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
-  leveldb_ = std::move(std::unique_ptr<leveldb::DB>(db));
-  assert(leveldb_);
+    : kDbPath_(db_path), mutex_(), sqlitedb_() {
+  sqlitedb_.reset(new VaultDataBase(kDbPath_));
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
@@ -94,7 +85,7 @@ Db<Key, Value>::Db(const boost::filesystem::path& db_path)
 template <typename Key, typename Value>
 Db<Key, Value>::~Db() {
   try {
-    leveldb::DestroyDB(kDbPath_.string(), leveldb::Options());
+    sqlitedb_.reset();
     boost::filesystem::remove_all(kDbPath_);
   }
   catch (const std::exception& e) {
@@ -143,9 +134,9 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   std::vector<std::string> prune_vector;
   TransferInfo transfer_info;
   LOG(kVerbose) << "Db::GetTransferInfo";
-  std::unique_ptr<leveldb::Iterator> db_iter(leveldb_->NewIterator(leveldb::ReadOptions()));
-  for (db_iter->SeekToFirst(); db_iter->Valid(); db_iter->Next()) {
-    Key key(typename Key::FixedWidthString(db_iter->key().ToString()));
+  std::pair<std::string, std::string> db_iter;
+  while (sqlitedb_->SeekNext(db_iter)) {
+    Key key(typename Key::FixedWidthString(db_iter.first));
     auto check_holder_result = close_nodes_change->CheckHolders(NodeId(key.name.string()));
     if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
       LOG(kVerbose) << "Db::GetTransferInfo in range";
@@ -156,23 +147,22 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
       if (found_itr != transfer_info.end()) {
         LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
                    << HexSubstr(key.name.string()) << " to " << check_holder_result.new_holder;
-        found_itr->second.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+        found_itr->second.push_back(std::make_pair(key, Value(db_iter.second)));
       } else {  // create
         LOG(kInfo) << "Db::GetTransferInfo create transfering account "
                    << HexSubstr(key.name.string()) << " to " << check_holder_result.new_holder;
         std::vector<KvPair> kv_pair;
-        kv_pair.push_back(std::make_pair(key, Value(db_iter->value().ToString())));
+        kv_pair.push_back(std::make_pair(key, Value(db_iter.second)));
         transfer_info.insert(std::make_pair(check_holder_result.new_holder, std::move(kv_pair)));
       }
     } else {
       VLOG(VisualiserAction::kRemoveAccount, key.name);
-      prune_vector.push_back(db_iter->key().data());
+      prune_vector.push_back(db_iter.first);
     }
   }
-  db_iter.reset();
 
   for (const auto& key_string : prune_vector)
-    leveldb_->Delete(leveldb::WriteOptions(), key_string);  // Ignore Delete failure here ?
+    sqlitedb_->Delete(key_string);  // Ignore Delete failure here ?
   return transfer_info;
 }
 
@@ -195,42 +185,24 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
   }
 }
 
-// throws on level-db errors other than key not found
 template <typename Key, typename Value>
 Value Db<Key, Value>::Get(const Key& key) {
-  leveldb::ReadOptions read_options;
-  read_options.verify_checksums = true;
   std::string value_string;
-  leveldb::Status status(
-      leveldb_->Get(read_options, key.ToFixedWidthString().string(), &value_string));
-  if (status.ok()) {
-    assert(!value_string.empty());
-    return Value(value_string);
-  } else if (status.IsNotFound()) {
+  sqlitedb_->Get(key.ToFixedWidthString().string(), value_string);
+  if (value_string.empty())
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-  }
-  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+  return Value(value_string);
 }
 
 template <typename Key, typename Value>
 void Db<Key, Value>::Put(const KvPair& key_value_pair) {
-  leveldb::Status status(leveldb_->Put(leveldb::WriteOptions(),
-                                       key_value_pair.first.ToFixedWidthString().string(),
-                                       key_value_pair.second.Serialise()));
-  if (!status.ok()) {
-    LOG(kError) << "Db<Key, Value>::Put incorrect leveldb::Status";
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
-  }
+  sqlitedb_->Put(key_value_pair.first.ToFixedWidthString().string(),
+                 key_value_pair.second.Serialise());
 }
 
 template <typename Key, typename Value>
 void Db<Key, Value>::Delete(const Key& key) {
-  leveldb::Status status(
-      leveldb_->Delete(leveldb::WriteOptions(), key.ToFixedWidthString().string()));
-  if (!status.ok()) {
-    LOG(kError) << "Db<Key, Value>::Delete incorrect leveldb::Status";
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
-  }
+  sqlitedb_->Delete(key.ToFixedWidthString().string());
 }
 
 }  // namespace vault
