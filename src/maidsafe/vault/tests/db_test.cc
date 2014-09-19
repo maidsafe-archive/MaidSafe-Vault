@@ -32,6 +32,7 @@
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/version_handler/value.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -111,14 +112,14 @@ void DbTests(Db<Key, Value>& db, const Key& key) {
 
 TEST(DbTest, BEH_DbConstructor) {
   maidsafe::test::TestPath test_path1(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest1"));
-  Db<Key, DataManagerValue> data_manager_db(*test_path1);
+  Db<Key, DataManagerValue> data_manager_db(UniqueDbPath(*test_path1));
   maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
-  Db<Key, VersionHandlerValue> version_handler_db(*test_path2);
+  Db<Key, VersionHandlerValue> version_handler_db(UniqueDbPath(*test_path2));
 }
 
 TEST(DbTest, BEH_DbCommit) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest"));
-  Db<Key, TestDbValue> db(*test_path);
+  Db<Key, TestDbValue> db(UniqueDbPath(*test_path));
   Key key(Identity(NodeId(NodeId::IdType::kRandomId).string()), DataTagValue::kMaidValue);
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
@@ -132,9 +133,9 @@ TEST(DbTest, BEH_DbCommit) {
 
 TEST(DbTest, BEH_DbTransferInfo) {
   maidsafe::test::TestPath test_path1(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest1"));
-  Db<Key, DataManagerValue> data_manager_db(*test_path1);
+  Db<Key, DataManagerValue> data_manager_db(UniqueDbPath(*test_path1));
   maidsafe::test::TestPath test_path2(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest2"));
-  Db<Key, VersionHandlerValue> version_handler_db(*test_path2);
+  Db<Key, VersionHandlerValue> version_handler_db(UniqueDbPath(*test_path2));
   std::shared_ptr<routing::CloseNodesChange> close_nodes_change;
   data_manager_db.GetTransferInfo(close_nodes_change);
   version_handler_db.GetTransferInfo(close_nodes_change);
