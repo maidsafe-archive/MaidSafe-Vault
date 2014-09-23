@@ -18,6 +18,7 @@
 
 #include "maidsafe/vault/database_operations.h"
 
+#include <utility>
 #include <cstdint>
 #include <string>
 

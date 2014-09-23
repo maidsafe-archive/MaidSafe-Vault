@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
 #define MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
 
+#include <string>
+#include <utility>
+
 #include "maidsafe/common/sqlite3_wrapper.h"
 
 namespace maidsafe {
@@ -29,7 +32,7 @@ class VaultDataBase {
   typedef std::string VALUE;
  public:
   typedef std::string KEY;
-  VaultDataBase(const boost::filesystem::path& db_path);
+  explicit VaultDataBase(const boost::filesystem::path& db_path);
 
   void Put(const KEY& key, const VALUE& value);
   void Get(const KEY& key, VALUE& value);
