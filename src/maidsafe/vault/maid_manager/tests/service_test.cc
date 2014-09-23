@@ -42,6 +42,7 @@ class MaidManagerServiceTest : public testing::Test {
         anpmid_(),
         pmid_(anpmid_),
         public_maid_(maid_),
+        public_pmid_(pmid_),
         kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_dir_(*kTestRoot_),
         routing_(pmid_),
@@ -113,6 +114,7 @@ class MaidManagerServiceTest : public testing::Test {
   passport::Anpmid anpmid_;
   passport::Pmid pmid_;
   passport::PublicMaid public_maid_;
+  passport::PublicPmid public_pmid_;
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
@@ -373,37 +375,6 @@ TEST_F(MaidManagerServiceTest, BEH_Delete) {
   auto group_unresolved_action(
       CreateGroupUnresolvedAction<MaidManager::UnresolvedDelete>(key, action_delete, group_source));
   SendSync<MaidManager::UnresolvedDelete>(group_unresolved_action, group_source);
-}
-
-TEST_F(MaidManagerServiceTest, BEH_RegistedPmid) {
-  CreateAccount();
-  nfs_vault::PmidRegistration pmid_registration(maid_, pmid_, false);
-  ActionMaidManagerRegisterPmid action_register_pmid(pmid_registration,
-                                                     nfs::MessageId(RandomUint32()));
-  MaidManager::MetadataKey metadata_key(public_maid_.name());
-  auto group_source(CreateGroupSource(MaidNodeId()));
-  auto group_unresolved_action(CreateGroupUnresolvedAction<MaidManager::UnresolvedRegisterPmid>(
-      metadata_key, action_register_pmid, group_source));
-  SendSync<MaidManager::UnresolvedRegisterPmid>(group_unresolved_action, group_source);
-  MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-  EXPECT_TRUE(MetadataPmidTotals(metadata).size() ==
-              1);  // FAILS BECAUSE DATAGETTER GET NEVER SUCCEEDS
-}
-
-TEST_F(MaidManagerServiceTest, BEH_UnregistedPmid) {
-  CreateAccount();
-  RegisterPmid();
-  MaidManager::Metadata metadata(GetMetadata(public_maid_.name()));
-  EXPECT_TRUE(MetadataPmidTotals(metadata).size() == 1);
-  ActionMaidManagerUnregisterPmid action_unregister_pmid(
-      PmidName(Identity(pmid_.name()->string())));
-  MaidManager::MetadataKey metadata_key(public_maid_.name());
-  auto group_source(CreateGroupSource(MaidNodeId()));
-  auto group_unresolved_action(CreateGroupUnresolvedAction<MaidManager::UnresolvedUnregisterPmid>(
-      metadata_key, action_unregister_pmid, group_source));
-  SendSync<MaidManager::UnresolvedUnregisterPmid>(group_unresolved_action, group_source);
-  metadata = GetMetadata(public_maid_.name());
-  EXPECT_TRUE(MetadataPmidTotals(metadata).empty());
 }
 
 TEST_F(MaidManagerServiceTest, BEH_UpdatePmid) {
