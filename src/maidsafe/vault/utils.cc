@@ -21,7 +21,6 @@
 #include <string>
 
 #include "boost/filesystem/operations.hpp"
-#include "leveldb/status.h"
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"

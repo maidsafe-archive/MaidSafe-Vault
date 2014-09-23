@@ -23,11 +23,6 @@
 
 #include "boost/progress.hpp"
 
-#include "leveldb/db.h"
-#include "leveldb/options.h"
-
-#include "leveldb/status.h"
-
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"

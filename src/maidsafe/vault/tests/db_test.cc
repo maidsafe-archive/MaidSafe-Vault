@@ -18,11 +18,6 @@
 
 #include "maidsafe/vault/db.h"
 
-#include "leveldb/db.h"
-#include "leveldb/options.h"
-
-#include "leveldb/status.h"
-
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
