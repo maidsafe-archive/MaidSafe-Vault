@@ -37,8 +37,11 @@ class VaultDataBase {
   bool SeekNext(std::pair<KEY, VALUE>& result);
 
  private:
-  std::unique_ptr<sqlite::Database> data_base_;
+  std::unique_ptr<sqlite::Database> ConnectToDatabase(const sqlite::Mode& access_mode);
+
+  boost::filesystem::path db_path_;
   std::unique_ptr<sqlite::Statement> seeking_statement_;
+  std::unique_ptr<sqlite::Database> seeking_database_;
 };
 
 }  // namespace vault

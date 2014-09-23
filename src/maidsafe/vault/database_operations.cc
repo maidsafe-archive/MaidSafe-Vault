@@ -29,26 +29,16 @@ namespace maidsafe {
 namespace vault {
 
 VaultDataBase::VaultDataBase(const boost::filesystem::path& db_path)
-  : data_base_(), seeking_statement_() {
-  data_base_.reset(new sqlite::Database(db_path,
-                                        sqlite::Mode::kReadWriteCreate));
-  std::string query(
-      "CREATE TABLE IF NOT EXISTS KeyValuePairs ("
-      "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
-  sqlite::Tranasction transaction{*data_base_};
-  sqlite::Statement statement{*data_base_, query};
-  statement.Step();
-  transaction.Commit();
+  : db_path_(db_path), seeking_statement_(), seeking_database_() {
+  ConnectToDatabase(sqlite::Mode::kReadWriteCreate);
 }
 
 void VaultDataBase::Put(const KEY& key, const VALUE& value) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
-
-  sqlite::Tranasction transaction{*data_base_};
+  std::unique_ptr<sqlite::Database> data_base(ConnectToDatabase(sqlite::Mode::kReadWrite));
+  sqlite::Tranasction transaction{*data_base};
   std::string query(
       "INSERT OR REPLACE INTO KeyValuePairs (KEY, VALUE) VALUES (?, ?)");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*data_base, query};
   statement.BindText(1, key);
   statement.BindText(2, value);
   statement.Step();
@@ -56,37 +46,31 @@ void VaultDataBase::Put(const KEY& key, const VALUE& value) {
 }
 
 void VaultDataBase::Get(const KEY& key, VALUE& value) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
-
+  std::unique_ptr<sqlite::Database> data_base(ConnectToDatabase(sqlite::Mode::kReadOnly));
   std::string query(
       "SELECT VALUE FROM KeyValuePairs WHERE KEY=?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*data_base, query};
   statement.BindText(1, key);
   if (statement.Step() == sqlite::StepResult::kSqliteRow)
     value = statement.ColumnText(0);
 }
 
 void VaultDataBase::Delete(const KEY& key) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
-
-  sqlite::Tranasction transaction{*data_base_};
+  std::unique_ptr<sqlite::Database> data_base(ConnectToDatabase(sqlite::Mode::kReadWrite));
+  sqlite::Tranasction transaction{*data_base};
   std::string query(
       "DELETE FROM KeyValuePairs WHERE KEY=?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*data_base, query};
   statement.BindText(1, key);
   statement.Step();
   transaction.Commit();
 }
 
 bool VaultDataBase::SeekNext(std::pair<KEY, VALUE>& result) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
-
   if (!seeking_statement_) {
+    seeking_database_ = ConnectToDatabase(sqlite::Mode::kReadOnly);
     std::string query("SELECT * from KeyValuePairs");
-    seeking_statement_.reset(new sqlite::Statement(*data_base_, query));
+    seeking_statement_.reset(new sqlite::Statement(*seeking_database_, query));
   }
   if (seeking_statement_->Step() == sqlite::StepResult::kSqliteRow) {
     result = std::make_pair(seeking_statement_->ColumnText(0),
@@ -94,8 +78,29 @@ bool VaultDataBase::SeekNext(std::pair<KEY, VALUE>& result) {
     return true;
   } else {
     seeking_statement_.reset();
+    seeking_database_.reset();
     return false;
   }
+}
+
+std::unique_ptr<sqlite::Database> VaultDataBase::ConnectToDatabase(
+    const sqlite::Mode& access_mode) {
+  std::unique_ptr<sqlite::Database> data_base;
+  data_base.reset(new sqlite::Database(db_path_, access_mode));
+  if (!data_base) {
+      LOG(kError) << "db not presented at " << db_path_;
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+  }
+  if (access_mode == sqlite::Mode::kReadWriteCreate) {
+    std::string query(
+        "CREATE TABLE IF NOT EXISTS KeyValuePairs ("
+        "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
+    sqlite::Tranasction transaction{*data_base};
+    sqlite::Statement statement{*data_base, query};
+    statement.Step();
+    transaction.Commit();
+  }
+  return std::move(data_base);
 }
 
 }  // namespace vault
