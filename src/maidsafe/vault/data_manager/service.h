@@ -406,8 +406,8 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
         // it is observed during the startup period, a vault may receive a request before
         // it's routing_table having any entry.
         auto picked_node(routing_.RandomConnectedNode());
-        if (picked_node) {
-          pmid_name = PmidName(Identity(picked_node->string()));
+        if (picked_node != NodeId()) {
+          pmid_name = PmidName(Identity(picked_node.string()));
         } else {
           LOG(kError) << "no entry in routing_table";
           return;
@@ -506,16 +506,9 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
     }
 
     pmids_to_avoid.insert(attempted_pmid_node);
-    auto random_connected_node(routing_.RandomConnectedNode());
-    if (!random_connected_node)
-      return;
-    auto pmid_name(PmidName(Identity(random_connected_node->string())));
-    while (pmids_to_avoid.find(pmid_name) != std::end(pmids_to_avoid)) {
-      random_connected_node = routing_.RandomConnectedNode();
-      if (!random_connected_node)
-        return;
-      pmid_name = PmidName(Identity(random_connected_node->string()));
-    }
+    auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
+    while (pmids_to_avoid.find(pmid_name) != std::end(pmids_to_avoid))
+      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
 
     try {
       NonEmptyString content(GetContentFromCache<Data>(data_name));
@@ -764,10 +757,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
     PmidName pmid_name;
     bool already_picked(false);
     do {
-      auto random_connected_node(routing_.RandomConnectedNode());
-      if (!random_connected_node)
-        return;
-      pmid_name = PmidName(Identity(random_connected_node->string()));
+      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
       auto itr(online_pmids.find(pmid_name));
       already_picked = (itr != online_pmids.end());
     } while (pmid_name->string() == data_name.value.string() && already_picked);
