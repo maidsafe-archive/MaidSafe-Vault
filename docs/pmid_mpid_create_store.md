@@ -10,7 +10,7 @@ The ability to arbitrarily select a node's placement on the network is a securit
 
 Futhermore, clustering of PMIDs will mean that groups of PMID managers will be managing dissimilar numbers of accounts.
 
-So it would be desirable to try and avoid "bunching" of PMIDs, in other words, to try and force an even distribution by limiting the closeness of PMIDs to eachother.  This can also be viewed as restricting the number of leading bits in common between two PMIDs.
+So it would be desirable to try and avoid "bunching" of PMIDs, in other words, to try and force an even distribution by limiting the closeness of PMIDs to eachother.  This can also be viewed as restricting the number of leading bits in common between two PMIDs. This design is for the PMIDNode in particular as the manager nodes will take on a new identity on each network connect.
 
 The same requirement would work well with regards to the MPIDs too, although for slightly different reasons.
 
@@ -34,7 +34,11 @@ A new PMID will be created by the VaultManager (the daemon/service which is resp
 
 Group2 have to validate at each stage.  When receiving the initial RegisterPmid from Group1, they must ensure that the XOR value in the PMID corresponds to the XOR of the 4 sender's IDs.  They must also ensure that the new PMID only exceeds the max common leading bits between any of the current group by 1.
 
-Then when they receive the PutPmid from the new Vault, they must check that the sender's ID == the modified PMID name and that the request's signature validates using the public key of the PMID.
+In addition the rank shall be obtained (this is part of nodeinfo) and the ID only accepted if the rank of the vault brings the close group closer to the average of all the ranks of the routing table. i.e. if groups rank is higher than average the new node must have a lower rank and vice versa.
+
+Then when they receive the PutPmid from the new Vault, they must check that the sender's ID == the modified PMID name and that the request's signature validates using the public key of the PMID. 
+
+
 
 ###Creating MPID
 
