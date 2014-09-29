@@ -56,6 +56,16 @@ int main(int argc, char* argv[]) {
     exit_code =
         maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
   }
-  VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
+  try {
+    VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
+  }
+  catch (const maidsafe::maidsafe_error& err) {
+    if (err.code() == maidsafe::make_error_code(maidsafe::CommonErrors::unable_to_handle_request)) {
+      LOG(kWarning) << "Visualiser logging has not been initialised.";
+    } else {
+      LOG(kError) << boost::diagnostic_information(err);
+      throw;
+    }
+  }
   return exit_code;
 }

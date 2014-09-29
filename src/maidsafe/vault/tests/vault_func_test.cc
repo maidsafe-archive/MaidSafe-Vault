@@ -43,7 +43,11 @@ class VaultTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-TEST_F(VaultTest, FUNC_KeepsJoin) {
+// This test is disabled as :
+//   1, it requires the VLOG to handle multiple initialisation problem
+//   2, impossible to be run on low spec machine especially Odroids
+// The test shall be moved to using LNC as a test option
+TEST_F(VaultTest, DISABLED_FUNC_KeepsJoin) {
   for (size_t i(0); i < 40; ++i) {
     LOG(kVerbose) << "Joining vault number " << i;
     EXPECT_TRUE(env_->AddVault()) << " Vault " << i << " failed in joining network";

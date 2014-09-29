@@ -87,9 +87,6 @@ class VaultNetwork {
   std::vector<passport::PublicPmid> public_pmids_;
   fs::path vault_dir_;
   size_t network_size_;
-#ifndef MAIDSAFE_WIN32
-  long kUlimitFileSize;  // NOLINT
-#endif
 };
 
 template <typename Data>
@@ -110,8 +107,13 @@ class VaultEnvironment : public testing::Environment {
   VaultEnvironment() {}
 
   void SetUp() override {
-    g_env_.reset(new VaultNetwork());
-    g_env_->SetUp();
+    try {
+      g_env_ = std::make_shared<VaultNetwork>();
+      g_env_->SetUp();
+    }
+    catch (const std::exception& e) {
+      GTEST_FAIL() << e.what();
+    }
   }
 
   void TearDown() override { g_env_->TearDown(); }

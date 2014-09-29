@@ -222,7 +222,7 @@ TEST_F(ChunkStoreTest, BEH_RepeatedlyStoreUsingSameKey) {
   ASSERT_NO_THROW(recovered = chunk_store_->Get(key));
   EXPECT_TRUE(recovered == value);
 
-  uint32_t events(RandomUint32() % 100);
+  uint32_t events((RandomUint32() % 100) + 1);
   for (uint32_t i = 0; i != events; ++i) {
     last_value = NonEmptyString(RandomAlphaNumericString((RandomUint32() % 30) + 1));
     ASSERT_NO_THROW(chunk_store_->Put(key, last_value));
@@ -233,7 +233,7 @@ TEST_F(ChunkStoreTest, BEH_RepeatedlyStoreUsingSameKey) {
   EXPECT_TRUE(last_value.string().size() == chunk_store_->GetCurrentDiskUsage().data);
 }
 
-TEST_F(ChunkStoreTest, BEH_Restart) {
+TEST_F(ChunkStoreTest, FUNC_Restart) {
   const size_t num_entries(10 * OneKB), disk_entries(1000 * OneKB);
   KeyValueContainer key_value_pairs(
       PopulateChunkStore(num_entries, disk_entries, chunk_store_path_));

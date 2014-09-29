@@ -73,8 +73,7 @@ set(VaultTests         ${VaultTestsAllFiles}
                        ${DataManagerTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}
                        ${CacheHandlerTestsAllFiles}
-                       ${MaidManagerTestsAllFiles}
-                       ${VaultSourcesDir}/tests/db_test.cc)
+                       ${MaidManagerTestsAllFiles})
 
 set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/tests/vault_network.cc
@@ -86,8 +85,6 @@ set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
 list(REMOVE_ITEM VaultTests ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
 list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
                                      ${VaultSourcesDir}/tests/tests_utils.cc)
-list(APPEND VaultTests ${TestsMain} ${VaultSourcesDir}/tests/tests_utils.h
-                                    ${VaultSourcesDir}/tests/tests_utils.cc)
 
 
 #==================================================================================================#
