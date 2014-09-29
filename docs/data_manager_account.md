@@ -16,7 +16,15 @@ The ```data_manager``` is the persona that is responsible for data avalibility a
 The motiviating factor for re-factoring of this persona is efficiency, unlike the other personas the data manager has currently no easy win in terms of reducing the amount of information the persona holds. There is a very valid opportunity though via a better holding mechnaism (via sqlite) and also the length of the keys held. So there are two factors involved in this case, more efficient engine for managing the data and also the size of the data we are managing. 
 
 ##Overview
+The hear of the ```data_manager``` will be a mini SQL database. Thsi will be managed via sqlite3. The table structure will be very simple.
 
+ChunkName | ```storage_node``` |
+
+Each chunkname will have associated ```storage_nodes``` and these nodes will have a status, on or off line. This status is held in the routing table of the data_manager already and need not be replicated in the database. 
+
+On a churn event the SQL database should be searched for every chunk that old node had and joined with what chunks the new nodes has. Any chunk with less than 4 holders should now be stored to the node in the group with the least rank. If a record now conatins more than 8 nodes the 9th node shall be downranked and a delete message sent ot the ```storage_node_manager``` of that node. 
+
+Records of nodes holding a chunk should be held in a manner that as a new node comes on line that it is put to the top of the list. 
 
 
 ##Implementation
