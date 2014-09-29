@@ -26,7 +26,7 @@ The ```storage_client``` account information can be split into two integers (64 
 ```Space Available```
 
 These two itegers are updated as so:
-1. On storing any data, the stored value is incremented with the size stored. This data is syncronised amongst teh group (as is already) and account transferred as per todays design. (deltes are a later design, this is increment only at the moment)
+1. On storing any data, the stored value is incremented with the size stored. This data is syncronised amongst the group (as is already) and account transferred as per todays design. (deletes are a later design, this is increment only at the moment)
 2: Space available is dependent on the number of safecoin used to purchase space. The mechanism to get safecoin or to calculate the space per doin is not part of this document. The ability to record a safecoin and be awarded space is though. This should be set at 1 safecoin per gB for now, this is a test figure and will be adjusted in the design doc for that coin. Initially we assume everyone has a safecoin in arrears limit (i.e. a free Gb) 
 
 ##Implementation
