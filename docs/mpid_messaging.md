@@ -65,8 +65,8 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 1. The user at Mpid(A)  sends MpidMessage to MpidManager(A) signed with the recipient included
 2. The MpidManagers(A) sync this message and perform the action() which sends the MpidAlert to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is simply the hash of the MpidMessage.
 3. MpidManager(B) either store the MpidAlert or send immediately to the Mpid(B) user if they are off-line or on-line respectively.
-4. Mpid(B) then sends a ```retrieve_message``` to the PmidManager(B) group who send this on to the MpidManagers(A). This message if of the form ```retrieve_message(MpidAlert)``` 
-5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group and then perform action() which sends the message to MpidManagers(B) and remove the message.
+4. Mpid(B) then sends a ```Singed(retrieve_message)``` to the PmidManager(B) group who send this on to the MpidManagers(A). This message if of the form ```retrieve_message(MpidAlert, MpidPacket)[signed by Mpid(A)]``` 
+5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group, do a signature check and then perform action() which sends the message to MpidManagers(B) and remove the message.
 6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
 
 Future Works
