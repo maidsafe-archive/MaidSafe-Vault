@@ -71,3 +71,4 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 
 
 
+[SDV]:(https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)
