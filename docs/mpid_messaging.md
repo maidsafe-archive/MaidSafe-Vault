@@ -69,4 +69,7 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group and then perform action() which sends the message to MpidManagers(B) and remove the message.
 6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
 
+Future Works
+============
 
+This proposal implements a container as a std::map, it is assumed this will fall over to become an SDV when/if SDV is able to insert/delete single elements in a branch (possibly doubly linked list type). Thsi is considered premature optimisation at this stage of development and requires measuring of the performance/size hit on adding two pointers per node. 
