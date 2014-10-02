@@ -55,11 +55,13 @@ Identity sender;
 
 Message Flow
 ------------
+```
         MpidManagers (A)                           MpidManagers (B)
            /  *                                    * \
 Mpid (A) -> - *                                    * - <-Mpid (B)
            \  *                                    * /
 
+```
 1. The user at Mpid(A)  sends MpidMessage to MpidManager(A) signed with the recipient included
 2. The MpidManagers(A) sync this message and perform the action() which sends the MpidAlert to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is simply the hash of the MpidMessage.
 3. MpidManager(B) either store the MpidAlert or send immediately to the Mpid(B) user if they are off-line or on-line respectively.
