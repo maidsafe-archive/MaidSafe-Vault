@@ -6,7 +6,7 @@ Design document 1.0
 Introduction
 ============
 
-In MaidSafe the ability for secured messaging is obvious and may take many forms, mail like, IM like etc. This document outlines the system componenets and design for general communications infrastructure and security. The assumption is that all personal communications are only handled by an Structured Data Version ([SDV]) type container. This is described in Future Work section. 
+In MaidSafe the ability for secured messaging is obvious and may take many forms, mail like, IM like etc. This document outlines the system componenets and design for general communications infrastructure and security. The assumption is that all personal communications are only handled by an Structured Data Version ([SDV](https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)) type container. This is described in Future Work section. 
 
 Motivation
 ==========
@@ -70,5 +70,3 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
 
 
-
-[SDV]:(https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)
