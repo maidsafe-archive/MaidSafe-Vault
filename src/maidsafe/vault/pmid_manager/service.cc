@@ -485,6 +485,7 @@ void PmidManagerService::HandleChurnEvent(
     std::lock_guard<std::mutex> lock(mutex_);
     if (stopped_)
       return;
+    VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
     auto lost_node(close_nodes_change->lost_node());
     if (!lost_node.IsZero()) {
