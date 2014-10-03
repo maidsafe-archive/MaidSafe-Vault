@@ -43,7 +43,7 @@ class DataManagerServiceTest : public testing::Test {
         asio_service_(2) {}
 
   typedef std::function<
-      void(const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&)> Functor;
+      void(const GetResponseFromPmidNodeToDataManager::Contents&)> Functor;
 
   void AddTask(Functor functor, uint32_t required, uint32_t task_id) {
     data_manager_service_.get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, required,
@@ -236,7 +236,7 @@ TEST_F(DataManagerServiceTest, BEH_Varios) {
     NodeId pmid_node_id(NodeId::IdType::kRandomId);
     auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
     auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
-    auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
+    auto functor([=](const GetResponseFromPmidNodeToDataManager::Contents&) {
       LOG(kVerbose) << "functor called";
     });
 

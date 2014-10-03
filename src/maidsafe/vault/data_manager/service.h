@@ -133,8 +133,8 @@ class DataManagerService {
   template <typename Data>
   void GetForNodeDown(const PmidName& pmid_name, const typename Data::Name& data_name);
 
-  void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
-                         const GetResponseContents& contents);
+  void HandleGetResponse(const nfs_vault::DataNameAndContentOrCheckResult& response,
+                         nfs::MessageId message_id);
 
   void HandleGetCachedResponse(nfs::MessageId message_id,
                                const GetCachedResponseContents& contents);
@@ -148,8 +148,8 @@ class DataManagerService {
 
   template <typename Data, typename RequestorIdType>
   void DoHandleGetResponse(
-      const PmidName& pmid_node, const GetResponseContents& contents,
-      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
+    nfs_vault::DataNameAndContentOrCheckResult response,
+    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data, typename RequestorIdType>
   void DoHandleGetCachedResponse(
@@ -157,8 +157,8 @@ class DataManagerService {
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data>
-  void DoGetForNodeDownResponse(const PmidName& pmid_node, const typename Data::Name& data_name,
-                                const GetResponseContents& contents);
+  void DoGetForNodeDownResponse(const PmidName& pmid_name, const typename Data::Name& data_name,
+                                const nfs_vault::DataNameAndContentOrCheckResult& response);
 
   template <typename Data, typename RequestorIdType>
   bool SendGetResponse(
@@ -274,7 +274,7 @@ class DataManagerService {
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
-  routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
+  routing::Timer<nfs_vault::DataNameAndContentOrCheckResult> get_timer_;
   routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
   Db<DataManager::Key, DataManager::Value> db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
@@ -570,12 +570,10 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   auto get_response_op(
       std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
           pmid_node_to_get_from, message_id, integrity_checks, data_name, requestor));
-  auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
+  auto functor([=](const nfs_vault::DataNameAndContentOrCheckResult& response) {  // std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
                   << " task called from timer to DoHandleGetResponse";
-    this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
-                                                     pmid_node_and_contents.second,
-                                                     get_response_op);
+    this->DoHandleGetResponse<Data, RequestorIdType>(response, get_response_op);
   });
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1/*expected_response_count*/,
                      message_id.data);
@@ -605,12 +603,10 @@ void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
   if (online_pmids.size() > (routing::Parameters::group_size / 2U))
     return;
   // Just get, don't do integrity check
-  auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
+  auto functor([=](const nfs_vault::DataNameAndContentOrCheckResult& response) {
     LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
                   << " task called from timer to DoGetForNodeDownResponse";
-    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first,
-                                         data_name,
-                                         pmid_node_and_contents.second);
+    this->DoGetForNodeDownResponse<Data>(pmid_name, data_name, response);
   });
   nfs::MessageId message_id(get_timer_.NewTaskId());
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1, message_id);
@@ -672,36 +668,37 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
 
 template <typename Data, typename RequestorIdType>
 void DataManagerService::DoHandleGetResponse(
-    const PmidName& pmid_node, const GetResponseContents& contents,
+    nfs_vault::DataNameAndContentOrCheckResult response,
     std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
   // Note: if 'pmid_node' and 'contents' is default-constructed, it's probably a result of this
   // function being invoked by the timer after timeout.
+
   int called_count(0), expected_count(0);
   {
     std::lock_guard<std::mutex> lock(get_response_op->mutex);
-    if (contents.content && pmid_node.value.IsInitialised())
+    if (response.content && get_response_op->pmid_node_to_get_from.value.IsInitialised())
       LOG(kVerbose) << "DataManagerService::DoHandleGetResponse received response from "
-                    << HexSubstr(pmid_node->string()) << " for chunk "
-                    << HexSubstr(contents.name.raw_name) << " with content "
-                    << HexSubstr(contents.content->string());
+                    << HexSubstr(get_response_op->pmid_node_to_get_from->string()) << " for chunk "
+                    << HexSubstr(response.name.raw_name) << " with content "
+                    << HexSubstr(response.content->string());
 
     called_count = ++get_response_op->called_count;
     expected_count = static_cast<int>(get_response_op->integrity_checks.size()) + 1;
     assert(called_count <= expected_count);
-    if (pmid_node == get_response_op->pmid_node_to_get_from) {
+    if (response.pmid_name == get_response_op->pmid_node_to_get_from) {
       LOG(kVerbose) << "DataManagerService::DoHandleGetResponse send response to requester";
-      if (contents.content)
+      if (response.content)
         if (SendGetResponse<Data, RequestorIdType>(
-                Data(get_response_op->data_name, typename Data::serialised_type(*contents.content)),
+                Data(get_response_op->data_name, typename Data::serialised_type(*response.content)),
                 get_response_op)) {
-        get_response_op->serialised_contents = typename Data::serialised_type(*contents.content);
-      }
-    } else if (contents.check_result) {
+          get_response_op->serialised_contents = typename Data::serialised_type(*response.content);
+        }
+    } else if (response.check_result) {
       LOG(kVerbose) << "DataManagerService::DoHandleGetResponse set integrity check_result "
-                    << "for pmid_node " << HexSubstr(pmid_node->string());
-      auto itr(get_response_op->integrity_checks.find(pmid_node));
+                    << "for pmid_node " << HexSubstr(response.pmid_name->string());
+      auto itr(get_response_op->integrity_checks.find(response.pmid_name));
       if (itr != std::end(get_response_op->integrity_checks))
-        itr->second.SetResult(*contents.check_result);
+        itr->second.SetResult(*response.check_result);
     } else {
       // In case of timer timeout, the pmid_node and contents will be constructed using default.
       LOG(kWarning) << "DataManagerService::DoHandleGetResponse reached timed out branch";
@@ -733,9 +730,9 @@ void DataManagerService::DoHandleGetCachedResponse(
 }
 
 template <typename Data>
-void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
-                                                  const typename Data::Name& data_name,
-                                                  const GetResponseContents& contents) {
+void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_name,
+      const typename Data::Name& data_name,
+      const nfs_vault::DataNameAndContentOrCheckResult& response) {
   // Note: if 'pmid_node' and 'contents' is default-constructed, it's probably a result of this
   // function being invoked by the timer after timeout.
   LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse "
@@ -746,13 +743,13 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
       return;
   }
 
-  if (contents.content && pmid_node.value.IsInitialised())
+  if (response.content && pmid_name.value.IsInitialised())
     LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse received response from "
-                  << HexSubstr(pmid_node->string()) << " for chunk "
-                  << HexSubstr(contents.name.raw_name) << " with content "
-                  << HexSubstr(contents.content->string());
+                  << HexSubstr(pmid_name->string()) << " for chunk "
+                  << HexSubstr(response.name.raw_name) << " with content "
+                  << HexSubstr(response.content->string());
 
-  if (contents.content) {
+  if (response.content) {
     std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
     PmidName pmid_name;
     bool already_picked(false);
@@ -762,10 +759,10 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
       already_picked = (itr != online_pmids.end());
     } while (pmid_name->string() == data_name.value.string() && already_picked);
 
-    Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
+    Data data(Data(data_name, typename Data::serialised_type(*response.content)));
     nfs::MessageId message_id(HashStringToMessageId(data_name.value.string()));
-    // Moving chunk 'contents.name.raw_name' to Pmid node 'pmid_name.value'
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kMoveChunk, contents.name.raw_name,
+    // Moving chunk 'response.name.raw_name' to Pmid node 'pmid_name.value'
+    VLOG(nfs::Persona::kDataManager, VisualiserAction::kMoveChunk, response.name.raw_name,
          pmid_name.value);
     dispatcher_.SendPutRequest(pmid_name, data, message_id);
   }

@@ -24,7 +24,7 @@
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
-
+#include "maidsafe/nfs/client/messages.h"
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
 
@@ -37,6 +37,7 @@ struct PmidManagerMetadata {
   PmidManagerMetadata();
   explicit PmidManagerMetadata(const PmidName& pmid_name_in);
   explicit PmidManagerMetadata(const std::string& serialised_metadata);
+  explicit PmidManagerMetadata(maidsafe_error error);
   PmidManagerMetadata(const PmidManagerMetadata& other);
   PmidManagerMetadata(PmidManagerMetadata&& other);
   PmidManagerMetadata& operator=(PmidManagerMetadata other);
@@ -55,6 +56,7 @@ struct PmidManagerMetadata {
   int64_t lost_count;
   int64_t lost_total_size;
   int64_t claimed_available_size;
+  nfs_client::ReturnCode return_code;
 };
 
 bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs);

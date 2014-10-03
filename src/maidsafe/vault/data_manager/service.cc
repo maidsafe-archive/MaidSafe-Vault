@@ -231,13 +231,13 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
-                                           const GetResponseContents& contents) {
-  LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
-                << " from pmid_name " << HexSubstr(pmid_name.value)
+void DataManagerService::HandleGetResponse(const nfs_vault::DataNameAndContentOrCheckResult& response,
+                                           nfs::MessageId message_id) {
+  LOG(kVerbose) << "Get content for " << HexSubstr(response.content->string())
+                << " from pmid_name " << HexSubstr(response.pmid_name.value)
                 << " with message_id " << message_id.data;
   try {
-    get_timer_.AddResponse(message_id.data, std::make_pair(pmid_name, contents));
+    get_timer_.AddResponse(message_id.data, response);
   }
   catch (const maidsafe_error& error) {
     // There is scenario that during the procedure of Get, the request side will get timed out
