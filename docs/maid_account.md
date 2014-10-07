@@ -7,7 +7,7 @@ MaidManager -> is now referred to as ```storage_client_manager```
 
 ##Introduction
 
-The ```storage_client``` is a 2nd degree key pair, it's is signed by the pure keypair referred to a ANMAID (Anonmous). This identity is not published and does not require to be published. It is an anoymous identity used purely for put/deg/delete (later) data onto the network. This is data and not communications, safecoin, computing etc. it is only data (immutable and mutable) data for private, public and private shared files. The account is held in the close group this ID connect to and is referred to as the ```storage_client_manager```group.
+The ```storage_client``` is a 2nd degree key pair, it's is signed by the pure keypair referred to a ANMAID (Anonmous). This identity is not published and does not require to be published. It is an anoymous identity used purely for put/get/delete (later) data onto the network. This is data and not communications, safecoin, computing etc. it is only data (immutable and mutable) data for private, public and private shared files. The account is held in the close group this ID connect to and is referred to as the ```storage_client_manager```group.
 
 The account information will allow the network to measure data stored and available. This allows users of the system to interact with the network in terms of data storing. 
 
