@@ -21,7 +21,6 @@
 #include <string>
 
 #include "boost/filesystem/operations.hpp"
-#include "leveldb/status.h"
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/nfs/types.h"
@@ -132,20 +131,6 @@ boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_d
   boost::filesystem::path db_root_path(vault_root_dir / "db");
   detail::InitialiseDirectory(db_root_path);
   return (db_root_path / boost::filesystem::unique_path());
-}
-
-std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path) {
-  if (boost::filesystem::exists(db_path))
-    boost::filesystem::remove_all(db_path);
-  leveldb::DB* db(nullptr);
-  leveldb::Options options;
-  options.create_if_missing = true;
-  options.error_if_exists = true;
-  leveldb::Status status(leveldb::DB::Open(options, db_path.string(), &db));
-  if (!status.ok())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
-  assert(db);
-  return std::move(std::unique_ptr<leveldb::DB>(db));
 }
 
 nfs::MessageId HashStringToMessageId(const std::string& input) {
