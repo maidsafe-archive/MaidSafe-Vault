@@ -570,7 +570,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   auto get_response_op(
       std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
           pmid_node_to_get_from, message_id, integrity_checks, data_name, requestor));
-  auto functor([=](const nfs_vault::DataNameAndContentOrCheckResult& response) {  // std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
+  auto functor([=](const nfs_vault::DataNameAndContentOrCheckResult& response) {
     LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
                   << " task called from timer to DoHandleGetResponse";
     this->DoHandleGetResponse<Data, RequestorIdType>(response, get_response_op);

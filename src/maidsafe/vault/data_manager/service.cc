@@ -231,8 +231,8 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-void DataManagerService::HandleGetResponse(const nfs_vault::DataNameAndContentOrCheckResult& response,
-                                           nfs::MessageId message_id) {
+void DataManagerService::HandleGetResponse(
+    const nfs_vault::DataNameAndContentOrCheckResult& response, nfs::MessageId message_id) {
   LOG(kVerbose) << "Get content for " << HexSubstr(response.content->string())
                 << " from pmid_name " << HexSubstr(response.pmid_name.value)
                 << " with message_id " << message_id.data;
