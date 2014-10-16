@@ -22,8 +22,6 @@
 #include <string>
 #include <vector>
 
-#include "leveldb/db.h"
-
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/routing/routing_api.h"
@@ -191,10 +189,6 @@ struct GroupOrKeyType<PersonaType, typename ToVoid<typename PersonaType::GroupNa
 // Creates vault_root_dir / db , if not found.
 // Returns a unique path in vault_root_dir / "db" dir
 boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_dir);
-
-std::unique_ptr<leveldb::DB> InitialiseLevelDb(const boost::filesystem::path& db_path);
-
-
 
 // ============================ sync utils =========================================================
 namespace detail {

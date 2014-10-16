@@ -13,16 +13,16 @@ The `data_manager` is the persona that is responsible for data avalibility and i
 
 ##Motivation
 
-The main motiviating for re-factoring this persona is efficiency: unlike the other personas the data manager has currently no easy win in terms of reducing the amount of information the persona holds. There is a very valid opportunity though via a better holding mechnaism (via sqlite) and also the length of the keys held. So there are two factors involved in this case: more efficient engine for managing the data and also the size of the data we are managing.
+The main motiviation for re-factoring this persona is efficiency: unlike the other personas the data manager has currently no easy win in terms of reducing the amount of information the persona holds. There is a very valid opportunity though via a better holding mechnaism (via sqlite) and also the length of the keys held. So there are two factors involved in this case: more efficient engine for managing the data and also the size of the data we are managing.
 
 ##Overview
 
 The heart of the `data_manager` will be a mini SQL database. This will be managed via sqlite3. The table structure will be very simple.
 
-| ChunkName | `storage_node`s' status |
-| --------- | ----------------------- |
+| ChunkName | `storage_node`s |
+| --------- | --------------- |
 
-Each ChunkName will have associated `storage_node`s and these nodes will have a status, on or off line. This status is held in the routing table of the `data_manager` already and need not be replicated in the database.
+Each ChunkName will have a list of associated `storage_node`s. The on-/off-line status of these nodes is held in the routing table of the `data_manager` already and need not be replicated in the database.
 
 On a churn event, the SQL database should be searched for every chunk that old node had and joined with what chunks the new nodes has. Any chunk with less than four holders should now be stored to the node in the group with the lowest rank. If a record now contains more than eight nodes the ninth node shall be downranked and a delete message sent to the `storage_node_manager` of that node.
 
