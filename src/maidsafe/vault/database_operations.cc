@@ -36,7 +36,7 @@ VaultDataBase::VaultDataBase(const boost::filesystem::path& db_path)
   std::string query(
       "CREATE TABLE IF NOT EXISTS KeyValuePairs ("
       "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
-  sqlite::Tranasction transaction{*data_base_};
+  sqlite::Transaction transaction{*data_base_};
   sqlite::Statement statement{*data_base_, query};
   statement.Step();
   transaction.Commit();
@@ -47,7 +47,7 @@ void VaultDataBase::Put(const KEY& key, const VALUE& value) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
   CheckPoint();
 
-  sqlite::Tranasction transaction{*data_base_};
+  sqlite::Transaction transaction{*data_base_};
   std::string query(
       "INSERT OR REPLACE INTO KeyValuePairs (KEY, VALUE) VALUES (?, ?)");
   sqlite::Statement statement{*data_base_, query};
@@ -74,7 +74,7 @@ void VaultDataBase::Delete(const KEY& key) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
   CheckPoint();
 
-  sqlite::Tranasction transaction{*data_base_};
+  sqlite::Transaction transaction{*data_base_};
   std::string query(
       "DELETE FROM KeyValuePairs WHERE KEY=?");
   sqlite::Statement statement{*data_base_, query};
