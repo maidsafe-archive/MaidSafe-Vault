@@ -4,15 +4,21 @@ To offer a reliable information, on each churn managing personas must update rel
 
 
 ##Storage client manager
+Storage client manager keeps records about the storage clients it is responsible for. The information kept represent the amount of network space the storage client is entitled to.
 
 | Storage client id | Available space | Stored space |
 | ------------------| --------------- | ------------ |
 
-##DataManager
+##Data manager
+Data manages holds account information about chunks it is responsible for. The account information for a chunk represent the chunk name and the id of nodes storing the chunk.
+
 | ChunkName | `storage_node`s |
 | --------- | --------------- |
 
-##Storage Node Manager
-| Storage node id | Claimed available size | Stored total size | stored count | lost total size | lost count |
+##Storage node manager
+
+Storage node manager holds account information about `storage nodes` it is responsible for. The account information for a storage node represent the id of the storage node along with some store success and failure statistics related to that storage node.
+
+| Storage node id | Claimed available size | Stored total size | Stored count | Lost total size | Lost count |
 | ----------------| ---------------------- | ----------------- | ------------ | --------------- | ---------- |
 
