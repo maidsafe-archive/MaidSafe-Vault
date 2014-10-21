@@ -9,11 +9,13 @@ Storage client manager keeps records about the storage clients it is responsible
 | Storage client id | Available space | Stored space |
 | ------------------| --------------- | ------------ |
 
+
 ##Data manager
 Data manages holds account information about chunks it is responsible for. The account information for a chunk represent the chunk name and the id of nodes storing the chunk.
 
 | ChunkName | `storage_node`s |
 | --------- | --------------- |
+
 
 ##Storage node manager
 
@@ -21,4 +23,3 @@ Storage node manager holds account information about `storage nodes` it is respo
 
 | Storage node id | Claimed available size | Stored total size | Stored count | Lost total size | Lost count |
 | ----------------| ---------------------- | ----------------- | ------------ | --------------- | ---------- |
-
