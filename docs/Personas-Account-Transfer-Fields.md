@@ -16,7 +16,7 @@ Data manages holds account information about chunks it is responsible for. The a
 | ChunkName | `storage nodes info`s |
 | --------- | --------------------- |
 
-storage node info has id and the status (online / offline) for node storing the chunck.
+storage node info has id and the status (online / offline) for the node storing the chunck.
 
 
 ##Storage node manager
