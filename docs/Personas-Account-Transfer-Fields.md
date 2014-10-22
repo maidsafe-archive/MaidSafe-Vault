@@ -13,8 +13,10 @@ Storage client manager keeps records about the storage clients it is responsible
 ##Data manager
 Data manages holds account information about chunks it is responsible for. The account information for a chunk represent the chunk name and the id and status of nodes storing the chunk.
 
-| ChunkName | `storage_node`s |
-| --------- | --------------- |
+| ChunkName | `storage nodes info`s |
+| --------- | --------------------- |
+
+storage node info has id and the status (online / offline) for node storing the chunck.
 
 
 ##Storage node manager
