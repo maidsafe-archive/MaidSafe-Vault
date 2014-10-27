@@ -573,12 +573,6 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
       std::vector<std::string> actions;
       actions.push_back(account.metadata.Serialise());
       LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
-      for (auto& kv : account.kv_pairs) {
-        protobuf::PmidManagerKeyValuePair kv_msg;
-          kv_msg.set_key(kv.first.Serialise());
-          kv_msg.set_value(kv.second.Serialise());
-          actions.push_back(kv_msg.SerializeAsString());
-      }
       nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
       PmidManager::UnresolvedAccountTransfer account_transfer(
           account.group_name, message_id, actions);
@@ -620,16 +614,9 @@ void PmidManagerService::HandleAccountTransfer(
   content.group_name = resolved_action->key;
   for (auto& action : resolved_action->actions) {
     try {
-      protobuf::PmidManagerKeyValuePair kv_msg;
-      if (kv_msg.ParseFromString(action)) {
-        PmidManager::Key key(kv_msg.key());
-        PmidManagerValue value(kv_msg.value());
-        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
-      } else {
-        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
-        PmidManagerMetadata meta_data(action);
-        content.metadata = meta_data;
-      }
+      LOG(kVerbose) << "HandleAccountTransfer handle metadata";
+      PmidManagerMetadata meta_data(action);
+      content.metadata = meta_data;
     } catch(...) {
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
