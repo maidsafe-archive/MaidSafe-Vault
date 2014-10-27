@@ -27,16 +27,14 @@ namespace maidsafe {
 namespace vault {
 
 PmidManagerMetadata::PmidManagerMetadata()
-    : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
-      claimed_available_size(0) {}
+    : pmid_name(), stored_total_size(0), lost_total_size(0), claimed_available_size(0) {}
 
 PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
-    : pmid_name(pmid_name_in), stored_count(0), stored_total_size(0), lost_count(0),
+    : pmid_name(pmid_name_in), stored_total_size(0),
       lost_total_size(0), claimed_available_size(0) {}
 
 PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
-    : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
-      claimed_available_size(0) {
+    : pmid_name(), stored_total_size(0), lost_total_size(0), claimed_available_size(0) {
   LOG(kVerbose) << "PmidManagerMetadata parsing from " << HexSubstr(serialised_metadata);
   protobuf::PmidManagerMetadata proto_metadata;
   if (!proto_metadata.ParseFromString(serialised_metadata)) {
@@ -48,35 +46,27 @@ PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   pmid_name = PmidName(Identity(proto_metadata.pmid_name()));
-  stored_count = proto_metadata.stored_count();
   stored_total_size = proto_metadata.stored_total_size();
-  lost_count = proto_metadata.lost_count();
   lost_total_size = proto_metadata.lost_total_size();
   claimed_available_size = proto_metadata.claimed_available_size();
 }
 
 PmidManagerMetadata::PmidManagerMetadata(const PmidManagerMetadata& other)
     : pmid_name(other.pmid_name),
-      stored_count(other.stored_count),
       stored_total_size(other.stored_total_size),
-      lost_count(other.lost_count),
       lost_total_size(other.lost_total_size),
       claimed_available_size(other.claimed_available_size) {}
 
 PmidManagerMetadata::PmidManagerMetadata(PmidManagerMetadata&& other)
     : pmid_name(std::move(other.pmid_name)),
-      stored_count(std::move(other.stored_count)),
       stored_total_size(std::move(other.stored_total_size)),
-      lost_count(std::move(other.lost_count)),
       lost_total_size(std::move(other.lost_total_size)),
       claimed_available_size(std::move(other.claimed_available_size)) {}
 
 PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
   using std::swap;
   swap(pmid_name, other.pmid_name);
-  swap(stored_count, other.stored_count);
   swap(stored_total_size, other.stored_total_size);
-  swap(lost_count, other.lost_count);
   swap(lost_total_size, other.lost_total_size);
   swap(claimed_available_size, other.claimed_available_size);
   return *this;
@@ -84,23 +74,19 @@ PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
 
 void PmidManagerMetadata::PutData(int32_t size) {
   stored_total_size += size;
-  ++stored_count;
 }
 
 void PmidManagerMetadata::DeleteData(int32_t size) {
-  if ((stored_total_size < size) || (stored_count < 1)) {
-    LOG(kError) << "invalid stored_total_size " << stored_total_size
-                << " or stored_count " << stored_count;
+  if (stored_total_size < size) {
+    LOG(kError) << "invalid stored_total_size " << stored_total_size;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   stored_total_size -= size;
-  --stored_count;
 }
 
 void PmidManagerMetadata::HandleLostData(int32_t size) {
   DeleteData(size);
   lost_total_size += size;
-  ++lost_count;
 }
 
 void PmidManagerMetadata::HandleFailure(int32_t size) {
@@ -115,34 +101,32 @@ void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
 
 // BEFORE_RELEASE check if group can be deleted with below check
 detail::GroupDbMetaDataStatus PmidManagerMetadata::GroupStatus() {
-  return ((stored_count <= 0) && (claimed_available_size == 0) ?
+  return (claimed_available_size == 0 ?
       detail::GroupDbMetaDataStatus::kGroupEmpty : detail::GroupDbMetaDataStatus::kGroupNonEmpty);
 }
 
 std::string PmidManagerMetadata::Serialise() const {
   protobuf::PmidManagerMetadata proto_metadata;
   proto_metadata.set_pmid_name(pmid_name->string());
-  proto_metadata.set_stored_count(stored_count);
   proto_metadata.set_stored_total_size(stored_total_size);
-  proto_metadata.set_lost_count(lost_count);
   proto_metadata.set_lost_total_size(lost_total_size);
   proto_metadata.set_claimed_available_size(claimed_available_size);
   return proto_metadata.SerializeAsString();
 }
 
 bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) {
-  return lhs.pmid_name == rhs.pmid_name && lhs.stored_count == rhs.stored_count &&
-         lhs.stored_total_size == rhs.stored_total_size && lhs.lost_count == rhs.lost_count &&
+  return lhs.pmid_name == rhs.pmid_name &&
+         lhs.stored_total_size == rhs.stored_total_size &&
          lhs.lost_total_size == rhs.lost_total_size &&
          lhs.claimed_available_size == rhs.claimed_available_size;
 }
 
 std::string PmidManagerMetadata::Print() const {
   std::stringstream stream;
-  stream << "\t[pmid_name," << DebugId(pmid_name) << "] [stored_count," << stored_count
-         << "] [stored_total_size," << stored_total_size << "] [lost_count," << lost_count
-         << "] [lost_total_size," << lost_total_size << "] [claimed_available_size,"
-         << claimed_available_size << "]";
+  stream << "\t[pmid_name," << DebugId(pmid_name)
+         << "] [stored_total_size," << stored_total_size
+         << "] [lost_total_size," << lost_total_size
+         << "] [claimed_available_size," << claimed_available_size << "]";
   return stream.str();
 }
 

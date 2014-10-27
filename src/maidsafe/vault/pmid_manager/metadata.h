@@ -50,9 +50,7 @@ struct PmidManagerMetadata {
   std::string Print() const;
 
   PmidName pmid_name;
-  int64_t stored_count;
   int64_t stored_total_size;
-  int64_t lost_count;
   int64_t lost_total_size;
   int64_t claimed_available_size;
 };
