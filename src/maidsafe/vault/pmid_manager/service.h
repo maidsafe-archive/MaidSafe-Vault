@@ -145,13 +145,14 @@ class PmidManagerService {
       const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
 
   void TransferAccount(const NodeId& dest,
-                       const std::vector<GroupDb<PmidManager>::Contents>& accounts);
+                       const std::vector<Db<PmidManager::MetadataKey,
+                                            PmidManager::Metadata>::KvPair>& accounts);
 
   void HandleAccountTransfer(
       std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action);
 
   routing::Routing& routing_;
-  GroupDb<PmidManager> group_db_;
+  Db<PmidManager::MetadataKey, PmidManager::Metadata> db_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
