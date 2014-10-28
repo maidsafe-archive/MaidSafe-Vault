@@ -42,8 +42,8 @@ namespace maidsafe {
 
 namespace vault {
 
-template <typename UnresolvedAccountTransferAction>
-class AccountTransfer {
+template <typename AccountType>
+class AccountTransferHandler {
  public:
   enum class AddResult {
     kSuccess,
@@ -52,188 +52,71 @@ class AccountTransfer {
     kHandled
   };
 
-  class AddRequestChecker {
-   public:
-    explicit AddRequestChecker(size_t required_requests) : required_requests_(required_requests) {
-      assert((required_requests <= routing::Parameters::group_size) &&
-             "Invalid number of requests");
-    }
-
-    AddResult operator()(const std::set<routing::SingleId>& requests) {
-      if (requests.size() < required_requests_) {
-        LOG(kInfo) << "AccountTransfer::AddRequestChecke::operator() not enough pending requests";
-        return AddResult::kWaiting;
-      }
-      return AddResult::kSuccess;
-    }
-
-   private:
-    size_t required_requests_;
+  template <typename AccountType>
+  struct Result {
+    Result(const AccountType::Key& key_in,
+           const boost::optional<AccountType::Value>& value_in, const AddResult& result_in):
+        key(key_in), value(value_in), result(result_in) {}
+    AccountType::Key key;
+    boost::optional<AccountType::Value> value;
+    AddResult result;
   };
 
-  struct PendingRequest {
-   public:
-    PendingRequest(const UnresolvedAccountTransferAction& request_in,
-                   const routing::GroupSource& source_in)
-        : request(request_in), group_id(source_in.group_id) {
-      request.Merge(request_in, source_in.sender_id);
-    }
+  AccountTransferHandler();
 
-    //     bool HasSender(const routing::GroupSource& source_in) {
-    //       if (source_in.group_id != group_id)
-    //         return false;
-    //       auto itr(std::find(senders.begin(), senders.end(), source_in.sender_id));
-    //       if (itr == senders.end())
-    //         return false;
-    //       return true;
-    //     }
-    void MergePendingRequest(const UnresolvedAccountTransferAction& request_in,
-                             const routing::GroupSource& source_in) {
-      request.Merge(request_in, source_in.sender_id);
-    }
-    std::set<routing::SingleId> GetSenders() const { return request.GetSenders(); }
-    routing::GroupId GetGroupId() const { return group_id; }
-    UnresolvedAccountTransferAction GetRequest() const { return request; }
+  Result AddAccountTransferHandler(
+      const std::pair<AccountType::Key, AccountType::Value>& request,
+      const routing::GroupSource& source);
 
-    UnresolvedAccountTransferAction GetResolved(size_t resolve_num) {
-      return request.GetResolvedActions(resolve_num);
-    }
-    bool IsResolved() { return request.IsResolved(); }
-
-   private:
-    UnresolvedAccountTransferAction request;
-    routing::GroupId group_id;
-    //     std::set<routing::SingleId> senders;
-  };
-
-  AccountTransfer();
-
-  std::unique_ptr<UnresolvedAccountTransferAction> AddUnresolvedAction(
-      const UnresolvedAccountTransferAction& request, const routing::GroupSource& source,
-      AddRequestChecker checker);
-  bool CheckHandled(const routing::GroupId& source);
+  Result Resolve(const AccountType::Key& key, const std::vector<AccountType::Value>& values);
 
  private:
-  AccountTransfer(const AccountTransfer&);
-  AccountTransfer& operator=(const AccountTransfer&);
-  AccountTransfer(AccountTransfer&&);
-  AccountTransfer& operator=(AccountTransfer&&);
+  AccountTransferHandler(const AccountTransferHandler&);
+  AccountTransferHandler& operator=(const AccountTransferHandler&);
+  AccountTransferHandler(AccountTransferHandler&&);
+  AccountTransferHandler& operator=(AccountTransferHandler&&);
 
-  bool RequestExists(const UnresolvedAccountTransferAction& request,
-                     const routing::GroupSource& source);
-  void CleanUpHandledRequests();
 
-  std::deque<PendingRequest> pending_requests_;
-  std::map<routing::GroupId, boost::posix_time::ptime> handled_requests_;
-  const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
+  std::map<AccountType::Key, std::vector<std::pair<NodeId, AccountType::Value>>> kv_pairs_;
   mutable std::mutex mutex_;
 };
 
 // ==================== Implementation =============================================================
 
-template <typename UnresolvedAccountTransferAction>
-AccountTransfer<UnresolvedAccountTransferAction>::AccountTransfer()
-    : pending_requests_(),
-      handled_requests_(),
-      kMaxPendingRequestsCount_(100),
-      kMaxHandledRequestsCount_(100),
-      mutex_() {}
+template <typename AccountType>
+AccountTransferHandler<AccountType>::AccountTransferHandler()
+    : kv_pairs_(),  mutex_() {}
 
-template <typename UnresolvedAccountTransferAction>
-std::unique_ptr<UnresolvedAccountTransferAction>
-AccountTransfer<UnresolvedAccountTransferAction>::AddUnresolvedAction(
-    const UnresolvedAccountTransferAction& request, const routing::GroupSource& source,
-    AddRequestChecker checker) {
-  LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction for GroupSource "
-                << HexSubstr(source.group_id.data.string()) << " sent from "
-                << HexSubstr(source.sender_id->string());
-  std::unique_ptr<UnresolvedAccountTransferAction> resolved_action;
-  if (CheckHandled(source.group_id)) {
-    LOG(kInfo) << "AccountTransfer::AddUnresolvedAction request has been handled";
-    return resolved_action;
-  }
-  std::lock_guard<std::mutex> lock(mutex_);
-  if (RequestExists(request, source)) {
-    LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction request already existed";
-    auto itr(pending_requests_.begin());
-    while (itr != pending_requests_.end()) {
-      if (itr->GetGroupId() == source.group_id) {
-        LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction merge request before having "
-                      << itr->GetSenders().size() << " senders";
-        itr->MergePendingRequest(request, source);
-        LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction merge request after having "
-                      << itr->GetSenders().size() << " senders";
-        if (checker(itr->GetSenders()) == AddResult::kSuccess) {
-          resolved_action.reset(new UnresolvedAccountTransferAction(
-              itr->GetResolved(routing::Parameters::group_size / 2)));
-          if (itr->IsResolved()) {
-            handled_requests_[itr->GetGroupId()] =
-                boost::posix_time::microsec_clock::universal_time();
-            LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction put "
-                          << DebugId(itr->GetGroupId()) << " into handled list";
-            if (handled_requests_.size() > kMaxHandledRequestsCount_)
-              CleanUpHandledRequests();
-            pending_requests_.erase(itr);
-          }
-        }
-        break;
-      }
-      ++itr;
-    }
+template <typename AccountType>
+AccountTransferHandler<AccountType>::Result
+AccountTransferHandler<AccountType>::Add(
+    const std::pair<AccountType::Key, AccountType::Value>& request,
+    const routing::GroupSource& source) {
+  std::lock_guard<std::mutex> lock;
+  auto iter(kv_pairs_.find(request.first));
+  if (iter != std::end(kv_pairs)) {
+    // replace entry from existing sender
+    iter->second.erase(std::remove_if(std::begin(iter->second), std::end(iter->second),
+                                      [&](const std::pair<NodeId, Value>& pair) {
+                                        return pair.first == source.sender_id;
+                                      }), std::end(iter->second));
+    iter->second.push_back(request);
   } else {
-    pending_requests_.push_back(PendingRequest(request, source));
-    LOG(kVerbose) << "AccountTransfer::AddUnresolvedAction has " << pending_requests_.size()
-                  << " pending requests, allowing " << kMaxPendingRequestsCount_ << " requests";
-    if (pending_requests_.size() > kMaxPendingRequestsCount_)
-      pending_requests_.pop_front();
+    kv_pairs_.insert(std::make_pair(request.first,
+                                    std::make_pair(source.sender_id, request.second)));
   }
-  return std::move(resolved_action);
-}
-
-template <typename UnresolvedAccountTransferAction>
-bool AccountTransfer<UnresolvedAccountTransferAction>::CheckHandled(
-    const routing::GroupId& source_group_id) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  LOG(kVerbose) << "AccountTransfer::CheckHandled handled_requests_.size() "
-                << handled_requests_.size();
-  auto handled_entry(handled_requests_.find(source_group_id));
-  if (handled_entry == handled_requests_.end())
-    return false;
-  auto cur_time(boost::posix_time::microsec_clock::universal_time());
-  if ((cur_time - handled_entry->second).total_seconds() > 60) {
-    handled_requests_.erase(handled_entry);
-    return false;
-  }
-  return true;
-}
-
-template <typename UnresolvedAccountTransferAction>
-bool AccountTransfer<UnresolvedAccountTransferAction>::RequestExists(
-    const UnresolvedAccountTransferAction& request, const routing::GroupSource& source) {
-  auto request_message_id(request.id);
-  for (auto& pending_request : pending_requests_)
-    if (request_message_id == pending_request.GetRequest().id) {
-      LOG(kWarning) << "AccountTransfer::RequestExists,  reguest with message id "
-                    << request_message_id.data << " with group_id "
-                    << HexSubstr(source.group_id->string())
-                    << " already exists in the pending requests list";
-      return true;
-    }
-  LOG(kInfo) << "AccountTransfer::RequestExists,  reguest with message id "
-             << request_message_id.data << " with group_id " << HexSubstr(source.group_id->string())
-             << " doesn't exists in the pending requests list";
-  return false;
-}
-
-template <typename UnresolvedAccountTransferAction>
-void AccountTransfer<UnresolvedAccountTransferAction>::CleanUpHandledRequests() {
-  auto itr(handled_requests_.begin());
-  auto cur_time(boost::posix_time::microsec_clock::universal_time());
-  while (itr != handled_requests_.end()) {
-    if ((cur_time - itr->second).total_seconds() > 60)
-      itr = handled_requests_.erase(itr);
-    else
-      ++itr;
+  std::vector values_vector;
+  for (const auto& value : iter->second)
+    values_vector.push_back(value->second);
+  auto resolution(AccountType::Resolve(values_vector));
+  if (resolution.result == AddResult::kSuccess) {
+    kv_pairs_.erase(request.first);
+    return Result(resolution.key, resolution.value, AddResult::kSuccess);
+  } else if (resolution.result == AddResult::kFailure) {
+    kv_pairs_.erase(request.first);
+    return Result(request.first, std::unique_ptr<AccountType::Value>(), AddResult::kFailure);
+  } else {
+    return Result(request.first, std::vector<Value>(), AddResult::kWaiting);
   }
 }
 

@@ -433,13 +433,14 @@ void DataManagerService::HandleMessage(
     const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
   LOG(kInfo) << "DataManager received account from " << DebugId(sender.sender_id);
   DataManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
-  auto resolved_action(account_transfer_.AddUnresolvedAction(
-      unresolved_account_transfer, sender,
-      AccountTransfer<DataManager::UnresolvedAccountTransfer>::AddRequestChecker(
-          routing::Parameters::group_size / 2)));
-  if (resolved_action) {
-    LOG(kInfo) << "AccountTransferFromDataManagerToDataManager handle account transfer";
-    this->HandleAccountTransfer(std::move(resolved_action));
+  for (const auto& action : unresolved_account_transfer.actions) {
+    protobuf::DataManagerKeyValuePair kv_msg;
+    if (!kv_msg.ParseFromString(action)) {
+      LOG(kError) << "Failed to parse action";
+    }
+    auto result(account_transfer_.Add(std::make_pair(kv_msg.key(), kv_msg.value()), sender));
+    if (result.result == AccountTransfer<DataManager::Key, DataManager::Value>::AddResult::kFailure)
+      SendAccountRequest(result.key);
   }
 }
 

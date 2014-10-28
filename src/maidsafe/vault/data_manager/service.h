@@ -283,7 +283,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
-  AccountTransfer<DataManager::UnresolvedAccountTransfer> account_transfer_;
+  AccountTransfer<DataManager::Key, DataManager::Value> account_transfer_;
 
  protected:
   std::mutex lock_guard;
