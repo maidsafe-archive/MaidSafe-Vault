@@ -16,6 +16,7 @@ Data manages holds account information about chunks it is responsible for. The a
 | ChunkName | chunk size | `storage_node`s |
 | --------- | ---------- | --------------- |
 
+storage node info has id and the status (online / offline) for the node storing the chunck. We require 4 on line nodes and a max of 4 off line nodes. The off line is a FIFO queue and if any node is pushed off then its lost space is increased and stored is decreased. 
 
 ##Storage node manager
 
