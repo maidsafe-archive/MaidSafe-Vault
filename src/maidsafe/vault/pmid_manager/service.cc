@@ -105,7 +105,8 @@ void PmidManagerService::HandleSyncedSetPmidHealth(
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  db_.Commit(synced_action->key.group_name(), synced_action->action);
+  PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+  db_.Commit(metadata_key, synced_action->action);
 }
 
 void PmidManagerService::HandleSyncedCreatePmidAccount(

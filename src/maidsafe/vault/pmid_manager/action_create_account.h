@@ -39,13 +39,14 @@ struct ActionCreatePmidAccount {
   explicit ActionCreatePmidAccount(const std::string& serialised_action);
   ActionCreatePmidAccount(const ActionCreatePmidAccount& other);
   ActionCreatePmidAccount(ActionCreatePmidAccount&& other);
-
+  detail::DbAction operator()(std::unique_ptr<PmidManagerMetadata>& metadata);
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;
 
  private:
   ActionCreatePmidAccount& operator=(ActionCreatePmidAccount other);
+  PmidName pmid_name_;
 };
 
 bool operator==(const ActionCreatePmidAccount& lhs,

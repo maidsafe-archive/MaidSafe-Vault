@@ -32,13 +32,13 @@ namespace vault {
 class PmidManagerValue;
 
 struct ActionPmidManagerDelete {
-  ActionPmidManagerDelete(bool pmid_node_available_in, bool data_failure);
+  ActionPmidManagerDelete(int32_t size, bool pmid_node_available_in, bool data_failure);
   explicit ActionPmidManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(PmidManagerMetadata& metadata,
-                              std::unique_ptr<PmidManagerValue>& value) const;
+  detail::DbAction operator()(std::unique_ptr<PmidManagerMetadata>& metadata);
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
+  const int32_t kSize;
   bool pmid_node_available;
   bool data_failure;
 };

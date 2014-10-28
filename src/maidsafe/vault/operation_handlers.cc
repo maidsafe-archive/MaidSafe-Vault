@@ -406,8 +406,8 @@ void DoOperation(PmidManagerService* service, const PutFailureFromPmidNodeToPmid
   LOG(kVerbose) << "DoOperation PutFailureFromPmidNodeToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutResponseFailureVisitor<PmidManagerService> put_failure_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.contents->available_space,
-      message.contents->return_code.value, message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size,
+      message.contents->available_space, message.contents->return_code.value, message.id);
   boost::apply_visitor(put_failure_visitor, data_name);
 }
 
@@ -419,7 +419,7 @@ void DoOperation(PmidManagerService* service,
   LOG(kVerbose) << "DoOperation DeleteRequestFromDataManagerToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerDeleteVisitor<PmidManagerService> delete_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size, message.id);
   boost::apply_visitor(delete_visitor, data_name);
 }
 
@@ -472,11 +472,12 @@ void DoOperation(PmidManagerService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidManager from "
                 << HexSubstr(sender.sender_id.data.string()) << " for chunk "
-                << HexSubstr(message.contents->raw_name.string()) << " on pmid_node "
+                << HexSubstr(message.contents->name.string()) << " on pmid_node "
                 << HexSubstr(receiver.data.string());
-  auto data_name(GetNameVariant(*message.contents));
+  auto data_name(GetNameVariant(message.contents->name));
+  // TODO(TEAM): shall FalseNotification be fired after failing of IntegrityCheck ?
   PmidManagerFalseNotificationVisitor<PmidManagerService> false_notification_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size, message.id);
   boost::apply_visitor(false_notification_visitor, data_name);
 }
 

@@ -319,9 +319,11 @@ void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
     handler_.Put(data);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
+                  << " of size " << data.data().string().size()
                   << " with AvailableSpace " << handler_.AvailableSpace()
                   << " and error " << boost::diagnostic_information(error);
-    dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
+    dispatcher_.SendPutFailure<Data>(data.name(), data.data().string().size(),
+                                     handler_.AvailableSpace(), error, message_id);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to put data : " << HexSubstr(data.name().value) << " , "
                 << boost::diagnostic_information(e);

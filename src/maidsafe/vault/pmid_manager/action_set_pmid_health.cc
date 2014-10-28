@@ -51,8 +51,10 @@ std::string ActionPmidManagerSetPmidHealth::Serialise() const {
   return action_disk_size_proto.SerializeAsString();
 }
 
-void ActionPmidManagerSetPmidHealth::operator()(PmidManagerMetadata& metadata) {
-  metadata.SetAvailableSize(kDiskAvailableSize);
+detail::DbAction ActionPmidManagerSetPmidHealth::operator()(
+    std::unique_ptr<PmidManagerMetadata>& metadata) {
+  metadata->SetAvailableSize(kDiskAvailableSize);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionPmidManagerSetPmidHealth& /*lhs*/,

@@ -40,7 +40,7 @@ struct ActionPmidManagerSetPmidHealth {
   ActionPmidManagerSetPmidHealth(const ActionPmidManagerSetPmidHealth& other);
   ActionPmidManagerSetPmidHealth(ActionPmidManagerSetPmidHealth&& other);
 
-  void operator()(PmidManagerMetadata& metadata);
+  detail::DbAction operator()(std::unique_ptr<PmidManagerMetadata>& metadata);
 
   std::string Serialise() const;
 

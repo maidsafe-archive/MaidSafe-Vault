@@ -190,11 +190,11 @@ class DataManagerService {
 
   template <typename Data>
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
-                         nfs::MessageId message_id);
+                         const int32_t size, nfs::MessageId message_id);
 
   template <typename Data>
   void SendFalseDataNotification(const PmidName pmid_node, const typename Data::Name& name,
-                                 nfs::MessageId message_id);
+                                 int32_t size, nfs::MessageId message_id);
 
   // =========================== Node up / Node down section =======================================
   template <typename DataName>
@@ -839,6 +839,7 @@ void DataManagerService::AssessIntegrityCheckResults(
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
           SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
+                                          get_response_op->serialised_contents.size(),
                                           get_response_op->message_id);
         } else {
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
@@ -867,7 +868,8 @@ void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
   typename DataManager::Key key(name.value, Data::Tag::kValue);
   DoSync(DataManager::UnresolvedRemovePmid(key,
              ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
-  SendDeleteRequest<Data>(pmid_node, name, message_id);
+  // TODO(Team) : the new account will hold chunk_size info
+  SendDeleteRequest<Data>(pmid_node, name, 0, message_id);
 }
 
 // =================== Delete implementation ======================================================
@@ -881,15 +883,15 @@ void DataManagerService::HandleDelete(const typename Data::Name& data_name,
 }
 
 template <typename Data>
-void DataManagerService::SendDeleteRequest(
-    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
-  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
+void DataManagerService::SendDeleteRequest(const PmidName pmid_node,
+    const typename Data::Name& name, const int32_t size, nfs::MessageId message_id) {
+  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, size, message_id);
 }
 
 template <typename Data>
-void DataManagerService::SendFalseDataNotification(
-    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
-  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, message_id);
+void DataManagerService::SendFalseDataNotification(const PmidName pmid_node,
+    const typename Data::Name& name, int32_t size, nfs::MessageId message_id) {
+  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, size, message_id);
 }
 
 // ==================== Node up / Node down implementation =========================================
