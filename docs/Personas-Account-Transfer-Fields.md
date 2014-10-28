@@ -13,13 +13,14 @@ Storage client manager keeps records about the storage clients it is responsible
 ##Data manager
 Data manages holds account information about chunks it is responsible for. The account information for a chunk represent the chunk name and the id and status of nodes storing the chunk.
 
-| ChunkName | `storage_node`s |
-| --------- | --------------- |
+| ChunkName | chunk size | `storage_node`s |
+| --------- | ---------- | --------------- |
 
+storage node info has id and the status (online / offline) for the node storing the chunck. We require 4 on line nodes and a max of 4 off line nodes. The off line is a FIFO queue and if any node is pushed off then its lost space is increased and stored is decreased. 
 
 ##Storage node manager
 
 Storage node manager holds account information about `storage nodes` it is responsible for. The account information for a storage node represent the id of the storage node along with store success/failure statistics related to that storage node.
 
-| Storage node id | Claimed available size | Stored total size | Stored count | Lost total size | Lost count |
-| ----------------| ---------------------- | ----------------- | ------------ | --------------- | ---------- |
+| Storage node id | offered space | data stored | data lost |
+| ----------------| ------------- | ------------ |--------- |
