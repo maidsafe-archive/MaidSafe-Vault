@@ -69,17 +69,14 @@ void PmidManagerService::HandleSyncedPut(
                 << " to db_ and send_put_response";
   // When different DM choose same PN for the same chunk, PM will receive same Put requests twice
   // from different DM. This will trigger two different sync_put actions and will eventually
-  // got two resolved action, and committing same entry to group_db.
-  // BEFORE_RELEASE check whether a failure response shall be sent instead
+  // got two resolved action, and committing same entry to db.
+  // BEFORE_RELEASE check how to ensure proper stored_space can be updated
   try {
-    db_.Commit(synced_action->key, synced_action->action);
+    PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+    db_.Commit(metadata_key, synced_action->action);
   } catch (const maidsafe_error& error) {
-    if (error.code().value() == static_cast<int>(VaultErrors::data_already_exists)) {
-      LOG(kWarning) << "Possibly different DM chose same pmid_node for the same chunk";
-      return;
-    } else {
-      throw;
-    }
+    LOG(kWarning) << "HandleSyncedPut caught an error during db commit " << error.what();
+    throw;
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
@@ -93,7 +90,8 @@ void PmidManagerService::HandleSyncedDelete(
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
                 << HexSubstr(synced_action->key.name.string()) << " to db_ ";
   try {
-    db_.Commit(synced_action->key, synced_action->action);
+    PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+    db_.Commit(metadata_key, synced_action->action);
   } catch (std::exception& e) {
     // Delete action shall be exception free and no response expected
     LOG(kWarning) << boost::diagnostic_information(e);
