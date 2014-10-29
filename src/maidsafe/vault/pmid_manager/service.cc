@@ -380,7 +380,7 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
     PmidManagerMetadata reply(pmid_health);
     if (pmid_health == PmidManagerMetadata()) {
       LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
-      reply = db_.GetContents(pmid_node).metadata;
+      reply = db_.Get(PmidManager::MetadataKey(pmid_node));
     } else {
       DoSync(PmidManager::UnresolvedSetPmidHealth(
           PmidManager::MetadataKey(pmid_node),
@@ -404,13 +404,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
   try {
-    db_.GetMetadata(pmid_node);
-#ifdef TESTING
-    // GetContents is a costly call to db, enabled only for testing code
-    auto contents(db_.GetContents(pmid_node));
-    LOG(kInfo) << "The current PmidManager already have account record with "
-               << contents.kv_pairs.size() << " kv_pair entries";
-#endif
+    auto meta_data(db_.Get(PmidManager::MetadataKey(pmid_node)));
   } catch(const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
@@ -481,12 +475,15 @@ void PmidManagerService::HandleChurnEvent(
     if (stopped_)
       return;
     VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
+/*
+ *  PmidManager no longer report the PmidNode status to DataManager to mark node up / down
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
     auto lost_node(close_nodes_change->lost_node());
     if (!lost_node.IsZero()) {
       LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
       try {
         auto pmid_node(PmidName(Identity(lost_node.string())));
+        auto meta_data(db_.Get(PmidManager::MetadataKey(pmid_node)));
         auto contents(db_.GetContents(pmid_node));
         for (const auto& kv_pair : contents.kv_pairs) {
           VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
@@ -521,6 +518,7 @@ void PmidManagerService::HandleChurnEvent(
           throw;
       }
     }
+*/
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
     Db<PmidManager::MetadataKey, PmidManager::Metadata>:: transfer_info(
         db_.GetTransferInfo(close_nodes_change));

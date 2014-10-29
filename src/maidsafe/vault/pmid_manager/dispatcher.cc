@@ -115,7 +115,8 @@ void PmidManagerDispatcher::SendHealthRequest(const PmidName& pmid_node,
                          VaultMessage::Receiver(NodeId(pmid_node->string())));
   routing_.Send(message);
 }
-
+/*
+ * PmidManager no longer report the PmidNode status to DataManager to mark node up / down
 void PmidManagerDispatcher::SendSetPmidOnline(const nfs_vault::DataName& data_name,
                                               const PmidName& pmid_node) {
   nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
@@ -146,7 +147,7 @@ void PmidManagerDispatcher::SendSetPmidOffline(const nfs_vault::DataName& data_n
                          VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
   routing_.Send(message);
 }
-
+*/
 routing::GroupSource PmidManagerDispatcher::Sender(const MaidName& account_name) const {
   return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
                               routing::SingleId(routing_.kNodeId()));

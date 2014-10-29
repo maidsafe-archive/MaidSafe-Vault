@@ -60,10 +60,11 @@ class PmidManagerDispatcher {
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name, const PmidName& pmid_node,
                       const maidsafe_error& error_code, nfs::MessageId message_id);
-
+/*
+ * PmidManager no longer report the PmidNode status to DataManager to mark node up / down
   void SendSetPmidOnline(const nfs_vault::DataName& data_name, const PmidName& pmid_node);
   void SendSetPmidOffline(const nfs_vault::DataName& data_name, const PmidName& pmid_node);
-
+*/
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
