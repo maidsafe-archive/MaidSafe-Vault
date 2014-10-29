@@ -54,6 +54,8 @@ class AccountTransferHandler {
     AddResult result;
   };
 
+  AccountTransferHandler();
+
   using KeyValuePair = std::pair<typename AccountType::Key, typename AccountType::Value>;
 
   Result Add(const KeyValuePair& account, const NodeId& source_id);
@@ -71,6 +73,10 @@ class AccountTransferHandler {
 };
 
 // ==================== Implementation =============================================================
+
+template <typename AccountType>
+AccountTransferHandler<AccountType>::AccountTransferHandler()
+    : kv_pairs_(), mutex_() {}
 
 template <typename AccountType>
 typename AccountTransferHandler<AccountType>::Result

@@ -438,13 +438,13 @@ void DataManagerService::HandleMessage(
     if (!kv_msg.ParseFromString(account)) {
       LOG(kError) << "Failed to parse action";
     }
-    auto result(account_transfer_.Add(std::make_pair(DataManager::Key(kv_msg.key()),
-                                                     DataManager::Value(kv_msg.value())),
+    auto result(account_transfer_.Add(std::make_pair(DataManagerAccount::Key(kv_msg.key()),
+                                                     DataManagerAccount::Value(kv_msg.value())),
                                       sender.sender_id.data));
     if (result.result == AccountTransferHandler<DataManagerAccount>::AddResult::kSuccess) {
       HandleAccountTransfer(std::make_pair(result.key, *result.value));
     } else  if (result.result == AccountTransferHandler<DataManagerAccount>::AddResult::kFailure) {
-      // SendAccountRequest(result.key);  MAID-357
+//       SendAccountRequest(result.key);
     }
   }
 }
