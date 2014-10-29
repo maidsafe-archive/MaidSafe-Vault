@@ -146,7 +146,7 @@ void PmidNodeService::HandleMessage(
         uint16_t valid_response_size(0);
         for (auto& request : requests_in) {
           auto typed_request(boost::get<MessageType>(request));
-          if (typed_request.contents->return_code.value.code() == CommonErrors::success)
+          if (typed_request.contents->value.code() == CommonErrors::success)
             ++valid_response_size;
         }
         const unsigned& group_size(routing::Parameters::group_size);
@@ -187,8 +187,8 @@ void PmidNodeService::HandleHealthRequest(const NodeId& pmid_manager_node_id,
   dispatcher_.SendHealthResponse(handler_.AvailableSpace(), pmid_manager_node_id, message_id);
 }
 
-void PmidNodeService::HandlePmidAccountResponses(
-    const std::vector<std::set<nfs_vault::DataName>>& responses, int failures) {
+void PmidNodeService::HandlePmidAccountResponses(int /*failures*/) {
+/*
   const auto total_responses(responses.size() + failures);
   std::map<nfs_vault::DataName, uint16_t> chunks_expectation;
   std::vector<DataNameVariant> expected_chunks;
@@ -204,6 +204,7 @@ void PmidNodeService::HandlePmidAccountResponses(
       expected_chunks.push_back(GetDataNameVariant(iter->first.type, iter->first.raw_name));
   }
   CheckPmidAccountResponsesStatus(expected_chunks);
+*/
 }
 
 void PmidNodeService::CheckPmidAccountResponsesStatus(

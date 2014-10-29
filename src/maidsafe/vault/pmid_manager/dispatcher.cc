@@ -67,12 +67,11 @@ void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
 }
 
 void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
-                                            const PmidManagerMetadata& meta_data,
                                             const nfs_client::ReturnCode& return_code) {
   typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(nfs_client::DataNamesAndReturnCode(data_names, return_code));
+  VaultMessage vault_message((nfs_client::ReturnCode(return_code)));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),

@@ -657,15 +657,12 @@ operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
       int failures(0);
       auto responses(accumulator.Get(message, sender));
-      std::vector<std::set<nfs_vault::DataName>> response_vec;
       for (const auto& response : responses) {
         auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-        if (typed_response.contents->return_code.value.code() == CommonErrors::success)
-          response_vec.push_back(typed_response.contents->names);
-        else
+        if (typed_response.contents->return_code.value.code() != CommonErrors::success)
           failures++;
       }
-      service->HandlePmidAccountResponses(response_vec, failures);
+      service->HandlePmidAccountResponses(failures);
     } else if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
       service->StartUp();
     }

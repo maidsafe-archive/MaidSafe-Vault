@@ -159,8 +159,7 @@ class PmidNodeService {
 
   // Unless StartUp is called, PmidNode is not un-usable
   void StartUp();
-  void HandlePmidAccountResponses(const std::vector<std::set<nfs_vault::DataName>>& responses,
-                                  int failures);
+  void HandlePmidAccountResponses(int failures);
 
  private:
   template<typename ServiceHandlerType, typename MessageType>

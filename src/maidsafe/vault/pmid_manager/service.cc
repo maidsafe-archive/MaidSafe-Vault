@@ -328,17 +328,15 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
   try {
-    auto meta_data(db_.Get(pmid_node));
-    dispatcher_.SendPmidAccount(pmid_node, meta_data,
-                                nfs_client::ReturnCode(CommonErrors::success));
+    auto meta_data(db_.Get(PmidManager::MetadataKey(pmid_node)));
+    dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(CommonErrors::success));
     DoSync(PmidManager::UnresolvedSetPmidHealth(
         PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
         routing_.kNodeId()));
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
-    dispatcher_.SendPmidAccount(pmid_node, meta_data,
-                                nfs_client::ReturnCode(VaultErrors::no_such_account));
+    dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(VaultErrors::no_such_account));
   }
 }
 
