@@ -23,12 +23,11 @@
 #include <vector>
 
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/account_transfer_handler.h"
 
 namespace maidsafe {
 
 namespace vault {
-
-template <typename AccountType> class AccountTransferHandler;
 
 class DataManagerAccount {
  public:
@@ -40,35 +39,6 @@ class DataManagerAccount {
   static typename AccountTransferType::Result Resolve(
       const Key& key, const std::vector<std::pair<NodeId, Value>>& values);
 };
-
-typename DataManagerAccount::AccountTransferType::Result
-DataManagerAccount::Resolve(const Key& key, const std::vector<std::pair<NodeId, Value>>& values) {
-  std::vector<std::pair<Value, unsigned int>> stats;
-  auto max_iter(std::begin(stats));
-  for (const auto& value : values) {
-    auto iter(std::find_if(std::begin(stats), std::end(stats),
-                           [&](const std::pair<Value, unsigned int>& pair_value) {
-                             return value.second == pair_value.first;
-                           }));
-    if (iter == std::end(stats))
-      stats.emplace_back(std::make_pair(value.second, 0));
-    else
-      iter->second++;
-    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
-  }
-
-  if (max_iter->second == (routing::Parameters::group_size + 1) / 2) {
-    return AccountTransferType::Result(key, boost::optional<Value>(max_iter->first),
-                                       AccountTransferType::AddResult::kSuccess);
-  }
-
-  if (max_iter->second == routing::Parameters::group_size - 1)
-    return AccountTransferType::Result(key, boost::optional<Value>(max_iter->first),
-                                       AccountTransferType::AddResult::kFailure);
-
-  return AccountTransferType::Result(key, boost::optional<Value>(max_iter->first),
-                                     AccountTransferType::AddResult::kWaiting);
-}
 
 }  // namespace vault
 
