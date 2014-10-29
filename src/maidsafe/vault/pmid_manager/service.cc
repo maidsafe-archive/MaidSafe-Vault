@@ -414,8 +414,8 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
     LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
     // Once synced, check whether account exists or not, if not exist then shall create an account
     // If exist, decide whether to update or delete depending on account status and targeting size
-    DoSync(PmidManager::UnresolvedCreateAccount(
-        PmidManager::MetadataKey(pmid_node), ActionCreatePmidAccount(), routing_.kNodeId()));
+    DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::MetadataKey(pmid_node),
+        ActionCreatePmidAccount(pmid_node), routing_.kNodeId()));
   }
 }
 
@@ -520,7 +520,7 @@ void PmidManagerService::HandleChurnEvent(
     }
 */
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-    Db<PmidManager::MetadataKey, PmidManager::Metadata>:: transfer_info(
+    Db<PmidManager::MetadataKey, PmidManager::Metadata>::TransferInfo transfer_info(
         db_.GetTransferInfo(close_nodes_change));
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
@@ -557,21 +557,21 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
     // If account just received, shall not pass it out as may under a startup procedure
     // i.e. existing PM will be seen as new_node in close_nodes_change
     if (account_transfer_.CheckHandled(
-        routing::GroupId(NodeId(account.first.group_name->string())))) {
-      LOG(kInfo) << "PmidManager account " << HexSubstr(account.first.group_name->string())
+        routing::GroupId(NodeId(account.first.group_name()->string())))) {
+      LOG(kInfo) << "PmidManager account " << HexSubstr(account.first.group_name()->string())
                  << " just received";
       continue;
     }
-    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, account.group_name,
-         Identity{ dest.string() });
+    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
+         account.first.group_name(), Identity{ dest.string() });
     try {
       std::vector<std::string> actions;
       actions.push_back(account.second.Serialise());
       LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
-      nfs::MessageId message_id(HashStringToMessageId(account.first.group_name->string()));
+      nfs::MessageId message_id(HashStringToMessageId(account.first.group_name()->string()));
       PmidManager::UnresolvedAccountTransfer account_transfer(
-          account.first.group_name, message_id, actions);
-      dispatcher_.SendAccountTransfer(dest, account.first.group_name,
+          account.first.group_name(), message_id, actions);
+      dispatcher_.SendAccountTransfer(dest, account.first.group_name(),
                                       message_id, account_transfer.Serialise());
 #ifdef TESTING
       LOG(kVerbose) << "PmidManager sent to " << HexSubstr(dest.string())
@@ -605,12 +605,13 @@ void PmidManagerService::HandleMessage(
 void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
   VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
-  std::vector<std::pair<PmidManager::Key, PmidManager::Metadata>> kv_pairs;
+  std::vector<std::pair<PmidManager::MetadataKey, PmidManagerMetadata>> kv_pairs;
   for (auto& action : resolved_action->actions) {
     try {
       LOG(kVerbose) << "HandleAccountTransfer handle metadata";
       PmidManagerMetadata meta_data(action);
-      kv_pairs.push_back(std::make_pair(resolved_action->key, std::move(meta_data)));
+      PmidManager::MetadataKey meta_data_key(resolved_action->key);
+      kv_pairs.push_back(std::make_pair(std::move(meta_data_key), std::move(meta_data)));
     } catch(...) {
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
