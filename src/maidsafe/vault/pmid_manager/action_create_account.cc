@@ -23,7 +23,7 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionCreatePmidAccount::ActionCreatePmidAccount(PmidName pmid_node)
+ActionCreatePmidAccount::ActionCreatePmidAccount(const PmidName& pmid_name)
   : pmid_name_(pmid_name) {}
 
 ActionCreatePmidAccount::ActionCreatePmidAccount(

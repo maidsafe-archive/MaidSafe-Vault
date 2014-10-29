@@ -35,7 +35,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionCreatePmidAccount {
-  ActionCreatePmidAccount();
+  ActionCreatePmidAccount(const PmidName& pmid_name);
   explicit ActionCreatePmidAccount(const std::string& serialised_action);
   ActionCreatePmidAccount(const ActionCreatePmidAccount& other);
   ActionCreatePmidAccount(ActionCreatePmidAccount&& other);

@@ -116,8 +116,9 @@ void PmidManagerService::HandleSyncedCreatePmidAccount(
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManagerMetadata metadata;
-  db_.AddGroup(synced_action->key.group_name(), metadata);
+  PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+  ActionCreatePmidAccount create_pmid_account_action(synced_action->key.group_name());
+  db_.Commit(metadata_key, create_pmid_account_action);
 }
 
 // =============== HandleMessage ===================================================================
@@ -236,7 +237,7 @@ void PmidManagerService::HandleMessage(
     const typename IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "PmidManagerService IntegrityCheckRequestFromDataManagerToPmidManager "
                 << " received false data notification for chunk "
-                << HexSubstr(message.contents->raw_name.string())
+                << HexSubstr(message.contents->name.raw_name.string())
                 << " from " << HexSubstr(sender.sender_id.data.string());
   typedef IntegrityCheckRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
@@ -326,12 +327,9 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 //=================================================================================================
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
-  std::vector<nfs_vault::DataName> data_names;
   try {
-    auto contents(db_.GetContents(pmid_node));
-    for (const auto& kv_pair : contents.kv_pairs)
-      data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-    dispatcher_.SendPmidAccount(pmid_node, data_names,
+    auto meta_data(db_.Get(pmid_node));
+    dispatcher_.SendPmidAccount(pmid_node, meta_data,
                                 nfs_client::ReturnCode(CommonErrors::success));
     DoSync(PmidManager::UnresolvedSetPmidHealth(
         PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
@@ -339,7 +337,7 @@ void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account))
       throw;
-    dispatcher_.SendPmidAccount(pmid_node, data_names,
+    dispatcher_.SendPmidAccount(pmid_node, meta_data,
                                 nfs_client::ReturnCode(VaultErrors::no_such_account));
   }
 }

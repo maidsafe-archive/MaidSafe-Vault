@@ -67,7 +67,7 @@ void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
 }
 
 void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
-                                            const std::vector<nfs_vault::DataName>& data_names,
+                                            const PmidManagerMetadata& meta_data,
                                             const nfs_client::ReturnCode& return_code) {
   typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
