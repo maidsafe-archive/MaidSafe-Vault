@@ -433,38 +433,31 @@ void DataManagerService::HandleMessage(
     const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
   LOG(kInfo) << "DataManager received account from " << DebugId(sender.sender_id);
   DataManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
-  for (const auto& action : unresolved_account_transfer.actions) {
+  for (const auto& account : unresolved_account_transfer.actions) {
     protobuf::DataManagerKeyValuePair kv_msg;
-    if (!kv_msg.ParseFromString(action)) {
+    if (!kv_msg.ParseFromString(account)) {
       LOG(kError) << "Failed to parse action";
     }
-    auto result(account_transfer_.Add(std::make_pair(kv_msg.key(), kv_msg.value()), sender));
-    if (result.result == AccountTransfer<DataManager::Key, DataManager::Value>::AddResult::kFailure)
-      SendAccountRequest(result.key);
-  }
-}
-
-void DataManagerService::HandleAccountTransfer(
-    std::unique_ptr<DataManager::UnresolvedAccountTransfer>&& resolved_action) {
-  std::vector<std::pair<DataManager::Key, DataManager::Value>> kv_pairs;
-  for (auto& action : resolved_action->actions) {
-    try {
-      protobuf::DataManagerKeyValuePair kv_msg;
-      if (kv_msg.ParseFromString(action)) {
-        DataManager::Key key(kv_msg.key());
-        VLOG(nfs::Persona::kDataManager, VisualiserAction::kGotAccountTransferred, key.name);
-        DataManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "DataManager got account " << DebugId(key.name)
-                      << " transferred, having vaule " << value.Print();
-        kv_pairs.push_back(std::make_pair(key, std::move(value)));
-      }
-    } catch(...) {
-      LOG(kError) << "HandleAccountTransfer can't parse the action";
+    auto result(account_transfer_.Add(std::make_pair(DataManager::Key(kv_msg.key()),
+                                                     DataManager::Value(kv_msg.value())),
+                                      sender.sender_id.data));
+    if (result.result == AccountTransferHandler<DataManagerAccount>::AddResult::kSuccess) {
+      HandleAccountTransfer(std::make_pair(result.key, *result.value));
+    } else  if (result.result == AccountTransferHandler<DataManagerAccount>::AddResult::kFailure) {
+      // SendAccountRequest(result.key);  MAID-357
     }
   }
-  db_.HandleTransfer(kv_pairs);
 }
 
+void DataManagerService::HandleAccountTransfer(const AccountType& account) {
+  try {
+    db_.HandleTransfer(std::vector<AccountType> {account});
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "Failed to store account " << error.what();
+    throw;  // MAID-357
+  }
+}
 
 void DataManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
@@ -489,10 +482,10 @@ void DataManagerService::TransferAccount(const NodeId& dest,
     const std::vector<Db<DataManager::Key, DataManager::Value>::KvPair>& accounts) {
   // If account just received, shall not pass it out as may under a startup procedure
   // i.e. existing DM will be seen as new_node in close_nodes_change
-  if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
-    LOG(kWarning) << "DataManager account just received";
-    return;
-  }
+//  if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
+//    LOG(kWarning) << "DataManager account just received";
+//    return;
+//  } MAID-357
   std::vector<std::string> actions;
   for (auto& account : accounts) {
     VLOG(nfs::Persona::kDataManager, VisualiserAction::kAccountTransfer, account.first.name,

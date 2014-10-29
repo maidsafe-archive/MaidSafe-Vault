@@ -60,7 +60,7 @@ class DataManagerValue {
 
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
- private:
+// private: MAID-357
   DataManagerValue(const DataManagerValue&);
 
  private:

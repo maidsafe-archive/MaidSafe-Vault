@@ -16,60 +16,62 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACCCOUNT_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACCCOUNT_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACCOUNT_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_ACCOUNT_H_
 
-#include "maidsafe/vault/account_transfer.h"
+#include <utility>
+#include <vector>
+
 #include "maidsafe/vault/data_manager/data_manager.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+template <typename AccountType> class AccountTransferHandler;
+
 class DataManagerAccount {
-  typedef DataManager::Key Key;
-  typedef DataManager::Value Value;
+ public:
+  using Key = DataManager::Key;
+  using Value = DataManager::Value;
+  using AccountTransferType = AccountTransferHandler<DataManagerAccount>;
 
-  explicit DataManagerAccount(Db<Key, Value>& db) : db_(db) {}
-  static AccountTransferHandler<DataManagerAccount>::Result
-  Resolve(const Key& key, const std::vector<Value>& values);
-
- private:
-  static void HandleAccountTransfer(const Key& key, const Value& value);
-  Db<Key, Value>& db_;
+  DataManagerAccount() = default;
+  static typename AccountTransferType::Result Resolve(
+      const Key& key, const std::vector<std::pair<NodeId, Value>>& values);
 };
 
-AccountTransferHandler<DataManagerAccount>::Result
-DataManagerAccount::Resolve(const Key& key, const std::vector<Value>& values) {
-  std::map<DataManagerAccountType::Value, size_t> stats;
-  for (const auto& value : values)
-    stats.at(value)++;
-
-  auto max_iter(stats.begin());
-  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
-    max_iter = (iter->second > max) ? iter : max_iter;
-
-  if (max_iter->second == (Parameters::group_size + 1) / 2) {
-    HandleAccountTransfer(key, max_iter->first);
-    return AccountTransferHandler<DataManagerAccount>::Result(key, max_iter->first,
-                                                              AddResult::kSuccess);
+typename DataManagerAccount::AccountTransferType::Result
+DataManagerAccount::Resolve(const Key& key, const std::vector<std::pair<NodeId, Value>>& values) {
+  std::vector<std::pair<Value, unsigned int>> stats;
+  auto max_iter(std::begin(stats));
+  for (const auto& value : values) {
+    auto iter(std::find_if(std::begin(stats), std::end(stats),
+                           [&](const std::pair<Value, unsigned int>& pair_value) {
+                             return value.second == pair_value.first;
+                           }));
+    if (iter == std::end(stats))
+      stats.emplace_back(std::make_pair(value.second, 0));
+    else
+      iter->second++;
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
   }
 
-  if (max_iter->second == Parameters::group_size - 1)
-    return AccountTransferHandler<DataManagerAccount>::Result(key, max_iter->first,
-                                                              AddResult::kFailure);
+  if (max_iter->second == (routing::Parameters::group_size + 1) / 2) {
+    return AccountTransferType::Result(key, boost::optional<Value>(max_iter->first),
+                                       AccountTransferType::AddResult::kSuccess);
+  }
 
-  return AccountTransferHandler<DataManagerAccount>::Result(key, max_iter->first,
-                                                            AddResult::kWaiting);
-}
+  if (max_iter->second == routing::Parameters::group_size - 1)
+    return AccountTransferType::Result(key, boost::optional<Value>(max_iter->first),
+                                       AccountTransferType::AddResult::kFailure);
 
-void DataManagerAccount::HandleAccountTransfer(const Key& key, const Value& value) {
-  kv_pairs.push_back(std::make_pair(key, std::move(value)));
-  db_.HandleTransfer(kv_pairs);
+  return AccountTransferType::Result(key, boost::optional<Value>(max_iter->first),
+                                     AccountTransferType::AddResult::kWaiting);
 }
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACCCOUNT_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACCOUNT_H_
