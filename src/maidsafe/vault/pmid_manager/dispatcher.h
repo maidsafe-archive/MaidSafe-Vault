@@ -166,7 +166,7 @@ void PmidManagerDispatcher::SendSync(const KeyType& key, const std::string& seri
   typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   SendSyncMessage<VaultMessage> sync_sender;
-  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), PmidName(key.name));
 }
 
 // ==================== General implementation =====================================================

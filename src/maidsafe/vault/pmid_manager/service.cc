@@ -101,23 +101,24 @@ void PmidManagerService::HandleSyncedDelete(
 void PmidManagerService::HandleSyncedSetPmidHealth(
     std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedSetAvailableSize for pmid_node "
-                << HexSubstr(synced_action->key.group_name()->string()) << " to db_ ";
+                << HexSubstr(synced_action->key.name.string()) << " to db_ ";
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+  PmidManager::MetadataKey metadata_key(synced_action->key);
   db_.Commit(metadata_key, synced_action->action);
 }
 
 void PmidManagerService::HandleSyncedCreatePmidAccount(
     std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedCreateAccount for pmid_node "
-                << HexSubstr(synced_action->key.group_name()->string()) << " to db_ ";
+                << HexSubstr(synced_action->key.name.string()) << " to db_ ";
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
-  ActionCreatePmidAccount create_pmid_account_action(synced_action->key.group_name());
+  PmidManager::MetadataKey metadata_key(synced_action->key);
+  ActionCreatePmidAccount create_pmid_account_action(
+      PmidName(Identity(synced_action->key.name.string())));
   db_.Commit(metadata_key, create_pmid_account_action);
 }
 
@@ -557,21 +558,21 @@ void PmidManagerService::TransferAccount(const NodeId& dest,
     // If account just received, shall not pass it out as may under a startup procedure
     // i.e. existing PM will be seen as new_node in close_nodes_change
     if (account_transfer_.CheckHandled(
-        routing::GroupId(NodeId(account.first.group_name()->string())))) {
-      LOG(kInfo) << "PmidManager account " << HexSubstr(account.first.group_name()->string())
+        routing::GroupId(NodeId(account.first.name.string())))) {
+      LOG(kInfo) << "PmidManager account " << HexSubstr(account.first.name.string())
                  << " just received";
       continue;
     }
     VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
-         account.first.group_name(), Identity{ dest.string() });
+         account.first.name, Identity{ dest.string() });
     try {
       std::vector<std::string> actions;
       actions.push_back(account.second.Serialise());
       LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
-      nfs::MessageId message_id(HashStringToMessageId(account.first.group_name()->string()));
-      PmidManager::UnresolvedAccountTransfer account_transfer(
-          account.first.group_name(), message_id, actions);
-      dispatcher_.SendAccountTransfer(dest, account.first.group_name(),
+      nfs::MessageId message_id(HashStringToMessageId(account.first.name.string()));
+      PmidName pmid_name(Identity(account.first.name.string()));
+      PmidManager::UnresolvedAccountTransfer account_transfer(pmid_name, message_id, actions);
+      dispatcher_.SendAccountTransfer(dest, PmidName(account.first.name),
                                       message_id, account_transfer.Serialise());
 #ifdef TESTING
       LOG(kVerbose) << "PmidManager sent to " << HexSubstr(dest.string())
@@ -604,7 +605,8 @@ void PmidManagerService::HandleMessage(
 
 void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
+  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
+       resolved_action->key);
   std::vector<std::pair<PmidManager::MetadataKey, PmidManagerMetadata>> kv_pairs;
   for (auto& action : resolved_action->actions) {
     try {

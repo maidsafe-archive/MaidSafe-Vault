@@ -24,6 +24,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -54,7 +55,7 @@ struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
   typedef passport::PublicPmid::Name GroupName;
   typedef vault::GroupKey<GroupName> Key;
-  typedef vault::MetadataKey<GroupName> MetadataKey;
+  typedef vault::Key MetadataKey;
   typedef vault::PmidManagerMetadata Metadata;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;

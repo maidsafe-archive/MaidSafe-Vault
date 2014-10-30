@@ -76,8 +76,8 @@ Db<Key, Value>::Db(const boost::filesystem::path& db_path)
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
-  static_assert(!std::is_copy_constructible<Value>::value,
-                "value should not be copy constructible !");
+//   static_assert(!std::is_copy_constructible<Value>::value,
+//                 "value should not be copy constructible !");
   static_assert(std::is_move_constructible<Value>::value, "value should be move constructible !");
 #endif
 }
