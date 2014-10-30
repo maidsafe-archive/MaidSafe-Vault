@@ -51,18 +51,18 @@ detail::DbAction ActionPmidManagerDelete::operator()(
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   if (pmid_node_available) {
     if (data_failure)
-      metadata.HandleLostData(kSize);
+      metadata->HandleLostData(kSize);
     else
-      metadata.DeleteData(kSize);
+      metadata->DeleteData(kSize);
   } else {
-    metadata.HandleFailure(kSize);
+    metadata->HandleFailure(kSize);
   }
   return detail::DbAction::kPut;
 }
 
 std::string ActionPmidManagerDelete::Serialise() const {
   protobuf::ActionPmidManagerDelete action_delete_proto;
-  action_delete_proto.size_size(kSize);
+  action_delete_proto.set_size(kSize);
   action_delete_proto.set_pmid_node_available(pmid_node_available);
   action_delete_proto.set_data_failure(data_failure);
   return action_delete_proto.SerializeAsString();

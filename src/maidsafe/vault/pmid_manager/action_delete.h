@@ -38,7 +38,7 @@ struct ActionPmidManagerDelete {
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
-  const int32_t kSize;
+  int32_t kSize;
   bool pmid_node_available;
   bool data_failure;
 };
