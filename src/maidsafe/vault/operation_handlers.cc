@@ -472,7 +472,7 @@ void DoOperation(PmidManagerService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidManager from "
                 << HexSubstr(sender.sender_id.data.string()) << " for chunk "
-                << HexSubstr(message.contents->name.string()) << " on pmid_node "
+                << HexSubstr(message.contents->name.raw_name.string()) << " on pmid_node "
                 << HexSubstr(receiver.data.string());
   auto data_name(GetNameVariant(message.contents->name));
   // TODO(TEAM): shall FalseNotification be fired after failing of IntegrityCheck ?
@@ -659,7 +659,7 @@ operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
       auto responses(accumulator.Get(message, sender));
       for (const auto& response : responses) {
         auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-        if (typed_response.contents->return_code.value.code() != CommonErrors::success)
+        if (typed_response.contents->value.code() != CommonErrors::success)
           failures++;
       }
       service->HandlePmidAccountResponses(failures);
