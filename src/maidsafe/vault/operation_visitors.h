@@ -350,23 +350,6 @@ class PmidNodeGetVisitor : public boost::static_visitor<> {
 };
 
 template <typename ServiceHandlerType>
-class DataManagerAccountRequestVisitor : public boost::static_visitor<> {
- public:
-  DataManagerAccountRequestVisitor(ServiceHandlerType* service,
-                                   const NodeId& sender_node_id)
-      : kService_(service), kDataManagerNodeId_(sender_node_id) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    kService_->HandleAccountRequest(data_name, kDataManagerNodeId_);
-  }
-
- private:
-   ServiceHandlerType* const kService_;
-   const NodeId kDataManagerNodeId_;
-};
-
-template <typename ServiceHandlerType>
 class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
  public:
   PmidNodeIntegrityCheckVisitor(ServiceHandlerType* service, const NonEmptyString& random_string,
