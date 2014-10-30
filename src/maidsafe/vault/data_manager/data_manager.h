@@ -59,6 +59,8 @@ struct PersonaTypes<Persona::kDataManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid> UnresolvedRemovePmid;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerNodeUp> UnresolvedNodeUp;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerNodeDown> UnresolvedNodeDown;
+  typedef vault::UnresolvedAccountTransferAction<passport::PublicPmid::Name, std::string>
+      UnresolvedAccountTransfer;
 };
 
 }  // namespace nfs

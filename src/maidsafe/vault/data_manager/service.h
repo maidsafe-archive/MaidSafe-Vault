@@ -214,11 +214,6 @@ class DataManagerService {
                                          DataManager::Value>::KvPair>& accounts);
 
   void HandleAccountTransfer(const AccountType& account);
-
-  template<typename DataName>
-  void HandleAccountRequest(const DataName& name, const NodeId& sender);
-  void HandleAccountTransferEntry(const std::string& serialised_account,
-                                  const routing::GroupSource& sender);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -389,18 +384,6 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& message,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
-    const AccountRequestFromDataManagerToDataManager& message,
-    const typename AccountRequestFromDataManagerToDataManager::Sender& sender,
-    const typename AccountRequestFromDataManagerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
-    const AccountResponseFromDataManagerToDataManager& message,
-    const typename AccountResponseFromDataManagerToDataManager::Sender& sender,
-    const typename AccountResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
 template <typename Data>
