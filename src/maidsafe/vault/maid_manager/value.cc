@@ -35,25 +35,24 @@ namespace maidsafe {
 namespace vault {
 
 MaidManagerValue::MaidManagerValue(const std::string& serialised_maid_manager_value)
-    : count_(0), total_cost_(0) {
+    : size_(0) {
   protobuf::MaidManagerValue maid_manager_value_proto;
   if (!maid_manager_value_proto.ParseFromString(serialised_maid_manager_value)) {
     LOG(kError) << "Failed to read or parse serialised maid manager value.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-  count_ = maid_manager_value_proto.count();
-  total_cost_ = maid_manager_value_proto.total_cost();
-  LOG(kVerbose) << "parsed count_ " << count_ << " or total_cost_ " << total_cost_;
-  if (count_ < 0 || total_cost_ < 0) {
-    LOG(kError) << "invalid count_ " << count_ << " or total_cost_ " << total_cost_;
+  size_ = maid_manager_value_proto.size();
+  LOG(kVerbose) << "parsed size " << size_;
+  if (size_ < 0) {
+    LOG(kError) << "invalid size " << size_;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
-MaidManagerValue::MaidManagerValue() : count_(0), total_cost_(0) {}
+MaidManagerValue::MaidManagerValue() : size_(0) {}
 
 MaidManagerValue::MaidManagerValue(MaidManagerValue&& other) MAIDSAFE_NOEXCEPT
-    : count_(std::move(other.count_)), total_cost_(std::move(other.total_cost_)) {}
+    : size_(std::move(other.size_)) {}
 
 MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
   swap(*this, other);
@@ -61,58 +60,37 @@ MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
 }
 
 std::string MaidManagerValue::Serialise() const {
-  if (count_ == 0 || total_cost_ == 0) {
+  if (size_ == 0) {
     LOG(kError) << "MaidManagerValue::Serialise Cannot serialise if not a complete db value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
 
   protobuf::MaidManagerValue maid_manager_value_proto;
-  maid_manager_value_proto.set_count(count_);
-  maid_manager_value_proto.set_total_cost(total_cost_);
+  maid_manager_value_proto.set_size(size_);
   return maid_manager_value_proto.SerializeAsString();
 }
 
-void MaidManagerValue::Put(int32_t cost) {
-  ++count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, count_);
-  total_cost_ += cost;
+void MaidManagerValue::Put(int64_t size) {
+//  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, count_);
+  size_ = size;
 }
 
-int32_t MaidManagerValue::Delete() {
-  if (count_ < 0 || total_cost_ < 0)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-  auto average_cost(total_cost_ / count_);
-  --count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, count_);
-  total_cost_ -= average_cost;
-  assert(std::numeric_limits<int32_t>::max() >= average_cost);
-  return static_cast<int32_t>(average_cost);
-}
-
-void MaidManagerValue::IncrementCount() {
-  ++count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kIncreaseCount, count_);
-}
-
-void MaidManagerValue::DecrementCount() {
-  assert((count_ > 0) && "Reference count must be > 0 for Decrement operation");
-  --count_;
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, count_);
+int64_t MaidManagerValue::Delete() {
+  return size_;
 }
 
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {
   using std::swap;
-  swap(lhs.count_, rhs.count_);
-  swap(lhs.total_cost_, rhs.total_cost_);
+  swap(lhs.size_, rhs.size_);
 }
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
-  return lhs.count() == rhs.count() && lhs.total_cost() == rhs.total_cost();
+  return lhs.size() == rhs.size();
 }
 
 std::string MaidManagerValue::Print() const {
   std::stringstream stream;
-  stream << "[count_," << count_ << "] [total_cost_," << total_cost_ << "]";
+  stream << "[size, " << size_ << "]";
   return stream.str();
 }
 

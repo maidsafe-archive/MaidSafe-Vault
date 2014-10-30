@@ -19,6 +19,7 @@
 #include "maidsafe/vault/maid_manager/metadata.h"
 
 #include <utility>
+#include <limits>
 
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
@@ -27,18 +28,18 @@ namespace maidsafe {
 
 namespace vault {
 
-MaidManagerMetadata::MaidManagerMetadata() : total_put_data_(0), pmid_totals_() {}
+MaidManagerMetadata::MaidManagerMetadata()
+    : data_stored_(0), space_available_(std::numeric_limits<int64_t>().max()) {}
 
-MaidManagerMetadata::MaidManagerMetadata(int64_t total_put_data,
-                                         const std::vector<PmidTotals>& pmid_totals)
-    : total_put_data_(total_put_data), pmid_totals_(pmid_totals) {}
+MaidManagerMetadata::MaidManagerMetadata(int64_t data_stored, int64_t space_available)
+    : data_stored_(data_stored), space_available_(space_available) {}
 
 MaidManagerMetadata::MaidManagerMetadata(const MaidManagerMetadata& other)
-    : total_put_data_(other.total_put_data_), pmid_totals_(other.pmid_totals_) {}
+    : data_stored_(other.data_stored_), space_available_(other.space_available_) {}
 
 MaidManagerMetadata::MaidManagerMetadata(MaidManagerMetadata&& other)
-    : total_put_data_(std::move(other.total_put_data_)),
-      pmid_totals_(std::move(other.pmid_totals_)) {}
+    : data_stored_(std::move(other.data_stored_)),
+      space_available_(std::move(other.space_available_)) {}
 
 MaidManagerMetadata& MaidManagerMetadata::operator=(MaidManagerMetadata other) {
   swap(*this, other);
@@ -51,27 +52,27 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
     LOG(kError) << "Failed to read or parse serialised maid manager value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-  total_put_data_ = maid_manager_metadata_proto.total_put_data();
-  for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
-    pmid_totals_.emplace_back(
-        maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
-        PmidManagerMetadata(
-            maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
-  }
-  if (total_put_data_ < 0) {
-    LOG(kError) << "negative total_put_data_ " << total_put_data_;
+  data_stored_ = maid_manager_metadata_proto.data_stored();
+  space_available_ = maid_manager_metadata_proto.space_available();
+  if (data_stored_ < 0) {
+    LOG(kError) << "negative data stored " << data_stored_;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
 }
 
-void MaidManagerMetadata::PutData(int32_t cost) { total_put_data_ += cost; }
+void MaidManagerMetadata::PutData(int64_t size) {
+  data_stored_ += size;
+  space_available_ -= size;
+}
 
-void MaidManagerMetadata::DeleteData(int32_t cost) {
-  total_put_data_ -= cost;
-  if (total_put_data_ < 0) {
-    LOG(kError) << "negative total_put_data_ " << total_put_data_;
+void MaidManagerMetadata::DeleteData(int64_t size) {
+  data_stored_ -= size;
+  if (data_stored_ < 0) {
+    LOG(kError) << "negative data stored " << data_stored_;
+    data_stored_ += size;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
+  space_available_ += size;
 }
 
 template <>
@@ -94,72 +95,33 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(
   return Status::kNoSpace;
 }
 
-void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration) {
-  auto itr(Find(pmid_registration.pmid_name()));
-  if (itr == std::end(pmid_totals_)) {
-    auto serialised_pmid_registration(pmid_registration.Serialise());
-    pmid_totals_.emplace_back(serialised_pmid_registration,
-                              PmidManagerMetadata(pmid_registration.pmid_name()));
-  }
-}
+void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& /*pmid_registration*/) {}
 
-void MaidManagerMetadata::UnregisterPmid(const PmidName& pmid_name) {
-  auto itr(Find(pmid_name));
-  if (itr != std::end(pmid_totals_))
-    pmid_totals_.erase(itr);
-}
+void MaidManagerMetadata::UnregisterPmid(const PmidName& /*pmid_name*/) {}
 
-void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata) {
-  auto itr(Find(pmid_metadata.pmid_name));
-  if (itr == std::end(pmid_totals_)) {
-    LOG(kError) << "MaidManagerMetadata::UpdatePmidTotals can't find record for "
-                << HexSubstr(pmid_metadata.pmid_name->string());
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  }
-  LOG(kInfo) << "MaidManagerMetadata::UpdatePmidTotals updating record "
-             << HexSubstr(pmid_metadata.pmid_name->string()) << " with new avaiable_size "
-             << pmid_metadata.claimed_available_size;
-  (*itr).pmid_metadata = pmid_metadata;
-}
+void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& /*pmid_metadata*/) {}
 
 std::string MaidManagerMetadata::Serialise() const {
   protobuf::MaidManagerMetadata maid_manager_metadata_proto;
-  maid_manager_metadata_proto.set_total_put_data(total_put_data_);
-  for (const auto& pmid_total : pmid_totals_) {
-    auto pmid_total_proto(maid_manager_metadata_proto.add_pmid_totals());
-    pmid_total_proto->set_serialised_pmid_registration(pmid_total.serialised_pmid_registration);
-    pmid_total_proto->set_serialised_pmid_metadata(pmid_total.pmid_metadata.Serialise());
-  }
+  maid_manager_metadata_proto.set_data_stored(data_stored_);
+  maid_manager_metadata_proto.set_space_available(space_available_);
   return maid_manager_metadata_proto.SerializeAsString();
-}
-
-std::vector<PmidTotals>::iterator MaidManagerMetadata::Find(const PmidName& pmid_name) {
-  return std::find_if(std::begin(pmid_totals_), std::end(pmid_totals_),
-                      [&pmid_name](const PmidTotals & pmid_totals) {
-    return pmid_name == pmid_totals.pmid_metadata.pmid_name;
-  });
 }
 
 void swap(MaidManagerMetadata& lhs, MaidManagerMetadata& rhs) {
   using std::swap;
-  swap(lhs.total_put_data_, rhs.total_put_data_);
-  swap(lhs.pmid_totals_, rhs.pmid_totals_);
+  swap(lhs.data_stored_, rhs.data_stored_);
+  swap(lhs.space_available_, rhs.space_available_);
 }
 
 bool operator==(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
-  return lhs.total_put_data_ == rhs.total_put_data_ && lhs.pmid_totals_ == rhs.pmid_totals_;
+  return lhs.data_stored_ == rhs.data_stored_ && lhs.space_available_ == rhs.space_available_;
 }
 
 std::string MaidManagerMetadata::Print() const {
   std::stringstream stream;
-  stream << "\t[total_put_data_," << total_put_data_ << "] containing";
-  for (auto& pmid_total : pmid_totals_) {
-    try {
-      stream << "\n\t -- " << pmid_total.pmid_metadata.Print();
-    } catch (const std::exception& e) {
-      stream << "\n\t error: " << boost::diagnostic_information(e);
-    }
-  }
+  stream << "\tspace available," << space_available_ << " with " << "data stored, "
+         << data_stored_;
   return stream.str();
 }
 

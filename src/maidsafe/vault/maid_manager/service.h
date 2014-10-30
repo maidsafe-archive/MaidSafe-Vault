@@ -58,7 +58,6 @@
 #include "maidsafe/vault/maid_manager/action_register_pmid.h"
 #include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
-#include "maidsafe/vault/maid_manager/helpers.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
@@ -80,7 +79,6 @@ class MaidManagerServiceTest;
 }
 
 class AccountDb;
-struct PmidRegistrationOp;
 struct GetPmidTotalsOp;
 
 class MaidManagerService {
@@ -105,9 +103,6 @@ class MaidManagerService {
   }
 
  private:
-  static int DefaultPaymentFactor() { return kDefaultPaymentFactor_; }
-
- private:
   MaidManagerService(const MaidManagerService&);
   MaidManagerService& operator=(const MaidManagerService&);
   MaidManagerService(MaidManagerService&&);
@@ -123,7 +118,7 @@ class MaidManagerService {
     return true;
   }
 
-  // =============== account creation & pmid registration===========================================
+  // =============== Account Creation ==============================================================
   void HandleCreateMaidAccount(const passport::PublicMaid &public_maid,
                                const passport::PublicAnmaid& public_anmaid,
                                nfs::MessageId message_id);
@@ -133,20 +128,6 @@ class MaidManagerService {
   void HandleSyncedRemoveMaidAccount(
       std::unique_ptr<MaidManager::UnresolvedRemoveAccount>&& synced_action);
 
-  void HandlePmidRegistration(const nfs_vault::PmidRegistration& pmid_registration,
-                              nfs::MessageId message_id);
-  void HandlePmidUnregistration(const MaidName& maid_name, const PmidName& pmid_name);
-
-  void HandleSyncedPmidRegistration(
-      std::unique_ptr<MaidManager::UnresolvedRegisterPmid>&& synced_action);
-
-  void HandleSyncedPmidUnregistration(
-      std::unique_ptr<MaidManager::UnresolvedUnregisterPmid>&& synced_action);
-
-  template<typename PublicFobType>
-  void ValidatePmidRegistration(PublicFobType public_fob,
-                                std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
-                                nfs::MessageId message_id);
   // =============== Put/Delete data ===============================================================
   template <typename Data>
   void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
@@ -154,7 +135,7 @@ class MaidManagerService {
 
   template <typename Data>
   void HandlePutResponse(const MaidName& maid_name, const typename Data::Name& data_name,
-                         int32_t cost, nfs::MessageId message_id);
+                         int64_t size, nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutFailure(const MaidName& maid_name, const typename Data::Name& data_name,
@@ -169,7 +150,6 @@ class MaidManagerService {
   void HandleSyncedDelete(std::unique_ptr<MaidManager::UnresolvedDelete>&& synced_action_delete);
 
   // ================================== Version Handlers ===========================================
-
   template <typename DataNameType>
   void HandleCreateVersionTreeRequest(const MaidName& maid_name, const DataNameType& data_name,
                                       const StructuredDataVersions::VersionName& version,
@@ -194,20 +174,7 @@ class MaidManagerService {
                                    const StructuredDataVersions::VersionName& version,
                                    nfs::MessageId message_id);
 
-  void HandleIncrementReferenceCounts(const MaidName& maid_name,
-                                      const nfs_vault::DataNames& data_names);
-  void HandleDecrementReferenceCounts(const MaidName& maid_name,
-                                      const nfs_vault::DataNames& data_names);
-
-  void HandleSyncedIncrementReferenceCounts(
-      std::unique_ptr<MaidManager::UnresolvedIncrementReferenceCounts>&&
-          synced_action_increment_reference_counts);
-
-  void HandleSyncedDecrementReferenceCounts(
-      std::unique_ptr<MaidManager::UnresolvedDecrementReferenceCounts>&&
-          synced_action_decrement_reference_counts);
-
-  // ===============================================================================================
+  // ======================== Pmid Health ==========================================================
 
   void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
                                         synced_action_update_pmid_health);
@@ -222,8 +189,6 @@ class MaidManagerService {
   void TransferAccount(const NodeId& dest,
                        const std::vector<GroupDb<MaidManager>::Contents>& accounts);
 
-//  MaidManagerMetadata::Status AllowPut(const MaidName& account_name, int32_t cost);
-
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
   typedef std::false_type DisallowedAccountCreationType;
@@ -231,8 +196,6 @@ class MaidManagerService {
   void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
   template <typename Data>
   void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
-  void FinalisePmidRegistration(std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
-                                nfs::MessageId message_id);
 
   void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
@@ -298,7 +261,8 @@ class MaidManagerService {
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
-  GroupDb<MaidManager> group_db_;
+  // GroupDb<MaidManager> group_db_;
+  std::map<MaidName, MaidManager::Metadata> accounts_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   NfsAccumulator nfs_accumulator_;
@@ -308,13 +272,8 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
   Sync<MaidManager::UnresolvedPut> sync_puts_;
   Sync<MaidManager::UnresolvedDelete> sync_deletes_;
-  Sync<MaidManager::UnresolvedRegisterPmid> sync_register_pmids_;
-  Sync<MaidManager::UnresolvedUnregisterPmid> sync_unregister_pmids_;
   Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
-  Sync<MaidManager::UnresolvedIncrementReferenceCounts> sync_increment_reference_counts_;
-  Sync<MaidManager::UnresolvedDecrementReferenceCounts> sync_decrement_reference_counts_;
   AccountTransfer<MaidManager::UnresolvedAccountTransfer> account_transfer_;
-  static const int kDefaultPaymentFactor_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };
@@ -378,18 +337,6 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
-    const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
     const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
     const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
@@ -414,18 +361,6 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
-    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
-    const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
-    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
     const PutVersionResponseFromVersionHandlerToMaidManager& message,
     const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
     const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
@@ -444,12 +379,12 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
-    const typename passport::PublicMaid::Name& data_name, int32_t,
+    const typename passport::PublicMaid::Name& data_name, int64_t size,
     nfs::MessageId message_id);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
-    const typename passport::PublicAnmaid::Name& data_name, int32_t,
+    const typename passport::PublicAnmaid::Name& data_name, int64_t size,
     nfs::MessageId message_id);
 
 // ==================== Implementation =============================================================
@@ -470,66 +405,48 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
 template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
-                                   const PmidName& pmid_node_hint,
-                                   nfs::MessageId message_id) {
+                                   const PmidName& pmid_node_hint, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandlePut for account " << HexSubstr(account_name->string())
                 << " with data " << HexSubstr(data.name().value)
                 << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
                 << " message_id " << message_id.data;
-  try {
-    auto metadata(group_db_.GetMetadata(account_name));
-// Allowing free put
-//    if (metadata.AllowPut(data) != MaidManagerMetadata::Status::kNoSpace) {
-      LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
-      typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                          data.name(), Data::Tag::kValue);
-      auto obfuscated_key(group_key);
-      ObfuscateKey(obfuscated_key);
-      try {
-        group_db_.GetValue(obfuscated_key);
-        // BEFORE_RELEASE putting a duplicated chunk, cost set to the size of the data
-        LOG(kInfo) << "MaidManagerService::HandlePut duplicated PutRequest";
-        DoSync(typename MaidManager::UnresolvedPut(group_key,
-            ActionMaidManagerPut(static_cast<int32_t>(data.Serialise().data.string().size())),
-            routing_.kNodeId()));
-        return;
-      } catch(const maidsafe_error& error) {
-        if (error.code() == make_error_code(CommonErrors::no_such_element)) {
-          LOG(kInfo) << "MaidManagerService::HandlePut first PutRequest, passing to DataManager: ";
-        } else {
-          LOG(kError) << "MaidManagerService::HandlePut encountered unknown error : "
-                      << boost::diagnostic_information(error);
-          throw error;
-        }
-      }
-      dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
-//    } else {
-//      LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
-//      dispatcher_.SendPutFailure<Data>(account_name, data.name(),
-//                                      maidsafe_error(CommonErrors::cannot_exceed_limit),
-//                                      message_id);
-//    }
-  } catch(const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePut getting metadata has error : "
-                << boost::diagnostic_information(error);
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
-      throw;
+  MaidManagerMetadata metadata;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it(accounts_.find(account_name));
+    if (it == std::end(accounts_))
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    metadata = it->second;
   }
+  if (metadata.AllowPut(data) == MaidManagerMetadata::Status::kNoSpace) {
+    LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
+    dispatcher_.SendPutFailure<Data>(account_name, data.name(),
+                                     maidsafe_error(CommonErrors::cannot_exceed_limit),
+                                     message_id);
+    return;
+  }
+
+  LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
+  typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
+                                      data.name(), Data::Tag::kValue);
+  DoSync(typename MaidManager::UnresolvedPut(group_key,
+         ActionMaidManagerPut(static_cast<int64_t>(data.Serialise().data.string().size())),
+         routing_.kNodeId()));
+  dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
 }
 
 template <typename Data>
 void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
-                                           const typename Data::Name& data_name,
-                                           int32_t cost, nfs::MessageId message_id) {
+    const typename Data::Name& data_name, int64_t size, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandlePutResponse to maid "
                 << HexSubstr(maid_name->string())
                 << " for data name " << HexSubstr(data_name.value)
-                << " taking cost of " << cost;
+                << " with size " << size;
   dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
   typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
                                       data_name, Data::Tag::kValue);
-  DoSync(typename MaidManager::UnresolvedPut(group_key,
-                                             ActionMaidManagerPut(cost), routing_.kNodeId()));
+  DoSync(typename MaidManager::UnresolvedPut(group_key, ActionMaidManagerPut(size),
+                                             routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -544,17 +461,14 @@ void MaidManagerService::HandleCreateVersionTreeRequest(
     const MaidName& maid_name, const DataNameType& data_name,
     const StructuredDataVersions::VersionName& version, uint32_t max_versions,
     uint32_t max_branches, nfs::MessageId message_id) {
-  try {
-    group_db_.GetMetadata(maid_name);
-    dispatcher_.SendCreateVersionTreeRequest(maid_name, data_name, version, max_versions,
-                                             max_branches, message_id);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it(accounts_.find(maid_name));
+    if (it == std::end(accounts_))
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   }
-  catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandleCreateVersionTreeRequest faied: "
-                << boost::diagnostic_information(error);
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
-      throw;
-  }
+  dispatcher_.SendCreateVersionTreeRequest(maid_name, data_name, version, max_versions,
+                                           max_branches, message_id);
 }
 
 template <typename DataNameType>
@@ -562,19 +476,16 @@ void MaidManagerService::HandlePutVersionRequest(
     const MaidName& maid_name, const DataNameType& data_name,
     const StructuredDataVersions::VersionName& old_version,
     const StructuredDataVersions::VersionName& new_version, nfs::MessageId message_id) {
-  try {
-    group_db_.GetMetadata(maid_name);
-    LOG(kVerbose) << "MaidManagerService::HandlePutVersionRequest put new version "
-                  << DebugId(new_version.id) << " after old version "
-                  << DebugId(old_version.id) << " for " << HexSubstr(data_name.value);
-    dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it(accounts_.find(maid_name));
+    if (it == std::end(accounts_))
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   }
-  catch (const maidsafe_error& error) {
-    LOG(kError) << "MaidManagerService::HandlePutVersion failed to get metadata"
-                << boost::diagnostic_information(error);
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
-      throw;
-  }
+  LOG(kVerbose) << "MaidManagerService::HandlePutVersionRequest put new version "
+                << DebugId(new_version.id) << " after old version "
+                << DebugId(old_version.id) << " for " << HexSubstr(data_name.value);
+  dispatcher_.SendPutVersionRequest(maid_name, data_name, old_version, new_version, message_id);
 }
 
 template <typename DataNameType>
@@ -597,39 +508,22 @@ void MaidManagerService::HandlePutFailure<passport::PublicAnmaid>(
 // ================================== Delete Implementation =======================================
 
 template <typename Data>
-void MaidManagerService::HandleDelete(const MaidName& account_name,
-                                      const typename Data::Name& data_name,
-                                      nfs::MessageId message_id) {
-  // Only need to ensure that account exist in db. Data name availability in db is not guaranteed
-  // because related put data action may be still syncing
-  LOG(kVerbose) << "MaidManagerService::HandleDelete for account "
-                << HexSubstr(account_name->string()) << " of chunk " << HexSubstr(data_name.value);
-  group_db_.GetMetadata(account_name);  // throws
-  typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                      data_name, Data::Tag::kValue);
-  DoSync(typename MaidManager::UnresolvedDelete(group_key, ActionMaidManagerDelete(message_id),
-                                                routing_.kNodeId()));
+void MaidManagerService::HandleDelete(const MaidName& /*account_name*/,
+                                      const typename Data::Name& /*data_name*/,
+                                      nfs::MessageId /*message_id*/) {
+  //// Only need to ensure that account exist in db. Data name availability in db is not guaranteed
+  //// because related put data action may be still syncing
+  // LOG(kVerbose) << "MaidManagerService::HandleDelete for account "
+  //               << HexSubstr(account_name->string()) << " of chunk "
+  //               << HexSubstr(data_name.value);
+  // group_db_.GetMetadata(account_name);  // throws
+  // typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
+  //                                    data_name, Data::Tag::kValue);
+  // DoSync(typename MaidManager::UnresolvedDelete(group_key, ActionMaidManagerDelete(message_id),
+  //                                              routing_.kNodeId()));
 }
 
 // ===============================================================================================
-
-template<typename PublicFobType>
-void MaidManagerService::ValidatePmidRegistration(
-    PublicFobType public_fob, std::shared_ptr<PmidRegistrationOp> pmid_registration_op,
-    nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration";
-  bool finalise(false);
-  {
-    std::lock_guard<std::mutex> lock(pmid_registration_op->mutex);
-    pmid_registration_op->SetPublicFob(std::move(public_fob));
-    finalise = (++pmid_registration_op->count == 2);
-    LOG(kVerbose) << "MaidManagerService::ValidatePmidRegistration "
-                  << " pmid_registration_op->count " << pmid_registration_op->count
-                  << " finalised " << finalise;
-  }
-  if (finalise)
-    FinalisePmidRegistration(pmid_registration_op, message_id);
-}
 
 template <typename UnresolvedAction>
 void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
@@ -637,13 +531,7 @@ void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_register_pmids_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_unregister_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_increment_reference_counts_,
-                                       unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_decrement_reference_counts_,
-                                       unresolved_action);
 }
 
 }  // namespace vault
