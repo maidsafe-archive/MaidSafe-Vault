@@ -288,8 +288,11 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
                                             const std::set<PmidName>& pmids,
                                             nfs::MessageId message_id) {
   auto data_name(GetDataNameVariant(key.type, key.name));
+  // TODO(Team): DM shall hold the chunk_size info and pass it to PM via delete_request
+  int32_t chunk_size(0);
   for (const auto& pmid : pmids) {
-    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, pmid, message_id);
+    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, chunk_size,
+                                                                            pmid, message_id);
     boost::apply_visitor(delete_visitor, data_name);
   }
 }

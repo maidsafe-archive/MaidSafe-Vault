@@ -838,8 +838,9 @@ void DataManagerService::AssessIntegrityCheckResults(
           DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
+          // TODO(Team): DM will hold the chunk_size info, then pass this info to PM
           SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
-                                          get_response_op->serialised_contents.size(),
+                                          0,
                                           get_response_op->message_id);
         } else {
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
