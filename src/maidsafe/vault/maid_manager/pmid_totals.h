@@ -58,6 +58,7 @@ struct PmidTotals {
   PmidTotals& operator=(PmidTotals other);
 
   std::string serialised_pmid_registration;
+  PmidName pmid_name;
   PmidManagerMetadata pmid_metadata;
 };
 

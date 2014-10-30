@@ -23,9 +23,6 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionCreatePmidAccount::ActionCreatePmidAccount(const PmidName& pmid_name)
-  : pmid_name_(pmid_name) {}
-
 ActionCreatePmidAccount::ActionCreatePmidAccount(
     const std::string& serialised_action) {
   assert(serialised_action.size() == 0);
@@ -41,7 +38,7 @@ ActionCreatePmidAccount::ActionCreatePmidAccount(
 detail::DbAction ActionCreatePmidAccount::operator()(
     std::unique_ptr<PmidManagerMetadata>& metadata) {
   if (!metadata)
-    metadata.reset(new PmidManagerMetadata(pmid_name_));
+    metadata.reset(new PmidManagerMetadata());
   return detail::DbAction::kPut;
 }
 

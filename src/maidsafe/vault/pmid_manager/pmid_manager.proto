@@ -25,10 +25,9 @@ message PmidManagerValue {
 }
 
 message PmidManagerMetadata {
-  required bytes pmid_name = 1;
-  required int64 stored_total_size = 2;
-  required int64 lost_total_size = 3;
-  required int64 claimed_available_size = 4;
+  required int64 stored_total_size = 1;
+  required int64 lost_total_size = 2;
+  required int64 claimed_available_size = 3;
 }
 
 message PmidAccountResponse {

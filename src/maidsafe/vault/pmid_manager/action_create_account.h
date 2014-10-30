@@ -35,7 +35,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionCreatePmidAccount {
-  ActionCreatePmidAccount(const PmidName& pmid_name);
+  ActionCreatePmidAccount();
   explicit ActionCreatePmidAccount(const std::string& serialised_action);
   ActionCreatePmidAccount(const ActionCreatePmidAccount& other);
   ActionCreatePmidAccount(ActionCreatePmidAccount&& other);
@@ -46,7 +46,6 @@ struct ActionCreatePmidAccount {
 
  private:
   ActionCreatePmidAccount& operator=(ActionCreatePmidAccount other);
-  PmidName pmid_name_;
 };
 
 bool operator==(const ActionCreatePmidAccount& lhs,

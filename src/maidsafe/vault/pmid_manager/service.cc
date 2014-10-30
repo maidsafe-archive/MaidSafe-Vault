@@ -117,8 +117,7 @@ void PmidManagerService::HandleSyncedCreatePmidAccount(
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
   PmidManager::MetadataKey metadata_key(synced_action->key);
-  ActionCreatePmidAccount create_pmid_account_action(
-      PmidName(Identity(synced_action->key.name.string())));
+  ActionCreatePmidAccount create_pmid_account_action;
   db_.Commit(metadata_key, create_pmid_account_action);
 }
 
@@ -329,7 +328,7 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
   try {
-    auto meta_data(db_.Get(PmidManager::MetadataKey(pmid_node)));
+    db_.Get(PmidManager::MetadataKey(pmid_node));
     dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(CommonErrors::success));
     DoSync(PmidManager::UnresolvedSetPmidHealth(
         PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
@@ -363,7 +362,7 @@ void PmidManagerService::HandleHealthResponse(const PmidName& pmid_name,
   LOG(kVerbose) << "PmidManagerService::HandleHealthResponse Get pmid_health for "
                 << HexSubstr(pmid_name.value) << " with message_id " << message_id.data;
   try {
-    PmidManagerMetadata pmid_health(pmid_name);
+    PmidManagerMetadata pmid_health;
     pmid_health.SetAvailableSize(available_size);
     get_health_timer_.AddResponse(message_id.data, pmid_health);
   }
@@ -405,7 +404,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
   try {
-    auto meta_data(db_.Get(PmidManager::MetadataKey(pmid_node)));
+    db_.Get(PmidManager::MetadataKey(pmid_node));
   } catch(const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
@@ -416,7 +415,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
     // Once synced, check whether account exists or not, if not exist then shall create an account
     // If exist, decide whether to update or delete depending on account status and targeting size
     DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::MetadataKey(pmid_node),
-        ActionCreatePmidAccount(pmid_node), routing_.kNodeId()));
+        ActionCreatePmidAccount(), routing_.kNodeId()));
   }
 }
 

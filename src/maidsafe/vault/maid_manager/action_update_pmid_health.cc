@@ -24,8 +24,9 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
-    const PmidManagerMetadata& pmid_health_in) : kPmidHealth(pmid_health_in) {}
+ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(const PmidName& pmid_name,
+    const PmidManagerMetadata& pmid_health_in)
+  : kPmidName(pmid_name), kPmidHealth(pmid_health_in) {}
 
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
     const std::string& serialised_action)
@@ -38,25 +39,26 @@ ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
 
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
     const ActionMaidManagerUpdatePmidHealth& other)
-        : kPmidHealth(other.kPmidHealth) {}
+        : kPmidName(other.kPmidName), kPmidHealth(other.kPmidHealth) {}
 
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
     ActionMaidManagerUpdatePmidHealth&& other)
-        :kPmidHealth(std::move(other.kPmidHealth)) {}
+        : kPmidName(other.kPmidName), kPmidHealth(std::move(other.kPmidHealth)) {}
 
 std::string ActionMaidManagerUpdatePmidHealth::Serialise() const {
   protobuf::ActionMaidManagerUpdatePmidHealth action_proto;
+  action_proto.set_serialised_pmid_name(kPmidName->string());
   action_proto.set_serialised_pmid_health(kPmidHealth.Serialise());
   return action_proto.SerializeAsString();
 }
 
 void ActionMaidManagerUpdatePmidHealth::operator()(MaidManagerMetadata& metadata) {
-  metadata.UpdatePmidTotals(kPmidHealth);
+  metadata.UpdatePmidTotals(kPmidName, kPmidHealth);
 }
 
 bool operator==(const ActionMaidManagerUpdatePmidHealth& lhs,
                 const ActionMaidManagerUpdatePmidHealth& rhs) {
-  return (lhs.kPmidHealth == rhs.kPmidHealth);
+  return (lhs.kPmidName == rhs.kPmidName && lhs.kPmidHealth == rhs.kPmidHealth);
 }
 
 bool operator!=(const ActionMaidManagerUpdatePmidHealth& lhs,

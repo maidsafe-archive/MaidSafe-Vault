@@ -118,12 +118,13 @@ void DoOperation(MaidManagerService* service,
 template <>
 void DoOperation(MaidManagerService* service,
                  const PmidHealthResponseFromPmidManagerToMaidManager& message,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& /*sender*/,
+                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
                  const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidManagerToMaidManager "
                 << "message.contents->pmid_health.serialised_pmid_health "
                 << HexSubstr(message.contents->pmid_health.serialised_pmid_health);
   service->HandlePmidHealthResponse(MaidName(Identity(receiver.data.string())),
+                                    PmidName(Identity(sender.group_id.data.string())),
                                     message.contents->pmid_health.serialised_pmid_health,
                                     message.contents->return_code.value, message.id);
 }

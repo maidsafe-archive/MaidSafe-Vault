@@ -215,7 +215,7 @@ class MaidManagerService {
   void HandlePmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
                                nfs::MessageId message_id);
 
-  void HandlePmidHealthResponse(const MaidName& maid_name,
+  void HandlePmidHealthResponse(const MaidName& maid_name, const PmidName& pmid_name,
                                 const std::string &serialised_pmid_health,
                                 maidsafe_error& return_code, nfs::MessageId message_id);
 

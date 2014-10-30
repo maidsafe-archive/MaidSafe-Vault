@@ -554,15 +554,15 @@ void MaidManagerService::HandlePmidHealthRequest(
 }
 
 void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
-    const std::string& serialised_pmid_health, maidsafe_error& return_code,
-    nfs::MessageId message_id) {
+    const PmidName& pmid_name, const std::string& serialised_pmid_health,
+    maidsafe_error& return_code, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_name->string());
   try {
     PmidManagerMetadata pmid_health(serialised_pmid_health);
     LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
     if (return_code.code() == make_error_code(CommonErrors::success)) {
       DoSync(MaidManager::UnresolvedUpdatePmidHealth(MaidManager::MetadataKey(maid_name),
-          ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+          ActionMaidManagerUpdatePmidHealth(pmid_name, pmid_health), routing_.kNodeId()));
     }
     dispatcher_.SendPmidHealthResponse(maid_name, pmid_health.claimed_available_size,
                                        return_code, message_id);
