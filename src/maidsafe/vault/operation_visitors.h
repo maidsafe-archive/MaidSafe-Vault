@@ -126,7 +126,7 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
   void operator()(const Name& data_name) {
     kService_->HandlePut(
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        kMessageId_);
+        kContent_.string().size(), kMessageId_);
   }
 
  private:

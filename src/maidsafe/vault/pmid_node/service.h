@@ -187,7 +187,7 @@ class PmidNodeService {
   void HandleAccountResponses(
       const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
   template <typename Data>
-  void HandlePut(const Data& data, nfs::MessageId message_id);
+  void HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id);
   template <typename Data>
   void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
                  nfs::MessageId message_id);
@@ -311,17 +311,17 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
 
 // ============================== Put implementation =============================================
 template <typename Data>
-void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
+void PmidNodeService::HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id) {
   try {
     LOG(kVerbose) << "PmidNodeService::HandlePut put " << HexSubstr(data.name().value)
                   << " with message_id " << message_id.data;
     handler_.Put(data);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
-                  << " of size " << data.data().string().size()
+                  << " of size " << size
                   << " with AvailableSpace " << handler_.AvailableSpace()
                   << " and error " << boost::diagnostic_information(error);
-    dispatcher_.SendPutFailure<Data>(data.name(), data.data().string().size(),
+    dispatcher_.SendPutFailure<Data>(data.name(), size,
                                      handler_.AvailableSpace(), error, message_id);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to put data : " << HexSubstr(data.name().value) << " , "
