@@ -42,7 +42,7 @@
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_types_partial.h"
 
-#include "maidsafe/vault/account_transfer_handler.h"
+#include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
@@ -56,7 +56,6 @@
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/account.h"
 
 namespace maidsafe {
 
@@ -73,7 +72,6 @@ class DataManagerService {
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
-  using AccountType = std::pair<DataManagerAccount::Key, DataManagerAccount::Value>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -213,12 +211,8 @@ class DataManagerService {
                        const std::vector<Db<DataManager::Key,
                                          DataManager::Value>::KvPair>& accounts);
 
-  void HandleAccountTransfer(const AccountType& account);
-
-  template<typename DataName>
-  void HandleAccountRequest(const DataName& name, const NodeId& sender);
-  void HandleAccountTransferEntry(const std::string& serialised_account,
-                                  const routing::GroupSource& sender);
+  void HandleAccountTransfer(
+      std::unique_ptr<DataManager::UnresolvedAccountTransfer>&& resolved_action);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -289,7 +283,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
-  AccountTransferHandler<DataManagerAccount> account_transfer_;
+  AccountTransfer<DataManager::UnresolvedAccountTransfer> account_transfer_;
 
  protected:
   std::mutex lock_guard;
@@ -389,18 +383,6 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& message,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
-    const AccountRequestFromDataManagerToDataManager& message,
-    const typename AccountRequestFromDataManagerToDataManager::Sender& sender,
-    const typename AccountRequestFromDataManagerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
-    const AccountResponseFromDataManagerToDataManager& message,
-    const typename AccountResponseFromDataManagerToDataManager::Sender& sender,
-    const typename AccountResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
 template <typename Data>

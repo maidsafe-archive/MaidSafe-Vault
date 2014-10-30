@@ -329,12 +329,6 @@ void DoOperation(DataManagerService* service,
                  const SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
                  const SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
 
-template <>
-void DoOperation(DataManagerService* service,
-                 const AccountRequestFromDataManagerToDataManager& message,
-                 const AccountRequestFromDataManagerToDataManager::Sender& sender,
-                 const AccountRequestFromDataManagerToDataManager::Receiver& receiver);
-
 //=============================== To PmidManager ===================================================
 template <>
 void DoOperation(PmidManagerService* service, const PutRequestFromDataManagerToPmidManager& message,
@@ -477,7 +471,6 @@ struct OperationHandlerWrapper {
 
   void operator()(const MessageType& message, const typename MessageType::Sender& sender,
                   const typename MessageType::Receiver& receiver) {
-    LOG(kVerbose) << message;
     typed_operation_handler(message, sender, receiver);
   }
 
