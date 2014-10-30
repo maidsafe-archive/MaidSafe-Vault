@@ -35,6 +35,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/data_manager/account.h"
 
 namespace maidsafe {
 
@@ -103,8 +104,10 @@ class DataManagerDispatcher {
   void SendSync(const DataManager::Key& key, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer,
-                           nfs::MessageId message_id,
                            const std::string& serialised_account);
+  void SendAccountRequest(const DataManagerAccount::Key& key);
+  void SendAccountResponse(const std::string& serialised_account, const routing::GroupId& group_id,
+                           const NodeId& sender);
 
  private:
   DataManagerDispatcher();
