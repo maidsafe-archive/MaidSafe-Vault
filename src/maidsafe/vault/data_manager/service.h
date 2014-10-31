@@ -56,7 +56,6 @@
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/account.h"
 #include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
@@ -74,7 +73,7 @@ class DataManagerService {
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
-  using AccountType = std::pair<DataManagerAccount::Key, DataManagerAccount::Value>;
+  using AccountType = std::pair<Key, DataManagerValue>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -291,7 +290,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
-  AccountTransferHandler<DataManagerAccount> account_transfer_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
 
  protected:
   std::mutex lock_guard;

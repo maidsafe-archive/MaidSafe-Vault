@@ -430,18 +430,18 @@ void DataManagerService::HandleMessage(
 
 void DataManagerService::HandleAccountTransferEntry(
     const std::string& serialised_account, const routing::GroupSource& sender) {
-    protobuf::DataManagerKeyValuePair kv_msg;
-    if (!kv_msg.ParseFromString(serialised_account)) {
-      LOG(kError) << "Failed to parse action";
-    }
-    auto result(account_transfer_.Add(std::make_pair(DataManagerAccount::Key(kv_msg.key()),
-                                                     DataManagerAccount::Value(kv_msg.value())),
-                                      sender.sender_id.data));
-    if (result.result == AccountTransferHandler<DataManagerAccount>::AddResult::kSuccess) {
-      HandleAccountTransfer(std::make_pair(result.key, *result.value));
-    } else  if (result.result == AccountTransferHandler<DataManagerAccount>::AddResult::kFailure) {
-      dispatcher_.SendAccountRequest(result.key);
-    }
+  using Handler = AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>>;
+  protobuf::DataManagerKeyValuePair kv_msg;
+  if (!kv_msg.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse action";
+  }
+  auto result(account_transfer_.Add(Key(kv_msg.key()), DataManagerValue(kv_msg.value()),
+                                    sender.sender_id.data));
+  if (result.result ==  Handler::AddResult::kSuccess) {
+    HandleAccountTransfer(std::make_pair(result.key, *result.value));
+  } else  if (result.result ==  Handler::AddResult::kFailure) {
+    dispatcher_.SendAccountRequest(result.key);
+  }
 }
 
 void DataManagerService::HandleAccountTransfer(const AccountType& account) {

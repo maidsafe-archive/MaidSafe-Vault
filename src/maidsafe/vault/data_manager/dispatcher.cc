@@ -75,7 +75,7 @@ void DataManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
   routing_.Send(message);
 }
 
-void DataManagerDispatcher::SendAccountRequest(const DataManagerAccount::Key& key) {
+void DataManagerDispatcher::SendAccountRequest(const Key& key) {
   typedef AccountRequestFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;

@@ -21,7 +21,8 @@
 #include <utility>
 
 #include "maidsafe/common/utils.h"
-#include "maidsafe/vault/account_transfer_handler.h"
+
+#include "maidsafe/routing/parameters.h"
 
 namespace maidsafe {
 
