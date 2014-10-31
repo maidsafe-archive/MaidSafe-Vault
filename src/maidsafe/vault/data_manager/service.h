@@ -57,6 +57,7 @@
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/account.h"
+#include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
 
@@ -270,6 +271,7 @@ class DataManagerService {
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
+  friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -939,6 +941,27 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_, unresolved_action);
+}
+
+template<typename DataName>
+void DataManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto value(db_.Get(DataManager::Key(name)));
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::DataManagerKeyValuePair kv_msg;
+    kv_msg.set_key(DataManager::Key(name).Serialise());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountResponse(account_transfer_proto.SerializeAsString(),
+                                    routing::GroupId(NodeId(name->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
 }
 
 }  // namespace vault

@@ -35,7 +35,6 @@
 #include "maidsafe/vault/data_manager/action_node_down.h"
 #include "maidsafe/vault/data_manager/action_node_up.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
-#include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
 
@@ -452,27 +451,6 @@ void DataManagerService::HandleAccountTransfer(const AccountType& account) {
   catch (const std::exception& error) {
     LOG(kError) << "Failed to store account " << error.what();
     throw;  // MAID-357
-  }
-}
-
-template<typename DataName>
-void DataManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
-  if (!close_nodes_change_.CheckIsHolder(name, sender)) {
-    LOG(kWarning) << "attempt to obtain account from non-holder";
-    return;
-  }
-  try {
-    auto value(db_.Get(name));
-    protobuf::AccountTransfer account_transfer_proto;
-    protobuf::DataManagerKeyValuePair kv_msg;
-    kv_msg.set_key(name);
-    kv_msg.set_value(value.Serialise());
-    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
-    dispatcher_.SendAccountResponse(account_transfer_proto.SerializeAsString(),
-                                    routing::GroupId(NodeId(name->string())), sender);
-  }
-  catch (const std::exception& error) {
-    LOG(kError) << "failed to retrieve account: " << error.what();
   }
 }
 

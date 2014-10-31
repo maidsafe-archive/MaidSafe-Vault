@@ -362,8 +362,8 @@ class DataManagerAccountRequestVisitor : public boost::static_visitor<> {
   }
 
  private:
-   ServiceHandlerType* const kService_;
-   const NodeId kDataManagerNodeId_;
+  ServiceHandlerType* const kService_;
+  const NodeId kDataManagerNodeId_;
 };
 
 template <typename ServiceHandlerType>
