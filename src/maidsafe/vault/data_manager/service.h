@@ -42,7 +42,7 @@
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_types_partial.h"
 
-#include "maidsafe/vault/account_transfer.h"
+#include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
@@ -56,6 +56,7 @@
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
+#include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
 
@@ -72,6 +73,7 @@ class DataManagerService {
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
+  using AccountType = std::pair<Key, DataManagerValue>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -211,8 +213,12 @@ class DataManagerService {
                        const std::vector<Db<DataManager::Key,
                                          DataManager::Value>::KvPair>& accounts);
 
-  void HandleAccountTransfer(
-      std::unique_ptr<DataManager::UnresolvedAccountTransfer>&& resolved_action);
+  void HandleAccountTransfer(const AccountType& account);
+
+  template<typename DataName>
+  void HandleAccountRequest(const DataName& name, const NodeId& sender);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::GroupSource& sender);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -264,6 +270,7 @@ class DataManagerService {
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
+  friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -283,7 +290,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
-  AccountTransfer<DataManager::UnresolvedAccountTransfer> account_transfer_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
 
  protected:
   std::mutex lock_guard;
@@ -383,6 +390,18 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& message,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const AccountRequestFromDataManagerToDataManager& message,
+    const typename AccountRequestFromDataManagerToDataManager::Sender& sender,
+    const typename AccountRequestFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const AccountResponseFromDataManagerToDataManager& message,
+    const typename AccountResponseFromDataManagerToDataManager::Sender& sender,
+    const typename AccountResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
 template <typename Data>
@@ -921,6 +940,27 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_, unresolved_action);
+}
+
+template<typename DataName>
+void DataManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto value(db_.Get(DataManager::Key(name)));
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::DataManagerKeyValuePair kv_msg;
+    kv_msg.set_key(DataManager::Key(name).Serialise());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountResponse(account_transfer_proto.SerializeAsString(),
+                                    routing::GroupId(NodeId(name->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
 }
 
 }  // namespace vault

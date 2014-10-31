@@ -79,8 +79,6 @@ void DataManagerService::HandleMessage(
     const PutRequestFromMaidManagerToDataManager& message,
     const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
     const typename PutRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutRequestFromMaidManagerToDataManager "
-                << message.id;
   typedef PutRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -95,8 +93,6 @@ void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutResponseFromPmidManagerToDataManager "
-                <<  message.id;
   typedef PutResponseFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -111,8 +107,6 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage PutFailureFromPmidManagerToDataManager "
-                <<  message.id;
   typedef PutFailureFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -128,10 +122,6 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodeToDataManager"
-                << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                <<  " with message id " << message.id;
   typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -163,10 +153,6 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterToDataManager& message,
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromDataGetterToDataManager"
-                << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                << " with message id " << message.id;
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -183,11 +169,6 @@ void DataManagerService::HandleMessage(
     const nfs::GetRequestFromDataGetterPartialToDataManager& message,
     const typename nfs::GetRequestFromDataGetterPartialToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterPartialToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "nfs::GetRequestFromDataGetterPartialToDataManager"
-                << " from " << HexSubstr(sender.node_id->string())
-                << " relayed via : " << HexSubstr(sender.relay_node->string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                << " with message id " << message.id;
   typedef nfs::GetRequestFromDataGetterPartialToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -202,10 +183,6 @@ void DataManagerService::HandleMessage(
     const GetResponseFromPmidNodeToDataManager& message,
     const typename GetResponseFromPmidNodeToDataManager::Sender& sender,
     const typename GetResponseFromPmidNodeToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetResponseFromPmidNodeToDataManager"
-                << " from " << HexSubstr(sender.data.string())
-                << " for chunk " << HexSubstr(message.contents->name.raw_name.string())
-                << " with message_id " << message.id;
   typedef GetResponseFromPmidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -220,8 +197,6 @@ void DataManagerService::HandleMessage(
     const GetCachedResponseFromCacheHandlerToDataManager& message,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
     const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) <<
-      "DataManagerService::HandleMessage GetCachedResponseFromCacheHandlerToDataManager";
   typedef GetCachedResponseFromCacheHandlerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
@@ -273,8 +248,6 @@ void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage DeleteRequestFromMaidManagerToDataManager "
-                <<  message.id;
   typedef DeleteRequestFromMaidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -432,38 +405,54 @@ void DataManagerService::HandleMessage(
     const typename AccountTransferFromDataManagerToDataManager::Sender& sender,
     const typename AccountTransferFromDataManagerToDataManager::Receiver& /*receiver*/) {
   LOG(kInfo) << "DataManager received account from " << DebugId(sender.sender_id);
-  DataManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
-  auto resolved_action(account_transfer_.AddUnresolvedAction(
-      unresolved_account_transfer, sender,
-      AccountTransfer<DataManager::UnresolvedAccountTransfer>::AddRequestChecker(
-          routing::Parameters::group_size / 2)));
-  if (resolved_action) {
-    LOG(kInfo) << "AccountTransferFromDataManagerToDataManager handle account transfer";
-    this->HandleAccountTransfer(std::move(resolved_action));
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+    HandleAccountTransferEntry(serialised_account, sender);
   }
 }
 
-void DataManagerService::HandleAccountTransfer(
-    std::unique_ptr<DataManager::UnresolvedAccountTransfer>&& resolved_action) {
-  std::vector<std::pair<DataManager::Key, DataManager::Value>> kv_pairs;
-  for (auto& action : resolved_action->actions) {
-    try {
-      protobuf::DataManagerKeyValuePair kv_msg;
-      if (kv_msg.ParseFromString(action)) {
-        DataManager::Key key(kv_msg.key());
-        VLOG(nfs::Persona::kDataManager, VisualiserAction::kGotAccountTransferred, key.name);
-        DataManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "DataManager got account " << DebugId(key.name)
-                      << " transferred, having vaule " << value.Print();
-        kv_pairs.push_back(std::make_pair(key, std::move(value)));
-      }
-    } catch(...) {
-      LOG(kError) << "HandleAccountTransfer can't parse the action";
-    }
+template <>
+void DataManagerService::HandleMessage(
+    const AccountResponseFromDataManagerToDataManager& message,
+    const typename AccountResponseFromDataManagerToDataManager::Sender& sender,
+    const typename AccountResponseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  LOG(kInfo) << "DataManager received account from " << DebugId(sender.sender_id);
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
   }
-  db_.HandleTransfer(kv_pairs);
+  assert(account_transfer_proto.serialised_accounts_size() == 1);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0), sender);
 }
 
+void DataManagerService::HandleAccountTransferEntry(
+    const std::string& serialised_account, const routing::GroupSource& sender) {
+  using Handler = AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>>;
+  protobuf::DataManagerKeyValuePair kv_msg;
+  if (!kv_msg.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse action";
+  }
+  auto result(account_transfer_.Add(Key(kv_msg.key()), DataManagerValue(kv_msg.value()),
+                                    sender.sender_id.data));
+  if (result.result ==  Handler::AddResult::kSuccess) {
+    HandleAccountTransfer(std::make_pair(result.key, *result.value));
+  } else  if (result.result ==  Handler::AddResult::kFailure) {
+    dispatcher_.SendAccountRequest(result.key);
+  }
+}
+
+void DataManagerService::HandleAccountTransfer(const AccountType& account) {
+  try {
+    db_.HandleTransfer(std::vector<AccountType> {account});
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "Failed to store account " << error.what();
+    throw;  // MAID-357
+  }
+}
 
 void DataManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
@@ -488,27 +477,38 @@ void DataManagerService::TransferAccount(const NodeId& dest,
     const std::vector<Db<DataManager::Key, DataManager::Value>::KvPair>& accounts) {
   // If account just received, shall not pass it out as may under a startup procedure
   // i.e. existing DM will be seen as new_node in close_nodes_change
-  if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
-    LOG(kWarning) << "DataManager account just received";
-    return;
-  }
-  std::vector<std::string> actions;
+//  if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
+//    LOG(kWarning) << "DataManager account just received";
+//    return;
+//  } MAID-357
+  protobuf::AccountTransfer account_transfer_proto;
   for (auto& account : accounts) {
     VLOG(nfs::Persona::kDataManager, VisualiserAction::kAccountTransfer, account.first.name,
          Identity{ dest.string() });
     protobuf::DataManagerKeyValuePair kv_msg;
     kv_msg.set_key(account.first.Serialise());
     kv_msg.set_value(account.second.Serialise());
-    actions.push_back(kv_msg.SerializeAsString());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
     LOG(kVerbose) << "DataManager sent account " << DebugId(account.first.name)
                   << " to " << HexSubstr(dest.string())
                   << " with vaule " << account.second.Print();
   }
-  nfs::MessageId message_id(HashStringToMessageId(dest.string()));
-  DataManager::UnresolvedAccountTransfer account_transfer(
-      passport::PublicPmid::Name(Identity(dest.string())), message_id, actions);
   LOG(kVerbose) << "DataManagerService::TransferAccount send account_transfer";
-  dispatcher_.SendAccountTransfer(dest, message_id, account_transfer.Serialise());
+  dispatcher_.SendAccountTransfer(dest, account_transfer_proto.SerializeAsString());
+}
+
+template <>
+void DataManagerService::HandleMessage(
+    const AccountRequestFromDataManagerToDataManager& message,
+    const typename AccountRequestFromDataManagerToDataManager::Sender& sender,
+    const typename AccountRequestFromDataManagerToDataManager::Receiver& receiver) {
+  typedef AccountRequestFromDataManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
 }
 
 // ==================== General implementation =====================================================
@@ -517,8 +517,6 @@ void DataManagerService::HandleMessage(
     const SetPmidOnlineFromPmidManagerToDataManager& message,
     const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOnlineFromPmidManagerToDataManager"
-                << " with message_id " << message.id.data;
   typedef SetPmidOnlineFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -533,8 +531,6 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& message,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage SetPmidOfflineFromPmidManagerToDataManager"
-                << " with message_id " << message.id.data;
   typedef SetPmidOfflineFromPmidManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
@@ -543,35 +539,6 @@ void DataManagerService::HandleMessage(
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
 }
-
-
-// void DataManagerService::HandleChurnEvent(
-//     std::shared_ptr<routing::MatrixChange> close_nodes_change) {
-//  auto record_names(metadata_handler_.GetRecordNames());
-//  auto itr(std::begin(record_names));
-//  auto name(itr->name());
-//  while (itr != std::end(record_names)) {
-//    auto result(boost::apply_visitor(GetTagValueAndIdentityVisitor(), name));
-//    auto check_holders_result(close_nodes_change->(NodeId(result.second)));
-//    // Delete records for which this node is no longer responsible.
-//    if (check_holders_result.proximity_status != routing::GroupRangeStatus::kInRange) {
-//      metadata_handler_.DeleteRecord(itr->name());
-//      itr = record_names.erase(itr);
-//      continue;
-//    }
-
-//    // Replace old_node(s) in sync object and send TransferRecord to new node(s).
-//    assert(check_holders_result.old_holders.size() == check_holders_result.new_holders.size());
-//    for (auto i(0U); i != check_holders_result.old_holders.size(); ++i) {
-//      metadata_handler_.ReplaceNodeInSyncList(itr->name(), check_holders_result.old_holders[i],
-//                                              check_holders_result.new_holders[i]);
-//      TransferRecord(itr->name(), check_holders_result.new_holders[i]);
-//    }
-//    ++itr;
-//  }
-//  // TODO(Prakash):  modify ReplaceNodeInSyncList to be called once with vector of tuple/struct
-//  // containing record name, old_holders, new_holders.
-// }
 
 }  // namespace vault
 
