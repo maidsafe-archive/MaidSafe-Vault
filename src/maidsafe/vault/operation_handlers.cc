@@ -332,6 +332,16 @@ void DoOperation(DataManagerService* service,
   boost::apply_visitor(set_pmid_offline_visitor, data_name);
 }
 
+template <>
+void DoOperation(DataManagerService* service,
+                 const AccountQueryFromDataManagerToDataManager& message,
+                 const AccountQueryFromDataManagerToDataManager::Sender& sender,
+                 const AccountQueryFromDataManagerToDataManager::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  DataManagerAccountRequestVisitor<DataManagerService> account_request_visitor(service, sender);
+  boost::apply_visitor(account_request_visitor, data_name);
+}
+
 //=============================== To PmidManager ===================================================
 
 template <>

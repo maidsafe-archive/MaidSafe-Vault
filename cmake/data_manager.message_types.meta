@@ -8,3 +8,5 @@ Action:Synchronise            Source:DataManager:Group      Destination:DataMana
 Action:AccountTransfer        Source:DataManager:Group      Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::Content
 Action:SetPmidOnline          Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:SetPmidOffline         Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
+Action:AccountQuery           Source:DataManager:Single     Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
+Action:AccountQueryResponse   Source:DataManager:Group      Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::Content
