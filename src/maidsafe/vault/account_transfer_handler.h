@@ -104,10 +104,12 @@ AccountTransferHandler<Persona>::Add(const typename Persona::Key& key,
     kv_pairs_.erase(key);
     return Result(key, resolved_value, AddResult::kSuccess);
   } catch (const maidsafe::maidsafe_error& error) {
-    if (error.code() != make_error_code(CommonErrors::unable_to_handle_request)) {// failed_conflicting_entries
+    if (error.code() != make_error_code(CommonErrors::unable_to_handle_request)) {
+      // Unsuccessfull resolution
       kv_pairs_.erase(key);
       return Result(key, boost::optional<Value>(), AddResult::kFailure);
-    } else if (error.code() != make_error_code(CommonErrors::unable_to_handle_request)) { // failed_not_enough_entries
+    } else if (error.code() != make_error_code(VaultErrors::too_few_entries_to_resolve)) {
+      // resolution requires more entries
       return Result(key, boost::optional<Value>(), AddResult::kWaiting);
     } else {
       throw;
