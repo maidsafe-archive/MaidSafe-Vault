@@ -52,8 +52,8 @@ std::string ActionMaidManagerDelete::Serialise() const {
 }
 
 detail::DbAction ActionMaidManagerDelete::operator()(
-    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value) const {
-  if (!value)
+    MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& /*value*/) const {
+  /*if (!value)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
   metadata.DeleteData(value->Delete());
@@ -62,8 +62,10 @@ detail::DbAction ActionMaidManagerDelete::operator()(
   if (value->count() == 0)
     return detail::DbAction::kDelete;
   else
-    return detail::DbAction::kPut;
+    return detail::DbAction::kPut;*/
+  return detail::DbAction::kDelete;
 }
+
 
 bool operator==(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs) {
   return (lhs.kMessageId == rhs.kMessageId);

@@ -171,12 +171,6 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& receiver);
@@ -228,24 +222,6 @@ void DoOperation(MaidManagerService* service,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,

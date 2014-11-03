@@ -47,16 +47,6 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation RegisterPmidRequestFromMaidNodeToMaidManager";
-  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()),
-                                  message.id);
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
@@ -161,49 +151,6 @@ void DoOperation(MaidManagerService* /* service*/,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   //  service->HandleRemoveAccount(MaidName(Identity(sender.data.string())));
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver&) {
-  service->HandlePmidUnregistration(MaidName(Identity(sender.data.string())),
-                                    PmidName(message.contents->raw_name));
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver&) {
-  try {
-    for (const auto& data_name : message.contents->data_names_)
-      GetNameVariant(data_name);
-  }
-  catch (const maidsafe_error& error) {
-    LOG(kError) << "Failed to cast to accepted type " << boost::diagnostic_information(error);
-    return;
-  }
-  service->HandleIncrementReferenceCounts(MaidName(Identity(sender.data.string())),
-                                          *message.contents);
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver&) {
-  try {
-    for (const auto& data_name : message.contents->data_names_)
-      GetNameVariant(data_name);
-  }
-  catch (const maidsafe_error& error) {
-    LOG(kError) << "Failed to cast to accepted type " << boost::diagnostic_information(error);
-    return;
-  }
-  service->HandleDecrementReferenceCounts(MaidName(Identity(sender.data.string())),
-                                          *message.contents);
 }
 
 template <>

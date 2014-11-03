@@ -44,7 +44,7 @@ class MaidManagerMetadata {
     kNoSpace
   };
   MaidManagerMetadata();
-  MaidManagerMetadata(int64_t total_put_data, const std::vector<PmidTotals>& pmid_totals);
+  MaidManagerMetadata(int64_t data_stored, int64_t space_available);
   MaidManagerMetadata(const MaidManagerMetadata& other);
   MaidManagerMetadata(MaidManagerMetadata&& other);
   MaidManagerMetadata& operator=(MaidManagerMetadata other);
@@ -53,8 +53,8 @@ class MaidManagerMetadata {
   std::string Serialise() const;
   template <typename Data>
   Status AllowPut(const Data& data) const;
-  void PutData(int32_t cost);
-  void DeleteData(int32_t cost);
+  void PutData(int64_t size);
+  void DeleteData(int64_t size);
   void RegisterPmid(const nfs_vault::PmidRegistration& pmid_registration);
   void UnregisterPmid(const PmidName& pmid_name);
   void UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata);
@@ -65,10 +65,8 @@ class MaidManagerMetadata {
   friend class test::MaidManagerServiceTest;
 
  private:
-  std::vector<PmidTotals>::iterator Find(const PmidName& pmid_name);
-
-  int64_t total_put_data_;
-  std::vector<PmidTotals> pmid_totals_;
+  int64_t data_stored_;
+  int64_t space_available_;
 };
 
 
@@ -82,20 +80,15 @@ MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const passport::Public
 
 template <typename Data>
 MaidManagerMetadata::Status MaidManagerMetadata::AllowPut(const Data& data) const {
-  int64_t total_claimed_available_size_by_pmids(0);
-  for (const auto& pmid_total : pmid_totals_)
-    total_claimed_available_size_by_pmids += pmid_total.pmid_metadata.claimed_available_size;
-  auto cost(data.Serialise()->string().size());
+  auto size(data.Serialise()->string().size());
   LOG(kVerbose) << "MaidManagerMetadata::AllowPut data " << HexSubstr(data.name().value)
-                << " has size of " << cost << " trying to put into account provding "
-                << total_claimed_available_size_by_pmids << " total available_size by far";
-  if (total_claimed_available_size_by_pmids < (static_cast<int64_t>(total_put_data_ + cost)))
+                << " has size of " << size << " trying to put into account provding "
+                << space_available_ << " total available_size by far";
+  if (space_available_ < (static_cast<int64_t>(data_stored_ + size)))
     return Status::kNoSpace;
 
-  return ((3 * total_claimed_available_size_by_pmids / 100) <
-               static_cast<int64_t>(total_put_data_ + cost))
-             ? Status::kLowSpace
-             : Status::kOk;
+  return ((3 * space_available_ / 100) < static_cast<int64_t>(data_stored_ + size))
+             ? Status::kLowSpace : Status::kOk;
 }
 
 }  // namespace vault
