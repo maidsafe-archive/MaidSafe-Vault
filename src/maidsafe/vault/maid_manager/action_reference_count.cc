@@ -29,7 +29,6 @@ detail::DbAction ActionMaidManagerReferenceCount<true>::operator()(
     MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
   if (!value)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  value->IncrementCount();
   return detail::DbAction::kPut;
 }
 
@@ -38,8 +37,6 @@ detail::DbAction ActionMaidManagerReferenceCount<false>::operator()(
     MaidManagerMetadata& /*metadata*/, std::unique_ptr<MaidManagerValue>& value) {
   if (!value)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
-  assert((value->count() > 0));
-  value->DecrementCount();
   return detail::DbAction::kPut;
 }
 

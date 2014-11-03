@@ -36,13 +36,9 @@ class MaidManagerValue {
   MaidManagerValue& operator=(MaidManagerValue other);
   std::string Serialise() const;
 
-  void Put(int32_t cost);
-  void IncrementCount();
-  void DecrementCount();
-  // Returns amount which was subtracted from 'total_cost'.
-  int32_t Delete();
-  int32_t count() const { return count_; }
-  int64_t total_cost() const { return total_cost_; }
+  void Put(int64_t size);
+  int64_t Delete();
+  int64_t size() const { return size_; }
   std::string Print() const;
 
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
@@ -51,8 +47,7 @@ class MaidManagerValue {
   MaidManagerValue(const MaidManagerValue&);
 
  private:
-  int32_t count_;
-  int64_t total_cost_;
+  int64_t size_;
 };
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
