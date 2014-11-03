@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/visualiser_log.h"
@@ -58,9 +59,10 @@ class DataManagerValue {
   std::set<PmidName> online_pmids() const { return online_pmids_; }
   std::string Print() const;
 
+  static DataManagerValue Resolve(const std::vector<DataManagerValue>& values);
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
 
- private:
+// private: MAID-357
   DataManagerValue(const DataManagerValue&);
 
  private:

@@ -104,8 +104,10 @@ class DataManagerDispatcher {
   void SendSync(const DataManager::Key& key, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer,
-                           nfs::MessageId message_id,
                            const std::string& serialised_account);
+  void SendAccountRequest(const Key& key);
+  void SendAccountResponse(const std::string& serialised_account, const routing::GroupId& group_id,
+                           const NodeId& sender);
 
  private:
   DataManagerDispatcher();
