@@ -76,7 +76,7 @@ void DataManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
 }
 
 void DataManagerDispatcher::SendAccountRequest(const Key& key) {
-  typedef AccountRequestFromDataManagerToDataManager VaultMessage;
+  typedef AccountQueryFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(VaultMessage::Contents(key.type, key.name));
@@ -89,7 +89,7 @@ void DataManagerDispatcher::SendAccountRequest(const Key& key) {
 void DataManagerDispatcher::SendAccountResponse(const std::string& serialised_account,
                                                 const routing::GroupId& group_id,
                                                 const NodeId& sender) {
-  typedef AccountResponseFromDataManagerToDataManager VaultMessage;
+  typedef AccountQueryResponseFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage::Contents content((serialised_account));

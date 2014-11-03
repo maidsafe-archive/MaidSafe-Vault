@@ -387,9 +387,9 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const AccountRequestFromDataManagerToDataManager& message,
-                 const AccountRequestFromDataManagerToDataManager::Sender& sender,
-                 const AccountRequestFromDataManagerToDataManager::Receiver& /*receiver*/) {
+                 const AccountQueryFromDataManagerToDataManager& message,
+                 const AccountQueryFromDataManagerToDataManager::Sender& sender,
+                 const AccountQueryFromDataManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(*message.contents));
   DataManagerAccountRequestVisitor<DataManagerService> account_request_visitor(service, sender);
   boost::apply_visitor(account_request_visitor, data_name);

@@ -331,9 +331,9 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const AccountRequestFromDataManagerToDataManager& message,
-                 const AccountRequestFromDataManagerToDataManager::Sender& sender,
-                 const AccountRequestFromDataManagerToDataManager::Receiver& receiver);
+                 const AccountQueryFromDataManagerToDataManager& message,
+                 const AccountQueryFromDataManagerToDataManager::Sender& sender,
+                 const AccountQueryFromDataManagerToDataManager::Receiver& receiver);
 
 //=============================== To PmidManager ===================================================
 template <>
