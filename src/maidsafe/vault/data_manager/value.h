@@ -47,14 +47,8 @@ class DataManagerValue {
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
-  void IncrementSubscribers() {
-    ++subscribers_;
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, subscribers_);
-  }
-  int64_t DecrementSubscribers();
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
-  int64_t Subscribers() const { return subscribers_; }
   std::set<PmidName> AllPmids() const;
   std::set<PmidName> online_pmids() const { return online_pmids_; }
   std::string Print() const;
@@ -67,7 +61,6 @@ class DataManagerValue {
 
  private:
   void PrintRecords();
-  int64_t subscribers_;
   int32_t size_;
   std::set<PmidName> online_pmids_, offline_pmids_;
 };

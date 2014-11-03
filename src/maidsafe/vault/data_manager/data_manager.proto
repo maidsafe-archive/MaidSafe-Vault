@@ -21,10 +21,8 @@ option optimize_for = LITE_RUNTIME;
 package maidsafe.vault.protobuf;
 
 message DataManagerValue {
-  required int64 subscribers = 1;
-  required int32 size = 2;
-  repeated bytes online_pmid_name = 4;
-  repeated bytes offline_pmid_name = 5;
+  required int32 size = 1;
+  repeated bytes pmid_names = 2;
 }
 
 message DataManagerKeyValuePair {
