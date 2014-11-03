@@ -307,12 +307,10 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
                    << "the chunk " << HexSubstr(resolved_action->key.name.string());
         if (value) {
-          assert(value->Subscribers() >= 0);
-          if (value->Subscribers() == 0) {
-            LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-            SendDeleteRequests(resolved_action->key, value->AllPmids(),
-                               resolved_action->action.MessageId());
-          }
+          // The delete operation will be totally removed from network eventually
+          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
+          SendDeleteRequests(resolved_action->key, value->AllPmids(),
+                             resolved_action->action.MessageId());
         }
       }
       break;

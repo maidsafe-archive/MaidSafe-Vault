@@ -38,11 +38,8 @@ std::string ActionDataManagerPut::Serialise() const {
 }
 
 detail::DbAction ActionDataManagerPut::operator()(std::unique_ptr<DataManagerValue>& value) {
-  if (value) {
-    LOG(kVerbose) << "ActionDataManagerPut::operator() value->IncrementSubscribers()";
-    value->IncrementSubscribers();
+  if (value)
     return detail::DbAction::kPut;
-  }
   LOG(kWarning) << "ActionDataManagerPut::operator() no_such_element";
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
