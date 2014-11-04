@@ -202,8 +202,8 @@ class DataManagerService {
   template <typename DataName>
   void MarkNodeDown(const PmidName& pmid_node, const DataName& data_name);
 
-  template <typename DataName>
-  void MarkNodeUp(const PmidName& pmid_node, const DataName& data_name);
+//   template <typename DataName>
+//   void MarkNodeUp(const PmidName& pmid_node, const DataName& data_name);
 
   // =========================== Sync / AccountTransfer section ====================================
   template <typename UnresolvedAction>
@@ -923,13 +923,13 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
   GetForNodeDown<typename DataName::data_type>(pmid_node, name);
 }
 
-template <typename DataName>
-void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
-  VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node.value, name.value);
-  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  DoSync(DataManager::UnresolvedNodeUp(key,
-             ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
-}
+// template <typename DataName>
+// void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
+//   VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node.value, name.value);
+//   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+//   DoSync(DataManager::UnresolvedNodeUp(key,
+//              ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
+// }
 
 // ==================== Sync =======================================================================
 
