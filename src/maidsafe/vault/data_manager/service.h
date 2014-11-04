@@ -393,15 +393,15 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const AccountRequestFromDataManagerToDataManager& message,
-    const typename AccountRequestFromDataManagerToDataManager::Sender& sender,
-    const typename AccountRequestFromDataManagerToDataManager::Receiver& receiver);
+    const AccountQueryFromDataManagerToDataManager& message,
+    const typename AccountQueryFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryFromDataManagerToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
-    const AccountResponseFromDataManagerToDataManager& message,
-    const typename AccountResponseFromDataManagerToDataManager::Sender& sender,
-    const typename AccountResponseFromDataManagerToDataManager::Receiver& receiver);
+    const AccountQueryResponseFromDataManagerToDataManager& message,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
 template <typename Data>

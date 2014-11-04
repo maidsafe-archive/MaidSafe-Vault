@@ -419,9 +419,9 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const AccountResponseFromDataManagerToDataManager& message,
-    const typename AccountResponseFromDataManagerToDataManager::Sender& sender,
-    const typename AccountResponseFromDataManagerToDataManager::Receiver& /*receiver*/) {
+    const AccountQueryResponseFromDataManagerToDataManager& message,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Receiver& /*receiver*/) {
   LOG(kInfo) << "DataManager received account from " << DebugId(sender.sender_id);
   protobuf::AccountTransfer account_transfer_proto;
   if (!account_transfer_proto.ParseFromString(message.contents->data)) {
@@ -502,10 +502,10 @@ void DataManagerService::TransferAccount(const NodeId& dest,
 
 template <>
 void DataManagerService::HandleMessage(
-    const AccountRequestFromDataManagerToDataManager& message,
-    const typename AccountRequestFromDataManagerToDataManager::Sender& sender,
-    const typename AccountRequestFromDataManagerToDataManager::Receiver& receiver) {
-  typedef AccountRequestFromDataManagerToDataManager MessageType;
+    const AccountQueryFromDataManagerToDataManager& message,
+    const typename AccountQueryFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryFromDataManagerToDataManager::Receiver& receiver) {
+  typedef AccountQueryFromDataManagerToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
