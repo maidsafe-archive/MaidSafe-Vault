@@ -146,6 +146,15 @@ std::set<PmidName> DataManagerValue::AllPmids() const {
   return pmids_union;
 }
 
+std::set<PmidName> DataManagerValue::online_pmids(routing::Routing& routing) const {
+  std::set<PmidName> all_pmids(AllPmids());
+  std::set<PmidName> online_pmids;
+  for (auto& pmid : all_pmids)
+    if (routing.IsConnectedVault(pmid))
+      online_pmids.insert(pmid);
+  return online_pmids;
+}
+
 void DataManagerValue::PrintRecords() {
   LOG(kVerbose) << " online_pmids_ now having : ";
   for (auto pmid : online_pmids_) {

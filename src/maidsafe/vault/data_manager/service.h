@@ -268,8 +268,6 @@ class DataManagerService {
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
-  friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
-  friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
   friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
@@ -674,7 +672,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
   std::set<PmidName> online_pmids;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    online_pmids = std::move(value.online_pmids());
+    online_pmids = std::move(value.online_pmids(routing_));
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "

@@ -28,6 +28,8 @@
 #include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
+#include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
 
@@ -50,7 +52,7 @@ class DataManagerValue {
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
   std::set<PmidName> AllPmids() const;
-  std::set<PmidName> online_pmids() const { return online_pmids_; }
+  std::set<PmidName> online_pmids(maidsafe::routing::Routing& routing) const;
   std::string Print() const;
 
   static DataManagerValue Resolve(const std::vector<DataManagerValue>& values);

@@ -513,33 +513,7 @@ void DataManagerService::HandleMessage(
 }
 
 // ==================== General implementation =====================================================
-template <>
-void DataManagerService::HandleMessage(
-    const SetPmidOnlineFromPmidManagerToDataManager& message,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver) {
-  typedef SetPmidOnlineFromPmidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
 
-template <>
-void DataManagerService::HandleMessage(
-    const SetPmidOfflineFromPmidManagerToDataManager& message,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver) {
-  typedef SetPmidOfflineFromPmidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
 
 }  // namespace vault
 
