@@ -26,91 +26,25 @@
 #include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/nfs/vault/messages.h"
-#include "maidsafe/nfs/vault/pmid_registration.h"
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
-#include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
-#include "maidsafe/vault/maid_manager/action_reference_counts.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
+#include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
-#include "maidsafe/vault/maid_manager/action_reference_count.h"
 
 namespace maidsafe {
 
 namespace vault {
-
-namespace detail {
-
-template <typename T>
-int32_t EstimateCost(const T&) {
-  return 0;
-}
-
-template <>
-int32_t EstimateCost<passport::PublicAnmaid>(const passport::PublicAnmaid&) {
-  return 0;
-}
-
-template <>
-int32_t EstimateCost<passport::PublicMaid>(const passport::PublicMaid&) {
-  return 0;
-}
-
-template <>
-int32_t EstimateCost<passport::PublicPmid>(const passport::PublicPmid&) {
-  return 0;
-}
-
-}  // namespace detail
 
 namespace {
 
 template <typename Message>
 inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() != nfs::Persona::kMaidManager;
-}
-
-template <typename T>
-T Merge(std::vector<T> values) {
-  std::map<T, size_t> value_and_count;
-  auto most_frequent_itr(std::end(values));
-  size_t most_frequent(0);
-  for (auto itr(std::begin(values)); itr != std::end(values); ++itr) {
-    size_t this_value_count(++value_and_count[*itr]);
-    if (this_value_count > most_frequent) {
-      most_frequent = this_value_count;
-      most_frequent_itr = itr;
-    }
-  }
-
-  if (value_and_count.empty())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-
-  if (value_and_count.size() == 1U)
-    return *most_frequent_itr;
-
-  if (value_and_count.size() == 2U && most_frequent == 1U)
-    return (values[0] + values[1]) / 2;
-
-  // Strip the first and last values if they only have a count of 1.
-  if ((*std::begin(value_and_count)).second == 1U)
-    value_and_count.erase(std::begin(value_and_count));
-  if ((*(--std::end(value_and_count))).second == 1U)
-    value_and_count.erase(--std::end(value_and_count));
-
-  T total(0);
-  size_t count(0);
-  for (const auto& element : value_and_count) {
-    total += element.first * element.second;
-    count += element.second;
-  }
-
-  return total / count;
 }
 
 }  // unnamed namespace
@@ -120,7 +54,6 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
                                        const boost::filesystem::path& /*vault_root_dir*/)
     : routing_(routing),
       data_getter_(data_getter),
-      // group_db_(UniqueDbPath(vault_root_dir)),
       accounts_(),
       accumulator_mutex_(),
       mutex_(),
@@ -131,8 +64,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_remove_accounts_(NodeId(pmid.name()->string())),
       sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
-      sync_update_pmid_healths_(NodeId(pmid.name()->string())),
-      account_transfer_(),
+//      account_transfer_(),
       pending_account_mutex_(),
       pending_account_map_() {}
 
@@ -248,12 +180,14 @@ void MaidManagerService::HandlePutFailure<passport::PublicAnmaid>(
 
 void MaidManagerService::HandleSyncedCreateMaidAccount(
     std::unique_ptr<MaidManager::UnresolvedCreateAccount>&& synced_action) {
-  MaidManager::Metadata metadata;
+  MaidManager::Value value;
   maidsafe_error error(CommonErrors::success);
-  auto result(accounts_.insert(std::make_pair(synced_action->key.group_name(), metadata)));
-  if (!result.second)
-    error = MakeError(VaultErrors::account_already_exists);
-
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto result(accounts_.insert(std::make_pair(synced_action->key.group_name(), value)));
+    if (!result.second)
+      error = MakeError(VaultErrors::account_already_exists);
+  }
   dispatcher_.SendCreateAccountResponse(synced_action->key.group_name(), error,
                                         synced_action->action.kMessageId);
 }
@@ -267,49 +201,6 @@ void MaidManagerService::HandleSyncedRemoveMaidAccount(
   dispatcher_.SendRemoveAccountResponse(synced_action->key.group_name(),
                                         maidsafe_error(CommonErrors::success),
                                         synced_action->action.kMessageId);
-}
-
-// =============== Pmid Health =====================================================================
-
-void MaidManagerService::HandleSyncedUpdatePmidHealth(
-    std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&& synced_action_update_pmid_health) {
-  LOG(kVerbose) << "MaidManagerService::HandleSyncedUpdatePmidHealth";
-
-  std::lock_guard<std::mutex> lock(mutex_);
-  auto it(accounts_.find(synced_action_update_pmid_health->key.group_name()));
-  if (it == std::end(accounts_))
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-}
-
-void MaidManagerService::HandlePmidHealthRequest(
-  const MaidName& maid_name, const PmidName& pmid_node, nfs::MessageId message_id) {
-  {
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it(accounts_.find(maid_name));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-  }
-  dispatcher_.SendPmidHealthRequest(maid_name, pmid_node, message_id);
-}
-
-void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
-  const std::string& serialised_pmid_health, maidsafe_error& return_code,
-  nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_name->string());
-  try {
-    PmidManagerMetadata pmid_health(serialised_pmid_health);
-    LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
-    if (return_code.code() == make_error_code(CommonErrors::success)) {
-      DoSync(MaidManager::UnresolvedUpdatePmidHealth(MaidManager::MetadataKey(maid_name),
-        ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
-    }
-    dispatcher_.SendPmidHealthResponse(maid_name, pmid_health.claimed_available_size,
-      return_code, message_id);
-  }
-  catch (std::exception& e) {
-    LOG(kError) << "Error handling Health Response to " << HexSubstr(maid_name->string())
-      << " with exception of " << boost::diagnostic_information(e);
-  }
 }
 
 // =============== Put/Delete data =================================================================
@@ -386,39 +277,39 @@ void MaidManagerService::HandleChurnEvent(
   //  TransferAccount(transfer.first, transfer.second);
 }
 
-void MaidManagerService::TransferAccount(const NodeId& dest,
-    const std::vector<GroupDb<MaidManager>::Contents>& accounts) {
-  for (auto& account : accounts) {
-    // If account just received, shall not pass it out as may under a startup procedure
-    // i.e. existing MM will be seen as new_node in close_nodes_change
-    if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
-      LOG(kInfo) << "MaidManager account " << HexSubstr(account.group_name->string())
-                 << " just received";
-      continue;
-    }
-    VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.group_name,
-         Identity{ dest.string() });
-    try {
-      std::vector<std::string> actions;
-      actions.push_back(account.metadata.Serialise());
-      for (auto& kv : account.kv_pairs) {
-        protobuf::MaidManagerKeyValuePair kv_msg;
-          kv_msg.set_key(kv.first.Serialise());
-          kv_msg.set_value(kv.second.Serialise());
-          actions.push_back(kv_msg.SerializeAsString());
-      }
-      nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
-      MaidManager::UnresolvedAccountTransfer account_transfer(
-          account.group_name, message_id, actions);
-      dispatcher_.SendAccountTransfer(dest, account.group_name,
-                                      message_id, account_transfer.Serialise());
-      LOG(kVerbose) << "MaidManager sent to " << HexSubstr(dest.string())
-                    << " with account " << account.Print();
-    } catch(...) {
-      // the normal problem is metadata hasn't been populated
-      LOG(kError) << "MaidManagerService::TransferAccount account info error";
-    }
-  }
+void MaidManagerService::TransferAccount(const NodeId& /*dest*/,
+    const std::vector<std::pair<MaidName, MaidManagerValue>>& /*accounts*/) {
+  //for (auto& account : accounts) {
+  //  // If account just received, shall not pass it out as may under a startup procedure
+  //  // i.e. existing MM will be seen as new_node in close_nodes_change
+  //  if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
+  //    LOG(kInfo) << "MaidManager account " << HexSubstr(account.group_name->string())
+  //               << " just received";
+  //    continue;
+  //  }
+  //  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.group_name,
+  //       Identity{ dest.string() });
+  //  try {
+  //    std::vector<std::string> actions;
+  //    actions.push_back(account.metadata.Serialise());
+  //    for (auto& kv : account.kv_pairs) {
+  //      protobuf::MaidManagerKeyValuePair kv_msg;
+  //        kv_msg.set_key(kv.first.Serialise());
+  //        kv_msg.set_value(kv.second.Serialise());
+  //        actions.push_back(kv_msg.SerializeAsString());
+  //    }
+  //    nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
+  //    MaidManager::UnresolvedAccountTransfer account_transfer(
+  //        account.group_name, message_id, actions);
+  //    dispatcher_.SendAccountTransfer(dest, account.group_name,
+  //                                    message_id, account_transfer.Serialise());
+  //    LOG(kVerbose) << "MaidManager sent to " << HexSubstr(dest.string())
+  //                  << " with account " << account.Print();
+  //  } catch(...) {
+  //    // the normal problem is metadata hasn't been populated
+  //    LOG(kError) << "MaidManagerService::TransferAccount account info error";
+  //  }
+  //}
 }
 
 template <>
@@ -543,36 +434,6 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
-    const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver) {
-  LOG(kVerbose) << message;
-  typedef nfs::PmidHealthRequestFromMaidNodeToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, NfsAccumulator>(
-      nfs_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                          return this->ValidateSender(message, sender);
-                        },
-      NfsAccumulator::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void MaidManagerService::HandleMessage(
-    const PmidHealthResponseFromPmidManagerToMaidManager& message,
-    const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
-    const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
-  LOG(kVerbose) << message;
-  typedef PmidHealthResponseFromPmidManagerToMaidManager MessageType;
-  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
-      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                            return this->ValidateSender(message, sender);
-                          },
-      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void MaidManagerService::HandleMessage(
     const PutVersionResponseFromVersionHandlerToMaidManager& message,
     const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
     const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver) {
@@ -677,17 +538,6 @@ void MaidManagerService::HandleMessage(
       }
       break;
     }
-    case ActionMaidManagerUpdatePmidHealth::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionUpdatePmidHealth";
-      MaidManager::UnresolvedUpdatePmidHealth unresolved_action(
-        proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_update_pmid_healths_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedUpdatePmidHealth";
-        HandleSyncedUpdatePmidHealth(std::move(resolved_action));
-      }
-      break;
-    }
     default: {
       LOG(kError) << "Unhandled action type " << proto_sync.action_type();
       assert(false);
@@ -713,10 +563,10 @@ void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::Mes
 
 template <>
 void MaidManagerService::HandleMessage(
-    const AccountTransferFromMaidManagerToMaidManager& message,
-    const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
+    const AccountTransferFromMaidManagerToMaidManager& /*message*/,
+    const typename AccountTransferFromMaidManagerToMaidManager::Sender& /*sender*/,
     const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
-  MaidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
+  /*MaidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
   LOG(kInfo) << "MaidManager received account " << DebugId(sender.group_id)
              << " from " << DebugId(sender.sender_id);
   auto resolved_action(account_transfer_.AddUnresolvedAction(
@@ -726,35 +576,35 @@ void MaidManagerService::HandleMessage(
   if (resolved_action) {
     LOG(kInfo) << "AccountTransferFromMaidManagerToMaidManager handle account transfer";
     this->HandleAccountTransfer(std::move(resolved_action));
-  }
+  }*/
 }
 
 void MaidManagerService::HandleAccountTransfer(
-    std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
-  GroupDb<MaidManager>::Contents content;
-  content.group_name = resolved_action->key;
-  for (auto& action : resolved_action->actions) {
-    try {
-      protobuf::MaidManagerKeyValuePair kv_msg;
-      if (kv_msg.ParseFromString(action)) {
-        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
-        MaidManager::Key key(kv_msg.key());
-        LOG(kVerbose) << "HandleAccountTransfer key parsed";
-        MaidManagerValue value(kv_msg.value());
-        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
-        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
-      } else {
-        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
-        MaidManagerMetadata meta_data(action);
-        content.metadata = meta_data;
-      }
-    } catch(...) {
-      LOG(kError) << "HandleAccountTransfer can't parse the action";
-    }
-  }
-  LOG(kVerbose) << "MaidManagerService received account "<< content.Print();
-// group_db_.HandleTransfer(content);
+    std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& /*resolved_action*/) {
+//  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
+//  GroupDb<MaidManager>::Contents content;
+//  content.group_name = resolved_action->key;
+//  for (auto& action : resolved_action->actions) {
+//    try {
+//      protobuf::MaidManagerKeyValuePair kv_msg;
+//      if (kv_msg.ParseFromString(action)) {
+//        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
+//        MaidManager::Key key(kv_msg.key());
+//        LOG(kVerbose) << "HandleAccountTransfer key parsed";
+//        MaidManagerValue value(kv_msg.value());
+//        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
+//        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
+//      } else {
+//        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
+//        MaidManagerMetadata meta_data(action);
+//        content.metadata = meta_data;
+//      }
+//    } catch(...) {
+//      LOG(kError) << "HandleAccountTransfer can't parse the action";
+//    }
+//  }
+//  LOG(kVerbose) << "MaidManagerService received account "<< content.Print();
+//// group_db_.HandleTransfer(content);
 }
 
 }  // namespace vault

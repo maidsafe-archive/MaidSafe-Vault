@@ -197,8 +197,6 @@ class PmidNodeService {
                             const NonEmptyString& random_string, const NodeId& sender,
                             nfs::MessageId message_id);
 
-  void HandleHealthRequest(const NodeId& pmid_manager_node_id, nfs::MessageId message_id);
-
   // ================================ Sender Validation =========================================
   template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
@@ -264,12 +262,6 @@ void PmidNodeService::HandleMessage(
     const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
     const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <>
-void PmidNodeService::HandleMessage(
-    const PmidHealthRequestFromPmidManagerToPmidNode& message,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 // ============================== Get implementation =============================================
 template <typename Data>

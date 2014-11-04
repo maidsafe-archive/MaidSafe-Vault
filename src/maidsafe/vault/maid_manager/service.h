@@ -55,20 +55,14 @@
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
-#include "maidsafe/vault/maid_manager/action_register_pmid.h"
-#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
+#include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/sync.h"
 
 namespace maidsafe {
-
-class OwnerDirectory;
-class GroupDirectory;
-class WorldDirectory;
 
 namespace vault {
 
@@ -111,6 +105,7 @@ class MaidManagerService {
   //  void CheckSenderIsConnectedMaidNode(const nfs::Message& message) const;
   //  void CheckSenderIsConnectedMaidManager(const nfs::Message& message) const;
   //  void ValidateDataSender(const nfs::Message& message) const;
+
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const {
@@ -174,20 +169,8 @@ class MaidManagerService {
                                    const StructuredDataVersions::VersionName& version,
                                    nfs::MessageId message_id);
 
-  // ======================== Pmid Health ==========================================================
-
-  void HandleSyncedUpdatePmidHealth(std::unique_ptr<MaidManager::UnresolvedUpdatePmidHealth>&&
-                                        synced_action_update_pmid_health);
-
-  void HandlePmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
-                               nfs::MessageId message_id);
-
-  void HandlePmidHealthResponse(const MaidName& maid_name,
-                                const std::string &serialised_pmid_health,
-                                maidsafe_error& return_code, nfs::MessageId message_id);
-
   void TransferAccount(const NodeId& dest,
-                       const std::vector<GroupDb<MaidManager>::Contents>& accounts);
+                       const std::vector<std::pair<MaidName, MaidManagerValue>>& accounts);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
@@ -199,10 +182,6 @@ class MaidManagerService {
 
   void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
-  // ===================================== PMID totals ============================================
-  void UpdatePmidTotals(const MaidName& account_name);
-  void UpdatePmidTotalsCallback(const std::string& serialised_reply,
-                                std::shared_ptr<GetPmidTotalsOp> op_data);
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
 
@@ -261,8 +240,7 @@ class MaidManagerService {
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
-  // GroupDb<MaidManager> group_db_;
-  std::map<MaidName, MaidManager::Metadata> accounts_;
+  std::map<MaidName, MaidManager::Value> accounts_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   NfsAccumulator nfs_accumulator_;
@@ -272,8 +250,7 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
   Sync<MaidManager::UnresolvedPut> sync_puts_;
   Sync<MaidManager::UnresolvedDelete> sync_deletes_;
-  Sync<MaidManager::UnresolvedUpdatePmidHealth> sync_update_pmid_healths_;
-  AccountTransfer<MaidManager::UnresolvedAccountTransfer> account_transfer_;
+//  AccountTransfer<MaidManager::UnresolvedAccountTransfer> account_transfer_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };
@@ -334,18 +311,6 @@ void MaidManagerService::HandleMessage(
     const nfs::RemoveAccountRequestFromMaidNodeToMaidManager& message,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& sender,
     const typename nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
-    const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
-    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-    const typename nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void MaidManagerService::HandleMessage(
-    const PmidHealthResponseFromPmidManagerToMaidManager& message,
-    const typename PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
-    const typename PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
 
 template <>
 void MaidManagerService::HandleMessage(
@@ -410,15 +375,15 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
                 << " with data " << HexSubstr(data.name().value)
                 << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
                 << " message_id " << message_id.data;
-  MaidManagerMetadata metadata;
+  MaidManagerValue value;
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(account_name));
     if (it == std::end(accounts_))
       BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-    metadata = it->second;
+    value = it->second;
   }
-  if (metadata.AllowPut(data) == MaidManagerMetadata::Status::kNoSpace) {
+  if (value.AllowPut(data) == MaidManagerValue::Status::kNoSpace) {
     LOG(kWarning) << "MaidManagerService::HandlePut disallowing put";
     dispatcher_.SendPutFailure<Data>(account_name, data.name(),
                                      maidsafe_error(CommonErrors::cannot_exceed_limit),
@@ -531,7 +496,6 @@ void MaidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_pmid_healths_, unresolved_action);
 }
 
 }  // namespace vault

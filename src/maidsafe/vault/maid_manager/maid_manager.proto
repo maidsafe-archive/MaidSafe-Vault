@@ -20,16 +20,12 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message MaidManagerValue {
-  required int64 size = 1;
-}
-
 message MaidManagerKeyValuePair {
   required bytes key = 1;
   required bytes value = 2;
 }
 
-message MaidManagerMetadata {
+message MaidManagerValue {
   required int64 space_available = 1;
   required int64 data_stored = 2;
 }

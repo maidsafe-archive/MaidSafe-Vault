@@ -39,10 +39,6 @@
 
 namespace maidsafe {
 
-class OwnerDirectory;
-class GroupDirectory;
-class WorldDirectory;
-
 namespace vault {
 
 class MaidManagerDispatcher {
@@ -83,8 +79,6 @@ class MaidManagerDispatcher {
   void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  nfs::MessageId message_id);
 
-  void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
-                                  const maidsafe_error& result, nfs::MessageId message_id);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
 
@@ -94,12 +88,6 @@ class MaidManagerDispatcher {
   template <typename Data>
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error,  nfs::MessageId message_id);
-
-  void SendPmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
-                             nfs::MessageId message_id);
-
-  void SendPmidHealthResponse(const MaidName& maid_name, int64_t available_size,
-                              const maidsafe_error& return_code, nfs::MessageId message_id);
 
   void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
                                     const passport::PublicPmid& pmid_name);
@@ -111,9 +99,6 @@ class MaidManagerDispatcher {
 
   void SendCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
                                      nfs::MessageId message_id);
-
-  void SendRegisterPmidResponse(const MaidName& maid_name, const maidsafe_error& error,
-                                nfs::MessageId message_id);
 
  private:
   MaidManagerDispatcher();

@@ -38,7 +38,6 @@
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
@@ -106,8 +105,6 @@ TEST(SyncTest, BEH_Constructor) {
   Sync<MaidManager::UnresolvedCreateAccount> maid_manager_sync_create_account(
       (NodeId(NodeId::IdType::kRandomId)));
   Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
-  Sync<PmidManager::UnresolvedSetPmidHealth> pmid_manager_sync_set_pmid_health(
-      (NodeId(NodeId::IdType::kRandomId)));
   Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
 }
 

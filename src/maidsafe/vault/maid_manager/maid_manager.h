@@ -29,18 +29,13 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/maid_manager/value.h"
-#include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
-#include "maidsafe/vault/maid_manager/action_register_pmid.h"
-#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
-#include "maidsafe/vault/maid_manager/action_reference_counts.h"
 
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
+class MaidManagerValue;
 
 template <bool Remove>
 struct ActionCreateRemoveAccount;
@@ -48,8 +43,6 @@ typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
-struct ActionRegisterUnregisterPmid;
-struct ActionMaidManagerRegisterPmid;
 
 }  // namespace vault
 
@@ -61,22 +54,11 @@ struct PersonaTypes<Persona::kMaidManager> {
   typedef passport::PublicMaid::Name GroupName;
   typedef vault::GroupKey<GroupName> Key;
   typedef vault::MaidManagerValue Value;
-  typedef vault::MaidManagerMetadata Metadata;
   typedef vault::MetadataKey<GroupName> MetadataKey;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount> UnresolvedCreateAccount;
   typedef vault::UnresolvedAction<MetadataKey, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUpdatePmidHealth>
-              UnresolvedUpdatePmidHealth;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerRegisterPmid>
-              UnresolvedRegisterPmid;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUnregisterPmid>
-              UnresolvedUnregisterPmid;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerIncrementReferenceCounts>
-              UnresolvedIncrementReferenceCounts;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerDecrementReferenceCounts>
-              UnresolvedDecrementReferenceCounts;
   typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
 };
 

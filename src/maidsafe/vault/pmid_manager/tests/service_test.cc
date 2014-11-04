@@ -161,13 +161,6 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
                                        routing::SingleSource(NodeId(pmid_.name()->string())),
                                        routing::GroupId(NodeId(pmid_.name()->string()))));
   }
-  {
-    auto content(CreateContent<PmidHealthRequestFromMaidManagerToPmidManager::Contents>());
-    auto get_pmid_account_request(
-        CreateMessage<PmidHealthRequestFromMaidManagerToPmidManager>(content));
-    NodeId maid_node(NodeId::IdType::kRandomId);
-    auto group_source(CreateGroupSource(maid_node));
-  }
 }
 
 

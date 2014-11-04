@@ -136,13 +136,8 @@ class PmidManagerService {
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
-  void HandleSyncedSetPmidHealth(
-      std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action);
   void HandleSyncedCreatePmidAccount(
       std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
-
-  void DoHandleHealthResponse(const PmidName& pmid_node,
-      const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
 
   void TransferAccount(const NodeId& dest,
                        const std::vector<GroupDb<PmidManager>::Contents>& accounts);
@@ -160,7 +155,6 @@ class PmidManagerService {
   routing::Timer<PmidManagerMetadata> get_health_timer_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
-  Sync<PmidManager::UnresolvedSetPmidHealth> sync_set_pmid_health_;
   Sync<PmidManager::UnresolvedCreateAccount> sync_create_account_;
   AccountTransfer<PmidManager::UnresolvedAccountTransfer> account_transfer_;
 };
@@ -196,18 +190,6 @@ void PmidManagerService::HandleMessage(
     const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
     const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
-
-template <>
-void PmidManagerService::HandleMessage(
-    const PmidHealthRequestFromMaidManagerToPmidManager& message,
-    const typename PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
-    const typename PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver);
-
-template <>
-void PmidManagerService::HandleMessage(
-    const PmidHealthResponseFromPmidNodeToPmidManager& message,
-    const typename PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
-    const typename PmidHealthResponseFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void PmidManagerService::HandleMessage(
@@ -321,7 +303,6 @@ template <typename UnresolvedAction>
 void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_set_pmid_health_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_account_, unresolved_action);
 }
 

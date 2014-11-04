@@ -94,30 +94,6 @@ void DoOperation(MaidManagerService* service,
   boost::apply_visitor(delete_visitor, data_name);
 }
 
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "nfs::PmidHealthRequestFromMaidNodeToMaidManager";
-  service->HandlePmidHealthRequest(MaidName(Identity(sender.data.string())),
-                                   PmidName(message.contents->raw_name), message.id);
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const PmidHealthResponseFromPmidManagerToMaidManager& message,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& /*sender*/,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidManagerToMaidManager "
-                << "message.contents->pmid_health.serialised_pmid_health "
-                << HexSubstr(message.contents->pmid_health.serialised_pmid_health);
-  service->HandlePmidHealthResponse(MaidName(Identity(receiver.data.string())),
-                                    message.contents->pmid_health.serialised_pmid_health,
-                                    message.contents->return_code.value, message.id);
-}
-
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
@@ -392,27 +368,6 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
-                 const PmidHealthRequestFromMaidManagerToPmidManager& message,
-                 const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PmidHealthRequestFromMaidManagerToPmidManager";
-  service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
-                               MaidName(Identity(sender.group_id.data.string())), message.id);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const PmidHealthResponseFromPmidNodeToPmidManager& message,
-                 const PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
-                 const PmidHealthResponseFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidNodeToPmidManager "
-                << "available_size : " << message.contents->available_size;
-  service->HandleHealthResponse(PmidName(Identity(sender.data.string())),
-                                message.contents->available_size, message.id);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
@@ -485,15 +440,6 @@ void DoOperation(PmidNodeService* service,
   PmidNodeIntegrityCheckVisitor<PmidNodeService> integrity_check_visitor(
       service, message.contents->random_string, sender, message.id);
   boost::apply_visitor(integrity_check_visitor, data_name);
-}
-
-template <>
-void DoOperation(PmidNodeService* service,
-                 const PmidHealthRequestFromPmidManagerToPmidNode& message,
-                 const PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-                 const PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidNode";
-  service->HandleHealthRequest(sender.data, message.id);
 }
 
 //====================================== To VersionHandler =========================================

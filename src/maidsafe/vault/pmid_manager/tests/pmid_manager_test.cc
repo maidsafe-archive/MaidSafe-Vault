@@ -39,11 +39,6 @@ class PmidManagerTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
-  auto get_pmid_health_future(GetClients().back()->GetPmidHealth(GetPublicPmids().back().name()));
-  EXPECT_NO_THROW(get_pmid_health_future.get());
-}
-
 }  // namespace test
 
 }  // namespace vault

@@ -103,18 +103,6 @@ void MaidManagerDispatcher::SendCreateVersionTreeResponse(
   routing_.Send(message);
 }
 
-void MaidManagerDispatcher::SendRegisterPmidResponse(
-    const MaidName& maid_name, const maidsafe_error& error, nfs::MessageId message_id) {
-  typedef nfs::RegisterPmidResponseFromMaidManagerToMaidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<NfsMessage>();
-  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
-  RoutingMessage message(nfs_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
-                         NfsMessage::Receiver(NodeId(maid_name->string())));
-  routing_.Send(message);
-}
-
 void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_name*/,
                                                       const maidsafe_error& /*result*/,
                                                       nfs::MessageId /*message_id*/) {
@@ -124,25 +112,6 @@ void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_
   //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
 
   //  nfs::Message::Data inner_data(result);
-  //  inner_data.action = kAction;
-  //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
-  //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
-  //                         routing::SingleId(NodeId(account_name->string())), cacheable);
-  //  routing_.Send(message);
-}
-
-void MaidManagerDispatcher::SendUnregisterPmidResponse(const MaidName& /*account_name*/,
-                                                       const PmidName& /*pmid_name*/,
-                                                       const maidsafe_error& /*result*/,
-                                                       nfs::MessageId /*message_id*/) {
-  //  typedef routing::GroupToSingleMessage RoutingMessage;
-  //  static const routing::Cacheable cacheable(routing::Cacheable::kNone);
-  //  static const nfs::MessageAction kAction(nfs::MessageAction::kUnregisterPmidResponse);
-  //  static const nfs::Persona kDestinationPersona(nfs::Persona::kMaidNode);
-
-  //  nfs::Message::Data inner_data(result);
-  //  inner_data.type = PmidName::data_type::Tag::kValue;
-  //  inner_data.name = pmid_name.data;
   //  inner_data.action = kAction;
   //  nfs::Message inner(kDestinationPersona, kSourcePersona_, inner_data);
   //  RoutingMessage message(inner.Serialise()->string(), Sender(account_name),
@@ -161,40 +130,6 @@ void MaidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name),
                          VaultMessage::Receiver(routing::SingleId(destination_peer)));
-  routing_.Send(message);
-}
-
-void MaidManagerDispatcher::SendPmidHealthRequest(const MaidName& maid_name,
-                                                  const PmidName& pmid_node,
-                                                  nfs::MessageId message_id) {
-  typedef PmidHealthRequestFromMaidManagerToPmidManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-
-  VaultMessage vault_message;
-  vault_message.id = message_id;
-  RoutingMessage message(vault_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
-                         VaultMessage::Receiver(NodeId(pmid_node->string())));
-  routing_.Send(message);
-}
-
-void MaidManagerDispatcher::SendPmidHealthResponse(const MaidName& maid_name,
-    int64_t available_size, const maidsafe_error& return_code, nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerDispatcher::SendPmidHealthResponse for maid "
-                << HexSubstr(maid_name->string()) << " . available_size " << available_size
-                << " and return code : " << return_code.code();
-  typedef nfs::PmidHealthResponseFromMaidManagerToMaidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<NfsMessage>();
-
-  NfsMessage nfs_message(message_id,
-                         nfs_client::AvailableSizeAndReturnCode(available_size,
-                                                                nfs_client::ReturnCode(
-                                                                    return_code)));
-  RoutingMessage message(nfs_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, maid_name),
-                         NfsMessage::Receiver(NodeId(maid_name.value.string())));
   routing_.Send(message);
 }
 

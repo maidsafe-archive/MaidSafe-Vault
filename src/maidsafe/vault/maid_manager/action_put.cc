@@ -21,7 +21,6 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/maid_manager/action_put.pb.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
 namespace maidsafe {
@@ -50,9 +49,8 @@ std::string ActionMaidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionMaidManagerPut::operator()(MaidManagerMetadata& metadata) const {
-  metadata.PutData(kSize);
-  return detail::DbAction::kPut;
+void ActionMaidManagerPut::operator()(MaidManagerValue& value) const {
+  value.PutData(kSize);
 }
 
 bool operator==(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {
