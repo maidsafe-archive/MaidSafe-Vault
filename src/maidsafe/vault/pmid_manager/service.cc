@@ -51,8 +51,8 @@ inline bool ForThisPersona(const Message& message) {
 }  // namespace detail
 
 PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                                       const boost::filesystem::path& vault_root_dir)
-    : routing_(routing), db_(UniqueDbPath(vault_root_dir)), accumulator_mutex_(), mutex_(),
+                                       const boost::filesystem::path& /*vault_root_dir*/)
+    : routing_(routing), db_(), accumulator_mutex_(), mutex_(),
       stopped_(false), accumulator_(), dispatcher_(routing_), asio_service_(2),
       get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),

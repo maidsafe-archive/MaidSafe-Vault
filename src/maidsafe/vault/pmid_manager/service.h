@@ -35,7 +35,7 @@
 
 #include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/group_db.h"
+#include "maidsafe/vault/key_value_map.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/action_delete.h"
@@ -153,7 +153,7 @@ class PmidManagerService {
       std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action);
 
   routing::Routing& routing_;
-  Db<PmidManager::MetadataKey, PmidManager::Metadata> db_;
+  KeyValueMap<PmidManager::MetadataKey, PmidManager::Metadata> db_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
