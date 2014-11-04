@@ -51,6 +51,7 @@ class DataManagerValue {
   void RemovePmid(const PmidName& pmid_name);
   void SetPmidOnline(const PmidName& pmid_name);
   void SetPmidOffline(const PmidName& pmid_name);
+  bool HasTarget(const PmidName& pmid_name) const;
   std::set<PmidName> AllPmids() const;
   std::set<PmidName> online_pmids(maidsafe::routing::Routing& routing) const;
   std::string Print() const;

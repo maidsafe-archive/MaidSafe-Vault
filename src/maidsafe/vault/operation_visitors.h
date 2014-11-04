@@ -95,6 +95,22 @@ class DataManagerPutVisitor : public boost::static_visitor<> {
 };
 
 template <typename ServiceHandlerType>
+class DataManagerMarkNodeDownVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerMarkNodeDownVisitor(ServiceHandlerType* service, const PmidName& pmid_name)
+      : kService_(service), kPmidName_(pmid_name) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template MarkNodeDown<typename Name::data_type::Name>(kPmidName_, data_name);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidName_;
+};
+
+template <typename ServiceHandlerType>
 class PmidManagerPutVisitor : public boost::static_visitor<> {
  public:
   PmidManagerPutVisitor(ServiceHandlerType* service, const NonEmptyString& content,

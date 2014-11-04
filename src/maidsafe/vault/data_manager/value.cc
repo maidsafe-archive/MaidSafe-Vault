@@ -118,6 +118,14 @@ void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
 //  PrintRecords();
 }
 
+bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
+  std::set<PmidName> all_pmids(AllPmids());
+  for (auto& pmid : all_pmids)
+    if (pmid_name == pmid)
+      return true;
+  return false;
+}
+
 std::string DataManagerValue::Serialise() const {
   if (size_ <= 0) {
     LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";

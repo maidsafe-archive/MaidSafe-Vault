@@ -202,8 +202,8 @@ class DataManagerService {
   template <typename DataName>
   void MarkNodeDown(const PmidName& pmid_node, const DataName& data_name);
 
-//   template <typename DataName>
-//   void MarkNodeUp(const PmidName& pmid_node, const DataName& data_name);
+  template <typename DataName>
+  void MarkNodeUp(const PmidName& pmid_node, const DataName& data_name);
 
   // =========================== Sync / AccountTransfer section ====================================
   template <typename UnresolvedAction>
@@ -269,6 +269,7 @@ class DataManagerService {
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
+  friend class detail::DataManagerMarkNodeDownVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -923,6 +924,7 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
   GetForNodeDown<typename DataName::data_type>(pmid_node, name);
 }
 
+// MAID-315 No need to mark node up
 // template <typename DataName>
 // void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
 //   VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node.value, name.value);
