@@ -150,7 +150,7 @@ std::set<PmidName> DataManagerValue::online_pmids(routing::Routing& routing) con
   std::set<PmidName> all_pmids(AllPmids());
   std::set<PmidName> online_pmids;
   for (auto& pmid : all_pmids)
-    if (routing.IsConnectedVault(pmid))
+    if (routing.IsConnectedVault(NodeId(pmid->string())))
       online_pmids.insert(pmid);
   return online_pmids;
 }
