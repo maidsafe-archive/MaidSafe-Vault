@@ -29,8 +29,6 @@
 namespace maidsafe {
 namespace vault {
 
-class PmidManagerValue;
-
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete(int32_t size, bool pmid_node_available_in, bool data_failure);
   explicit ActionPmidManagerDelete(const std::string& serialised_action);

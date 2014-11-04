@@ -19,7 +19,6 @@
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.pb.h"
 
-#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {

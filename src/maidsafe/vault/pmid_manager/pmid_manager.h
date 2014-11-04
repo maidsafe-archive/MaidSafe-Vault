@@ -32,7 +32,6 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
 #include "maidsafe/vault/pmid_manager/action_create_account.h"
-#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 

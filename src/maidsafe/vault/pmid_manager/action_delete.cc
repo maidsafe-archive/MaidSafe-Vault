@@ -20,7 +20,6 @@
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/action_delete.pb.h"
 
 namespace maidsafe {
