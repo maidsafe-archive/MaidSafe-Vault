@@ -92,6 +92,27 @@ bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
   return false;
 }
 
+bool DataManagerValue::NeedToPrune(const PmidName& target,
+                                   routing::Routing& routing,
+                                   PmidName& pmid_node_to_remove) const {
+  // Prune the furthest offline node
+  if (pmids_.size() < routing::Parameters::closest_nodes_size)
+    return false;
+
+  std::vector<PmidName> offline_pmids;
+  for (auto& pmid : pmids_)
+    if (!routing.IsConnectedVault(NodeId(pmid->string())))
+      offline_pmids.push_back(pmid);
+  assert(!offline_pmids.empty());
+  std::sort(offline_pmids.begin(), offline_pmids.end(),
+            [&](const PmidName& lhs, const PmidName& rhs) {
+    return NodeId::CloserToTarget(NodeId(lhs->string()), NodeId(rhs->string()),
+                                  NodeId(target->string()));
+  });
+  pmid_node_to_remove = offline_pmids.back();
+  return true;
+}
+
 std::string DataManagerValue::Serialise() const {
   if (size_ <= 0) {
     LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";

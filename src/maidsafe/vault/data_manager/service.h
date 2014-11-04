@@ -499,6 +499,13 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   DoSync(DataManager::UnresolvedAddPmid(key,
              ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
+  // if storages nodes reached cap, the existing furthest offline node need to be removed
+  auto value(db_.Get(key));
+  PmidName pmid_node_to_remove;
+  if (value.NeedToPrune(PmidName(Identity(data_name.value.string())),
+                        routing_, pmid_node_to_remove))
+    DoSync(DataManager::UnresolvedRemovePmid(key,
+               ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -918,9 +925,9 @@ template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
   LOG(kWarning) << "DataManager marking node " << HexSubstr(pmid_node->string())
                 << " down for chunk " << HexSubstr(name.value.string());
-  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  DoSync(DataManager::UnresolvedNodeDown(key,
-             ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
+//  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
+//  DoSync(DataManager::UnresolvedNodeDown(key,
+//             ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
   GetForNodeDown<typename DataName::data_type>(pmid_node, name);
 }
 
