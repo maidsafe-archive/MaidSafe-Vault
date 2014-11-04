@@ -49,10 +49,8 @@ class DataManagerValue {
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
-  void SetPmidOnline(const PmidName& pmid_name);
-  void SetPmidOffline(const PmidName& pmid_name);
   bool HasTarget(const PmidName& pmid_name) const;
-  std::set<PmidName> AllPmids() const;
+  std::set<PmidName> AllPmids() const { return pmids_; }
   std::set<PmidName> online_pmids(maidsafe::routing::Routing& routing) const;
   std::string Print() const;
 
@@ -65,7 +63,7 @@ class DataManagerValue {
  private:
   void PrintRecords();
   int32_t size_;
-  std::set<PmidName> online_pmids_, offline_pmids_;
+  std::set<PmidName> pmids_;
 };
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

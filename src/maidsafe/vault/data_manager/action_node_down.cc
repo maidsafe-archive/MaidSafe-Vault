@@ -53,7 +53,7 @@ std::string ActionDataManagerNodeDown::Serialise() const {
 detail::DbAction ActionDataManagerNodeDown::operator()(
     std::unique_ptr<DataManagerValue>& value) const {
   if (value) {
-    value->SetPmidOffline(kPmidName);
+//    value->SetPmidOffline(kPmidName);
     return detail::DbAction::kPut;
   }
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));

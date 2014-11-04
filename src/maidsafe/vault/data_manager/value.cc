@@ -29,7 +29,7 @@ namespace maidsafe {
 namespace vault {
 
 DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
-    : size_(0), online_pmids_(), offline_pmids_() {
+    : size_(0), pmids_() {
   protobuf::DataManagerValue metadata_value_proto;
   if (!metadata_value_proto.ParseFromString(serialised_metadata_value)) {
     LOG(kError) << "Failed to read or parse serialised metadata value";
@@ -40,12 +40,9 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
     size_ = metadata_value_proto.size();
-    // Default status of pmid_node is online, later on mark correspondings to offline
     for (auto& i : metadata_value_proto.pmid_names())
-      online_pmids_.insert(PmidName(Identity(i)));
-//    for (auto& i : metadata_value_proto.offline_pmid_name())
-//      offline_pmids_.insert(PmidName(Identity(i)));
-    if (online_pmids_.size() < 1) {
+      pmids_.insert(PmidName(Identity(i)));
+    if (pmids_.size() < 1) {
       LOG(kError) << "Invalid pmids";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
@@ -54,31 +51,26 @@ DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
 
 DataManagerValue& DataManagerValue::operator=(const DataManagerValue& other) {
   size_ = other.size_;
-  online_pmids_ = other.online_pmids_;
-  offline_pmids_ = other.offline_pmids_;
+  pmids_ = other.pmids_;
   return *this;
 }
 
 DataManagerValue::DataManagerValue(const DataManagerValue& other) {
   size_ = other.size_;
-  online_pmids_ = other.online_pmids_;
-  offline_pmids_ = other.offline_pmids_;
+  pmids_ = other.pmids_;
 }
 
 DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
-    : size_(size), online_pmids_(), offline_pmids_() {
+    : size_(size), pmids_() {
   AddPmid(pmid_name);
 }
 
 DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
-    : size_(std::move(other.size_)),
-      online_pmids_(std::move(other.online_pmids_)),
-      offline_pmids_(std::move(other.offline_pmids_)) {}
+    : size_(std::move(other.size_)), pmids_(std::move(other.pmids_)) {}
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
-  online_pmids_.insert(pmid_name);
-  offline_pmids_.erase(pmid_name);
+  pmids_.insert(pmid_name);
 //  PrintRecords();
 }
 
@@ -89,38 +81,12 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
 //    // TODO add error - not_allowed
 //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
-  online_pmids_.erase(pmid_name);
-  offline_pmids_.erase(pmid_name);
+  pmids_.erase(pmid_name);
   PrintRecords();
-}
-
-void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::SetPmidOnline " << HexSubstr(pmid_name->string());
-  auto deleted = offline_pmids_.erase(pmid_name);
-  if (deleted == 1) {
-    online_pmids_.insert(pmid_name);
-  } else {
-    LOG(kError) << "Invalid Pmid reported";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-  PrintRecords();
-}
-
-void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::SetPmidOffline " << HexSubstr(pmid_name->string());
-  auto deleted = online_pmids_.erase(pmid_name);
-  if (deleted == 1) {
-    offline_pmids_.insert(pmid_name);
-  } else {
-    LOG(kError) << "Invalid Pmid reported";
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-//  PrintRecords();
 }
 
 bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
-  std::set<PmidName> all_pmids(AllPmids());
-  for (auto& pmid : all_pmids)
+  for (auto& pmid : pmids_)
     if (pmid_name == pmid)
       return true;
   return false;
@@ -131,45 +97,30 @@ std::string DataManagerValue::Serialise() const {
     LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
-  assert(!(online_pmids_.empty() && offline_pmids_.empty()));
+  assert(!pmids_.empty());
   protobuf::DataManagerValue metadata_value_proto;
   metadata_value_proto.set_size(size_);
-  for (const auto& i : online_pmids_)
-    metadata_value_proto.add_pmid_names(i->string());
-  for (const auto& i : offline_pmids_)
+  for (const auto& i : pmids_)
     metadata_value_proto.add_pmid_names(i->string());
   assert(metadata_value_proto.IsInitialized());
   return metadata_value_proto.SerializeAsString();
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
-  return lhs.size_ == rhs.size_ &&
-         lhs.online_pmids_ == rhs.online_pmids_ && lhs.offline_pmids_ == rhs.offline_pmids_;
-}
-
-std::set<PmidName> DataManagerValue::AllPmids() const {
-  std::set<PmidName> pmids_union;
-  std::set_union(std::begin(online_pmids_), std::end(online_pmids_), std::begin(offline_pmids_),
-                 std::end(offline_pmids_), std::inserter(pmids_union, std::begin(pmids_union)));
-  return pmids_union;
+  return lhs.size_ == rhs.size_ && lhs.pmids_ == rhs.pmids_;
 }
 
 std::set<PmidName> DataManagerValue::online_pmids(routing::Routing& routing) const {
-  std::set<PmidName> all_pmids(AllPmids());
   std::set<PmidName> online_pmids;
-  for (auto& pmid : all_pmids)
+  for (auto& pmid : pmids_)
     if (routing.IsConnectedVault(NodeId(pmid->string())))
       online_pmids.insert(pmid);
   return online_pmids;
 }
 
 void DataManagerValue::PrintRecords() {
-  LOG(kVerbose) << " online_pmids_ now having : ";
-  for (auto pmid : online_pmids_) {
-    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
-  }
-  LOG(kVerbose) << " offline_pmids_ now having : ";
-  for (auto pmid : offline_pmids_) {
+  LOG(kVerbose) << "pmids_ now having : ";
+  for (auto pmid : pmids_) {
     LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
   }
 }
@@ -177,11 +128,8 @@ void DataManagerValue::PrintRecords() {
 std::string DataManagerValue::Print() const {
   std::stringstream stream;
   stream << "\n\t[size_," << size_ << "]";
-  stream << "\n\t\t online_pmids_ now having : ";
-  for (auto pmid : online_pmids_)
-    stream << "\n\t\t     ----     " << HexSubstr(pmid.value.string());
-  stream << "\n\t\t offline_pmids_ now having : ";
-  for (auto pmid : offline_pmids_)
+  stream << "\n\t\t pmids_ now having : ";
+  for (auto pmid : pmids_)
     stream << "\n\t\t     ----     " << HexSubstr(pmid.value.string());
   return stream.str();
 }
