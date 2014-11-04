@@ -71,7 +71,7 @@ void PmidManagerService::HandleSyncedPut(
   // got two resolved action, and committing same entry to db.
   // BEFORE_RELEASE check how to ensure proper stored_space can be updated
   try {
-    PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+    PmidManager::Key metadata_key(synced_action->key.group_name());
     db_.Commit(metadata_key, synced_action->action);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "HandleSyncedPut caught an error during db commit " << error.what();
@@ -89,7 +89,7 @@ void PmidManagerService::HandleSyncedDelete(
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
                 << HexSubstr(synced_action->key.name.string()) << " to db_ ";
   try {
-    PmidManager::MetadataKey metadata_key(synced_action->key.group_name());
+    PmidManager::Key metadata_key(synced_action->key.group_name());
     db_.Commit(metadata_key, synced_action->action);
   } catch (std::exception& e) {
     // Delete action shall be exception free and no response expected
@@ -104,7 +104,7 @@ void PmidManagerService::HandleSyncedSetPmidHealth(
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManager::MetadataKey metadata_key(synced_action->key);
+  PmidManager::Key metadata_key(synced_action->key);
   db_.Commit(metadata_key, synced_action->action);
 }
 
@@ -115,7 +115,7 @@ void PmidManagerService::HandleSyncedCreatePmidAccount(
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManager::MetadataKey metadata_key(synced_action->key);
+  PmidManager::Key metadata_key(synced_action->key);
   ActionCreatePmidAccount create_pmid_account_action;
   db_.Commit(metadata_key, create_pmid_account_action);
 }
@@ -327,10 +327,10 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
   try {
-    db_.Get(PmidManager::MetadataKey(pmid_node));
+    db_.Get(PmidManager::Key(pmid_node));
     dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(CommonErrors::success));
     DoSync(PmidManager::UnresolvedSetPmidHealth(
-        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
+        PmidManager::Key(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
         routing_.kNodeId()));
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account))
@@ -379,10 +379,10 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
     PmidManagerMetadata reply(pmid_health);
     if (pmid_health == PmidManagerMetadata()) {
       LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
-      reply = db_.Get(PmidManager::MetadataKey(pmid_node));
+      reply = db_.Get(PmidManager::Key(pmid_node));
     } else {
       DoSync(PmidManager::UnresolvedSetPmidHealth(
-          PmidManager::MetadataKey(pmid_node),
+          PmidManager::Key(pmid_node),
           ActionPmidManagerSetPmidHealth(pmid_health.claimed_available_size),
           routing_.kNodeId()));
     }
@@ -403,7 +403,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
   try {
-    db_.Get(PmidManager::MetadataKey(pmid_node));
+    db_.Get(PmidManager::Key(pmid_node));
   } catch(const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
@@ -413,7 +413,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
     LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
     // Once synced, check whether account exists or not, if not exist then shall create an account
     // If exist, decide whether to update or delete depending on account status and targeting size
-    DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::MetadataKey(pmid_node),
+    DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::Key(pmid_node),
         ActionCreatePmidAccount(), routing_.kNodeId()));
   }
 }
@@ -482,7 +482,7 @@ void PmidManagerService::HandleChurnEvent(
       LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
       try {
         auto pmid_node(PmidName(Identity(lost_node.string())));
-        auto meta_data(db_.Get(PmidManager::MetadataKey(pmid_node)));
+        auto meta_data(db_.Get(PmidManager::Key(pmid_node)));
         auto contents(db_.GetContents(pmid_node));
         for (const auto& kv_pair : contents.kv_pairs) {
           VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
@@ -519,7 +519,7 @@ void PmidManagerService::HandleChurnEvent(
     }
 */
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-    Db<PmidManager::MetadataKey, PmidManager::Metadata>::TransferInfo transfer_info(
+    Db<PmidManager::Key, PmidManager::Value>::TransferInfo transfer_info(
         db_.GetTransferInfo(close_nodes_change));
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
@@ -551,7 +551,7 @@ void PmidManagerService::HandleChurnEvent(
 // =============== Account transfer ===============================================================
 
 void PmidManagerService::TransferAccount(const NodeId& dest,
-    const std::vector<Db<PmidManager::MetadataKey, PmidManager::Metadata>::KvPair>& accounts) {
+    const std::vector<Db<PmidManager::Key, PmidManager::Value>::KvPair>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
     // i.e. existing PM will be seen as new_node in close_nodes_change
@@ -605,12 +605,12 @@ void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
   VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
        resolved_action->key);
-  std::vector<std::pair<PmidManager::MetadataKey, PmidManagerMetadata>> kv_pairs;
+  std::vector<std::pair<PmidManager::Key, PmidManagerMetadata>> kv_pairs;
   for (auto& action : resolved_action->actions) {
     try {
       LOG(kVerbose) << "HandleAccountTransfer handle metadata";
       PmidManagerMetadata meta_data(action);
-      PmidManager::MetadataKey meta_data_key(resolved_action->key);
+      PmidManager::Key meta_data_key(resolved_action->key);
       kv_pairs.push_back(std::make_pair(std::move(meta_data_key), std::move(meta_data)));
     } catch(...) {
       LOG(kError) << "HandleAccountTransfer can't parse the action";

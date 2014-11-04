@@ -53,16 +53,16 @@ template <>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
   typedef passport::PublicPmid::Name GroupName;
-  typedef vault::GroupKey<GroupName> Key;
-  typedef vault::Key MetadataKey;
-  typedef vault::PmidManagerMetadata Metadata;
-  typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
-  typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
+  typedef vault::GroupKey<GroupName> SyncKey;
+  typedef vault::Key Key;
+  typedef vault::PmidManagerMetadata Value;
+  typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut> UnresolvedPut;
+  typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete> UnresolvedDelete;
+  typedef vault::UnresolvedAction<SyncKey, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
   typedef vault::UnresolvedAction<
-              MetadataKey, vault::ActionPmidManagerSetPmidHealth> UnresolvedSetPmidHealth;
+              Key, vault::ActionPmidManagerSetPmidHealth> UnresolvedSetPmidHealth;
   typedef vault::UnresolvedAction<
-              MetadataKey, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
+              Key, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
   typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
 };
 

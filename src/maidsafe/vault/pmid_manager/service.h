@@ -146,14 +146,14 @@ class PmidManagerService {
       const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
 
   void TransferAccount(const NodeId& dest,
-                       const std::vector<Db<PmidManager::MetadataKey,
-                                            PmidManager::Metadata>::KvPair>& accounts);
+                       const std::vector<Db<PmidManager::Key,
+                                            PmidManager::Value>::KvPair>& accounts);
 
   void HandleAccountTransfer(
       std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action);
 
   routing::Routing& routing_;
-  KeyValueMap<PmidManager::MetadataKey, PmidManager::Metadata> db_;
+  KeyValueMap<PmidManager::Key, PmidManager::Value> db_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
@@ -259,8 +259,8 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
 //   } catch(...) {
 //   }
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
-  PmidManager::Key group_key(PmidManager::GroupName(pmid_node), data.name().value,
-                             Data::Tag::kValue);
+  PmidManager::SyncKey group_key(PmidManager::GroupName(pmid_node), data.name().value,
+                                 Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedPut(group_key,
       ActionPmidManagerPut(static_cast<uint32_t>(data.Serialise().data.string().size()),
           message_id), routing_.kNodeId()));
@@ -276,7 +276,7 @@ void PmidManagerService::HandlePutFailure(
                 << " . available_space -- " << available_space << " , error_code -- "
                 << boost::diagnostic_information(error_code);
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
-  PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
+  PmidManager::SyncKey group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, false, true),
                                        routing_.kNodeId()));
 }
@@ -287,7 +287,7 @@ void PmidManagerService::HandleFalseNotification(const typename Data::Name& name
   LOG(kVerbose) << "PmidManagerService::HandleFlaseNotification regarding pmid_node -- "
                 << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
-  PmidManager::Key group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
+  PmidManager::SyncKey group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, true, true),
                                        routing_.kNodeId()));
 }
@@ -311,8 +311,8 @@ void PmidManagerService::HandleDelete(
                 << " on pmid_node " << HexSubstr(pmid_name.value.string())
                 << " , with message_id -- " << message_id.data;
   dispatcher_.SendDeleteRequest<Data>(pmid_name, data_name, message_id);
-  PmidManager::Key group_key(typename PmidManager::GroupName(pmid_name),
-                             data_name.value, Data::Tag::kValue);
+  PmidManager::SyncKey group_key(typename PmidManager::GroupName(pmid_name),
+                                 data_name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, true, false),
                                        routing_.kNodeId()));
 }
