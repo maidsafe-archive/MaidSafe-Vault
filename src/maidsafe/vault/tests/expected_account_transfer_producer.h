@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,7 +16,21 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/tests/account_transfer_handler_test.h"
+#ifndef MAIDSAFE_VAULT_TEST_EXPECTED_ACCOUNT_TRANSFER_PRODUCER_H_
+#define MAIDSAFE_VAULT_TEST_EXPECTED_ACCOUNT_TRANSFER_PRODUCER_H_
+
+#include <algorithm>
+#include <map>
+#include <mutex>
+#include <utility>
+#include <vector>
+
+#include "boost/optional.hpp"
+
+#include "maidsafe/common/node_id.h"
+
+#include "maidsafe/vault/account_transfer_handler.h"
+
 
 namespace maidsafe {
 
@@ -24,6 +38,8 @@ namespace vault {
 
 namespace test {
 
+template <typename Persona>
+class ExpectedAccountTransferProducer {};
 
 }  // namespace test
 
@@ -31,3 +47,4 @@ namespace test {
 
 }  // namespace maidsafe
 
+#endif  // MAIDSAFE_VAULT_TEST_EXPECTED_ACCOUNT_TRANSFER_PRODUCER_H_
