@@ -38,7 +38,6 @@ struct ActionCreatePmidAccount {
   explicit ActionCreatePmidAccount(const std::string& serialised_action);
   ActionCreatePmidAccount(const ActionCreatePmidAccount& other);
   ActionCreatePmidAccount(ActionCreatePmidAccount&& other);
-  detail::DbAction operator()(std::unique_ptr<PmidManagerValue>& metadata);
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;

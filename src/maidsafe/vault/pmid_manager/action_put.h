@@ -39,7 +39,7 @@ struct ActionPmidManagerPut {
   ActionPmidManagerPut(const ActionPmidManagerPut& other);
   ActionPmidManagerPut(ActionPmidManagerPut&& other);
 
-  detail::DbAction operator()(std::unique_ptr<PmidManagerValue>& metadata);
+  void operator()(PmidManagerValue& value);
 
   std::string Serialise() const;
 

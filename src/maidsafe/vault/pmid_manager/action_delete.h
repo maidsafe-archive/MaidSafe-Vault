@@ -32,7 +32,7 @@ namespace vault {
 struct ActionPmidManagerDelete {
   ActionPmidManagerDelete(int32_t size, bool pmid_node_available_in, bool data_failure);
   explicit ActionPmidManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(std::unique_ptr<PmidManagerValue>& metadata);
+  void operator()(PmidManagerValue& value);
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;

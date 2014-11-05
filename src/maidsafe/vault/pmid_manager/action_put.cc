@@ -54,16 +54,8 @@ std::string ActionPmidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionPmidManagerPut::operator()(
-    std::unique_ptr<PmidManagerValue>& metadata) {
-  if (metadata) {
-    LOG(kVerbose) << "ActionPmidManagerPut::operator() put " << kSize;
-    metadata->PutData(kSize);
-    return detail::DbAction::kPut;
-  }
-  LOG(kWarning) << "ActionDataManagerPut::operator() no_such_account";
-  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-  return detail::DbAction::kPut;
+void ActionPmidManagerPut::operator()(PmidManagerValue& value) {
+  value.PutData(kSize);
 }
 
 bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs) {

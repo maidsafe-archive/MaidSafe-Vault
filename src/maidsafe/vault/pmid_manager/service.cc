@@ -75,9 +75,7 @@ void PmidManagerService::HandleSyncedPut(
     auto itr(accounts_.find(account_name));
     if (itr == std::end(accounts_))
       BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-    std::unique_ptr<PmidManager::Value> value(new PmidManager::Value(itr->second));
-    synced_action->action(value);
-    itr->second = *value;
+    synced_action->action(itr->second);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "HandleSyncedPut caught an error during account commit " << error.what();
     throw;
@@ -116,33 +114,21 @@ void PmidManagerService::HandleSyncedSetPmidHealth(
   if (itr == std::end(accounts_))
     accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
   itr = accounts_.find(account_name);
-  std::unique_ptr<PmidManager::Value> value(new PmidManager::Value(itr->second));
-  synced_action->action(value);
-  if (value->claimed_available_size == 0)
+  synced_action->action(itr->second);
+  if (itr->second.claimed_available_size == 0)
     accounts_.erase(account_name);
-  else
-    itr->second = *value;
 }
 
 void PmidManagerService::HandleSyncedCreatePmidAccount(
     std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedCreateAccount for pmid_node "
                 << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
-  // If no account exists, then create an account
-  // If has account, and asked to set to 0, delete the account
-  // If has account, and asked to set to non-zero, update the size
+  // If no account exists, then create an account. otherwise ignore the request
   std::lock_guard<std::mutex> lock(mutex_);
   PmidManager::Key account_name(synced_action->key);
   auto itr(accounts_.find(account_name));
   if (itr == std::end(accounts_))
     accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
-  itr = accounts_.find(account_name);
-  std::unique_ptr<PmidManager::Value> value(new PmidManager::Value(itr->second));
-  synced_action->action(value);
-  if (value->claimed_available_size == 0)
-    accounts_.erase(account_name);
-  else
-    itr->second = *value;
 }
 
 // =============== HandleMessage ===================================================================

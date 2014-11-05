@@ -37,13 +37,6 @@ ActionCreatePmidAccount::ActionCreatePmidAccount(
 ActionCreatePmidAccount::ActionCreatePmidAccount(
     ActionCreatePmidAccount&& /*other*/) {}
 
-detail::DbAction ActionCreatePmidAccount::operator()(
-    std::unique_ptr<PmidManagerValue>& metadata) {
-  if (!metadata)
-    metadata.reset(new PmidManagerValue());
-  return detail::DbAction::kPut;
-}
-
 std::string ActionCreatePmidAccount::Serialise() const {
   return std::string();
 }
