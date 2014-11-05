@@ -23,6 +23,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <map>
 
 #include "boost/filesystem/path.hpp"
 
@@ -35,7 +36,6 @@
 
 #include "maidsafe/vault/account_transfer.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/key_value_map.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/pmid_manager/action_delete.h"
@@ -144,15 +144,13 @@ class PmidManagerService {
   void DoHandleHealthResponse(const PmidName& pmid_node,
       const MaidName& maid_node, const PmidManagerValue& pmid_health, nfs::MessageId message_id);
 
-  void TransferAccount(const NodeId& dest,
-                       const std::vector<Db<PmidManager::Key,
-                                            PmidManager::Value>::KvPair>& accounts);
+  void TransferAccount(const NodeId& dest, const std::vector<PmidManager::KvPair>& accounts);
 
   void HandleAccountTransfer(
       std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action);
 
   routing::Routing& routing_;
-  KeyValueMap<PmidManager::Key, PmidManager::Value> db_;
+  std::map<PmidManager::Key, PmidManager::Value> accounts_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;

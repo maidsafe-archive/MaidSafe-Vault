@@ -50,7 +50,7 @@ inline bool ForThisPersona(const Message& message) {
 }  // namespace detail
 
 PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing)
-    : routing_(routing), db_(), accumulator_mutex_(), mutex_(),
+    : routing_(routing), accounts_(), accumulator_mutex_(), mutex_(),
       stopped_(false), accumulator_(), dispatcher_(routing_), asio_service_(2),
       get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
@@ -64,16 +64,22 @@ void PmidManagerService::HandleSyncedPut(
     std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedPut commit put for chunk "
                 << HexSubstr(synced_action->key.name.string())
-                << " to db_ and send_put_response";
+                << " to accounts and send_put_response";
   // When different DM choose same PN for the same chunk, PM will receive same Put requests twice
   // from different DM. This will trigger two different sync_put actions and will eventually
-  // got two resolved action, and committing same entry to db.
+  // got two resolved action, and committing same entry to accounts_
   // BEFORE_RELEASE check how to ensure proper stored_space can be updated
   try {
-    PmidManager::Key metadata_key(synced_action->key.group_name());
-    db_.Commit(metadata_key, synced_action->action);
+    std::lock_guard<std::mutex> lock(mutex_);
+    PmidManager::Key account_name(synced_action->key.group_name());
+    auto itr(accounts_.find(account_name));
+    if (itr == std::end(accounts_))
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    std::unique_ptr<PmidManager::Value> value(new PmidManager::Value(itr->second));
+    synced_action->action(value);
+    itr->second = *value;
   } catch (const maidsafe_error& error) {
-    LOG(kWarning) << "HandleSyncedPut caught an error during db commit " << error.what();
+    LOG(kWarning) << "HandleSyncedPut caught an error during account commit " << error.what();
     throw;
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
@@ -86,10 +92,11 @@ void PmidManagerService::HandleSyncedPut(
 void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
-                << HexSubstr(synced_action->key.name.string()) << " to db_ ";
+                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
   try {
-    PmidManager::Key metadata_key(synced_action->key.group_name());
-    db_.Commit(metadata_key, synced_action->action);
+    std::lock_guard<std::mutex> lock(mutex_);
+    PmidManager::Key account_name(synced_action->key.group_name());
+    accounts_.erase(account_name);
   } catch (std::exception& e) {
     // Delete action shall be exception free and no response expected
     LOG(kWarning) << boost::diagnostic_information(e);
@@ -99,24 +106,43 @@ void PmidManagerService::HandleSyncedDelete(
 void PmidManagerService::HandleSyncedSetPmidHealth(
     std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedSetAvailableSize for pmid_node "
-                << HexSubstr(synced_action->key.name.string()) << " to db_ ";
+                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManager::Key metadata_key(synced_action->key);
-  db_.Commit(metadata_key, synced_action->action);
+  std::lock_guard<std::mutex> lock(mutex_);
+  PmidManager::Key account_name(synced_action->key);
+  auto itr(accounts_.find(account_name));
+  if (itr == std::end(accounts_))
+    accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
+  itr = accounts_.find(account_name);
+  std::unique_ptr<PmidManager::Value> value(new PmidManager::Value(itr->second));
+  synced_action->action(value);
+  if (value->claimed_available_size == 0)
+    accounts_.erase(account_name);
+  else
+    itr->second = *value;
 }
 
 void PmidManagerService::HandleSyncedCreatePmidAccount(
     std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedCreateAccount for pmid_node "
-                << HexSubstr(synced_action->key.name.string()) << " to db_ ";
+                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
   // If no account exists, then create an account
   // If has account, and asked to set to 0, delete the account
   // If has account, and asked to set to non-zero, update the size
-  PmidManager::Key metadata_key(synced_action->key);
-  ActionCreatePmidAccount create_pmid_account_action;
-  db_.Commit(metadata_key, create_pmid_account_action);
+  std::lock_guard<std::mutex> lock(mutex_);
+  PmidManager::Key account_name(synced_action->key);
+  auto itr(accounts_.find(account_name));
+  if (itr == std::end(accounts_))
+    accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
+  itr = accounts_.find(account_name);
+  std::unique_ptr<PmidManager::Value> value(new PmidManager::Value(itr->second));
+  synced_action->action(value);
+  if (value->claimed_available_size == 0)
+    accounts_.erase(account_name);
+  else
+    itr->second = *value;
 }
 
 // =============== HandleMessage ===================================================================
@@ -325,16 +351,16 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 //=================================================================================================
 
 void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
-  try {
-    db_.Get(PmidManager::Key(pmid_node));
+  std::lock_guard<std::mutex> lock(mutex_);
+  PmidManager::Key account_name(pmid_node);
+  auto itr(accounts_.find(account_name));
+  if (itr == std::end(accounts_)) {
+    dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(VaultErrors::no_such_account));
+  } else {
     dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(CommonErrors::success));
     DoSync(PmidManager::UnresolvedSetPmidHealth(
         PmidManager::Key(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
         routing_.kNodeId()));
-  } catch (const maidsafe_error& error) {
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
-      throw;
-    dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(VaultErrors::no_such_account));
   }
 }
 
@@ -378,7 +404,12 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
     PmidManagerValue reply(pmid_health);
     if (pmid_health == PmidManagerValue()) {
       LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
-      reply = db_.Get(PmidManager::Key(pmid_node));
+      std::lock_guard<std::mutex> lock(mutex_);
+      auto itr(accounts_.find(PmidManager::Key(pmid_node)));
+      if (itr == std::end(accounts_))
+        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+      else
+        reply = itr->second;
     } else {
       DoSync(PmidManager::UnresolvedSetPmidHealth(
           PmidManager::Key(pmid_node),
@@ -401,20 +432,13 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
   LOG(kVerbose) << "PmidManagerService::HandleCreatePmidAccountRequest from maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  try {
-    db_.Get(PmidManager::Key(pmid_node));
-  } catch(const maidsafe_error& error) {
-    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
-                  << boost::diagnostic_information(error);
-      throw;
-    }
-    LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
-    // Once synced, check whether account exists or not, if not exist then shall create an account
-    // If exist, decide whether to update or delete depending on account status and targeting size
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(accounts_.find(PmidManager::Key(pmid_node)));
+  if (itr != std::end(accounts_))
     DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::Key(pmid_node),
         ActionCreatePmidAccount(), routing_.kNodeId()));
-  }
+  else
+    LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest account already existed";
 }
 
 // =================================================================================================
@@ -518,8 +542,9 @@ void PmidManagerService::HandleChurnEvent(
     }
 */
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-    Db<PmidManager::Key, PmidManager::Value>::TransferInfo transfer_info(
-        db_.GetTransferInfo(close_nodes_change));
+    PmidManager::TransferInfo transfer_info(
+        detail::GetTransferInfo<PmidManager::Key, PmidManager::Value, PmidManager::TransferInfo>(
+            close_nodes_change, accounts_));
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
@@ -550,7 +575,7 @@ void PmidManagerService::HandleChurnEvent(
 // =============== Account transfer ===============================================================
 
 void PmidManagerService::TransferAccount(const NodeId& dest,
-    const std::vector<Db<PmidManager::Key, PmidManager::Value>::KvPair>& accounts) {
+                                         const std::vector<PmidManager::KvPair>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
     // i.e. existing PM will be seen as new_node in close_nodes_change
@@ -615,7 +640,10 @@ void PmidManagerService::HandleAccountTransfer(
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
   }
-  db_.HandleTransfer(kv_pairs);
+
+  std::lock_guard<std::mutex> lock(mutex_);
+  for (const auto& kv_pair : kv_pairs)
+    accounts_[kv_pair.first] = kv_pair.second;
 }
 
 // void PmidManagerService::TransferAccount(const PmidName& account_name, const NodeId& new_node) {

@@ -57,6 +57,8 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef vault::GroupKey<GroupName> SyncKey;
   typedef vault::Key Key;
   typedef vault::PmidManagerValue Value;
+  typedef std::pair<Key, Value> KvPair;
+  typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
