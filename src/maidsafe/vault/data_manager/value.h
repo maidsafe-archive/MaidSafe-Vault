@@ -56,6 +56,7 @@ class DataManagerValue {
                    routing::Routing& routing,
                    PmidName& pmid_node_to_remove) const;
   std::string Print() const;
+  int32_t chunk_size() const { return size_; }
 
   static DataManagerValue Resolve(const std::vector<DataManagerValue>& values);
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

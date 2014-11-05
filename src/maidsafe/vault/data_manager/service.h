@@ -861,9 +861,9 @@ void DataManagerService::AssessIntegrityCheckResults(
           DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
-          // TODO(Team): DM will hold the chunk_size info, then pass this info to PM
+          typename DataManager::Key key(get_response_op->data_name.value, Data::Tag::kValue);
           SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
-                                          0,
+                                          db_.Get(key).chunk_size(),
                                           get_response_op->message_id);
         } else {
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
@@ -892,8 +892,7 @@ void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
   typename DataManager::Key key(name.value, Data::Tag::kValue);
   DoSync(DataManager::UnresolvedRemovePmid(key,
              ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
-  // TODO(Team) : the new account will hold chunk_size info
-  SendDeleteRequest<Data>(pmid_node, name, 0, message_id);
+  SendDeleteRequest<Data>(pmid_node, name, db_.Get(key).chunk_size(), message_id);
 }
 
 // =================== Delete implementation ======================================================
