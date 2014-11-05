@@ -376,17 +376,17 @@ void DataManagerService::HandleMessage(
     const typename AccountTransferFromDataManagerToDataManager::Sender& sender,
     const typename AccountTransferFromDataManagerToDataManager::Receiver& receiver);
 
-template <>
-void DataManagerService::HandleMessage(
-  const SetPmidOnlineFromPmidManagerToDataManager& message,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
+//template <>
+//void DataManagerService::HandleMessage(
+//  const SetPmidOnlineFromPmidManagerToDataManager& message,
+//    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
+//    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
 
-template <>
-void DataManagerService::HandleMessage(
-    const SetPmidOfflineFromPmidManagerToDataManager& message,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
+//template <>
+//void DataManagerService::HandleMessage(
+//    const SetPmidOfflineFromPmidManagerToDataManager& message,
+//    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
+//    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
