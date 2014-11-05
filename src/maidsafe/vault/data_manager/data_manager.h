@@ -30,8 +30,6 @@
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
-#include "maidsafe/vault/data_manager/action_node_down.h"
-#include "maidsafe/vault/data_manager/action_node_up.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 
 namespace maidsafe {
@@ -57,8 +55,6 @@ struct PersonaTypes<Persona::kDataManager> {
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid> UnresolvedAddPmid;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid> UnresolvedRemovePmid;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerNodeUp> UnresolvedNodeUp;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerNodeDown> UnresolvedNodeDown;
 };
 
 }  // namespace nfs

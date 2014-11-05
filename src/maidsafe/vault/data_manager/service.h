@@ -287,8 +287,6 @@ class DataManagerService {
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
-  Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
-  Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
 
  protected:
@@ -948,8 +946,6 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_, unresolved_action);
 }
 
 template<typename DataName>

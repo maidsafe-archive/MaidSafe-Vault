@@ -32,8 +32,6 @@
 #include "maidsafe/vault/data_manager/action_delete.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
-#include "maidsafe/vault/data_manager/action_node_down.h"
-#include "maidsafe/vault/data_manager/action_node_up.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 
 namespace maidsafe {
@@ -68,8 +66,6 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
-      sync_node_downs_(NodeId(pmid.name()->string())),
-      sync_node_ups_(NodeId(pmid.name()->string())),
       account_transfer_() {
 }
 
@@ -353,42 +349,6 @@ void DataManagerService::HandleMessage(
         } catch(maidsafe_error& error) {
           LOG(kWarning) << "having error when trying to commit remove pmid to db : "
                         << boost::diagnostic_information(error);
-        }
-      }
-      break;
-    }
-    case ActionDataManagerNodeUp::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerNodeUp";
-      DataManager::UnresolvedNodeUp unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager commit pmid goes online "
-                      << " for chunk " << HexSubstr(resolved_action->key.name.string())
-                      << " and pmid_node "
-                      << HexSubstr(resolved_action->action.kPmidName->string());
-        try {
-          db_.Commit(resolved_action->key, resolved_action->action);
-        } catch(maidsafe_error& error) {
-          LOG(kWarning) << "having error when trying to commit set pmid up to db : "
-                        << boost::diagnostic_information(error);
-        }
-      }
-      break;
-    }
-    case ActionDataManagerNodeDown::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerNodeDown";
-      DataManager::UnresolvedNodeDown unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
-        try {
-          db_.Commit(resolved_action->key, resolved_action->action);
-        }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(CommonErrors::no_such_element))
-            throw;
         }
       }
       break;
