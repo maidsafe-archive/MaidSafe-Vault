@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_TEST_ACCOUNT_TRANSFER_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_TEST_ACCOUNT_TRANSFER_H_
 
+#include "maidsafe/routing/parameters.h"
+
 #include "maidsafe/vault/tests/expected_account_transfer_producer.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
@@ -35,22 +37,89 @@ using DataManagerPersona = typename nfs::PersonaTypes<nfs::Persona::kDataManager
 template <>
 class ExpectedAccountTransferProducer<DataManagerPersona> {
  public:
-  using KeyValuePair = std::pair<typename DataManagerPersona::Key,
-                                 typename DataManagerPersona::Value>;
-  using KeyResultPair = std::pair<typename DataManagerPersona::Key,
-                                  typename AccountTransferHandler<DataManagerPersona>::AddResult>;
   using Value = DataManagerPersona::Value;
   using Key = DataManagerPersona::Key;
 
-  Value CreateValue(int32_t data_size) {
-    return Value { PmidName {Identity {NodeId(NodeId::IdType::kRandomId) } },  data_size };
+  using KeyValuePair = std::pair<Key, Value>;
+  using AddResult = AccountTransferHandler<DataManagerPersona>::AddResult;
+
+  ExpectedAccountTransferProducer()
+      : kv_pairs_(), kDataSize_(64), kAcceptSize_((routing::Parameters::group_size + 1) / 2),
+        kFailureSize_(routing::Parameters::group_size - 1) {}
+
+  std::map<Key, AddResult> ProduceResults(unsigned int total) {
+    CreateEntries(total);
+    RandomlyDistribute();
+    std::map<Key, AddResult> results;
+    auto copy(kv_pairs_);
+    for (const auto& kv_pair : kv_pairs_) {
+      if (results.find(kv_pair.first) == std::end(results)) {
+        results.insert(std::make_pair(kv_pair.first, AddResult::kWaiting));
+        if (std::count(std::begin(copy), std::end(copy), kv_pair) >= kAcceptSize_)
+          results[kv_pair.first] = AddResult::kSuccess;
+        else if (std::count_if(std::begin(copy), std::end(copy),
+                               [&kv_pair](const KeyValuePair& pair) {
+                                 return pair.first == kv_pair.first;
+                               }) >= kFailureSize_)
+          results[kv_pair.first] = AddResult::kFailure;
+      }
+    }
+    return results;
   }
 
-  void Produce(unsigned int resolvable, unsigned int unresolvable,
-               std::vector<KeyValuePair>& entries, std::vector<KeyResultPair>& result) {
-    for (unsigned int index(); index < resolvable + unresolvable; ++index) {
+ protected:
+  std::vector<KeyValuePair> kv_pairs_;
+
+ private:
+  void CreateEntries(unsigned int total) {
+    for (unsigned int index(0); index < total; ++index) {
+      kv_pairs_.push_back(
+          std::make_pair(Key(Identity { NodeId(NodeId::IdType::kRandomId).string() },
+                         ImmutableData::Tag::kValue), CreateValue(kDataSize_)));
+      LOG(kVerbose) << kv_pairs_.size() << " added "
+                    << HexSubstr(kv_pairs_.back().first.name.string());
     }
   }
+
+  void RandomlyDistribute() {
+    assert(!kv_pairs_.empty());
+    auto original_size(kv_pairs_.size());
+    std::vector<KeyValuePair>::iterator resolvable_end_iter(std::begin(kv_pairs_)),
+        unresolvable_iter;
+    std::advance(resolvable_end_iter, original_size / 2);
+    CreateResolvables(resolvable_end_iter);
+    resolvable_end_iter = unresolvable_iter = std::begin(kv_pairs_);
+    std::advance(resolvable_end_iter, original_size / 2 + 1);
+    std::advance(unresolvable_iter, original_size * 3 / 4);
+    CreateUnResolvable(resolvable_end_iter, unresolvable_iter);
+  }
+
+  Value CreateValue(int32_t data_size) {
+    return Value { PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } },
+                   data_size };
+  }
+
+  void CreateResolvables(std::vector<KeyValuePair>::iterator& resolvable_end_iter) {
+    std::vector<KeyValuePair> new_pairs;
+    for (auto iter(std::begin(kv_pairs_)); iter != resolvable_end_iter; ++iter)
+      for (unsigned int index(0); index < kAcceptSize_ - 1; ++index)
+        new_pairs.push_back(*iter);
+    std::copy(std::begin(new_pairs), std::end(new_pairs), std::back_inserter(kv_pairs_));
+  }
+
+  void CreateUnResolvable(std::vector<KeyValuePair>::iterator& unresolvable_start_iter,
+                          std::vector<KeyValuePair>::iterator& unresolvable_end_iter) {
+    std::vector<KeyValuePair> new_pairs;
+    for (; unresolvable_start_iter != unresolvable_end_iter; ++unresolvable_start_iter)
+      for (unsigned int index(0); index < kFailureSize_ - 1; ++index) {
+        new_pairs.push_back(
+            std::make_pair(unresolvable_start_iter->first, CreateValue(kDataSize_)));
+      }
+    std::copy(std::begin(new_pairs), std::end(new_pairs), std::back_inserter(kv_pairs_));
+  }
+
+  const int32_t kDataSize_;
+  const unsigned int kAcceptSize_, kFailureSize_;
 };
 
 //TYPED_TEST_P(AccountTransferHandlerTest, BEH_SuccessfulResolve) {

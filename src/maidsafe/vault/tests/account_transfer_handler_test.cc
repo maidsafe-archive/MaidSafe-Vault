@@ -47,30 +47,18 @@ class AccountTransferHandlerTest : public testing::Test,
   using KeyResultPair = std::pair<typename Persona::Key,
                                   typename AccountTransferHandler<Persona>::AddResult>;
 
-  AccountTransferHandlerTest()
-      : account_transfer_handler_(),
-        source_ids_(), data_size_(64),
-        data_(NonEmptyString { RandomAlphaNumericString(data_size_) }) {
-    for (unsigned int index(0); index < routing::Parameters::group_size; ++index)
-      source_ids_.emplace_back(NodeId(NodeId::IdType::kRandomId));
-  }
+  AccountTransferHandlerTest() : account_transfer_handler_() {}
 
  protected:
    AccountTransferHandler<Persona> account_transfer_handler_;
-   ExpectedAccountTransferProducer<Persona> expected_results_;
-   std::vector<NodeId> source_ids_;
-   int32_t data_size_;
-   ImmutableData data_;
 };
 
 TYPED_TEST_CASE_P(AccountTransferHandlerTest);
 
 TYPED_TEST_P(AccountTransferHandlerTest, BEH_InputMultipleEntries) {
-  std::vector<typename AccountTransferHandlerTest<TypeParam>::KeyValuePair> entries;
-  std::vector<typename AccountTransferHandlerTest<TypeParam>::KeyResultPair> results;
   std::map<Key, typename AccountTransferHandler<TypeParam>::AddResult> results_map;
-  this->expected_results_.Produce(200, 100, entries, results);
-  for (const auto& entry : entries) {
+  auto results(ExpectedAccountTransferProducer<TypeParam>::ProduceResults(1000));
+  for (const auto& entry : ExpectedAccountTransferProducer<TypeParam>::kv_pairs_) {
     auto add_result(this->account_transfer_handler_.Add(entry.first, entry.second,
                                                         NodeId(NodeId::IdType::kRandomId)));
     auto iter(results_map.find(entry.first));
@@ -80,7 +68,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_InputMultipleEntries) {
       results_map[entry.first] = add_result.result;
     }
   }
-  EXPECT_EQ(entries.size(), results_map.size());
+  EXPECT_EQ(results.size(), results_map.size());
   for (const auto& entry : results)
     EXPECT_EQ(entry.second, results_map.at(entry.first));
 }
