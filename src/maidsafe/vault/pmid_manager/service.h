@@ -61,8 +61,7 @@ class PmidManagerService {
   typedef PmidManagerServiceMessages Messages;
   typedef void HandleMessageReturnType;
 
-  PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                     const boost::filesystem::path& vault_root_dir);
+  PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing);
 
   template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
