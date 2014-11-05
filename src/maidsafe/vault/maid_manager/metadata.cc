@@ -21,7 +21,7 @@
 #include <utility>
 
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -55,7 +55,7 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
   for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
     pmid_totals_.emplace_back(
         maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
-        PmidManagerMetadata(
+        PmidManagerValue(
             maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
   }
   if (total_put_data_ < 0) {
@@ -98,7 +98,7 @@ void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_r
   auto itr(Find(pmid_registration.pmid_name()));
   if (itr == std::end(pmid_totals_)) {
     auto serialised_pmid_registration(pmid_registration.Serialise());
-    pmid_totals_.emplace_back(serialised_pmid_registration, PmidManagerMetadata());
+    pmid_totals_.emplace_back(serialised_pmid_registration, PmidManagerValue());
   }
 }
 
@@ -109,7 +109,7 @@ void MaidManagerMetadata::UnregisterPmid(const PmidName& pmid_name) {
 }
 
 void MaidManagerMetadata::UpdatePmidTotals(const PmidName& pmid_name,
-                                           const PmidManagerMetadata& pmid_metadata) {
+                                           const PmidManagerValue& pmid_metadata) {
   auto itr(Find(pmid_name));
   if (itr == std::end(pmid_totals_)) {
     LOG(kError) << "MaidManagerMetadata::UpdatePmidTotals can't find record for "

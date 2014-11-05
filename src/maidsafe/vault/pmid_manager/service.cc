@@ -24,7 +24,7 @@
 
 #include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.pb.h"
@@ -343,7 +343,7 @@ void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node, const Ma
   LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  auto functor([=](const PmidManagerMetadata& pmid_health) {
+  auto functor([=](const PmidManagerValue& pmid_health) {
     LOG(kVerbose) << "PmidManagerService::HandleHealthRequest "
                   << HexSubstr(pmid_node.value.string())
                   << " task called from timer to DoHandleGetHealthResponse";
@@ -360,7 +360,7 @@ void PmidManagerService::HandleHealthResponse(const PmidName& pmid_name,
   LOG(kVerbose) << "PmidManagerService::HandleHealthResponse Get pmid_health for "
                 << HexSubstr(pmid_name.value) << " with message_id " << message_id.data;
   try {
-    PmidManagerMetadata pmid_health;
+    PmidManagerValue pmid_health;
     pmid_health.SetAvailableSize(available_size);
     get_health_timer_.AddResponse(message_id.data, pmid_health);
   }
@@ -370,13 +370,13 @@ void PmidManagerService::HandleHealthResponse(const PmidName& pmid_name,
 }
 
 void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
-    const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id) {
+    const MaidName& maid_node, const PmidManagerValue& pmid_health, nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::DoHandleHealthResponse regarding maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
   try {
-    PmidManagerMetadata reply(pmid_health);
-    if (pmid_health == PmidManagerMetadata()) {
+    PmidManagerValue reply(pmid_health);
+    if (pmid_health == PmidManagerValue()) {
       LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
       reply = db_.Get(PmidManager::Key(pmid_node));
     } else {
@@ -390,7 +390,7 @@ void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
   }
   catch (...) {
     LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse no_such_element";
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
+    dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerValue(), message_id,
                                    maidsafe_error(CommonErrors::no_such_element));
   }
 }
@@ -421,7 +421,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 
 // void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
 //  try {
-//    PmidManagerMetadata
+//    PmidManagerValue
 // metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
 //    if (!metadata.pmid_name->string().empty()) {
 //      nfs::Reply reply(CommonErrors::success, metadata.Serialise());
@@ -604,11 +604,11 @@ void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
   VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
        resolved_action->key);
-  std::vector<std::pair<PmidManager::Key, PmidManagerMetadata>> kv_pairs;
+  std::vector<std::pair<PmidManager::Key, PmidManagerValue>> kv_pairs;
   for (auto& action : resolved_action->actions) {
     try {
       LOG(kVerbose) << "HandleAccountTransfer handle metadata";
-      PmidManagerMetadata meta_data(action);
+      PmidManagerValue meta_data(action);
       PmidManager::Key meta_data_key(resolved_action->key);
       kv_pairs.push_back(std::make_pair(std::move(meta_data_key), std::move(meta_data)));
     } catch(...) {

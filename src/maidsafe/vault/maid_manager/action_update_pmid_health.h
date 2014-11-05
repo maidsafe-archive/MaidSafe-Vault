@@ -32,7 +32,7 @@ namespace vault {
 
 struct ActionMaidManagerUpdatePmidHealth {
   explicit ActionMaidManagerUpdatePmidHealth(const PmidName& pmid_name,
-                                             const PmidManagerMetadata& pmid_health_in);
+                                             const PmidManagerValue& pmid_health_in);
   explicit ActionMaidManagerUpdatePmidHealth(const std::string& serialised_action);
   ActionMaidManagerUpdatePmidHealth(const ActionMaidManagerUpdatePmidHealth& other);
   ActionMaidManagerUpdatePmidHealth(ActionMaidManagerUpdatePmidHealth&& other);
@@ -41,7 +41,7 @@ struct ActionMaidManagerUpdatePmidHealth {
   void operator()(MaidManagerMetadata& metadata);
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPmidHealthResponse;
   const PmidName kPmidName;
-  const PmidManagerMetadata kPmidHealth;
+  const PmidManagerValue kPmidHealth;
 };
 
 bool operator==(const ActionMaidManagerUpdatePmidHealth& lhs,

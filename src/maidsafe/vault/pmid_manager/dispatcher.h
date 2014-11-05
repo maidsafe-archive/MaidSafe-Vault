@@ -35,7 +35,7 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/utils.h"
 
@@ -73,7 +73,7 @@ class PmidManagerDispatcher {
   void SendPmidAccount(const PmidName& pmid_node, const nfs_client::ReturnCode& return_code);
 
   void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
-                          const PmidManagerMetadata& pmid_health, nfs::MessageId message_id,
+                          const PmidManagerValue& pmid_health, nfs::MessageId message_id,
                           const maidsafe_error& error);
   void SendHealthRequest(const PmidName& pmid_node, nfs::MessageId message_id);
 

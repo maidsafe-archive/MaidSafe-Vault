@@ -32,6 +32,7 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
 #include "maidsafe/vault/pmid_manager/action_create_account.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -42,7 +43,7 @@ struct ActionPmidManagerDelete;
 struct ActionPmidManagerCreateAccount;
 struct ActionGetPmidTotals;
 struct ActionPmidManagerSetPmidHealth;
-struct PmidManagerMetadata;
+struct PmidManagerValue;
 struct ActionCreatePmidAccount;
 
 }  // namespace vault
@@ -55,7 +56,7 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef passport::PublicPmid::Name GroupName;
   typedef vault::GroupKey<GroupName> SyncKey;
   typedef vault::Key Key;
-  typedef vault::PmidManagerMetadata Value;
+  typedef vault::PmidManagerValue Value;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;

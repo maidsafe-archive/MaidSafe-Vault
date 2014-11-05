@@ -129,9 +129,9 @@ namespace test {
 
 //  //  BEH_PutFailureFromPmidNodeToPmidManager)
 //  {
-//    PmidManagerMetadata metadata(PmidName(pmid_.name()));
+//    PmidManagerValue metadata(PmidName(pmid_.name()));
 //    metadata.claimed_available_size = kTestChunkSize * 100;
-//    AddGroup(PmidName(pmid_.name()), PmidManagerMetadata());
+//    AddGroup(PmidName(pmid_.name()), PmidManagerValue());
 //    auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
 //    auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
 //    EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
@@ -175,7 +175,7 @@ namespace test {
 //  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
 //  auto group_source(CreateGroupSource(NodeId(pmid_.name()->string())));
 //  PmidManager::Key key(PmidName(pmid_.name()), data.name(), ImmutableData::Tag::kValue);
-//  AddGroup(PmidName(pmid_.name()), PmidManagerMetadata());
+//  AddGroup(PmidName(pmid_.name()), PmidManagerValue());
 
 //  {  // Put
 //    ActionPmidManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));

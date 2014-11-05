@@ -25,16 +25,16 @@ namespace maidsafe {
 namespace vault {
 
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(const PmidName& pmid_name,
-    const PmidManagerMetadata& pmid_health_in)
+    const PmidManagerValue& pmid_health_in)
   : kPmidName(pmid_name), kPmidHealth(pmid_health_in) {}
 
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(
     const std::string& serialised_action)
-        : kPmidHealth([&serialised_action]()->PmidManagerMetadata {
+        : kPmidHealth([&serialised_action]()->PmidManagerValue {
             protobuf::ActionMaidManagerUpdatePmidHealth action_proto;
             if (!action_proto.ParseFromString(serialised_action))
               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-            return PmidManagerMetadata(action_proto.serialised_pmid_health());
+            return PmidManagerValue(action_proto.serialised_pmid_health());
           }()) {}
 
 ActionMaidManagerUpdatePmidHealth::ActionMaidManagerUpdatePmidHealth(

@@ -19,7 +19,7 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_put.pb.h"
 
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -55,7 +55,7 @@ std::string ActionPmidManagerPut::Serialise() const {
 }
 
 detail::DbAction ActionPmidManagerPut::operator()(
-    std::unique_ptr<PmidManagerMetadata>& metadata) {
+    std::unique_ptr<PmidManagerValue>& metadata) {
   if (metadata) {
     LOG(kVerbose) << "ActionPmidManagerPut::operator() put " << kSize;
     metadata->PutData(kSize);

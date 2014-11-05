@@ -42,7 +42,7 @@
 #include "maidsafe/vault/pmid_manager/dispatcher.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/operation_visitors.h"
 
 namespace maidsafe {
@@ -142,7 +142,7 @@ class PmidManagerService {
       std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
 
   void DoHandleHealthResponse(const PmidName& pmid_node,
-      const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id);
+      const MaidName& maid_node, const PmidManagerValue& pmid_health, nfs::MessageId message_id);
 
   void TransferAccount(const NodeId& dest,
                        const std::vector<Db<PmidManager::Key,
@@ -158,7 +158,7 @@ class PmidManagerService {
   Accumulator<Messages> accumulator_;
   PmidManagerDispatcher dispatcher_;
   AsioService asio_service_;
-  routing::Timer<PmidManagerMetadata> get_health_timer_;
+  routing::Timer<PmidManagerValue> get_health_timer_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedSetPmidHealth> sync_set_pmid_health_;
@@ -247,7 +247,7 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                 << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
 //   try {
-//     PmidManagerMetadata reply(group_db_.GetContents(pmid_node).metadata);
+//     PmidManagerValue reply(group_db_.GetContents(pmid_node).metadata);
 //     if (reply.claimed_available_size <
 //         static_cast<uint32_t>(data.Serialise().data.string().size())) {
 //       dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,

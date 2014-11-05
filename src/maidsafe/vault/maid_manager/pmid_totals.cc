@@ -35,7 +35,7 @@ PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in)
 }
 
 PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in,
-                       const PmidManagerMetadata& pmid_metadata_in)
+                       const PmidManagerValue& pmid_metadata_in)
     : serialised_pmid_registration(serialised_pmid_registration_in),
       pmid_name(), pmid_metadata(pmid_metadata_in) {
   maidsafe::nfs_vault::PmidRegistration pmid_registration(serialised_pmid_registration);

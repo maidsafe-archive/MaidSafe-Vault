@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
@@ -26,37 +26,37 @@
 namespace maidsafe {
 namespace vault {
 
-PmidManagerMetadata::PmidManagerMetadata()
+PmidManagerValue::PmidManagerValue()
     : stored_total_size(0), lost_total_size(0), claimed_available_size(0) {}
 
-PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
+PmidManagerValue::PmidManagerValue(const std::string &serialised_value)
     : stored_total_size(0), lost_total_size(0), claimed_available_size(0) {
-  LOG(kVerbose) << "PmidManagerMetadata parsing from " << HexSubstr(serialised_metadata);
-  protobuf::PmidManagerMetadata proto_metadata;
-  if (!proto_metadata.ParseFromString(serialised_metadata)) {
-    LOG(kError) << "Failed to parse pmid metadata.";
+  LOG(kVerbose) << "PmidManagerValue parsing from " << HexSubstr(serialised_value);
+  protobuf::PmidManagerValue proto_value;
+  if (!proto_value.ParseFromString(serialised_value)) {
+    LOG(kError) << "Failed to parse pmid value.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-  if (!proto_metadata.IsInitialized()) {
-    LOG(kError) << "Failed to construct pmid metadata.";
+  if (!proto_value.IsInitialized()) {
+    LOG(kError) << "Failed to construct pmid value.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
-  stored_total_size = proto_metadata.stored_total_size();
-  lost_total_size = proto_metadata.lost_total_size();
-  claimed_available_size = proto_metadata.claimed_available_size();
+  stored_total_size = proto_value.stored_total_size();
+  lost_total_size = proto_value.lost_total_size();
+  claimed_available_size = proto_value.claimed_available_size();
 }
 
-PmidManagerMetadata::PmidManagerMetadata(const PmidManagerMetadata& other)
+PmidManagerValue::PmidManagerValue(const PmidManagerValue& other)
     : stored_total_size(other.stored_total_size),
       lost_total_size(other.lost_total_size),
       claimed_available_size(other.claimed_available_size) {}
 
-PmidManagerMetadata::PmidManagerMetadata(PmidManagerMetadata&& other)
+PmidManagerValue::PmidManagerValue(PmidManagerValue&& other)
     : stored_total_size(std::move(other.stored_total_size)),
       lost_total_size(std::move(other.lost_total_size)),
       claimed_available_size(std::move(other.claimed_available_size)) {}
 
-PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
+PmidManagerValue& PmidManagerValue::operator=(PmidManagerValue other) {
   using std::swap;
   swap(stored_total_size, other.stored_total_size);
   swap(lost_total_size, other.lost_total_size);
@@ -64,11 +64,11 @@ PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
   return *this;
 }
 
-void PmidManagerMetadata::PutData(int32_t size) {
+void PmidManagerValue::PutData(int32_t size) {
   stored_total_size += size;
 }
 
-void PmidManagerMetadata::DeleteData(int32_t size) {
+void PmidManagerValue::DeleteData(int32_t size) {
   if (stored_total_size < size) {
     LOG(kError) << "invalid stored_total_size " << stored_total_size;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
@@ -76,42 +76,42 @@ void PmidManagerMetadata::DeleteData(int32_t size) {
   stored_total_size -= size;
 }
 
-void PmidManagerMetadata::HandleLostData(int32_t size) {
+void PmidManagerValue::HandleLostData(int32_t size) {
   DeleteData(size);
   lost_total_size += size;
 }
 
-void PmidManagerMetadata::HandleFailure(int32_t size) {
+void PmidManagerValue::HandleFailure(int32_t size) {
   HandleLostData(size);
   claimed_available_size = 0;
 }
 
-void PmidManagerMetadata::SetAvailableSize(const int64_t& available_size) {
+void PmidManagerValue::SetAvailableSize(const int64_t& available_size) {
   claimed_available_size = available_size;
 }
 
 
 // BEFORE_RELEASE check if group can be deleted with below check
-detail::GroupDbMetaDataStatus PmidManagerMetadata::GroupStatus() {
+detail::GroupDbMetaDataStatus PmidManagerValue::GroupStatus() {
   return (claimed_available_size == 0 ?
       detail::GroupDbMetaDataStatus::kGroupEmpty : detail::GroupDbMetaDataStatus::kGroupNonEmpty);
 }
 
-std::string PmidManagerMetadata::Serialise() const {
-  protobuf::PmidManagerMetadata proto_metadata;
-  proto_metadata.set_stored_total_size(stored_total_size);
-  proto_metadata.set_lost_total_size(lost_total_size);
-  proto_metadata.set_claimed_available_size(claimed_available_size);
-  return proto_metadata.SerializeAsString();
+std::string PmidManagerValue::Serialise() const {
+  protobuf::PmidManagerValue proto_value;
+  proto_value.set_stored_total_size(stored_total_size);
+  proto_value.set_lost_total_size(lost_total_size);
+  proto_value.set_claimed_available_size(claimed_available_size);
+  return proto_value.SerializeAsString();
 }
 
-bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs) {
+bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs) {
   return lhs.stored_total_size == rhs.stored_total_size &&
          lhs.lost_total_size == rhs.lost_total_size &&
          lhs.claimed_available_size == rhs.claimed_available_size;
 }
 
-std::string PmidManagerMetadata::Print() const {
+std::string PmidManagerValue::Print() const {
   std::stringstream stream;
   stream << "\t[stored_total_size," << stored_total_size
          << "] [lost_total_size," << lost_total_size

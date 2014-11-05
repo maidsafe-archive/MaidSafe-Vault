@@ -27,7 +27,7 @@
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -39,7 +39,7 @@ struct ActionPmidManagerPut {
   ActionPmidManagerPut(const ActionPmidManagerPut& other);
   ActionPmidManagerPut(ActionPmidManagerPut&& other);
 
-  detail::DbAction operator()(std::unique_ptr<PmidManagerMetadata>& metadata);
+  detail::DbAction operator()(std::unique_ptr<PmidManagerValue>& metadata);
 
   std::string Serialise() const;
 

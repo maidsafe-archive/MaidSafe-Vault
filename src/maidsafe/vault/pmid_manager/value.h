@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
 
 #include <cstdint>
 #include <string>
@@ -32,13 +32,13 @@ namespace maidsafe {
 
 namespace vault {
 
-struct PmidManagerMetadata {
+struct PmidManagerValue {
  public:
-  PmidManagerMetadata();
-  explicit PmidManagerMetadata(const std::string& serialised_metadata);
-  PmidManagerMetadata(const PmidManagerMetadata& other);
-  PmidManagerMetadata(PmidManagerMetadata&& other);
-  PmidManagerMetadata& operator=(PmidManagerMetadata other);
+  PmidManagerValue();
+  explicit PmidManagerValue(const std::string& serialised_value);
+  PmidManagerValue(const PmidManagerValue& other);
+  PmidManagerValue(PmidManagerValue&& other);
+  PmidManagerValue& operator=(PmidManagerValue other);
   void PutData(int32_t size);
   void DeleteData(int32_t size);
   void HandleLostData(int32_t size);
@@ -53,10 +53,10 @@ struct PmidManagerMetadata {
   int64_t claimed_available_size;
 };
 
-bool operator==(const PmidManagerMetadata& lhs, const PmidManagerMetadata& rhs);
+bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_METADATA_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_

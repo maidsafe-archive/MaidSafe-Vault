@@ -25,7 +25,7 @@
 
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/maid_manager/action_reference_count.h"
 
 namespace maidsafe {
@@ -303,7 +303,7 @@ TEST_F(MaidManagerServiceTest, BEH_nfsUnregisterPmidRequestFromMaidNodeToMaidMan
 
 //TEST_F(MaidManagerServiceTest, BEH_PmidHealthResponseFromPmidManagerToMaidManager) {
 //  PmidName pmid_name(pmid_.name());
-//  PmidManagerMetadata pmid_manager_metadata(pmid_name);
+//  PmidManagerValue pmid_manager_metadata(pmid_name);
 //  pmid_manager_metadata.SetAvailableSize(kTestChunkSize * (RandomUint32() % kAverageChunksStored));
 //  PmidHealthResponseFromPmidManagerToMaidManager::Contents content(
 //      nfs_vault::PmidHealth(pmid_manager_metadata.Serialise()),
@@ -378,7 +378,7 @@ TEST_F(MaidManagerServiceTest, BEH_Delete) {
 }
 
 //TEST_F(MaidManagerServiceTest, BEH_UpdatePmid) {
-//  PmidManagerMetadata pmid_manager_metadata(PmidName(Identity(pmid_.name()->string())));
+//  PmidManagerValue pmid_manager_metadata(PmidName(Identity(pmid_.name()->string())));
 //  pmid_manager_metadata.stored_count = 1;
 //  pmid_manager_metadata.stored_total_size = kTestChunkSize;
 //  pmid_manager_metadata.lost_count = 2;

@@ -19,7 +19,7 @@
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.pb.h"
 
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -51,7 +51,7 @@ std::string ActionPmidManagerSetPmidHealth::Serialise() const {
 }
 
 detail::DbAction ActionPmidManagerSetPmidHealth::operator()(
-    std::unique_ptr<PmidManagerMetadata>& metadata) {
+    std::unique_ptr<PmidManagerValue>& metadata) {
   metadata->SetAvailableSize(kDiskAvailableSize);
   return detail::DbAction::kPut;
 }

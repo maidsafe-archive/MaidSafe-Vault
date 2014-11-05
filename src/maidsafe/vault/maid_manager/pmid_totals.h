@@ -30,7 +30,7 @@
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -45,21 +45,21 @@ struct GetPmidTotalsOp {
   const MaidName kMaidManagerName;
   const PmidName kPmidAccountName;
   std::mutex mutex;
-  std::vector<PmidManagerMetadata> pmid_metadata;
+  std::vector<PmidManagerValue> pmid_metadata;
 };
 
 struct PmidTotals {
   PmidTotals();
   explicit PmidTotals(const std::string& serialised_pmid_registration_in);
   PmidTotals(const std::string& serialised_pmid_registration_in,
-             const PmidManagerMetadata& pmid_metadata_in);
+             const PmidManagerValue& pmid_metadata_in);
   PmidTotals(const PmidTotals& other);
   PmidTotals(PmidTotals&& other);
   PmidTotals& operator=(PmidTotals other);
 
   std::string serialised_pmid_registration;
   PmidName pmid_name;
-  PmidManagerMetadata pmid_metadata;
+  PmidManagerValue pmid_metadata;
 };
 
 bool operator==(const PmidTotals& lhs, const PmidTotals& rhs);

@@ -81,11 +81,11 @@ void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
 }
 
 void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
-    const PmidName& pmid_node, const PmidManagerMetadata& pmid_health,  nfs::MessageId message_id,
+    const PmidName& pmid_node, const PmidManagerValue& pmid_health,  nfs::MessageId message_id,
     const maidsafe_error& error) {
   LOG(kVerbose) << "PmidManagerDispatcher::SendHealthResponse for maid "
                 << HexSubstr(maid_node->string()) << " and pmid " << HexSubstr(pmid_node->string())
-                << " . PmidManagerMetadata serialised as " << HexSubstr(pmid_health.Serialise())
+                << " . PmidManagerValue serialised as " << HexSubstr(pmid_health.Serialise())
                 << " and return code : " << boost::diagnostic_information(error);
   typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;

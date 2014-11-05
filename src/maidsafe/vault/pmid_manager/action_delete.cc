@@ -45,7 +45,7 @@ ActionPmidManagerDelete::ActionPmidManagerDelete(const std::string& serialised_a
 }
 
 detail::DbAction ActionPmidManagerDelete::operator()(
-    std::unique_ptr<PmidManagerMetadata>& metadata) {
+    std::unique_ptr<PmidManagerValue>& metadata) {
   if (!metadata)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   if (pmid_node_available) {

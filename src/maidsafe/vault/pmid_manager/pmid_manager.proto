@@ -20,7 +20,7 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message PmidManagerMetadata {
+message PmidManagerValue {
   required int64 stored_total_size = 1;
   required int64 lost_total_size = 2;
   required int64 claimed_available_size = 3;
