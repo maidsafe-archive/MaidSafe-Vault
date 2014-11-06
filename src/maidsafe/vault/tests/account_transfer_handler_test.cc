@@ -28,8 +28,8 @@
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
-#include "maidsafe/vault/tests/expected_account_transfer_producer.h"
-#include "maidsafe/vault/data_manager/tests/account_transfer_handler_test.h"
+#include "maidsafe/vault/tests/account_transfer_analyser.h"
+#include "maidsafe/vault/data_manager/tests/account_transfer_info_handler.h"
 
 namespace maidsafe {
 
@@ -38,42 +38,84 @@ namespace vault {
 namespace test {
 
 template <typename Persona>
-class AccountTransferHandlerTest : public testing::Test,
-                                   public ExpectedAccountTransferProducer<Persona> {
+class AccountTransferHandlerTest : public testing::Test {
  public:
   using Key = typename Persona::Key;
   using Value = typename Persona::Value;
   using KeyValuePair = std::pair<typename Persona::Key, typename Persona::Value>;
   using KeyResultPair = std::pair<typename Persona::Key,
                                   typename AccountTransferHandler<Persona>::AddResult>;
+  using AddResult = typename AccountTransferHandler<Persona>::AddResult;
 
-  AccountTransferHandlerTest() : account_transfer_handler_() {}
+  AccountTransferHandlerTest() : mutex_(), account_transfer_handler_(),
+                                 account_transfer_analyser_() {}
 
  protected:
-   AccountTransferHandler<Persona> account_transfer_handler_;
+  std::mutex mutex_;
+  AccountTransferHandler<Persona> account_transfer_handler_;
+  AccountTransferTestAnalyser<Persona> account_transfer_analyser_;
 };
 
 TYPED_TEST_CASE_P(AccountTransferHandlerTest);
 
-TYPED_TEST_P(AccountTransferHandlerTest, BEH_InputMultipleEntries) {
-  std::map<Key, typename AccountTransferHandler<TypeParam>::AddResult> results_map;
-  auto results(ExpectedAccountTransferProducer<TypeParam>::ProduceResults(1000));
-  for (const auto& entry : ExpectedAccountTransferProducer<TypeParam>::kv_pairs_) {
+TYPED_TEST_P(AccountTransferHandlerTest, BEH_MultipleEntries) {
+  std::map<Key, typename AccountTransferHandler<TypeParam>::Result> results_map;
+  this->account_transfer_analyser_.CreateEntries(1000);
+  for (const auto& entry : this->account_transfer_analyser_.GetKeyValuePairs()) {
     auto add_result(this->account_transfer_handler_.Add(entry.first, entry.second,
                                                         NodeId(NodeId::IdType::kRandomId)));
     auto iter(results_map.find(entry.first));
     if (iter  == std::end(results_map)) {
-      results_map.insert(std::make_pair(entry.first, add_result.result));
+      results_map.insert(std::make_pair(entry.first, add_result));
     } else {
-      results_map[entry.first] = add_result.result;
+      results_map.at(entry.first) = add_result;
     }
   }
-  EXPECT_EQ(results.size(), results_map.size());
-  for (const auto& entry : results)
-    EXPECT_EQ(entry.second, results_map.at(entry.first));
+  EXPECT_TRUE(this->account_transfer_analyser_.CheckResults(results_map));
 }
 
-REGISTER_TYPED_TEST_CASE_P(AccountTransferHandlerTest, BEH_InputMultipleEntries);
+TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
+  std::map<Key, typename AccountTransferHandler<TypeParam>::Result> results_map;
+  using TypedHandlerTest = AccountTransferHandlerTest<TypeParam>;
+  const unsigned int kParallelismFactor(10);
+  unsigned int index(0);
+  this->account_transfer_analyser_.CreateEntries(500);
+  std::vector<std::vector<typename TypedHandlerTest::KeyValuePair>>
+      parallel_inputs(kParallelismFactor, std::vector<typename TypedHandlerTest::KeyValuePair>());
+
+  parallel_inputs.reserve(kParallelismFactor);
+  for (const auto& entry : this->account_transfer_analyser_.GetKeyValuePairs())
+    parallel_inputs.at(index++ % kParallelismFactor).push_back(entry);
+
+  std::vector<std::future<void>> futures;
+  for (unsigned int index(0); index < kParallelismFactor; ++index) {
+    auto& vector_ref(parallel_inputs.at(index));
+    futures.emplace_back(std::async(std::launch::async,
+                         [vector_ref, index, &results_map, this]() {
+                           for (const auto& entry : vector_ref) {
+                             auto add_result(
+                                 this->account_transfer_handler_.Add(
+                                     entry.first, entry.second, NodeId(NodeId::IdType::kRandomId)));
+                             {
+                               std::lock_guard<std::mutex> lock(this->mutex_);
+                               auto iter(results_map.find(entry.first));
+                               if (iter  == std::end(results_map)) {
+                                 results_map.insert(std::make_pair(entry.first, add_result));
+                               } else if (add_result.result !=
+                                     TypedHandlerTest::AddResult::kWaiting) {
+                                 results_map.at(entry.first) = add_result;
+                               }
+                             }
+                           }
+                         }));
+  }
+  for (unsigned int index(0); index < kParallelismFactor; ++index)
+    futures.at(index).get();
+  EXPECT_TRUE(this->account_transfer_analyser_.CheckResults(results_map));
+}
+
+REGISTER_TYPED_TEST_CASE_P(AccountTransferHandlerTest, BEH_MultipleEntries,
+                           BEH_ParallelMultipleEntries);
 typedef testing::Types<nfs::PersonaTypes<nfs::Persona::kDataManager>> PersonaTypes;
 INSTANTIATE_TYPED_TEST_CASE_P(AccountTransfer, AccountTransferHandlerTest, PersonaTypes);
 

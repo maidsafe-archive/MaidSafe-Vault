@@ -51,11 +51,13 @@ class AccountTransferHandler {
            const boost::optional<Value> value_in,
            const AddResult& result_in):
         key(key_in), value(value_in), result(result_in) {}
+    bool Equals(const Result& other) const {
+      return (result == other.result) && (key == other.key) && (value == other.value);
+    }
     Key key;
     boost::optional<Value> value;
     AddResult result;
   };
-
 
   AccountTransferHandler();
 
