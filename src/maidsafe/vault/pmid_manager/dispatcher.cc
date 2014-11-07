@@ -115,39 +115,7 @@ void PmidManagerDispatcher::SendHealthRequest(const PmidName& pmid_node,
                          VaultMessage::Receiver(NodeId(pmid_node->string())));
   routing_.Send(message);
 }
-/*
- * PmidManager no longer report the PmidNode status to DataManager to mark node up / down
-void PmidManagerDispatcher::SendSetPmidOnline(const nfs_vault::DataName& data_name,
-                                              const PmidName& pmid_node) {
-  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
-                                                  data_name.raw_name.string()));
-  typedef SetPmidOnlineFromPmidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
-  routing_.Send(message);
-}
 
-
-void PmidManagerDispatcher::SendSetPmidOffline(const nfs_vault::DataName& data_name,
-                                               const PmidName& pmid_node) {
-  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
-                                                  data_name.raw_name.string()));
-  typedef SetPmidOfflineFromPmidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
-  routing_.Send(message);
-}
-*/
 routing::GroupSource PmidManagerDispatcher::Sender(const MaidName& account_name) const {
   return routing::GroupSource(routing::GroupId(NodeId(account_name->string())),
                               routing::SingleId(routing_.kNodeId()));
