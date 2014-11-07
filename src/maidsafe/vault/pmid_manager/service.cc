@@ -485,7 +485,7 @@ void PmidManagerService::HandleChurnEvent(
     VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
 
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-    PmidManager::TransferInfo transfer_info(
+    const auto transfer_info(
         detail::GetTransferInfo<PmidManager::Key, PmidManager::Value, PmidManager::TransferInfo>(
             close_nodes_change, accounts_));
     for (auto& transfer : transfer_info)
