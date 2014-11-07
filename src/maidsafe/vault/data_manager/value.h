@@ -40,6 +40,7 @@ namespace vault {
 // not thread safe
 class DataManagerValue {
  public:
+  DataManagerValue();
   explicit DataManagerValue(const std::string& serialised_value);
   DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT;
   DataManagerValue(const PmidName& pmid_name, int32_t size);
@@ -57,6 +58,7 @@ class DataManagerValue {
                    PmidName& pmid_node_to_remove) const;
   std::string Print() const;
   int32_t chunk_size() const { return size_; }
+  void SetChunkSize(const int32_t chunk_size) { size_ = chunk_size; }
 
   static DataManagerValue Resolve(const std::vector<DataManagerValue>& values);
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

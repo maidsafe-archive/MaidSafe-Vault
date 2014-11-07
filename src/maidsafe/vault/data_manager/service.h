@@ -44,7 +44,6 @@
 
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/parameters.h"
@@ -56,6 +55,7 @@
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
+#include "maidsafe/vault/data_manager/datamanager_database.h"
 #include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
@@ -282,7 +282,7 @@ class DataManagerService {
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
-  Db<DataManager::Key, DataManager::Value> db_;
+  DataManagerDataBase db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;

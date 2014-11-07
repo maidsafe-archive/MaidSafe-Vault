@@ -28,6 +28,8 @@ namespace maidsafe {
 
 namespace vault {
 
+DataManagerValue::DataManagerValue() : size_(0), pmids_() {}
+
 DataManagerValue::DataManagerValue(const std::string &serialised_value)
     : size_(0), pmids_() {
   protobuf::DataManagerValue value_proto;

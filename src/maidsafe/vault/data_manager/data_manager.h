@@ -48,6 +48,8 @@ struct PersonaTypes<Persona::kDataManager> {
   static const Persona persona = Persona::kDataManager;
   typedef vault::Key Key;
   typedef vault::DataManagerValue Value;
+  typedef std::pair<Key, Value> KvPair;
+  typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid> UnresolvedAddPmid;
