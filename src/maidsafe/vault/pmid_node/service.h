@@ -159,7 +159,6 @@ class PmidNodeService {
 
   // Unless StartUp is called, PmidNode is not un-usable
   void StartUp();
-  void HandlePmidAccountResponses(int failures);
 
  private:
   template<typename ServiceHandlerType, typename MessageType>
@@ -180,12 +179,9 @@ class PmidNodeService {
   //  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
   void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                           const std::vector<DataNameVariant>& to_be_retrieved);
-  void CheckPmidAccountResponsesStatus(const std::vector<DataNameVariant>& expected_chunks);
 
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);
-  void HandleAccountResponses(
-      const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
   template <typename Data>
   void HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id);
   template <typename Data>
@@ -257,12 +253,6 @@ void PmidNodeService::HandleMessage(
     const DeleteRequestFromPmidManagerToPmidNode& message,
     const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <>
-void PmidNodeService::HandleMessage(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
 
 template <>
 void PmidNodeService::HandleMessage(

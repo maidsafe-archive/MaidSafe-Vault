@@ -66,7 +66,6 @@ class PmidManagerDispatcher {
   void SendSync(const KeyType& key, const std::string& serialised_sync);
   void SendAccountTransfer(const NodeId& destination_peer, const PmidName& account_name,
                            nfs::MessageId message_id, const std::string& serialised_account);
-  void SendPmidAccount(const PmidName& pmid_node, const nfs_client::ReturnCode& return_code);
 
   void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
                           const PmidManagerValue& pmid_health, nfs::MessageId message_id,

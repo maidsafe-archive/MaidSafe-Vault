@@ -132,8 +132,6 @@ class PmidManagerService {
   void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
                        nfs::MessageId message_id);
 
-  void HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size);
-
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
   void HandleSyncedSetPmidHealth(
@@ -189,12 +187,6 @@ void PmidManagerService::HandleMessage(
     const DeleteRequestFromDataManagerToPmidManager& message,
     const typename DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
-
-template <>
-void PmidManagerService::HandleMessage(
-    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void PmidManagerService::HandleMessage(
