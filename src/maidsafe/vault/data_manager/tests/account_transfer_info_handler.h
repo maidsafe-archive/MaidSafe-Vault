@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
 
 #include <algorithm>
+#include <deque>
 #include <map>
 #include <string>
 #include <utility>
@@ -60,20 +61,66 @@ class AccountTransferInfoHandler<DataManagerPersona> {
                           CreateValue());
   }
 
+  std::pair<AddResult, boost::optional<Value>> Resolve(std::deque<KeyValuePair>& pairs) {
+    std::pair<AddResult, boost::optional<Value>>
+        wait_resolution(std::make_pair(AddResult::kWaiting, boost::optional<Value>())), resolution;
+    if (pairs.size() < kAcceptSize_)
+      return wait_resolution;
+
+    while (pairs.size() >= kResolutionSize_) {
+      std::vector<Value> current_resolution;
+      for (unsigned int index(0); index < kResolutionSize_; ++index) {
+        current_resolution.push_back(pairs.front().second);
+        pairs.pop_front();
+      }
+      resolution = IndividualResolve(current_resolution);
+      if (resolution.first == AddResult::kSuccess)
+        return resolution;
+       current_resolution.clear();
+    }
+
+    if (pairs.empty())
+      return resolution;
+
+    if (pairs.size() == kAcceptSize_) {
+      if (std::count(std::begin(pairs), std::end(pairs), pairs.front()) == kAcceptSize_)
+        return std::make_pair(AddResult::kSuccess, boost::optional<Value>(pairs.front().second));
+      else
+       return wait_resolution;
+    }
+    return wait_resolution;
+  }
+
+  std::pair<AddResult, boost::optional<Value>> IndividualResolve(
+      std::vector<Value>& resolution_values) {
+    assert(resolution_values.size() == kResolutionSize_);
+    while (resolution_values.size() >= kAcceptSize_) {
+      if (std::count(std::begin(resolution_values), std::end(resolution_values),
+                     resolution_values.back()) >= kAcceptSize_)
+        return std::make_pair(AddResult::kSuccess,
+                              boost::optional<Value>(resolution_values.back()));
+      else
+        resolution_values.pop_back();
+    }
+    return std::make_pair(AddResult::kFailure, boost::optional<Value>());
+  }
+
   std::vector<Result> ProduceResults(const std::vector<KeyValuePair>& kv_pairs) {
     std::map<Key, Result> results;
-    auto copy(kv_pairs);
+    std::vector<KeyValuePair> copy(kv_pairs);
+    std::deque<KeyValuePair> same_key_pairs;
     for (const auto& kv_pair : kv_pairs) {
       if (results.find(kv_pair.first) == std::end(results)) {
-        if (std::count(std::begin(copy), std::end(copy), kv_pair) >= kAcceptSize_)
+        for (const auto& entry : copy)
+          if (entry.first == kv_pair.first)
+            same_key_pairs.push_back(entry);
+        auto verdict(Resolve(same_key_pairs));
+        if (verdict.first == AddResult::kSuccess)
           results.insert(
               std::make_pair(kv_pair.first,
-                             Result(kv_pair.first, boost::optional<Value>(kv_pair.second),
+                             Result(kv_pair.first, boost::optional<Value>(verdict.second),
                                     AddResult::kSuccess)));
-        else if (std::count_if(std::begin(copy), std::end(copy),
-                               [&kv_pair](const KeyValuePair& pair) {
-                                 return pair.first == kv_pair.first;
-                               }) >= kResolutionSize_)
+        else if (verdict.first == AddResult::kFailure)
           results.insert(std::make_pair(kv_pair.first,
                                         Result(kv_pair.first, boost::optional<Value>(),
                                                AddResult::kFailure)));
@@ -81,6 +128,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
           results.insert(std::make_pair(kv_pair.first,
                                         Result(kv_pair.first, boost::optional<Value>(),
                                                AddResult::kWaiting)));
+        same_key_pairs.clear();
       }
     }
     std::vector<Result> results_vec;

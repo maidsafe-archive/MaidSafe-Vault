@@ -26,7 +26,6 @@
 #include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/data_manager.h"
 
 #include "maidsafe/vault/tests/account_transfer_analyser.h"
 #include "maidsafe/vault/data_manager/tests/account_transfer_info_handler.h"
@@ -59,15 +58,18 @@ class AccountTransferHandlerTest : public testing::Test {
 TYPED_TEST_CASE_P(AccountTransferHandlerTest);
 
 TYPED_TEST_P(AccountTransferHandlerTest, BEH_MultipleEntries) {
+  using AddResult = typename AccountTransferHandlerTest<TypeParam>::AddResult;
   std::map<Key, typename AccountTransferHandler<TypeParam>::Result> results_map;
   this->account_transfer_analyser_.CreateEntries(1000);
+  this->account_transfer_analyser_.DefaultReplicate();
+  this->account_transfer_analyser_.RandomReplicate(100);
   for (const auto& entry : this->account_transfer_analyser_.GetKeyValuePairs()) {
     auto add_result(this->account_transfer_handler_.Add(entry.first, entry.second,
                                                         NodeId(NodeId::IdType::kRandomId)));
     auto iter(results_map.find(entry.first));
     if (iter  == std::end(results_map)) {
       results_map.insert(std::make_pair(entry.first, add_result));
-    } else {
+    } else if (results_map.at(entry.first).result != AddResult::kSuccess) {
       results_map.at(entry.first) = add_result;
     }
   }
@@ -79,7 +81,8 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
   using TypedHandlerTest = AccountTransferHandlerTest<TypeParam>;
   const unsigned int kParallelismFactor(10);
   unsigned int index(0);
-  this->account_transfer_analyser_.CreateEntries(500);
+  this->account_transfer_analyser_.CreateEntries(1000);
+  this->account_transfer_analyser_.DefaultReplicate();
   std::vector<std::vector<typename TypedHandlerTest::KeyValuePair>>
       parallel_inputs(kParallelismFactor, std::vector<typename TypedHandlerTest::KeyValuePair>());
 

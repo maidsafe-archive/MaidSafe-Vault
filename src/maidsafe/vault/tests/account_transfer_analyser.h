@@ -32,6 +32,7 @@
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 
+
 namespace maidsafe {
 
 namespace vault {
@@ -49,20 +50,21 @@ class AccountTransferTestAnalyser : public AccountTransferInfoHandler<Persona> {
 
   using KeyValuePair = std::pair<Key, Value>;
   using Result = typename AccountTransferHandler<Persona>::Result;
+  using AddResult = typename AccountTransferHandler<Persona>::AddResult;
 
   AccountTransferTestAnalyser();
   bool CheckResults(
       const std::map<Key, typename AccountTransferHandler<Persona>::Result>& results_in);
-
   void CreateEntries(unsigned int total);
   std::vector<KeyValuePair> GetKeyValuePairs() const;
+  void DefaultReplicate();
+  void RandomReplicate(unsigned int replicates);
 
  private:
-  void Replicate();
-  void ReplicateWithSameValue(typename std::vector<KeyValuePair>::iterator& resolvable_end_iter);
-  void ReplicateWithDifferntValue(
-      typename std::vector<KeyValuePair>::iterator& unresolvable_start_iter,
-      typename std::vector<KeyValuePair>::iterator& unresolvable_end_iter);
+  void ReplicateWithSameValue(typename std::vector<KeyValuePair>::iterator& start_iter,
+                              typename std::vector<KeyValuePair>::iterator& end_iter);
+  void ReplicateWithDifferentValue(typename std::vector<KeyValuePair>::iterator& start_iter,
+                                   typename std::vector<KeyValuePair>::iterator& end_iter);
 
   std::vector<KeyValuePair> kv_pairs_;
 };
@@ -77,10 +79,9 @@ bool AccountTransferTestAnalyser<Persona>::CheckResults(
   auto expected_results(AccountTransferInfoHandler<Persona>::ProduceResults(kv_pairs_));
   if (results_in.size() != expected_results.size())
     return false;
-  for (const auto& expected_result : expected_results) {
-    if (!expected_result.template Result::Equals(results_in.at(expected_result.key)))
+  for (const auto& expected_result : expected_results)
+    if (!expected_result.Equals(results_in.at(expected_result.key)))
       return false;
-  }
   return true;
 }
 
@@ -88,9 +89,6 @@ template <typename Persona>
 void AccountTransferTestAnalyser<Persona>::CreateEntries(unsigned int total) {
   for (unsigned int index(0); index < total; ++index)
     kv_pairs_.push_back(AccountTransferInfoHandler<Persona>::CreatePair());
-  Replicate();
-  std::srand (unsigned(std::time(0)));
-  std::random_shuffle(std::begin(kv_pairs_), std::end(kv_pairs_));
 }
 
 template <typename Persona>
@@ -100,48 +98,70 @@ AccountTransferTestAnalyser<Persona>::GetKeyValuePairs() const {
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::Replicate() {
+void AccountTransferTestAnalyser<Persona>::DefaultReplicate() {
   assert(!kv_pairs_.empty());
   auto original_size(kv_pairs_.size());
-  typename std::vector<KeyValuePair>::iterator resolvable_end_iter(std::begin(kv_pairs_)),
-      unresolvable_iter;
-  std::advance(resolvable_end_iter, original_size / 2);
-  ReplicateWithSameValue(resolvable_end_iter);
-  resolvable_end_iter = unresolvable_iter = std::begin(kv_pairs_);
-  std::advance(resolvable_end_iter, original_size / 2 + 1);
-  std::advance(unresolvable_iter, original_size * 3 / 4);
-  ReplicateWithDifferntValue(resolvable_end_iter, unresolvable_iter);
+  typename std::vector<KeyValuePair>::iterator start_iter(std::begin(kv_pairs_)),
+      end_iter(std::begin(kv_pairs_));
+  std::advance(end_iter, original_size / 2);
+  ReplicateWithSameValue(start_iter, end_iter);
+  end_iter = start_iter = std::begin(kv_pairs_);
+  std::advance(start_iter, original_size / 2 + 1);
+  std::advance(end_iter, original_size * 3 / 4);
+  ReplicateWithDifferentValue(start_iter, end_iter);
+  std::srand (unsigned(std::time(0)));
+  std::random_shuffle(std::begin(kv_pairs_), std::end(kv_pairs_));
+}
+
+template <typename Persona>
+void AccountTransferTestAnalyser<Persona>::RandomReplicate(unsigned int replicates) {
+  std::vector<KeyValuePair> new_pairs;
+  bool same_value(true);
+  typename std::vector<KeyValuePair>::iterator start_iter, end_iter;
+  for (; replicates > 1; --replicates) {
+    auto random_index(RandomUint32() % (kv_pairs_.size() - 1) + 1);
+    start_iter = std::begin(kv_pairs_);
+    std::advance(start_iter, random_index);
+    end_iter = start_iter;
+    std::advance(end_iter, 1);
+    if (same_value)
+      ReplicateWithSameValue(start_iter, end_iter);
+    else
+      ReplicateWithDifferentValue(start_iter, end_iter);
+    same_value = !same_value;
+  }
+  std::srand (unsigned(std::time(0)));
+  std::random_shuffle(std::begin(kv_pairs_), std::end(kv_pairs_));
 }
 
 template <typename Persona>
 void AccountTransferTestAnalyser<Persona>::ReplicateWithSameValue(
-    typename std::vector<KeyValuePair>::iterator& resolvable_end_iter) {
+    typename std::vector<KeyValuePair>::iterator& start_iter,
+    typename std::vector<KeyValuePair>::iterator& end_iter) {
   std::vector<KeyValuePair> new_pairs;
-  for (auto iter(std::begin(kv_pairs_)); iter != resolvable_end_iter; ++iter)
+  for (; start_iter != end_iter; ++start_iter)
     for (unsigned int index(0);
          index < AccountTransferInfoHandler<Persona>::AcceptSize() - 1;
          ++index)
-      new_pairs.push_back(*iter);
+      new_pairs.push_back(*start_iter);
   std::copy(std::begin(new_pairs), std::end(new_pairs), std::back_inserter(kv_pairs_));
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::ReplicateWithDifferntValue(
-    typename std::vector<KeyValuePair>::iterator& unresolvable_start_iter,
-    typename std::vector<KeyValuePair>::iterator& unresolvable_end_iter) {
+void AccountTransferTestAnalyser<Persona>::ReplicateWithDifferentValue(
+    typename std::vector<KeyValuePair>::iterator& start_iter,
+    typename std::vector<KeyValuePair>::iterator& end_iter) {
   std::vector<KeyValuePair> new_pairs;
-  for (; unresolvable_start_iter != unresolvable_end_iter; ++unresolvable_start_iter)
+  for (; start_iter != end_iter; ++start_iter)
     for (unsigned int index(0);
          index < AccountTransferInfoHandler<Persona>::ResolutionSize() - 1;
          ++index) {
       new_pairs.push_back(
-          std::make_pair(unresolvable_start_iter->first,
+          std::make_pair(start_iter->first,
                          AccountTransferInfoHandler<Persona>::CreateValue()));
     }
   std::copy(std::begin(new_pairs), std::end(new_pairs), std::back_inserter(kv_pairs_));
 }
-
-
 
 }  // namespace test
 
