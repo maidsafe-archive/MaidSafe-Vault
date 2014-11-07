@@ -119,17 +119,43 @@ void MaidManagerDispatcher::SendRemoveAccountResponse(const MaidName& /*account_
   //  routing_.Send(message);
 }
 
+void MaidManagerDispatcher::SendAccountRequest(const MaidManager::Key& key) {
+  typedef AccountQueryFromMaidManagerToMaidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(VaultMessage::Contents(
+      MaidManager::Key::data_type::Tag::kValue, key.value));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(key.value.string()))));
+  routing_.Send(message);
+}
+
 void MaidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
-                                                const MaidName& account_name,
-                                                nfs::MessageId message_id,
                                                 const std::string& serialised_account) {
   typedef AccountTransferFromMaidManagerToMaidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, nfs_vault::Content(serialised_account));
+  VaultMessage vault_message((nfs_vault::Content(serialised_account)));
   RoutingMessage message(vault_message.Serialise(),
-                         GroupOrKeyHelper::GroupSender(routing_, account_name),
+                         VaultMessage::Sender(routing::GroupId(destination_peer),
+                                              routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::SingleId(destination_peer)));
+  routing_.Send(message);
+}
+
+void MaidManagerDispatcher::SendAccountResponse(const std::string& serialised_account,
+                                                const routing::GroupId& group_id,
+                                                const NodeId& sender) {
+  typedef AccountQueryResponseFromMaidManagerToMaidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage::Contents content(serialised_account);
+  VaultMessage vault_message(content);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(group_id),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(sender));
   routing_.Send(message);
 }
 

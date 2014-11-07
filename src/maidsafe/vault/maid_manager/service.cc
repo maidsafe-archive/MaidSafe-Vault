@@ -64,7 +64,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_remove_accounts_(NodeId(pmid.name()->string())),
       sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
-//      account_transfer_(),
+      account_transfer_(),
       pending_account_mutex_(),
       pending_account_map_() {}
 
@@ -72,30 +72,30 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
 
 void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& public_maid,
     const passport::PublicAnmaid& public_anmaid, nfs::MessageId message_id) {
-  MaidName account_name(public_maid.name());
+  Key key(public_maid.name());
   bool exists(false);
   {
     std::lock_guard<std::mutex> lock(mutex_);
-    auto it(accounts_.find(account_name));
+    auto it(accounts_.find(key));
     exists = (it != std::end(accounts_));
   }
 
   if (exists) {
-    LOG(kError) << "Account for " << account_name.value.string() << " already exists.";
+    LOG(kError) << "Account for " << key.value.string() << " already exists.";
     maidsafe_error error(MakeError(VaultErrors::account_already_exists));
-    dispatcher_.SendCreateAccountResponse(account_name, error, message_id);
+    dispatcher_.SendCreateAccountResponse(key, error, message_id);
     return;
   }
 
   {
     std::lock_guard<std::mutex> lock(pending_account_mutex_);
-    MaidAccountCreationStatus account_creation_status(account_name, public_anmaid.name());
+    MaidAccountCreationStatus account_creation_status(key, public_anmaid.name());
     pending_account_map_.insert(std::make_pair(message_id, account_creation_status));
   }
 
   PmidName pmid_name(Identity(NodeId().string()));
-  dispatcher_.SendPutRequest(account_name, public_maid, pmid_name, message_id);
-  dispatcher_.SendPutRequest(account_name, public_anmaid, pmid_name, message_id);
+  dispatcher_.SendPutRequest(key, public_maid, pmid_name, message_id);
+  dispatcher_.SendPutRequest(key, public_anmaid, pmid_name, message_id);
 }
 
 template <>
@@ -241,75 +241,97 @@ void MaidManagerService::HandleSyncedDelete(
   // }
 }
 
-// =============== Account transfer ================================================================
-
-// void MaidManagerService::TransferAccount(const MaidName& account_name,
-//                                               const NodeId& new_node) {
-//  protobuf::MaidManager maid_account;
-//  maid_account.set_maid_name(account_name->string());
-//  maid_account.set_serialised_account_details(
-//      maid_account_handler_.GetSerialisedAccount(account_name)->string());
-//  nfs_.TransferAccount(new_node, NonEmptyString(maid_account.SerializeAsString()));
-// }
-
-// void MaidManagerService::HandleAccountTransfer(const nfs::Message& message) {
-//  protobuf::MaidManager maid_account;
-//  NodeId source_id(message.source().node_id);
-//  if (!maid_account.ParseFromString(message.data().content.string()))
-//    return;
-
-//  MaidName account_name(Identity(maid_account.maid_name()));
-//  bool finished_all_transfers(
-//      maid_account_handler_.ApplyAccountTransfer(account_name, source_id,
-//        MaidAccount::serialised_type(NonEmptyString(maid_account.serialised_account_details()))));
-//  if (finished_all_transfers)
-//    UpdatePmidTotals(account_name);
-// }
+// =========================== Sync / AccountTransfer ==============================================
 
 void MaidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-  // std::lock_guard<std::mutex> lock(mutex_);
-  // if (stopped_)
-  //  return;
-  // GroupDb<MaidManager>::TransferInfo transfer_info(
-  //    group_db_.GetTransferInfo(close_nodes_change));
-  // for (auto& transfer : transfer_info)
-  //  TransferAccount(transfer.first, transfer.second);
+  std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {
+  try {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (stopped_)
+      return;
+    //    VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
+
+    // TransferInfo transfer_info(detail::GetTransferInfo<Key, Value, TransferInfo>(
+    //    close_nodes_change, accounts_));
+
+    // for (const auto& transfer : transfer_info)
+    //  TransferAccount(transfer.first, transfer.second);
+  }
+  catch (const std::exception& e) {
+    LOG(kVerbose) << "Error : " << boost::diagnostic_information(e) << "\n\n";
+  }
 }
 
-void MaidManagerService::TransferAccount(const NodeId& /*dest*/,
-    const std::vector<std::pair<MaidName, MaidManagerValue>>& /*accounts*/) {
-  //for (auto& account : accounts) {
-  //  // If account just received, shall not pass it out as may under a startup procedure
-  //  // i.e. existing MM will be seen as new_node in close_nodes_change
-  //  if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
-  //    LOG(kInfo) << "MaidManager account " << HexSubstr(account.group_name->string())
-  //               << " just received";
-  //    continue;
-  //  }
-  //  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.group_name,
-  //       Identity{ dest.string() });
-  //  try {
-  //    std::vector<std::string> actions;
-  //    actions.push_back(account.metadata.Serialise());
-  //    for (auto& kv : account.kv_pairs) {
-  //      protobuf::MaidManagerKeyValuePair kv_msg;
-  //        kv_msg.set_key(kv.first.Serialise());
-  //        kv_msg.set_value(kv.second.Serialise());
-  //        actions.push_back(kv_msg.SerializeAsString());
-  //    }
-  //    nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
-  //    MaidManager::UnresolvedAccountTransfer account_transfer(
-  //        account.group_name, message_id, actions);
-  //    dispatcher_.SendAccountTransfer(dest, account.group_name,
-  //                                    message_id, account_transfer.Serialise());
-  //    LOG(kVerbose) << "MaidManager sent to " << HexSubstr(dest.string())
-  //                  << " with account " << account.Print();
-  //  } catch(...) {
-  //    // the normal problem is metadata hasn't been populated
-  //    LOG(kError) << "MaidManagerService::TransferAccount account info error";
-  //  }
-  //}
+void MaidManagerService::TransferAccount(const NodeId& destination,
+                                         const std::vector<AccountType>& accounts) {
+  assert(!accounts.empty());
+  protobuf::AccountTransfer account_transfer_proto;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& account : accounts) {
+      VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.first.value,
+        Identity{ destination.string() });
+      protobuf::MaidManagerKeyValuePair kv_pair;
+      vault::Key key(account.first.value, MaidManager::Key::data_type::Tag::kValue);
+      kv_pair.set_key(key.Serialise());
+      kv_pair.set_value(account.second.Serialise());
+      account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
+      LOG(kVerbose) << "MaidManager send account " << DebugId(account.first.value)
+        << " to " << HexSubstr(destination.string())
+        << " with value " << account.second.Print();
+    }
+  }
+  LOG(kVerbose) << "MaidManagerService::TransferAccount send account transfer";
+  dispatcher_.SendAccountTransfer(destination, account_transfer_proto.SerializeAsString());
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+  const AccountQueryFromMaidManagerToMaidManager& message,
+  const typename AccountQueryFromMaidManagerToMaidManager::Sender& sender,
+  const typename AccountQueryFromMaidManagerToMaidManager::Receiver& receiver) {
+  typedef AccountQueryFromMaidManagerToMaidManager MessageType;
+  OperationHandlerWrapper<MaidManagerService, MessageType, VaultAccumulator>(
+      vault_accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                            return this->ValidateSender(message, sender);
+                        },
+      VaultAccumulator::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MaidManagerService::HandleMessage(
+  const AccountQueryResponseFromMaidManagerToMaidManager& message,
+  const typename AccountQueryResponseFromMaidManagerToMaidManager::Sender& sender,
+  const typename AccountQueryResponseFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  LOG(kInfo) << "MaidManager received account from " << DebugId(sender.sender_id);
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  assert(account_transfer_proto.serialised_accounts_size() == 1);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0), sender);
+}
+
+void MaidManagerService::HandleAccountTransferEntry(
+  const std::string& serialised_account, const routing::GroupSource& sender) {
+  using Handler = AccountTransferHandler<MaidManager>;
+  protobuf::MaidManagerKeyValuePair kv_pair;
+  if (!kv_pair.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse action";
+  }
+  auto result(account_transfer_.Add(Key(Identity(kv_pair.key())),
+    MaidManagerValue(kv_pair.value()), sender.sender_id.data));
+  if (result.result == Handler::AddResult::kSuccess) {
+    HandleAccountTransfer(std::make_pair(result.key, *result.value));
+  } else  if (result.result == Handler::AddResult::kFailure) {
+    dispatcher_.SendAccountRequest(result.key);
+  }
+}
+
+void MaidManagerService::HandleAccountTransfer(const AccountType& account) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  accounts_.insert(account);
 }
 
 template <>
@@ -577,34 +599,6 @@ void MaidManagerService::HandleMessage(
     LOG(kInfo) << "AccountTransferFromMaidManagerToMaidManager handle account transfer";
     this->HandleAccountTransfer(std::move(resolved_action));
   }*/
-}
-
-void MaidManagerService::HandleAccountTransfer(
-    std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& /*resolved_action*/) {
-//  VLOG(nfs::Persona::kMaidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
-//  GroupDb<MaidManager>::Contents content;
-//  content.group_name = resolved_action->key;
-//  for (auto& action : resolved_action->actions) {
-//    try {
-//      protobuf::MaidManagerKeyValuePair kv_msg;
-//      if (kv_msg.ParseFromString(action)) {
-//        LOG(kVerbose) << "HandleAccountTransfer handle key_value pair";
-//        MaidManager::Key key(kv_msg.key());
-//        LOG(kVerbose) << "HandleAccountTransfer key parsed";
-//        MaidManagerValue value(kv_msg.value());
-//        LOG(kVerbose) << "HandleAccountTransfer vaule parsed";
-//        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
-//      } else {
-//        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
-//        MaidManagerMetadata meta_data(action);
-//        content.metadata = meta_data;
-//      }
-//    } catch(...) {
-//      LOG(kError) << "HandleAccountTransfer can't parse the action";
-//    }
-//  }
-//  LOG(kVerbose) << "MaidManagerService received account "<< content.Print();
-//// group_db_.HandleTransfer(content);
 }
 
 }  // namespace vault

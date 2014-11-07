@@ -167,6 +167,16 @@ void DoOperation(
                                            message.contents->value, message.id);
 }
 
+template <>
+void DoOperation(MaidManagerService* service,
+                 const AccountQueryFromMaidManagerToMaidManager& message,
+                 const AccountQueryFromMaidManagerToMaidManager::Sender& sender,
+                 const AccountQueryFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerAccountRequestVisitor<MaidManagerService> account_request_visitor(service, sender);
+  boost::apply_visitor(account_request_visitor, data_name);
+}
+
 //=============================== To DataManager ===================================================
 
 template <>

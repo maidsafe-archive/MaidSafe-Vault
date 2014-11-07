@@ -24,6 +24,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -51,15 +52,18 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kMaidManager> {
   static const Persona persona = Persona::kMaidManager;
-  typedef passport::PublicMaid::Name GroupName;
-  typedef vault::GroupKey<GroupName> Key;
-  typedef vault::MaidManagerValue Value;
-  typedef vault::MetadataKey<GroupName> MetadataKey;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount> UnresolvedCreateAccount;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
-  typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
-  typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
+  using GroupName = passport::PublicMaid::Name;
+  using Key = GroupName;
+  using Value = vault::MaidManagerValue;
+  using SyncKey = vault::GroupKey<GroupName>;
+  using MetadataKey = vault::MetadataKey<GroupName>;
+  using AccountType = std::pair<Key, Value>;
+  using TransferInfo = std::map<NodeId, std::vector<AccountType>>;
+  using UnresolvedCreateAccount = vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount>;
+  using UnresolvedRemoveAccount = vault::UnresolvedAction<MetadataKey, vault::ActionRemoveAccount>;
+  using UnresolvedPut = vault::UnresolvedAction<SyncKey, vault::ActionMaidManagerPut>;
+  using UnresolvedDelete = vault::UnresolvedAction<SyncKey, vault::ActionMaidManagerDelete>;
+  using UnresolvedAccountTransfer = vault::UnresolvedAccountTransferAction<GroupName, std::string>;
 };
 
 }  // namespace nfs

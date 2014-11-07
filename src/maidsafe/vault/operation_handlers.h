@@ -229,6 +229,12 @@ void DoOperation(MaidManagerService* service,
                  const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
                  const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver&);
 
+template <>
+void DoOperation(MaidManagerService* service,
+                 const AccountQueryFromMaidManagerToMaidManager& message,
+                 const AccountQueryFromMaidManagerToMaidManager::Sender& sender,
+                 const AccountQueryFromMaidManagerToMaidManager::Receiver& receiver);
+
 //=============================== To DataManager ===================================================
 template <>
 void DoOperation(DataManagerService* service, const PutRequestFromMaidManagerToDataManager& message,

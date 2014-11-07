@@ -45,9 +45,8 @@
 #include "maidsafe/nfs/utils.h"
 #include "maidsafe/nfs/client/data_getter.h"
 
-#include "maidsafe/vault/account_transfer.h"
+#include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/group_db.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -61,6 +60,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
 
@@ -80,6 +80,10 @@ class MaidManagerService {
   typedef nfs::MaidManagerServiceMessages PublicMessages;
   typedef MaidManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
+  using Key = MaidManager::Key;
+  using Value = MaidManager::Value;
+  using AccountType = MaidManager::AccountType;
+  using TransferInfo = MaidManager::TransferInfo;
 
   MaidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -169,8 +173,7 @@ class MaidManagerService {
                                    const StructuredDataVersions::VersionName& version,
                                    nfs::MessageId message_id);
 
-  void TransferAccount(const NodeId& dest,
-                       const std::vector<std::pair<MaidName, MaidManagerValue>>& accounts);
+  void TransferAccount(const NodeId& dest, const std::vector<AccountType>& accounts);
 
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
@@ -182,31 +185,20 @@ class MaidManagerService {
 
   void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
+  // =========================== Sync / AccountTransfer ============================================
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
 
-  typedef boost::mpl::vector<> InitialType;
-  typedef boost::mpl::insert_range<InitialType,
-                                   boost::mpl::end<InitialType>::type,
-                                   nfs::MaidManagerServiceMessages::types>::type IntermediateType;
-  typedef boost::mpl::insert_range<IntermediateType,
-                                   boost::mpl::end<IntermediateType>::type,
-                                   MaidManagerServiceMessages::types>::type FinalType;
+  void HandleAccountTransfer(const AccountType& account);
 
- public:
-  typedef boost::make_variant_over<FinalType>::type Messages;
+  template<typename DataName>
+  void HandleAccountRequest(const DataName& name, const NodeId& sender);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::GroupSource& sender);
 
  private:
   typedef Accumulator<nfs::MaidManagerServiceMessages> NfsAccumulator;
   typedef Accumulator<MaidManagerServiceMessages> VaultAccumulator;
-
-  void ObfuscateKey(MaidManager::Key& key) {
-    // Hash the data name to obfuscate the list of chunks associated with the client.
-    key.name = Identity(crypto::Hash<crypto::SHA512>(key.name));
-  }
-
-  void HandleAccountTransfer(
-      std::unique_ptr<MaidManager::UnresolvedAccountTransfer>&& resolved_action);
 
   bool CheckDataNamesExist(const MaidName& maid_name, const nfs_vault::DataNames& data_names);
 
@@ -236,11 +228,12 @@ class MaidManagerService {
   friend class detail::MaidManagerPutVersionRequestVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteBranchUntilForkVisitor<MaidManagerService>;
   friend class detail::MaidManagerCreateVersionTreeRequestVisitor<MaidManagerService>;
+  friend class detail::MaidManagerAccountRequestVisitor<MaidManagerService>;
   friend class test::MaidManagerServiceTest;
 
   routing::Routing& routing_;
   nfs_client::DataGetter& data_getter_;
-  std::map<MaidName, MaidManager::Value> accounts_;
+  std::map<MaidManager::Key, MaidManager::Value> accounts_;
   std::mutex accumulator_mutex_, mutex_;
   bool stopped_;
   NfsAccumulator nfs_accumulator_;
@@ -250,7 +243,7 @@ class MaidManagerService {
   Sync<MaidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
   Sync<MaidManager::UnresolvedPut> sync_puts_;
   Sync<MaidManager::UnresolvedDelete> sync_deletes_;
-//  AccountTransfer<MaidManager::UnresolvedAccountTransfer> account_transfer_;
+  AccountTransferHandler<MaidManager> account_transfer_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
 };
@@ -326,6 +319,18 @@ void MaidManagerService::HandleMessage(
 
 template <>
 void MaidManagerService::HandleMessage(
+  const AccountQueryFromMaidManagerToMaidManager& message,
+  const typename AccountQueryFromMaidManagerToMaidManager::Sender& sender,
+  const typename AccountQueryFromMaidManagerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
+  const AccountQueryResponseFromMaidManagerToMaidManager& message,
+  const typename AccountQueryResponseFromMaidManagerToMaidManager::Sender& sender,
+  const typename AccountQueryResponseFromMaidManagerToMaidManager::Receiver& receiver);
+
+template <>
+void MaidManagerService::HandleMessage(
     const PutVersionResponseFromVersionHandlerToMaidManager& message,
     const typename PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
     const typename PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
@@ -392,8 +397,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
   }
 
   LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
-  typename MaidManager::Key group_key(typename MaidManager::GroupName(account_name.value),
-                                      data.name(), Data::Tag::kValue);
+  typename MaidManager::SyncKey group_key(account_name, data.name(), Data::Tag::kValue);
   DoSync(typename MaidManager::UnresolvedPut(group_key,
          ActionMaidManagerPut(static_cast<int64_t>(data.Serialise().data.string().size())),
          routing_.kNodeId()));
@@ -408,8 +412,7 @@ void MaidManagerService::HandlePutResponse(const MaidName& maid_name,
                 << " for data name " << HexSubstr(data_name.value)
                 << " with size " << size;
   dispatcher_.SendPutResponse(maid_name, maidsafe_error(CommonErrors::success), message_id);
-  typename MaidManager::Key group_key(typename MaidManager::GroupName(maid_name.value),
-                                      data_name, Data::Tag::kValue);
+  typename MaidManager::SyncKey group_key(maid_name, data_name, Data::Tag::kValue);
   DoSync(typename MaidManager::UnresolvedPut(group_key, ActionMaidManagerPut(size),
                                              routing_.kNodeId()));
 }
@@ -486,6 +489,29 @@ void MaidManagerService::HandleDelete(const MaidName& /*account_name*/,
   //                                    data_name, Data::Tag::kValue);
   // DoSync(typename MaidManager::UnresolvedDelete(group_key, ActionMaidManagerDelete(message_id),
   //                                              routing_.kNodeId()));
+}
+
+template<typename DataName>
+void MaidManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
+  if (!routing::CloseNodesChange().CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  protobuf::AccountTransfer account_transfer_proto;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto it(accounts_.find(Key(name.value)));
+    if (it == std::end(accounts_))
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+
+    protobuf::MaidManagerKeyValuePair kv_pair;
+    vault::Key key(it->first.value, MaidManager::Key::data_type::Tag::kValue);
+    kv_pair.set_key(key.Serialise());
+    kv_pair.set_value(it->second.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
+  }
+  dispatcher_.SendAccountResponse(account_transfer_proto.SerializeAsString(),
+      routing::GroupId(NodeId(name->string())), sender);
 }
 
 // ===============================================================================================
