@@ -39,11 +39,11 @@ nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>() {
 }
 
 template <>
-nfs_client::DataNameAndSpaceAndReturnCode
-CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>() {
+nfs_client::DataNameAndSizeAndSpaceAndReturnCode
+CreateContent<nfs_client::DataNameAndSizeAndSpaceAndReturnCode>() {
   ImmutableData data(NonEmptyString(RandomString(128)));
   nfs_client::ReturnCode return_code(VaultErrors::not_enough_space);
-  return nfs_client::DataNameAndSpaceAndReturnCode(data.name(), 100, return_code);
+  return nfs_client::DataNameAndSizeAndSpaceAndReturnCode(data.name(), 100, 1024, return_code);
 }
 
 template <>
