@@ -36,8 +36,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class Metadata;
-
 struct ActionDataManagerPut;
 struct ActionDataManagerAddPmid;
 
@@ -50,7 +48,6 @@ struct PersonaTypes<Persona::kDataManager> {
   static const Persona persona = Persona::kDataManager;
   typedef vault::Key Key;
   typedef vault::DataManagerValue Value;
-  typedef vault::Metadata Metadata;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid> UnresolvedAddPmid;

@@ -40,7 +40,7 @@ namespace vault {
 // not thread safe
 class DataManagerValue {
  public:
-  explicit DataManagerValue(const std::string& serialised_metadata_value);
+  explicit DataManagerValue(const std::string& serialised_value);
   DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT;
   DataManagerValue(const PmidName& pmid_name, int32_t size);
   std::string Serialise() const;

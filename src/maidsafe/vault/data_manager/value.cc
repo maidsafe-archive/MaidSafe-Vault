@@ -28,19 +28,19 @@ namespace maidsafe {
 
 namespace vault {
 
-DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
+DataManagerValue::DataManagerValue(const std::string &serialised_value)
     : size_(0), pmids_() {
-  protobuf::DataManagerValue metadata_value_proto;
-  if (!metadata_value_proto.ParseFromString(serialised_metadata_value)) {
-    LOG(kError) << "Failed to read or parse serialised metadata value";
+  protobuf::DataManagerValue value_proto;
+  if (!value_proto.ParseFromString(serialised_value)) {
+    LOG(kError) << "Failed to read or parse serialised value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   } else {
-    if (metadata_value_proto.size() <= 0) {
+    if (value_proto.size() <= 0) {
       LOG(kError) << "Invalid parameters";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
-    size_ = metadata_value_proto.size();
-    for (auto& i : metadata_value_proto.pmid_names())
+    size_ = value_proto.size();
+    for (auto& i : value_proto.pmid_names())
       pmids_.insert(PmidName(Identity(i)));
     if (pmids_.size() < 1) {
       LOG(kError) << "Invalid pmids";
@@ -119,12 +119,12 @@ std::string DataManagerValue::Serialise() const {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
   assert(!pmids_.empty());
-  protobuf::DataManagerValue metadata_value_proto;
-  metadata_value_proto.set_size(size_);
+  protobuf::DataManagerValue value_proto;
+  value_proto.set_size(size_);
   for (const auto& i : pmids_)
-    metadata_value_proto.add_pmid_names(i->string());
-  assert(metadata_value_proto.IsInitialized());
-  return metadata_value_proto.SerializeAsString();
+    value_proto.add_pmid_names(i->string());
+  assert(value_proto.IsInitialized());
+  return value_proto.SerializeAsString();
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
