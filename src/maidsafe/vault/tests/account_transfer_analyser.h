@@ -43,7 +43,7 @@ template <typename Persona>
 class  AccountTransferInfoHandler {};
 
 template <typename Persona>
-class AccountTransferTestAnalyser : public AccountTransferInfoHandler<Persona> {
+class AccountTransferAnalyser : public AccountTransferInfoHandler<Persona> {
  public:
   using Value = typename Persona::Value;
   using Key = typename Persona::Key;
@@ -52,7 +52,7 @@ class AccountTransferTestAnalyser : public AccountTransferInfoHandler<Persona> {
   using Result = typename AccountTransferHandler<Persona>::Result;
   using AddResult = typename AccountTransferHandler<Persona>::AddResult;
 
-  AccountTransferTestAnalyser();
+  AccountTransferAnalyser();
   bool CheckResults(
       const std::map<Key, typename AccountTransferHandler<Persona>::Result>& results_in);
   void CreateEntries(unsigned int total);
@@ -70,11 +70,11 @@ class AccountTransferTestAnalyser : public AccountTransferInfoHandler<Persona> {
 };
 
 template <typename Persona>
-AccountTransferTestAnalyser<Persona>::AccountTransferTestAnalyser()
+AccountTransferAnalyser<Persona>::AccountTransferAnalyser()
     : kv_pairs_() {}
 
 template <typename Persona>
-bool AccountTransferTestAnalyser<Persona>::CheckResults(
+bool AccountTransferAnalyser<Persona>::CheckResults(
     const std::map<Key, typename AccountTransferHandler<Persona>::Result>& results_in) {
   auto expected_results(AccountTransferInfoHandler<Persona>::ProduceResults(kv_pairs_));
   if (results_in.size() != expected_results.size())
@@ -86,19 +86,19 @@ bool AccountTransferTestAnalyser<Persona>::CheckResults(
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::CreateEntries(unsigned int total) {
+void AccountTransferAnalyser<Persona>::CreateEntries(unsigned int total) {
   for (unsigned int index(0); index < total; ++index)
     kv_pairs_.push_back(AccountTransferInfoHandler<Persona>::CreatePair());
 }
 
 template <typename Persona>
-std::vector<typename AccountTransferTestAnalyser<Persona>::KeyValuePair>
-AccountTransferTestAnalyser<Persona>::GetKeyValuePairs() const {
+std::vector<typename AccountTransferAnalyser<Persona>::KeyValuePair>
+AccountTransferAnalyser<Persona>::GetKeyValuePairs() const {
   return kv_pairs_;
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::DefaultReplicate() {
+void AccountTransferAnalyser<Persona>::DefaultReplicate() {
   assert(!kv_pairs_.empty());
   auto original_size(kv_pairs_.size());
   typename std::vector<KeyValuePair>::iterator start_iter(std::begin(kv_pairs_)),
@@ -114,7 +114,7 @@ void AccountTransferTestAnalyser<Persona>::DefaultReplicate() {
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::RandomReplicate(unsigned int replicates) {
+void AccountTransferAnalyser<Persona>::RandomReplicate(unsigned int replicates) {
   std::vector<KeyValuePair> new_pairs;
   bool same_value(true);
   typename std::vector<KeyValuePair>::iterator start_iter, end_iter;
@@ -135,7 +135,7 @@ void AccountTransferTestAnalyser<Persona>::RandomReplicate(unsigned int replicat
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::ReplicateWithSameValue(
+void AccountTransferAnalyser<Persona>::ReplicateWithSameValue(
     typename std::vector<KeyValuePair>::iterator& start_iter,
     typename std::vector<KeyValuePair>::iterator& end_iter) {
   std::vector<KeyValuePair> new_pairs;
@@ -148,7 +148,7 @@ void AccountTransferTestAnalyser<Persona>::ReplicateWithSameValue(
 }
 
 template <typename Persona>
-void AccountTransferTestAnalyser<Persona>::ReplicateWithDifferentValue(
+void AccountTransferAnalyser<Persona>::ReplicateWithDifferentValue(
     typename std::vector<KeyValuePair>::iterator& start_iter,
     typename std::vector<KeyValuePair>::iterator& end_iter) {
   std::vector<KeyValuePair> new_pairs;

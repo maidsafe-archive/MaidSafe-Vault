@@ -52,7 +52,7 @@ class AccountTransferHandlerTest : public testing::Test {
  protected:
   std::mutex mutex_;
   AccountTransferHandler<Persona> account_transfer_handler_;
-  AccountTransferTestAnalyser<Persona> account_transfer_analyser_;
+  AccountTransferAnalyser<Persona> account_transfer_analyser_;
 };
 
 TYPED_TEST_CASE_P(AccountTransferHandlerTest);
