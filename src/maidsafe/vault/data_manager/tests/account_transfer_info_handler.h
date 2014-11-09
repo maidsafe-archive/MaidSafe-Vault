@@ -143,11 +143,11 @@ class AccountTransferInfoHandler<DataManagerPersona> {
                    kDataSize_ };
   }
 
-  unsigned int AcceptSize() const {
+  unsigned int kAcceptSize() const {
     return kAcceptSize_;
   }
 
-  unsigned int ResolutionSize() const {
+  unsigned int kResolutionSize() const {
     return kResolutionSize_;
   }
 

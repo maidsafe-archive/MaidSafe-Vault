@@ -62,9 +62,11 @@ class AccountTransferAnalyser : public AccountTransferInfoHandler<Persona> {
 
  private:
   void ReplicateWithSameValue(typename std::vector<KeyValuePair>::iterator& start_iter,
-                              typename std::vector<KeyValuePair>::iterator& end_iter);
+                              typename std::vector<KeyValuePair>::iterator& end_iter,
+                              unsigned int quantity = 1);
   void ReplicateWithDifferentValue(typename std::vector<KeyValuePair>::iterator& start_iter,
-                                   typename std::vector<KeyValuePair>::iterator& end_iter);
+                                   typename std::vector<KeyValuePair>::iterator& end_iter,
+                                   unsigned int quantity = 1);
 
   std::vector<KeyValuePair> kv_pairs_;
 };
@@ -104,11 +106,13 @@ void AccountTransferAnalyser<Persona>::DefaultReplicate() {
   typename std::vector<KeyValuePair>::iterator start_iter(std::begin(kv_pairs_)),
       end_iter(std::begin(kv_pairs_));
   std::advance(end_iter, original_size / 2);
-  ReplicateWithSameValue(start_iter, end_iter);
+  ReplicateWithSameValue(start_iter, end_iter,
+                         AccountTransferInfoHandler<Persona>::kAcceptSize() - 1);
   end_iter = start_iter = std::begin(kv_pairs_);
   std::advance(start_iter, original_size / 2 + 1);
   std::advance(end_iter, original_size * 3 / 4);
-  ReplicateWithDifferentValue(start_iter, end_iter);
+  ReplicateWithDifferentValue(start_iter, end_iter,
+                              AccountTransferInfoHandler<Persona>::kResolutionSize() - 1);
   std::srand (unsigned(std::time(0)));
   std::random_shuffle(std::begin(kv_pairs_), std::end(kv_pairs_));
 }
@@ -137,12 +141,11 @@ void AccountTransferAnalyser<Persona>::RandomReplicate(unsigned int replicates) 
 template <typename Persona>
 void AccountTransferAnalyser<Persona>::ReplicateWithSameValue(
     typename std::vector<KeyValuePair>::iterator& start_iter,
-    typename std::vector<KeyValuePair>::iterator& end_iter) {
+    typename std::vector<KeyValuePair>::iterator& end_iter,
+    unsigned int quantity) {
   std::vector<KeyValuePair> new_pairs;
   for (; start_iter != end_iter; ++start_iter)
-    for (unsigned int index(0);
-         index < AccountTransferInfoHandler<Persona>::AcceptSize() - 1;
-         ++index)
+    for (unsigned int index(0); index < quantity; ++index)
       new_pairs.push_back(*start_iter);
   std::copy(std::begin(new_pairs), std::end(new_pairs), std::back_inserter(kv_pairs_));
 }
@@ -150,12 +153,11 @@ void AccountTransferAnalyser<Persona>::ReplicateWithSameValue(
 template <typename Persona>
 void AccountTransferAnalyser<Persona>::ReplicateWithDifferentValue(
     typename std::vector<KeyValuePair>::iterator& start_iter,
-    typename std::vector<KeyValuePair>::iterator& end_iter) {
+    typename std::vector<KeyValuePair>::iterator& end_iter,
+    unsigned int quantity) {
   std::vector<KeyValuePair> new_pairs;
   for (; start_iter != end_iter; ++start_iter)
-    for (unsigned int index(0);
-         index < AccountTransferInfoHandler<Persona>::ResolutionSize() - 1;
-         ++index) {
+    for (unsigned int index(0); index < quantity; ++index) {
       new_pairs.push_back(
           std::make_pair(start_iter->first,
                          AccountTransferInfoHandler<Persona>::CreateValue()));

@@ -81,7 +81,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
   using TypedHandlerTest = AccountTransferHandlerTest<TypeParam>;
   const unsigned int kParallelismFactor(10);
   unsigned int index(0);
-  this->account_transfer_analyser_.CreateEntries(1000);
+  this->account_transfer_analyser_.CreateEntries(900);
   this->account_transfer_analyser_.DefaultReplicate();
   std::vector<std::vector<typename TypedHandlerTest::KeyValuePair>>
       parallel_inputs(kParallelismFactor, std::vector<typename TypedHandlerTest::KeyValuePair>());
