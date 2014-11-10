@@ -585,7 +585,7 @@ template <typename ServiceHandlerType>
 class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
  public:
   PmidManagerPutResponseFailureVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
-                                       const int32_t size,
+                                       const uint64_t size,
                                        const int64_t available_size,
                                        const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
@@ -604,7 +604,7 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidName_;
-  const int32_t kSize_;
+  const uint64_t kSize_;
   const int64_t kAvailableSize_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;

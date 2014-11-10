@@ -183,7 +183,7 @@ class PmidNodeService {
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);
   template <typename Data>
-  void HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id);
+  void HandlePut(const Data& data, const uint64_t size, nfs::MessageId message_id);
   template <typename Data>
   void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
                  nfs::MessageId message_id);
@@ -301,7 +301,7 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
 
 // ============================== Put implementation =============================================
 template <typename Data>
-void PmidNodeService::HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id) {
+void PmidNodeService::HandlePut(const Data& data, const uint64_t size, nfs::MessageId message_id) {
   try {
     LOG(kVerbose) << "PmidNodeService::HandlePut put " << HexSubstr(data.name().value)
                   << " with message_id " << message_id.data;

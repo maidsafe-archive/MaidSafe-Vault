@@ -27,7 +27,7 @@ namespace maidsafe {
 namespace vault {
 
 ActionPmidManagerDelete::ActionPmidManagerDelete(
-    int32_t size, bool pmid_node_available_in , bool data_failure_in)
+  uint64_t size, bool pmid_node_available_in, bool data_failure_in)
     : kSize(size),
       pmid_node_available(pmid_node_available_in),
       data_failure(data_failure_in) {}

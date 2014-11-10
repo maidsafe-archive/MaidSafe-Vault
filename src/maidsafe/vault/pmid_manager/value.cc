@@ -64,11 +64,11 @@ PmidManagerValue& PmidManagerValue::operator=(PmidManagerValue other) {
   return *this;
 }
 
-void PmidManagerValue::PutData(int32_t size) {
+void PmidManagerValue::PutData(uint64_t size) {
   stored_total_size += size;
 }
 
-void PmidManagerValue::DeleteData(int32_t size) {
+void PmidManagerValue::DeleteData(uint64_t size) {
   if (stored_total_size < size) {
     LOG(kError) << "invalid stored_total_size " << stored_total_size;
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
@@ -76,12 +76,12 @@ void PmidManagerValue::DeleteData(int32_t size) {
   stored_total_size -= size;
 }
 
-void PmidManagerValue::HandleLostData(int32_t size) {
+void PmidManagerValue::HandleLostData(uint64_t size) {
   DeleteData(size);
   lost_total_size += size;
 }
 
-void PmidManagerValue::HandleFailure(int32_t size) {
+void PmidManagerValue::HandleFailure(uint64_t size) {
   HandleLostData(size);
   claimed_available_size = 0;
 }

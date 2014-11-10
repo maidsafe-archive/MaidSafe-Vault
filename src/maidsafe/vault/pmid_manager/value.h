@@ -39,18 +39,18 @@ struct PmidManagerValue {
   PmidManagerValue(const PmidManagerValue& other);
   PmidManagerValue(PmidManagerValue&& other);
   PmidManagerValue& operator=(PmidManagerValue other);
-  void PutData(int32_t size);
-  void DeleteData(int32_t size);
-  void HandleLostData(int32_t size);
-  void HandleFailure(int32_t size);
+  void PutData(uint64_t size);
+  void DeleteData(uint64_t size);
+  void HandleLostData(uint64_t size);
+  void HandleFailure(uint64_t size);
   void SetAvailableSize(const int64_t& available_size);
   std::string Serialise() const;
   detail::GroupDbMetaDataStatus GroupStatus();
   std::string Print() const;
 
-  int64_t stored_total_size;
-  int64_t lost_total_size;
-  int64_t claimed_available_size;
+  uint64_t stored_total_size;
+  uint64_t lost_total_size;
+  uint64_t claimed_available_size;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);

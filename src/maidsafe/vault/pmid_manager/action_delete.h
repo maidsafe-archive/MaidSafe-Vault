@@ -30,13 +30,13 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionPmidManagerDelete {
-  ActionPmidManagerDelete(int32_t size, bool pmid_node_available_in, bool data_failure);
+  ActionPmidManagerDelete(uint64_t size, bool pmid_node_available_in, bool data_failure);
   explicit ActionPmidManagerDelete(const std::string& serialised_action);
   void operator()(PmidManagerValue& value);
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
-  int32_t kSize;
+  uint64_t kSize;
   bool pmid_node_available;
   bool data_failure;
 };
