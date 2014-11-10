@@ -33,154 +33,156 @@ namespace vault {
 
 namespace test {
 
-// class MaidManagerServiceTest : public testing::Test {
-// public:
-//  MaidManagerServiceTest()
-//      : anmaid_(),
-//        maid_(anmaid_),
-//        anpmid_(),
-//        pmid_(anpmid_),
-//        public_maid_(maid_),
-//        public_pmid_(pmid_),
-//        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-//        vault_root_dir_(*kTestRoot_),
-//        routing_(pmid_),
-//        data_getter_(asio_service_, routing_),
-//        maid_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
-//        asio_service_(2) {}
-//
-//  NodeId MaidNodeId() { return NodeId(maid_.name()->string()); }
-//
-//  MaidManager::Metadata GetMetadata(const MaidManager::GroupName& group_name) {
-//    return maid_manager_service_.group_db_.GetMetadata(group_name);
-//  }
-//
-//  void AddMetadata(const MaidManager::GroupName& group_name,
-//                   const MaidManager::Metadata& metadata) {
-//    maid_manager_service_.group_db_.AddGroup(group_name, metadata);
-//  }
-//
-//  void CreateAccount() {
-//    MaidManager::MetadataKey metadata_key(public_maid_.name());
-//    MaidManager::Metadata metadata(100, std::vector<PmidTotals>());
-//    AddMetadata(public_maid_.name(), metadata);
-//  }
-//
-//  template <typename ActionType>
-//  void Commit(const MaidManager::Key& key, const ActionType& action) {
-//    maid_manager_service_.group_db_.Commit(key, action);
-//  }
-//
-//  MaidManager::Value Get(const MaidManager::Key& key) {
-//    return maid_manager_service_.group_db_.GetValue(key);
-//  }
-//
-//  std::vector<PmidTotals> MetadataPmidTotals(const MaidManager::Metadata& metadata) {
-//    return metadata.pmid_totals_;
-//  }
-//
-//  template <typename UnresolvedActionType>
-//  void SendSync(const std::vector<UnresolvedActionType>& unresolved_actions,
-//                const std::vector<routing::GroupSource>& group_source);
-//
-//  bool Equal(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
-//    if (lhs.total_put_data_ != rhs.total_put_data_)
-//      return false;
-//
-//    if (lhs.pmid_totals_.size() != rhs.pmid_totals_.size())
-//      return false;
-//
-//    for (const auto& pmid_total : lhs.pmid_totals_) {
-//      auto found(std::find_if(
-//          std::begin(rhs.pmid_totals_), std::end(rhs.pmid_totals_),
-//          [&](const PmidTotals& rhs_pmid_total) { return pmid_total == rhs_pmid_total; }));
-//      if (found == std::end(rhs.pmid_totals_))
-//        return false;
-//    }
-//    return true;
-//  }
-//
-// protected:
-//  passport::Anmaid anmaid_;
-//  passport::Maid maid_;
-//  passport::Anpmid anpmid_;
-//  passport::Pmid pmid_;
-//  passport::PublicMaid public_maid_;
-//  passport::PublicPmid public_pmid_;
-//  const maidsafe::test::TestPath kTestRoot_;
-//  boost::filesystem::path vault_root_dir_;
-//  routing::Routing routing_;
-//  nfs_client::DataGetter data_getter_;
-//  MaidManagerService maid_manager_service_;
-//  AsioService asio_service_;
-// };
-//
-// template <typename UnresolvedActionType>
-// void MaidManagerServiceTest::SendSync(
-//    const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
-//    const std::vector<routing::GroupSource>& /*group_source*/) {
-//  UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
-// }
-//
-// template <>
-// void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedCreateAccount>(
-//    const std::vector<MaidManager::UnresolvedCreateAccount>& unresolved_actions,
-//    const std::vector<routing::GroupSource>& group_source) {
-//  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedCreateAccount,
-//                                    SynchroniseFromMaidManagerToMaidManager>(
-//      &maid_manager_service_, maid_manager_service_.sync_create_accounts_, unresolved_actions,
-//      group_source);
-// }
-//
-// template <>
-// void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedRemoveAccount>(
-//    const std::vector<MaidManager::UnresolvedRemoveAccount>& unresolved_actions,
-//    const std::vector<routing::GroupSource>& group_source) {
-//  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRemoveAccount,
-//                                    SynchroniseFromMaidManagerToMaidManager>(
-//      &maid_manager_service_, maid_manager_service_.sync_remove_accounts_, unresolved_actions,
-//      group_source);
-// }
-//
-// template <>
-// void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedPut>(
-//    const std::vector<MaidManager::UnresolvedPut>& unresolved_actions,
-//    const std::vector<routing::GroupSource>& group_source) {
-//  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedPut,
-//                                    SynchroniseFromMaidManagerToMaidManager>(
-//      &maid_manager_service_, maid_manager_service_.sync_puts_, unresolved_actions, group_source);
-// }
-//
-// template <>
-// void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDelete>(
-//    const std::vector<MaidManager::UnresolvedDelete>& unresolved_actions,
-//    const std::vector<routing::GroupSource>& group_source) {
-//  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedDelete,
-//                                    SynchroniseFromMaidManagerToMaidManager>(
-//      &maid_manager_service_, maid_manager_service_.sync_deletes_, unresolved_actions,
-//      group_source);
-// }
-//
-// template <>
-// void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
-//    const std::vector<MaidManager::UnresolvedUpdatePmidHealth>& unresolved_actions,
-//    const std::vector<routing::GroupSource>& group_source) {
-//  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUpdatePmidHealth,
-//                                    SynchroniseFromMaidManagerToMaidManager>(
-//      &maid_manager_service_, maid_manager_service_.sync_update_pmid_healths_, unresolved_actions,
-//      group_source);
-// }
-//
-//
-// TEST_F(MaidManagerServiceTest, BEH_PutRequestFromMaidNodeToMaidManager) {
-//  CreateAccount();
-//  auto content(CreateContent<nfs::PutRequestFromMaidNodeToMaidManager::Contents>());
-//  auto put_request(CreateMessage<nfs::PutRequestFromMaidNodeToMaidManager>(content));
-//  EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, put_request,
-//                                     routing::SingleSource(MaidNodeId()),
-//                                     routing::GroupId(MaidNodeId())));
-// }
-//
+class MaidManagerServiceTest : public testing::Test {
+ public:
+  MaidManagerServiceTest()
+      : anmaid_(),
+        maid_(anmaid_),
+        anpmid_(),
+        pmid_(anpmid_),
+        public_maid_(maid_),
+        public_pmid_(pmid_),
+        kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
+        vault_root_dir_(*kTestRoot_),
+        routing_(pmid_),
+        data_getter_(asio_service_, routing_),
+        maid_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
+        asio_service_(2) {}
+
+  NodeId MaidNodeId() { return NodeId(maid_.name()->string()); }
+
+  MaidManager::Value GetValue(const MaidManager::GroupName& group_name) {
+    std::lock_guard<std::mutex> lock(maid_manager_service_.mutex_);
+    return maid_manager_service_.accounts_[group_name];
+  }
+
+  void AddAccount(const MaidManager::GroupName& group_name,
+                  const MaidManager::Value& value) {
+    std::lock_guard<std::mutex> lock(maid_manager_service_.mutex_);
+    maid_manager_service_.accounts_.insert(std::make_pair(group_name, value));
+  }
+
+  void CreateAccount() {
+    MaidManager::Key key(public_maid_.name());
+    MaidManager::Value value(100, 1000);
+    AddAccount(public_maid_.name(), value);
+  }
+
+  template <typename ActionType>
+  void Commit(const MaidManager::Key& key, const ActionType& action) {
+    maid_manager_service_.group_db_.Commit(key, action);
+  }
+
+  MaidManager::Value Get(const MaidManager::Key& key) {
+    return maid_manager_service_.group_db_.GetValue(key);
+  }
+
+  std::vector<PmidTotals> MetadataPmidTotals(const MaidManager::Metadata& metadata) {
+    return metadata.pmid_totals_;
+  }
+
+  template <typename UnresolvedActionType>
+  void SendSync(const std::vector<UnresolvedActionType>& unresolved_actions,
+                const std::vector<routing::GroupSource>& group_source);
+
+  bool Equal(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
+    if (lhs.total_put_data_ != rhs.total_put_data_)
+      return false;
+
+    if (lhs.pmid_totals_.size() != rhs.pmid_totals_.size())
+      return false;
+
+    for (const auto& pmid_total : lhs.pmid_totals_) {
+      auto found(std::find_if(
+          std::begin(rhs.pmid_totals_), std::end(rhs.pmid_totals_),
+          [&](const PmidTotals& rhs_pmid_total) { return pmid_total == rhs_pmid_total; }));
+      if (found == std::end(rhs.pmid_totals_))
+        return false;
+    }
+    return true;
+  }
+
+ protected:
+  passport::Anmaid anmaid_;
+  passport::Maid maid_;
+  passport::Anpmid anpmid_;
+  passport::Pmid pmid_;
+  passport::PublicMaid public_maid_;
+  passport::PublicPmid public_pmid_;
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_root_dir_;
+  routing::Routing routing_;
+  nfs_client::DataGetter data_getter_;
+  MaidManagerService maid_manager_service_;
+  AsioService asio_service_;
+};
+
+template <typename UnresolvedActionType>
+void MaidManagerServiceTest::SendSync(
+    const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
+    const std::vector<routing::GroupSource>& /*group_source*/) {
+  UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
+}
+
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedCreateAccount>(
+    const std::vector<MaidManager::UnresolvedCreateAccount>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedCreateAccount,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_create_accounts_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedRemoveAccount>(
+    const std::vector<MaidManager::UnresolvedRemoveAccount>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRemoveAccount,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_remove_accounts_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedPut>(
+    const std::vector<MaidManager::UnresolvedPut>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedPut,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_puts_, unresolved_actions, group_source);
+}
+
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDelete>(
+    const std::vector<MaidManager::UnresolvedDelete>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedDelete,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_deletes_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
+    const std::vector<MaidManager::UnresolvedUpdatePmidHealth>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUpdatePmidHealth,
+                                    SynchroniseFromMaidManagerToMaidManager>(
+      &maid_manager_service_, maid_manager_service_.sync_update_pmid_healths_, unresolved_actions,
+      group_source);
+}
+
+
+TEST_F(MaidManagerServiceTest, BEH_PutRequestFromMaidNodeToMaidManager) {
+  CreateAccount();
+  auto content(CreateContent<nfs::PutRequestFromMaidNodeToMaidManager::Contents>());
+  auto put_request(CreateMessage<nfs::PutRequestFromMaidNodeToMaidManager>(content));
+  EXPECT_NO_THROW(SingleSendsToGroup(&maid_manager_service_, put_request,
+                                     routing::SingleSource(MaidNodeId()),
+                                     routing::GroupId(MaidNodeId())));
+}
+
 // TEST_F(MaidManagerServiceTest, BEH_PutResponseFromDataManagerToMaidManager) {
 //  auto content(CreateContent<PutResponseFromDataManagerToMaidManager::Contents>());
 //  NodeId data_name_id(content.name.raw_name.string());
