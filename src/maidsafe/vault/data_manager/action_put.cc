@@ -19,7 +19,6 @@
 #include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/action_put.pb.h"
 
-#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 

@@ -28,7 +28,6 @@
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 
@@ -39,7 +38,6 @@ struct ActionCreatePmidAccount {
   explicit ActionCreatePmidAccount(const std::string& serialised_action);
   ActionCreatePmidAccount(const ActionCreatePmidAccount& other);
   ActionCreatePmidAccount(ActionCreatePmidAccount&& other);
-
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kCreateAccountRequest;

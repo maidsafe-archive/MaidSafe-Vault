@@ -118,12 +118,12 @@ T Merge(std::vector<T> values) {
   return total / count;
 }
 
-// PmidManagerMetadata MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
+// PmidManagerValue MergePmidTotals(std::shared_ptr<GetPmidTotalsOp> op_data) {
 //  // Remove invalid results
 //  op_data->pmid_records.erase(
 //      std::remove_if(std::begin(op_data->pmid_records),
 //                     std::end(op_data->pmid_records),
-//                     [&op_data](const PmidManagerMetadata& pmid_record) {
+//                     [&op_data](const PmidManagerValue& pmid_record) {
 //                         return pmid_record.pmid_name->IsInitialised() &&
 //                                pmid_record.pmid_name == op_data->kPmidAccountName;
 //                     }),
@@ -139,7 +139,7 @@ T Merge(std::vector<T> values) {
 //    all_claimed_available_size.push_back(pmid_record.claimed_available_size);
 //  }
 
-//  PmidManagerMetadata merged(op_data->kPmidAccountName);
+//  PmidManagerValue merged(op_data->kPmidAccountName);
 //  merged.stored_count = Merge(all_stored_counts);
 //  merged.stored_total_size = Merge(all_stored_total_size);
 //  merged.lost_count = Merge(all_lost_count);
@@ -554,15 +554,15 @@ void MaidManagerService::HandlePmidHealthRequest(
 }
 
 void MaidManagerService::HandlePmidHealthResponse(const MaidName& maid_name,
-    const std::string& serialised_pmid_health, maidsafe_error& return_code,
-    nfs::MessageId message_id) {
+    const PmidName& pmid_name, const std::string& serialised_pmid_health,
+    maidsafe_error& return_code, nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandleHealthResponse to " << HexSubstr(maid_name->string());
   try {
-    PmidManagerMetadata pmid_health(serialised_pmid_health);
-    LOG(kVerbose) << "PmidManagerMetadata available size " << pmid_health.claimed_available_size;
+    PmidManagerValue pmid_health(serialised_pmid_health);
+    LOG(kVerbose) << "PmidManagerValue available size " << pmid_health.claimed_available_size;
     if (return_code.code() == make_error_code(CommonErrors::success)) {
       DoSync(MaidManager::UnresolvedUpdatePmidHealth(MaidManager::MetadataKey(maid_name),
-          ActionMaidManagerUpdatePmidHealth(pmid_health), routing_.kNodeId()));
+          ActionMaidManagerUpdatePmidHealth(pmid_name, pmid_health), routing_.kNodeId()));
     }
     dispatcher_.SendPmidHealthResponse(maid_name, pmid_health.claimed_available_size,
                                        return_code, message_id);

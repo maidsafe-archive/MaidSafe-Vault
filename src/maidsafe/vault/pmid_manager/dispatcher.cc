@@ -66,27 +66,12 @@ void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
   routing_.Send(message);
 }
 
-void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
-                                            const std::vector<nfs_vault::DataName>& data_names,
-                                            const nfs_client::ReturnCode& return_code) {
-  typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(nfs_client::DataNamesAndReturnCode(data_names, return_code));
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::SingleId(
-                                                    NodeId(pmid_node.value.string()))));
-  routing_.Send(message);
-}
-
 void PmidManagerDispatcher::SendHealthResponse(const MaidName& maid_node,
-    const PmidName& pmid_node, const PmidManagerMetadata& pmid_health,  nfs::MessageId message_id,
+    const PmidName& pmid_node, const PmidManagerValue& pmid_health,  nfs::MessageId message_id,
     const maidsafe_error& error) {
   LOG(kVerbose) << "PmidManagerDispatcher::SendHealthResponse for maid "
                 << HexSubstr(maid_node->string()) << " and pmid " << HexSubstr(pmid_node->string())
-                << " . PmidManagerMetadata serialised as " << HexSubstr(pmid_health.Serialise())
+                << " . PmidManagerValue serialised as " << HexSubstr(pmid_health.Serialise())
                 << " and return code : " << boost::diagnostic_information(error);
   typedef PmidHealthResponseFromPmidManagerToMaidManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
@@ -114,37 +99,6 @@ void PmidManagerDispatcher::SendHealthRequest(const PmidName& pmid_node,
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing_.kNodeId()),
                          VaultMessage::Receiver(NodeId(pmid_node->string())));
-  routing_.Send(message);
-}
-
-void PmidManagerDispatcher::SendSetPmidOnline(const nfs_vault::DataName& data_name,
-                                              const PmidName& pmid_node) {
-  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
-                                                  data_name.raw_name.string()));
-  typedef SetPmidOnlineFromPmidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
-  routing_.Send(message);
-}
-
-
-void PmidManagerDispatcher::SendSetPmidOffline(const nfs_vault::DataName& data_name,
-                                               const PmidName& pmid_node) {
-  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
-                                                  data_name.raw_name.string()));
-  typedef SetPmidOfflineFromPmidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
   routing_.Send(message);
 }
 

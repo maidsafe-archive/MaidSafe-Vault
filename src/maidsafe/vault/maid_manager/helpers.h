@@ -30,7 +30,7 @@
 #include "maidsafe/nfs/vault/pmid_registration.h"
 
 #include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
