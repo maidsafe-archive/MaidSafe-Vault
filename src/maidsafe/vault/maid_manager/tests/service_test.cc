@@ -25,7 +25,7 @@
 
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 

@@ -349,8 +349,8 @@ void DoOperation(PmidManagerService* service, const PutFailureFromPmidNodeToPmid
   LOG(kVerbose) << "DoOperation PutFailureFromPmidNodeToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutResponseFailureVisitor<PmidManagerService> put_failure_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.contents->available_space,
-      message.contents->return_code.value, message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size,
+      message.contents->available_space, message.contents->return_code.value, message.id);
   boost::apply_visitor(put_failure_visitor, data_name);
 }
 
@@ -362,18 +362,8 @@ void DoOperation(PmidManagerService* service,
   LOG(kVerbose) << "DoOperation DeleteRequestFromDataManagerToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerDeleteVisitor<PmidManagerService> delete_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size, message.id);
   boost::apply_visitor(delete_visitor, data_name);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation GetPmidAccountRequestFromPmidNodeToPmidManager";
-  service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),
-                                 message.contents->available_size);
 }
 
 template <>
@@ -394,11 +384,12 @@ void DoOperation(PmidManagerService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidManager from "
                 << HexSubstr(sender.sender_id.data.string()) << " for chunk "
-                << HexSubstr(message.contents->raw_name.string()) << " on pmid_node "
+                << HexSubstr(message.contents->name.raw_name.string()) << " on pmid_node "
                 << HexSubstr(receiver.data.string());
-  auto data_name(GetNameVariant(*message.contents));
+  auto data_name(GetNameVariant(message.contents->name));
+  // TODO(TEAM): shall FalseNotification be fired after failing of IntegrityCheck ?
   PmidManagerFalseNotificationVisitor<PmidManagerService> false_notification_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size, message.id);
   boost::apply_visitor(false_notification_visitor, data_name);
 }
 
@@ -551,38 +542,6 @@ void DoOperation(
 }
 
 // ================================================================================================
-
-template <>
-template <>
-void OperationHandler<
-    typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
-    Accumulator<PmidNodeServiceMessages>,
-    typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor, PmidNodeService>::
-operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-           const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-           const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  if (!validate_sender(message, sender))
-    return;
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto result(accumulator.AddPendingRequest(message, sender, checker));
-    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
-      int failures(0);
-      auto responses(accumulator.Get(message, sender));
-      std::vector<std::set<nfs_vault::DataName>> response_vec;
-      for (const auto& response : responses) {
-        auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-        if (typed_response.contents->return_code.value.code() == CommonErrors::success)
-          response_vec.push_back(typed_response.contents->names);
-        else
-          failures++;
-      }
-      service->HandlePmidAccountResponses(response_vec, failures);
-    } else if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
-      service->StartUp();
-    }
-  }
-}
 
 template <>
 template <>

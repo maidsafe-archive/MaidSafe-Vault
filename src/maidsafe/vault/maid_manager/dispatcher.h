@@ -34,7 +34,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {

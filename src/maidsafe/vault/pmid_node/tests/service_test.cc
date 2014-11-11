@@ -104,17 +104,17 @@ TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManagerToPmidNode) {
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManagerToPmidNode) {
-  nfs_client::ReturnCode return_code(CommonErrors::success);
-  nfs_client::DataNamesAndReturnCode content(return_code);
-  // ADD DATA BEFORE TEST TO PERMANENT DATA STORES
-  // ADD DATA NAME TO CONTENTS
-  auto pmid_account_response(
-      CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
-                                    routing::SingleId(routing_.kNodeId())));
-}
+//TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManagerToPmidNode) {
+//  nfs_client::ReturnCode return_code(CommonErrors::success);
+//  nfs_client::DataNamesAndReturnCode content(return_code);
+//  // ADD DATA BEFORE TEST TO PERMANENT DATA STORES
+//  // ADD DATA NAME TO CONTENTS
+//  auto pmid_account_response(
+//      CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
+//  auto group_source(CreateGroupSource(routing_.kNodeId()));
+//  EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
+//                                    routing::SingleId(routing_.kNodeId())));
+//}
 
 }  //  namespace test
 
