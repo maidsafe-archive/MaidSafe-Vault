@@ -105,16 +105,6 @@ void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerTy
 
 template <>
 template <>
-void OperationHandler<
-    typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
-    Accumulator<PmidNodeServiceMessages>,
-    typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor, PmidNodeService>::
-    operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-               const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-               const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <>
-template <>
 void OperationHandler<typename ValidateSenderType<PutRequestFromDataManagerToPmidManager>::type,
                       Accumulator<PmidManagerServiceMessages>,
                       typename Accumulator<PmidManagerServiceMessages>::AddCheckerFunctor,
@@ -351,12 +341,6 @@ void DoOperation(PmidManagerService* service,
                  const DeleteRequestFromDataManagerToPmidManager& message,
                  const DeleteRequestFromDataManagerToPmidManager::Sender& sender,
                  const DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void DoOperation(PmidManagerService* service,

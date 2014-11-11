@@ -20,7 +20,6 @@
 #include "maidsafe/vault/pmid_manager/action_set_pmid_health.pb.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 
@@ -51,8 +50,8 @@ std::string ActionPmidManagerSetPmidHealth::Serialise() const {
   return action_disk_size_proto.SerializeAsString();
 }
 
-void ActionPmidManagerSetPmidHealth::operator()(PmidManagerMetadata& metadata) {
-  metadata.SetAvailableSize(kDiskAvailableSize);
+void ActionPmidManagerSetPmidHealth::operator()(PmidManagerValue& value) {
+  value.SetAvailableSize(kDiskAvailableSize);
 }
 
 bool operator==(const ActionPmidManagerSetPmidHealth& /*lhs*/,

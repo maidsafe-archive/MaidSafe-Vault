@@ -31,7 +31,8 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionMaidManagerUpdatePmidHealth {
-  explicit ActionMaidManagerUpdatePmidHealth(const PmidManagerMetadata& pmid_health_in);
+  explicit ActionMaidManagerUpdatePmidHealth(const PmidName& pmid_name,
+                                             const PmidManagerValue& pmid_health_in);
   explicit ActionMaidManagerUpdatePmidHealth(const std::string& serialised_action);
   ActionMaidManagerUpdatePmidHealth(const ActionMaidManagerUpdatePmidHealth& other);
   ActionMaidManagerUpdatePmidHealth(ActionMaidManagerUpdatePmidHealth&& other);
@@ -39,7 +40,8 @@ struct ActionMaidManagerUpdatePmidHealth {
   std::string Serialise() const;
   void operator()(MaidManagerMetadata& metadata);
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPmidHealthResponse;
-  const PmidManagerMetadata kPmidHealth;
+  const PmidName kPmidName;
+  const PmidManagerValue kPmidHealth;
 };
 
 bool operator==(const ActionMaidManagerUpdatePmidHealth& lhs,

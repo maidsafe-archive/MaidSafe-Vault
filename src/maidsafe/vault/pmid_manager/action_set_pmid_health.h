@@ -28,7 +28,6 @@
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 
@@ -40,7 +39,7 @@ struct ActionPmidManagerSetPmidHealth {
   ActionPmidManagerSetPmidHealth(const ActionPmidManagerSetPmidHealth& other);
   ActionPmidManagerSetPmidHealth(ActionPmidManagerSetPmidHealth&& other);
 
-  void operator()(PmidManagerMetadata& metadata);
+  void operator()(PmidManagerValue& value);
 
   std::string Serialise() const;
 

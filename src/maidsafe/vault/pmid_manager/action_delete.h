@@ -24,21 +24,19 @@
 
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/config.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 namespace vault {
 
-class PmidManagerValue;
-
 struct ActionPmidManagerDelete {
-  ActionPmidManagerDelete(bool pmid_node_available_in, bool data_failure);
+  ActionPmidManagerDelete(uint64_t size, bool pmid_node_available_in, bool data_failure);
   explicit ActionPmidManagerDelete(const std::string& serialised_action);
-  detail::DbAction operator()(PmidManagerMetadata& metadata,
-                              std::unique_ptr<PmidManagerValue>& value) const;
+  void operator()(PmidManagerValue& value);
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
+  uint64_t kSize;
   bool pmid_node_available;
   bool data_failure;
 };

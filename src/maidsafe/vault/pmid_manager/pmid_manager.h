@@ -24,6 +24,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -42,7 +43,7 @@ struct ActionPmidManagerDelete;
 struct ActionPmidManagerCreateAccount;
 struct ActionGetPmidTotals;
 struct ActionPmidManagerSetPmidHealth;
-struct PmidManagerMetadata;
+struct PmidManagerValue;
 struct ActionCreatePmidAccount;
 
 }  // namespace vault
@@ -53,17 +54,18 @@ template <>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
   typedef passport::PublicPmid::Name GroupName;
-  typedef vault::GroupKey<GroupName> Key;
+  typedef vault::GroupKey<GroupName> SyncKey;
+  typedef vault::Key Key;
   typedef vault::PmidManagerValue Value;
-  typedef vault::PmidManagerMetadata Metadata;
-  typedef vault::MetadataKey<GroupName> MetadataKey;
-  typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerPut> UnresolvedPut;
-  typedef vault::UnresolvedAction<Key, vault::ActionPmidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<Key, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
+  typedef std::pair<Key, Value> KvPair;
+  typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
+  typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut> UnresolvedPut;
+  typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete> UnresolvedDelete;
+  typedef vault::UnresolvedAction<SyncKey, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
   typedef vault::UnresolvedAction<
-              MetadataKey, vault::ActionPmidManagerSetPmidHealth> UnresolvedSetPmidHealth;
+              Key, vault::ActionPmidManagerSetPmidHealth> UnresolvedSetPmidHealth;
   typedef vault::UnresolvedAction<
-              MetadataKey, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
+              Key, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
   typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
 };
 

@@ -25,22 +25,31 @@ namespace maidsafe {
 
 namespace vault {
 
-PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_metadata() {}
+PmidTotals::PmidTotals() : serialised_pmid_registration(), pmid_name(), pmid_metadata() {}
 
 PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in)
-    : serialised_pmid_registration(serialised_pmid_registration_in), pmid_metadata() {}
+    : serialised_pmid_registration(serialised_pmid_registration_in),
+      pmid_name(), pmid_metadata() {
+  maidsafe::nfs_vault::PmidRegistration pmid_registration(serialised_pmid_registration);
+  pmid_name = pmid_registration.pmid_name();
+}
 
 PmidTotals::PmidTotals(const std::string& serialised_pmid_registration_in,
-                       const PmidManagerMetadata& pmid_metadata_in)
+                       const PmidManagerValue& pmid_metadata_in)
     : serialised_pmid_registration(serialised_pmid_registration_in),
-      pmid_metadata(pmid_metadata_in) {}
+      pmid_name(), pmid_metadata(pmid_metadata_in) {
+  maidsafe::nfs_vault::PmidRegistration pmid_registration(serialised_pmid_registration);
+  pmid_name = pmid_registration.pmid_name();
+}
 
 PmidTotals::PmidTotals(const PmidTotals& other)
     : serialised_pmid_registration(other.serialised_pmid_registration),
+      pmid_name(other.pmid_name),
       pmid_metadata(other.pmid_metadata) {}
 
 PmidTotals::PmidTotals(PmidTotals&& other)
     : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
+      pmid_name(std::move(pmid_name)),
       pmid_metadata(std::move(other.pmid_metadata)) {}
 
 PmidTotals& PmidTotals::operator=(PmidTotals other) {
@@ -50,12 +59,13 @@ PmidTotals& PmidTotals::operator=(PmidTotals other) {
 
 bool operator==(const PmidTotals& lhs, const PmidTotals& rhs) {
   return lhs.serialised_pmid_registration == rhs.serialised_pmid_registration &&
-         lhs.pmid_metadata == rhs.pmid_metadata;
+         lhs.pmid_name == rhs.pmid_name && lhs.pmid_metadata == rhs.pmid_metadata;
 }
 
 void swap(PmidTotals& lhs, PmidTotals& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.serialised_pmid_registration, rhs.serialised_pmid_registration);
+  swap(lhs.pmid_name, rhs.pmid_name);
   swap(lhs.pmid_metadata, rhs.pmid_metadata);
 }
 

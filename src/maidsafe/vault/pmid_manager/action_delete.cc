@@ -20,52 +20,51 @@
 
 #include "maidsafe/common/error.h"
 
-#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/action_delete.pb.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-ActionPmidManagerDelete::ActionPmidManagerDelete(bool pmid_node_available_in , bool data_failure_in)
-    : pmid_node_available(pmid_node_available_in),
+ActionPmidManagerDelete::ActionPmidManagerDelete(
+  uint64_t size, bool pmid_node_available_in, bool data_failure_in)
+    : kSize(size),
+      pmid_node_available(pmid_node_available_in),
       data_failure(data_failure_in) {}
 
 ActionPmidManagerDelete::ActionPmidManagerDelete(const std::string& serialised_action)
-    : pmid_node_available(true), data_failure(false) {
+    : kSize(0), pmid_node_available(true), data_failure(false) {
   protobuf::ActionPmidManagerDelete action_delete_proto;
   if (!action_delete_proto.ParseFromString(serialised_action)) {
     LOG(kError) << "Can't parse ActionPmidManagerDelete from serialised string";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
+  kSize = action_delete_proto.size();
   pmid_node_available = action_delete_proto.pmid_node_available();
   data_failure = action_delete_proto.data_failure();
 }
 
-detail::DbAction ActionPmidManagerDelete::operator()(PmidManagerMetadata& metadata,
-    std::unique_ptr<PmidManagerValue>& value) const {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+void ActionPmidManagerDelete::operator()(PmidManagerValue& value) {
   if (pmid_node_available) {
     if (data_failure)
-      metadata.HandleLostData(value->size());
+      value.HandleLostData(kSize);
     else
-      metadata.DeleteData(value->size());
+      value.DeleteData(kSize);
   } else {
-    metadata.HandleFailure(value->size());
+    value.HandleFailure(kSize);
   }
-  return detail::DbAction::kDelete;
 }
 
 std::string ActionPmidManagerDelete::Serialise() const {
   protobuf::ActionPmidManagerDelete action_delete_proto;
+  action_delete_proto.set_size(kSize);
   action_delete_proto.set_pmid_node_available(pmid_node_available);
   action_delete_proto.set_data_failure(data_failure);
   return action_delete_proto.SerializeAsString();
 }
 
 bool operator==(const ActionPmidManagerDelete& lhs, const ActionPmidManagerDelete& rhs) {
-  return (lhs.pmid_node_available ==  rhs.pmid_node_available) &&
+  return (lhs.kSize ==  rhs.kSize) && (lhs.pmid_node_available ==  rhs.pmid_node_available) &&
          (lhs.data_failure ==  rhs.data_failure);
 }
 

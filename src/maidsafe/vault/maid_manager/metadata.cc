@@ -21,7 +21,7 @@
 #include <utility>
 
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
@@ -55,7 +55,7 @@ MaidManagerMetadata::MaidManagerMetadata(const std::string& serialised_metadata_
   for (auto index(0); index < maid_manager_metadata_proto.pmid_totals_size(); ++index) {
     pmid_totals_.emplace_back(
         maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_registration()),
-        PmidManagerMetadata(
+        PmidManagerValue(
             maid_manager_metadata_proto.pmid_totals(index).serialised_pmid_metadata());
   }
   if (total_put_data_ < 0) {
@@ -98,8 +98,7 @@ void MaidManagerMetadata::RegisterPmid(const nfs_vault::PmidRegistration& pmid_r
   auto itr(Find(pmid_registration.pmid_name()));
   if (itr == std::end(pmid_totals_)) {
     auto serialised_pmid_registration(pmid_registration.Serialise());
-    pmid_totals_.emplace_back(serialised_pmid_registration,
-                              PmidManagerMetadata(pmid_registration.pmid_name()));
+    pmid_totals_.emplace_back(serialised_pmid_registration, PmidManagerValue());
   }
 }
 
@@ -109,15 +108,16 @@ void MaidManagerMetadata::UnregisterPmid(const PmidName& pmid_name) {
     pmid_totals_.erase(itr);
 }
 
-void MaidManagerMetadata::UpdatePmidTotals(const PmidManagerMetadata& pmid_metadata) {
-  auto itr(Find(pmid_metadata.pmid_name));
+void MaidManagerMetadata::UpdatePmidTotals(const PmidName& pmid_name,
+                                           const PmidManagerValue& pmid_metadata) {
+  auto itr(Find(pmid_name));
   if (itr == std::end(pmid_totals_)) {
     LOG(kError) << "MaidManagerMetadata::UpdatePmidTotals can't find record for "
-                << HexSubstr(pmid_metadata.pmid_name->string());
+                << HexSubstr(pmid_name->string());
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
   LOG(kInfo) << "MaidManagerMetadata::UpdatePmidTotals updating record "
-             << HexSubstr(pmid_metadata.pmid_name->string()) << " with new avaiable_size "
+             << HexSubstr(pmid_name->string()) << " with new avaiable_size "
              << pmid_metadata.claimed_available_size;
   (*itr).pmid_metadata = pmid_metadata;
 }
@@ -136,7 +136,7 @@ std::string MaidManagerMetadata::Serialise() const {
 std::vector<PmidTotals>::iterator MaidManagerMetadata::Find(const PmidName& pmid_name) {
   return std::find_if(std::begin(pmid_totals_), std::end(pmid_totals_),
                       [&pmid_name](const PmidTotals & pmid_totals) {
-    return pmid_name == pmid_totals.pmid_metadata.pmid_name;
+    return pmid_name == pmid_totals.pmid_name;
   });
 }
 
