@@ -40,6 +40,10 @@ struct Parameters {
   static int integrity_check_string_size;
   // Default network timeout
   static const std::chrono::milliseconds kDefaultTimeout;
+  // Prune account transfer when the size is divisible by below factor
+  static size_t account_transfer_cleanup_factor;
+  // Removes entries which have been longer than below factor
+  static std::chrono::seconds account_transfer_life;
 
  private:
   Parameters();
