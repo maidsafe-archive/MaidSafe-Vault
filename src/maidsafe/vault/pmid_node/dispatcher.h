@@ -45,7 +45,7 @@ class PmidNodeDispatcher {
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name,
-                      int32_t size,
+                      uint64_t size,
                       int64_t available_space,
                       const maidsafe_error& error,
                       nfs::MessageId message_id);
@@ -72,7 +72,7 @@ class PmidNodeDispatcher {
 
 template <typename Data>
 void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
-                                        int32_t size,
+                                        uint64_t size,
                                         int64_t available_space,
                                         const maidsafe_error& error,
                                         nfs::MessageId message_id) {

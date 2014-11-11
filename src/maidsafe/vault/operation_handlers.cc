@@ -436,16 +436,6 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation GetPmidAccountRequestFromPmidNodeToPmidManager";
-  service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),
-                                 message.contents->available_size);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
                  const PmidHealthRequestFromMaidManagerToPmidManager& message,
                  const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
                  const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
@@ -650,35 +640,6 @@ void DoOperation(
 }
 
 // ================================================================================================
-
-template <>
-template <>
-void OperationHandler<
-    typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
-    Accumulator<PmidNodeServiceMessages>,
-    typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor, PmidNodeService>::
-operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-           const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-           const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  if (!validate_sender(message, sender))
-    return;
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto result(accumulator.AddPendingRequest(message, sender, checker));
-    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
-      int failures(0);
-      auto responses(accumulator.Get(message, sender));
-      for (const auto& response : responses) {
-        auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-        if (typed_response.contents->value.code() != CommonErrors::success)
-          failures++;
-      }
-      service->HandlePmidAccountResponses(failures);
-    } else if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
-      service->StartUp();
-    }
-  }
-}
 
 template <>
 template <>

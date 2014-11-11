@@ -159,7 +159,6 @@ class PmidNodeService {
 
   // Unless StartUp is called, PmidNode is not un-usable
   void StartUp();
-  void HandlePmidAccountResponses(int failures);
 
  private:
   template<typename ServiceHandlerType, typename MessageType>
@@ -180,14 +179,11 @@ class PmidNodeService {
   //  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
   void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                           const std::vector<DataNameVariant>& to_be_retrieved);
-  void CheckPmidAccountResponsesStatus(const std::vector<DataNameVariant>& expected_chunks);
 
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);
-  void HandleAccountResponses(
-      const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
   template <typename Data>
-  void HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id);
+  void HandlePut(const Data& data, const uint64_t size, nfs::MessageId message_id);
   template <typename Data>
   void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
                  nfs::MessageId message_id);
@@ -260,12 +256,6 @@ void PmidNodeService::HandleMessage(
 
 template <>
 void PmidNodeService::HandleMessage(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <>
-void PmidNodeService::HandleMessage(
     const PmidHealthRequestFromPmidManagerToPmidNode& message,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
@@ -311,7 +301,7 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
 
 // ============================== Put implementation =============================================
 template <typename Data>
-void PmidNodeService::HandlePut(const Data& data, const int32_t size, nfs::MessageId message_id) {
+void PmidNodeService::HandlePut(const Data& data, const uint64_t size, nfs::MessageId message_id) {
   try {
     LOG(kVerbose) << "PmidNodeService::HandlePut put " << HexSubstr(data.name().value)
                   << " with message_id " << message_id.data;

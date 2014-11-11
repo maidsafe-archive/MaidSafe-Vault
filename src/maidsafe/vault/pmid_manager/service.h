@@ -118,7 +118,7 @@ class PmidManagerService {
   template <typename Data>
   void HandlePutFailure(const typename Data::Name& data,
                         const PmidName& pmid_node,
-                        int32_t size,
+                        uint64_t size,
                         int64_t available_space,
                         const maidsafe_error& error_code,
                         nfs::MessageId message_id);
@@ -131,8 +131,6 @@ class PmidManagerService {
   void DoSync(const UnresolvedAction& unresolved_action);
   void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
                        nfs::MessageId message_id);
-
-  void HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size);
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
@@ -189,12 +187,6 @@ void PmidManagerService::HandleMessage(
     const DeleteRequestFromDataManagerToPmidManager& message,
     const typename DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename DeleteRequestFromDataManagerToPmidManager::Receiver& receiver);
-
-template <>
-void PmidManagerService::HandleMessage(
-    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
 
 template <>
 void PmidManagerService::HandleMessage(
@@ -265,7 +257,7 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
 
 template <typename Data>
 void PmidManagerService::HandlePutFailure(
-    const typename Data::Name& name, const PmidName& pmid_node, int32_t size,
+    const typename Data::Name& name, const PmidName& pmid_node, uint64_t size,
     int64_t available_space, const maidsafe_error& error_code, nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::HandlePutFailure to pmid_node -- "
                 << HexSubstr(pmid_node.value.string()) << " of size " << size

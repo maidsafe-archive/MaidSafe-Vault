@@ -212,21 +212,6 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << message;
-  typedef GetPmidAccountRequestFromPmidNodeToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void PmidManagerService::HandleMessage(
     const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
@@ -336,20 +321,6 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 //=================================================================================================
 
-void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  PmidManager::Key account_name(pmid_node);
-  auto itr(accounts_.find(account_name));
-  if (itr == std::end(accounts_)) {
-    dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(VaultErrors::no_such_account));
-  } else {
-    dispatcher_.SendPmidAccount(pmid_node, nfs_client::ReturnCode(CommonErrors::success));
-    DoSync(PmidManager::UnresolvedSetPmidHealth(
-        PmidManager::Key(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
-        routing_.kNodeId()));
-  }
-}
-
 void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
                                              nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
@@ -429,53 +400,6 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
 
 // =================================================================================================
 
-// void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
-//  try {
-//    PmidManagerValue
-// metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
-//    if (!metadata.pmid_name->string().empty()) {
-//      nfs::Reply reply(CommonErrors::success, metadata.Serialise());
-//      nfs_.ReturnPmidTotals(message.source().node_id, reply.Serialise());
-//    } else {
-//      nfs_.ReturnFailure(message);
-//    }
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//  }
-// }
-
-// void PmidManagerService::GetPmidAccount(const nfs::Message& message) {
-//  try {
-//    PmidName pmid_name(detail::GetPmidAccountName(message));
-//    protobuf::PmidAccountResponse pmid_account_response;
-//    protobuf::PmidAccount pmid_account;
-//    PmidAccount::serialised_type serialised_account_details;
-//    pmid_account.set_pmid_name(pmid_name.data.string());
-//    try {
-//      serialised_account_details = pmid_account_handler_.GetSerialisedAccount(pmid_name, false);
-//      pmid_account.set_serialised_account_details(serialised_account_details.data.string());
-//      pmid_account_response.set_status(true);
-//    }
-//    catch(const maidsafe_error&) {
-//      pmid_account_response.set_status(false);
-//      pmid_account_handler_.CreateAccount(PmidName(detail::GetPmidAccountName(message)));
-//    }
-//    pmid_account_response.mutable_pmid_account()->CopyFrom(pmid_account);
-//    nfs_.AccountTransfer<passport::Pmid>(
-//          pmid_name, NonEmptyString(pmid_account_response.SerializeAsString()));
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//  }
-// }
-
 void PmidManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   try {
@@ -483,52 +407,9 @@ void PmidManagerService::HandleChurnEvent(
     if (stopped_)
       return;
     VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
-/*
- *  PmidManager no longer report the PmidNode status to DataManager to mark node up / down
-//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
-    auto lost_node(close_nodes_change->lost_node());
-    if (!lost_node.IsZero()) {
-      LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
-      try {
-        auto pmid_node(PmidName(Identity(lost_node.string())));
-        auto meta_data(db_.Get(PmidManager::Key(pmid_node)));
-        auto contents(db_.GetContents(pmid_node));
-        for (const auto& kv_pair : contents.kv_pairs) {
-          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
-               Identity{ lost_node.string() }, kv_pair.first.name);
-          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-          dispatcher_.SendSetPmidOffline(data_name, pmid_node);
-          LOG(kVerbose) << "Broadcasting pmid_node " << DebugId(pmid_node) << " holding data "
-                        << DebugId(kv_pair.first.name) << " is offline";
-        }
-      } catch (const maidsafe_error& error) {
-        LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
-        if (error.code() != make_error_code(VaultErrors::no_such_account))
-          throw;
-      }
-    }
-//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
-    auto new_node(close_nodes_change->new_node());
-    if (!new_node.IsZero()) {
-      LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
-      try {
-        auto pmid_node(PmidName(Identity(new_node.string())));
-        auto contents(db_.GetContents(PmidName(Identity(new_node.string()))));
-        for (const auto& kv_pair : contents.kv_pairs) {
-          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode,
-               Identity{ new_node.string() }, kv_pair.first.name);
-          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-          dispatcher_.SendSetPmidOnline(data_name, pmid_node);
-        }
-      } catch (const maidsafe_error& error) {
-//      LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
-        if (error.code() != make_error_code(VaultErrors::no_such_account))
-          throw;
-      }
-    }
-*/
+
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-    PmidManager::TransferInfo transfer_info(
+    const auto transfer_info(
         detail::GetTransferInfo<PmidManager::Key, PmidManager::Value, PmidManager::TransferInfo>(
             close_nodes_change, accounts_));
     for (auto& transfer : transfer_info)
