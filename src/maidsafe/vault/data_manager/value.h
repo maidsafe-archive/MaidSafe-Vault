@@ -43,7 +43,7 @@ class DataManagerValue {
   DataManagerValue();
   explicit DataManagerValue(const std::string& serialised_value);
   DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT;
-  DataManagerValue(const PmidName& pmid_name, int32_t size);
+  DataManagerValue(const PmidName& pmid_name, uint64_t size);
   std::string Serialise() const;
 
   DataManagerValue& operator=(const DataManagerValue& other);
@@ -57,8 +57,8 @@ class DataManagerValue {
                    routing::Routing& routing,
                    PmidName& pmid_node_to_remove) const;
   std::string Print() const;
-  int32_t chunk_size() const { return size_; }
-  void SetChunkSize(const int32_t chunk_size) { size_ = chunk_size; }
+  uint64_t chunk_size() const { return size_; }
+  void SetChunkSize(const uint64_t chunk_size) { size_ = chunk_size; }
 
   static DataManagerValue Resolve(const std::vector<DataManagerValue>& values);
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
@@ -68,7 +68,7 @@ class DataManagerValue {
 
  private:
   void PrintRecords();
-  int32_t size_;
+  uint64_t size_;
   std::set<PmidName> pmids_;
 };
 

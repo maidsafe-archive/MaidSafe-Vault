@@ -28,7 +28,7 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name, int32_t size)
+ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name, uint64_t size)
     : kPmidName(pmid_name), kSize(size) {}
 
 ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
@@ -38,7 +38,7 @@ ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised
           BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return PmidName(Identity(action_add_pmid_proto.pmid_name()));
       }()),
-      kSize([&serialised_action]()->int32_t {
+      kSize([&serialised_action]()->uint64_t {
         protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
         if (!action_add_pmid_proto.ParseFromString(serialised_action))
           BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));

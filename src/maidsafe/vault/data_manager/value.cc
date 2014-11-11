@@ -62,7 +62,7 @@ DataManagerValue::DataManagerValue(const DataManagerValue& other) {
   pmids_ = other.pmids_;
 }
 
-DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
+DataManagerValue::DataManagerValue(const PmidName& pmid_name, uint64_t size)
     : size_(size), pmids_() {
   AddPmid(pmid_name);
 }

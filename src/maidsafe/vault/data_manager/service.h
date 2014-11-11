@@ -108,14 +108,14 @@ class DataManagerService {
   typedef std::false_type EntryNeedNotBeUnique;
   template <typename Data>
   void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                 nfs::MessageId message_id, int32_t cost, EntryMustBeUnique);
+                                 nfs::MessageId message_id, uint64_t cost, EntryMustBeUnique);
   template <typename Data>
   void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                 nfs::MessageId message_id, int32_t cost, EntryNeedNotBeUnique);
+                                 nfs::MessageId message_id, uint64_t cost, EntryNeedNotBeUnique);
 
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
-                         int32_t size, nfs::MessageId message_id);
+                         uint64_t size, nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
@@ -192,11 +192,11 @@ class DataManagerService {
 
   template <typename Data>
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
-                         const int32_t size, nfs::MessageId message_id);
+                         const uint64_t size, nfs::MessageId message_id);
 
   template <typename Data>
   void SendFalseDataNotification(const PmidName pmid_node, const typename Data::Name& name,
-                                 int32_t size, nfs::MessageId message_id);
+                                 uint64_t size, nfs::MessageId message_id);
 
   // =========================== Node up / Node down section =======================================
   template <typename DataName>
@@ -407,7 +407,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                 << " from maid_node " << HexSubstr(maid_name->string())
                 << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
-  int32_t cost(static_cast<int32_t>(data.Serialise().data.string().size()));
+  uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;
     PmidName pmid_name;
@@ -464,7 +464,7 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
 
 template <typename Data>
 void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                                   nfs::MessageId message_id, int32_t /*cost*/,
+                                                   nfs::MessageId message_id, uint64_t /*cost*/,
                                                    EntryMustBeUnique) {
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
               << " from maid_node " << HexSubstr(maid_name->string())
@@ -475,7 +475,7 @@ void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidN
 
 template <typename Data>
 void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                                   nfs::MessageId message_id, int32_t cost,
+                                                   nfs::MessageId message_id, uint64_t cost,
                                                    EntryNeedNotBeUnique) {
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
               << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
@@ -489,7 +489,7 @@ void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidN
 
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
-                                           const PmidName& pmid_node, int32_t size,
+                                           const PmidName& pmid_node, uint64_t size,
                                            nfs::MessageId /*message_id*/) {
   LOG(kVerbose) << "DataManagerService::HandlePutResponse for chunk "
                 << HexSubstr(data_name.value.string()) << " storing on pmid_node "
@@ -907,13 +907,13 @@ void DataManagerService::HandleDelete(const typename Data::Name& data_name,
 
 template <typename Data>
 void DataManagerService::SendDeleteRequest(const PmidName pmid_node,
-    const typename Data::Name& name, const int32_t size, nfs::MessageId message_id) {
+    const typename Data::Name& name, const uint64_t size, nfs::MessageId message_id) {
   dispatcher_.SendDeleteRequest<Data>(pmid_node, name, size, message_id);
 }
 
 template <typename Data>
 void DataManagerService::SendFalseDataNotification(const PmidName pmid_node,
-    const typename Data::Name& name, int32_t size, nfs::MessageId message_id) {
+    const typename Data::Name& name, uint64_t size, nfs::MessageId message_id) {
   dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, size, message_id);
 }
 
