@@ -54,7 +54,6 @@ PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Rout
       stopped_(false), accumulator_(), dispatcher_(routing_), asio_service_(2),
       get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
-      sync_set_pmid_health_(NodeId(pmid.name()->string())),
       sync_create_account_(NodeId(pmid.name()->string())),
       account_transfer_() {
 }
@@ -101,24 +100,6 @@ void PmidManagerService::HandleSyncedDelete(
   }
 }
 
-void PmidManagerService::HandleSyncedSetPmidHealth(
-    std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action) {
-  LOG(kVerbose) << "PmidManagerService::HandleSyncedSetAvailableSize for pmid_node "
-                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
-  // If no account exists, then create an account
-  // If has account, and asked to set to 0, delete the account
-  // If has account, and asked to set to non-zero, update the size
-  std::lock_guard<std::mutex> lock(mutex_);
-  PmidManager::Key account_name(synced_action->key);
-  auto itr(accounts_.find(account_name));
-  if (itr == std::end(accounts_))
-    accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
-  itr = accounts_.find(account_name);
-  synced_action->action(itr->second);
-  if (itr->second.claimed_available_size == 0)
-    accounts_.erase(account_name);
-}
-
 void PmidManagerService::HandleSyncedCreatePmidAccount(
     std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedCreateAccount for pmid_node "
@@ -157,36 +138,6 @@ void PmidManagerService::HandleMessage(
     const typename PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "PmidManagerService::HandleMessage PutFailureFromPmidNodeToPmidManager";
   typedef PutFailureFromPmidNodeToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void PmidManagerService::HandleMessage(
-    const PmidHealthRequestFromMaidManagerToPmidManager& message,
-    const typename PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
-    const typename PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService:HandleMessage PmidHealthRequestFromMaidManagerToPmidManager";
-  typedef PmidHealthRequestFromMaidManagerToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void PmidManagerService::HandleMessage(
-    const PmidHealthResponseFromPmidNodeToPmidManager& message,
-    const typename PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
-    const typename PmidHealthResponseFromPmidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage PmidHealthResponseFromPmidNodeToPmidManager";
-  typedef PmidHealthResponseFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
@@ -279,17 +230,6 @@ void PmidManagerService::HandleMessage(
       }
       break;
     }
-    case ActionPmidManagerSetPmidHealth::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerSetAvailableSize";
-      PmidManager::UnresolvedSetPmidHealth unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_set_pmid_health_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager HandleSyncedSetAvailableSize";
-        HandleSyncedSetPmidHealth(std::move(resolved_action));
-      }
-      break;
-    }
     case ActionCreatePmidAccount::kActionId: {
       LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionCreatePmidAccount";
       PmidManager::UnresolvedCreateAccount unresolved_action(
@@ -320,68 +260,6 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 }
 
 //=================================================================================================
-
-void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
-                                             nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
-                << HexSubstr(maid_node.value.string()) << " for pmid_node "
-                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  auto functor([=](const PmidManagerValue& pmid_health) {
-    LOG(kVerbose) << "PmidManagerService::HandleHealthRequest "
-                  << HexSubstr(pmid_node.value.string())
-                  << " task called from timer to DoHandleGetHealthResponse";
-    this->DoHandleHealthResponse(pmid_node, maid_node, pmid_health, message_id);
-  });
-  get_health_timer_.AddTask(detail::Parameters::kDefaultTimeout / 2, functor, 1,
-                            message_id.data);
-  dispatcher_.SendHealthRequest(pmid_node, message_id);
-}
-
-void PmidManagerService::HandleHealthResponse(const PmidName& pmid_name,
-                                              uint64_t available_size,
-                                              nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandleHealthResponse Get pmid_health for "
-                << HexSubstr(pmid_name.value) << " with message_id " << message_id.data;
-  try {
-    PmidManagerValue pmid_health;
-    pmid_health.SetAvailableSize(available_size);
-    get_health_timer_.AddResponse(message_id.data, pmid_health);
-  }
-  catch (...) {
-    // BEFORE_RELEASE handle
-  }
-}
-
-void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
-    const MaidName& maid_node, const PmidManagerValue& pmid_health, nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::DoHandleHealthResponse regarding maid_node "
-                << HexSubstr(maid_node.value.string()) << " for pmid_node "
-                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  try {
-    PmidManagerValue reply(pmid_health);
-    if (pmid_health == PmidManagerValue()) {
-      LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
-      std::lock_guard<std::mutex> lock(mutex_);
-      auto itr(accounts_.find(PmidManager::Key(pmid_node)));
-      if (itr == std::end(accounts_))
-        BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-      else
-        reply = itr->second;
-    } else {
-      DoSync(PmidManager::UnresolvedSetPmidHealth(
-          PmidManager::Key(pmid_node),
-          ActionPmidManagerSetPmidHealth(pmid_health.claimed_available_size),
-          routing_.kNodeId()));
-    }
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, reply,
-                                   message_id, maidsafe_error(CommonErrors::success));
-  }
-  catch (...) {
-    LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse no_such_element";
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerValue(), message_id,
-                                   maidsafe_error(CommonErrors::no_such_element));
-  }
-}
 
 void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_node,
                                                         const MaidName& maid_node,
