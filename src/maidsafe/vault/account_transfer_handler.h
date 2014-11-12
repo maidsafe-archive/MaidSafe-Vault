@@ -20,7 +20,6 @@
 #define MAIDSAFE_VAULT_ACCOUNT_TRANSFER_HANDLER_H_
 
 #include <algorithm>
-#include <map>
 #include <mutex>
 #include <utility>
 #include <vector>
@@ -86,6 +85,7 @@ class AccountTransferHandler {
           update_time(common::Clock::now()) {}
     Key key;
     std::vector<SourceValuePair> values;
+
     common::Clock::time_point update_time;
   };
 
@@ -122,15 +122,17 @@ AccountTransferHandler<Persona>::Add(const typename Persona::Key& key,
   accounts_by_key& key_index = boost::multi_index::get<AccountKey>(container_);
   auto iter(key_index.find(key));
   if (iter != std::end(key_index)) {
-    Entry updated(*iter);
-    // replace entry from existing sender
-    updated.values.erase(std::remove_if(std::begin(updated.values), std::end(updated.values),
-                                    [&](const std::pair<NodeId, Value>& pair) {
-                                      return pair.first == source_id;
-                                    }), std::end(updated.values));
-    updated.values.push_back(std::make_pair(source_id, value));
-    updated.update_time = common::Clock::now();
-    key_index.replace(iter, updated);
+    key_index.modify(
+        iter,
+        [&](Entry& entry) {
+          // replace entry from existing sender
+          entry.values.erase(std::remove_if(std::begin(entry.values), std::end(entry.values),
+                             [&](const std::pair<NodeId, Value>& pair) {
+                               return pair.first == source_id;
+                             }), std::end(entry.values));
+          entry.values.push_back(std::make_pair(source_id, value));
+          entry.update_time = common::Clock::now();
+        });
   } else {
     container_.insert(Entry(key, value, source_id));
     iter = key_index.find(key);
