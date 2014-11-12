@@ -24,33 +24,6 @@ namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-// void PmidManagerDispatcher::SendStateChange(const PmidName& pmid_node,
-//                                            const Data::Name &data_name) {
-//  typedef nfs::StateChangeFromPmidManagerToDataManager NfsMessage;
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-//  nfs::DataName data(nfs::DataName(pmid_node));
-//  NfsMessage nfs_message(data);
-//  RoutingMessage message(nfs_message.Serialise(),
-//                         NfsMessage::Sender(routing::GroupId(pmid_node),
-//                                            routing::SingleId(routing_.kNodeId())),
-//                         NfsMessage::Receiver(NodeId(data_name->string())));
-//  routing_.Send(message);
-// }
-
-// void PmidManagerDispatcher::SendAccountTransfer(const PmidName& destination_peer,
-//                                                const PmidName& pmid_node,
-//                                                const std::string& serialised_account) {
-//  typedef nfs::AccountTransferFromPmidManagerToPmidManager NfsMessage;
-//  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-
-//  NfsMessage nfs_message(serialised_account);  // TODO(Mahmoud): MUST BE FIXED
-//  RoutingMessage message(nfs_message.Serialise(),
-//                         NfsMessage::Sender(routing::GroupId(pmid_node),
-//                                            routing::SingleId(routing_.kNodeId())),
-//                         NfsMessage::Receiver(routing::GroupId(destination_peer)));
-//  routing_.Send(message);
-// }
-
 void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
                                                 const PmidName& account_name,
                                                 nfs::MessageId message_id,
@@ -63,52 +36,6 @@ void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
                          VaultMessage::Sender(routing::GroupId(NodeId(account_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::SingleId(destination_peer)));
-  routing_.Send(message);
-}
-
-void PmidManagerDispatcher::SendPmidAccount(const PmidName& pmid_node,
-                                            const std::vector<nfs_vault::DataName>& data_names,
-                                            const nfs_client::ReturnCode& return_code) {
-  typedef GetPmidAccountResponseFromPmidManagerToPmidNode VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(nfs_client::DataNamesAndReturnCode(data_names, return_code));
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::SingleId(
-                                                    NodeId(pmid_node.value.string()))));
-  routing_.Send(message);
-}
-
-void PmidManagerDispatcher::SendSetPmidOnline(const nfs_vault::DataName& data_name,
-                                              const PmidName& pmid_node) {
-  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
-                                                  data_name.raw_name.string()));
-  typedef SetPmidOnlineFromPmidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
-  routing_.Send(message);
-}
-
-
-void PmidManagerDispatcher::SendSetPmidOffline(const nfs_vault::DataName& data_name,
-                                               const PmidName& pmid_node) {
-  nfs::MessageId message_id(HashStringToMessageId(pmid_node->string() +
-                                                  data_name.raw_name.string()));
-  typedef SetPmidOfflineFromPmidManagerToDataManager VaultMessage;
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  VaultMessage vault_message(message_id, data_name);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(data_name.raw_name.string())));
   routing_.Send(message);
 }
 

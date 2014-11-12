@@ -20,7 +20,6 @@
 #include "maidsafe/vault/pmid_manager/action_put.pb.h"
 
 #include "maidsafe/vault/pmid_manager/value.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
 
 namespace maidsafe {
 
@@ -55,17 +54,8 @@ std::string ActionPmidManagerPut::Serialise() const {
   return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionPmidManagerPut::operator()(PmidManagerMetadata& metadata,
-                                                  std::unique_ptr<PmidManagerValue>& value) const {
-  if (!value) {
-    value.reset(new PmidManagerValue(kSize));
-  } else {
-    LOG(kError) << "data already exists in the group";
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::data_already_exists));
-  }
-
-  metadata.PutData(value->size());
-  return detail::DbAction::kPut;
+void ActionPmidManagerPut::operator()(PmidManagerValue& value) {
+  value.PutData(kSize);
 }
 
 bool operator==(const ActionPmidManagerPut& lhs, const ActionPmidManagerPut& rhs) {

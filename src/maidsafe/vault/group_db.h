@@ -161,13 +161,6 @@ std::string GroupDb<Persona>::Print() const {
   return stream.str();
 }
 
-template <>
-GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
-    const GroupName& group_name);
-
-template <>
-void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
-
 template <typename Persona>
 GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
     : kDbPath_(db_path), mutex_(), sqlitedb_(), group_map_() {
