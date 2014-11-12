@@ -68,37 +68,22 @@ class MaidManagerServiceTest : public testing::Test {
     AddAccount(public_maid_.name(), value);
   }
 
-  template <typename ActionType>
-  void Commit(const MaidManager::Key& key, const ActionType& action) {
-    maid_manager_service_.group_db_.Commit(key, action);
-  }
+  // template <typename ActionType>
+  // void Commit(const MaidManager::Key& key, const ActionType& action) {
+  //   maid_manager_service_.group_db_.Commit(key, action);
+  // }
 
   MaidManager::Value Get(const MaidManager::Key& key) {
-    return maid_manager_service_.group_db_.GetValue(key);
-  }
-
-  std::vector<PmidTotals> MetadataPmidTotals(const MaidManager::Metadata& metadata) {
-    return metadata.pmid_totals_;
+    return maid_manager_service_.accounts_.find(key)->second;
   }
 
   template <typename UnresolvedActionType>
   void SendSync(const std::vector<UnresolvedActionType>& unresolved_actions,
                 const std::vector<routing::GroupSource>& group_source);
 
-  bool Equal(const MaidManagerMetadata& lhs, const MaidManagerMetadata& rhs) {
-    if (lhs.total_put_data_ != rhs.total_put_data_)
+  bool Equal(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
+    if (lhs.data_stored_ != rhs.data_stored_ || lhs.space_available_ != rhs.space_available_)
       return false;
-
-    if (lhs.pmid_totals_.size() != rhs.pmid_totals_.size())
-      return false;
-
-    for (const auto& pmid_total : lhs.pmid_totals_) {
-      auto found(std::find_if(
-          std::begin(rhs.pmid_totals_), std::end(rhs.pmid_totals_),
-          [&](const PmidTotals& rhs_pmid_total) { return pmid_total == rhs_pmid_total; }));
-      if (found == std::end(rhs.pmid_totals_))
-        return false;
-    }
     return true;
   }
 
@@ -162,17 +147,6 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDelete>(
       &maid_manager_service_, maid_manager_service_.sync_deletes_, unresolved_actions,
       group_source);
 }
-
-template <>
-void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedUpdatePmidHealth>(
-    const std::vector<MaidManager::UnresolvedUpdatePmidHealth>& unresolved_actions,
-    const std::vector<routing::GroupSource>& group_source) {
-  AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedUpdatePmidHealth,
-                                    SynchroniseFromMaidManagerToMaidManager>(
-      &maid_manager_service_, maid_manager_service_.sync_update_pmid_healths_, unresolved_actions,
-      group_source);
-}
-
 
 TEST_F(MaidManagerServiceTest, BEH_PutRequestFromMaidNodeToMaidManager) {
   CreateAccount();
