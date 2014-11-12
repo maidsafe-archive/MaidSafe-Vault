@@ -125,7 +125,7 @@ DataManager::Value DataManagerDataBase::Get(const DataManager::Key& key) {
   } else {
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   }
-  return std::move(value);
+  return value;
 }
 
 void DataManagerDataBase::Delete(const DataManager::Key& key) {
