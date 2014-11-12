@@ -431,7 +431,7 @@ void DataManagerService::HandleChurnEvent(
 //   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
 //   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
-  std::vector<DataManager::Key> targets(db_.GetTargets(pmid_name));
+  std::vector<DataManager::Key> targets(db_.GetRelatedKeys(pmid_name));
   detail::DataManagerMarkNodeDownVisitor<DataManagerService> mark_node_down(this, pmid_name);
   for (auto& target : targets) {
     auto data_name(GetDataNameVariant(target.type, target.name));

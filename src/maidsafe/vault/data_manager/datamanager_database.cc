@@ -141,7 +141,7 @@ void DataManagerDataBase::Delete(const DataManager::Key& key) {
   transaction.Commit();
 }
 
-std::vector<DataManager::Key> DataManagerDataBase::GetTargets(const PmidName& pmid_name) {
+std::vector<DataManager::Key> DataManagerDataBase::GetRelatedKeys(const PmidName& pmid_name) {
   if (!data_base_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
 

@@ -39,7 +39,7 @@ class DataManagerDataBase {
       std::function<detail::DbAction(std::unique_ptr<DataManager::Value>& value)> functor);
   DataManager::Value Get(const DataManager::Key& key);
 
-  std::vector<DataManager::Key> GetTargets(const PmidName& pmid_name);
+  std::vector<DataManager::Key> GetRelatedKeys(const PmidName& pmid_name);
   DataManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   void HandleTransfer(const std::vector<DataManager::KvPair>& contents);
