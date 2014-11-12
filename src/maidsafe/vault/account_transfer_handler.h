@@ -118,7 +118,7 @@ typename AccountTransferHandler<Persona>::Result
 AccountTransferHandler<Persona>::Add(const typename Persona::Key& key,
     const typename Persona::Value& value, const NodeId& source_id) {
   std::unique_lock<std::mutex> lock(mutex_);
-  typedef typename boost::multi_index::index<AccountsContainer, AccountKey>::type accounts_by_key;
+  using  accounts_by_key = typename boost::multi_index::index<AccountsContainer, AccountKey>::type;
   accounts_by_key& key_index = boost::multi_index::get<AccountKey>(container_);
   auto iter(key_index.find(key));
   if (iter != std::end(key_index)) {
@@ -164,8 +164,8 @@ template <typename Persona>
 void AccountTransferHandler<Persona>::Prune(std::unique_lock<std::mutex>& lock) {
   assert(lock.owns_lock());
   static_cast<void>(lock);
-  typedef typename boost::multi_index::index<AccountsContainer,
-      AccountUpdateTime>::type accounts_by_update_time;
+  using accounts_by_update_time = typename boost::multi_index::index<AccountsContainer,
+                                                                     AccountUpdateTime>::type;
   accounts_by_update_time& update_time_index =
       boost::multi_index::get<AccountUpdateTime>(container_);
 
