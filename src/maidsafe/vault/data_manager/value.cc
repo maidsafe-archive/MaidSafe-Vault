@@ -88,7 +88,7 @@ void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
 }
 
 bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
-  for (auto& pmid : pmids_)
+  for (const auto& pmid : pmids_)
     if (pmid_name == pmid)
       return true;
   return false;

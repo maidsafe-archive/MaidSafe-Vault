@@ -49,7 +49,6 @@
 #include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/data_manager/dispatcher.h"
@@ -283,7 +282,6 @@ class DataManagerService {
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
   DataManagerDataBase db_;
-  Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
@@ -477,10 +475,7 @@ template <typename Data>
 void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
                                                    nfs::MessageId message_id, uint64_t cost,
                                                    EntryNeedNotBeUnique) {
-  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-              << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
-  typename DataManager::Key key(data.name().value, Data::Tag::kValue);
-  DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
+  // As the subscribers has been removed, no need to carry out any further actions for duplicates
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
               << " from maid_node " << HexSubstr(maid_name->string())
               << " . SendPutResponse with message_id " << message_id.data;
@@ -521,8 +516,8 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
     try {
       auto value(db_.Get(key));
       pmids_to_avoid = std::move(value.AllPmids());
-    } catch (const common_error& error) {
-      if (error.code() != make_error_code(CommonErrors::no_such_element)) {
+    } catch (const maidsafe_error& error) {
+      if (error.code() != make_error_code(VaultErrors::no_such_account)) {
         LOG(kError) << "HandlePutFailure db error";
         throw error;  // For db errors
       }
@@ -941,7 +936,6 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
 
 template <typename UnresolvedAction>
 void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);

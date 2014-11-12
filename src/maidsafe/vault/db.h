@@ -179,7 +179,7 @@ std::vector<Key> Db<Key, Value>::GetTargets(const PmidName& pmid_name) {
       result.push_back(std::move(key));
     }
   }
-  return std::move(result);
+  return result;
 }
 
 // Ignores values which are already in db

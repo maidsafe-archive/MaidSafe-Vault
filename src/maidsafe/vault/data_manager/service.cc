@@ -62,7 +62,6 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       get_timer_(asio_service_),
       get_cached_response_timer_(asio_service_),
       db_(UniqueDbPath(vault_root_dir)),
-      sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
@@ -278,17 +277,6 @@ void DataManagerService::HandleMessage(
   }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-    case ActionDataManagerPut::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut";
-      DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
-                                                   sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit put to db";
-        db_.Commit(resolved_action->key, resolved_action->action);
-      }
-      break;
-    }
     case ActionDataManagerDelete::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
       DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
@@ -301,7 +289,8 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
                    << "the chunk " << HexSubstr(resolved_action->key.name.string());
         if (value) {
-          // The delete operation will be totally removed from network eventually
+          // The delete operation will not depend on subscribers anymore.
+          // Owners' signatures may stored in DM later on to support deletes.
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
           SendDeleteRequests(resolved_action->key, value->AllPmids(),
                              resolved_action->action.MessageId());
@@ -431,7 +420,7 @@ void DataManagerService::HandleChurnEvent(
 //   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
 //   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
-  std::vector<DataManager::Key> targets(db_.GetTargets(pmid_name));
+  std::vector<DataManager::Key> targets(db_.GetRelatedKeys(pmid_name));
   detail::DataManagerMarkNodeDownVisitor<DataManagerService> mark_node_down(this, pmid_name);
   for (auto& target : targets) {
     auto data_name(GetDataNameVariant(target.type, target.name));

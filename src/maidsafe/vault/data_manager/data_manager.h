@@ -36,7 +36,6 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionDataManagerPut;
 struct ActionDataManagerAddPmid;
 
 }  // namespace vault
@@ -50,7 +49,6 @@ struct PersonaTypes<Persona::kDataManager> {
   typedef vault::DataManagerValue Value;
   typedef std::pair<Key, Value> KvPair;
   typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid> UnresolvedAddPmid;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid> UnresolvedRemovePmid;

@@ -74,14 +74,12 @@ std::unique_ptr<DataManager::Value> DataManagerDataBase::Commit(const DataManage
   }
   if (detail::DbAction::kPut == functor(value)) {
     assert(value);
-    if (!value)
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
-
     LOG(kInfo) << "DataManagerDataBase::Commit putting entry";
     Put(key, std::move(*value));
   } else {
     LOG(kInfo) << "DataManagerDataBase::Commit deleting entry";
-    assert(value);
+    if (!value)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
     Delete(key);
     return value;
   }
@@ -125,7 +123,7 @@ DataManager::Value DataManagerDataBase::Get(const DataManager::Key& key) {
   } else {
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   }
-  return std::move(value);
+  return value;
 }
 
 void DataManagerDataBase::Delete(const DataManager::Key& key) {
@@ -141,7 +139,7 @@ void DataManagerDataBase::Delete(const DataManager::Key& key) {
   transaction.Commit();
 }
 
-std::vector<DataManager::Key> DataManagerDataBase::GetTargets(const PmidName& pmid_name) {
+std::vector<DataManager::Key> DataManagerDataBase::GetRelatedKeys(const PmidName& pmid_name) {
   if (!data_base_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
 
