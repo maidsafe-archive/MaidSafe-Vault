@@ -34,7 +34,6 @@
 #include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
-#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
@@ -107,7 +106,6 @@ TEST(SyncTest, BEH_Constructor) {
   Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
   Sync<PmidManager::UnresolvedSetPmidHealth> pmid_manager_sync_set_pmid_health(
       (NodeId(NodeId::IdType::kRandomId)));
-  Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
 }
 
 TEST(SyncTest, BEH_SingleAction) {
