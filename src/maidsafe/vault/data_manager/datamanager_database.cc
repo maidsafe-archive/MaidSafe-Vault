@@ -74,14 +74,12 @@ std::unique_ptr<DataManager::Value> DataManagerDataBase::Commit(const DataManage
   }
   if (detail::DbAction::kPut == functor(value)) {
     assert(value);
-    if (!value)
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
-
     LOG(kInfo) << "DataManagerDataBase::Commit putting entry";
     Put(key, std::move(*value));
   } else {
     LOG(kInfo) << "DataManagerDataBase::Commit deleting entry";
-    assert(value);
+    if (!value)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
     Delete(key);
     return value;
   }
