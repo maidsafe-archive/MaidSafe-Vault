@@ -38,7 +38,6 @@ class DataManagerDataBase {
   std::unique_ptr<DataManager::Value> Commit(const DataManager::Key& key,
       std::function<detail::DbAction(std::unique_ptr<DataManager::Value>& value)> functor);
   DataManager::Value Get(const DataManager::Key& key);
-  void Put(const DataManager::Key& key, const DataManager::Value& value);
 
   std::vector<DataManager::Key> GetRelatedKeys(const PmidName& pmid_name);
   DataManager::TransferInfo GetTransferInfo(
@@ -46,6 +45,7 @@ class DataManagerDataBase {
   void HandleTransfer(const std::vector<DataManager::KvPair>& contents);
 
  private:
+  void Put(const DataManager::Key& key, const DataManager::Value& value);
   void Delete(const DataManager::Key& key);
 
   void CheckPoint();

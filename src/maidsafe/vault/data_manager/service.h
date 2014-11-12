@@ -407,12 +407,6 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                 << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
   uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
-    // create an empty account entry in DB
-    DataManager::Key key(data.name().value, Data::Tag::kValue);
-    DataManager::Value value;
-    value.SetChunkSize(cost);
-    db_.Put(key, value);
-
     cost *= routing::Parameters::group_size;
     PmidName pmid_name;
     if (routing_.ClosestToId(NodeId(data.name().value)) &&
