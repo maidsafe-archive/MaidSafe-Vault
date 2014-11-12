@@ -301,7 +301,8 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
                    << "the chunk " << HexSubstr(resolved_action->key.name.string());
         if (value) {
-          // The delete operation will be totally removed from network eventually
+          // The delete operation will not depend on subscribers anymore.
+          // Owners' signatures may stored in DM later on to support deletes.
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
           SendDeleteRequests(resolved_action->key, value->AllPmids(),
                              resolved_action->action.MessageId());
