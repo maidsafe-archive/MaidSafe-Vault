@@ -67,7 +67,6 @@ class DataManagerServiceTest : public testing::Test {
  protected:
   virtual void SetUp() override {
     PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerPut action_put;
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
     auto group_source(CreateGroupSource(data.name()));
@@ -86,15 +85,6 @@ void DataManagerServiceTest::SendSync(
     const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
     const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
-}
-
-template <>
-void DataManagerServiceTest::SendSync<DataManager::UnresolvedPut>(
-    const std::vector<DataManager::UnresolvedPut>& unresolved_actions,
-    const std::vector<routing::GroupSource>& group_source) {
-  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedPut,
-                                    SynchroniseFromDataManagerToDataManager>(
-      &data_manager_service_, data_manager_service_.sync_puts_, unresolved_actions, group_source);
 }
 
 template <>
@@ -134,12 +124,6 @@ std::vector<std::unique_ptr<UnresolvedActionType>> DataManagerServiceTest::GetUn
 }
 
 template <>
-std::vector<std::unique_ptr<DataManager::UnresolvedPut>>
-DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedPut>() {
-  return data_manager_service_.sync_puts_.GetUnresolvedActions();
-}
-
-template <>
 std::vector<std::unique_ptr<DataManager::UnresolvedDelete>>
 DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedDelete>() {
   return data_manager_service_.sync_deletes_.GetUnresolvedActions();
@@ -167,7 +151,6 @@ TEST_F(DataManagerServiceTest, BEH_Varios) {
     auto group_source(CreateGroupSource(maid_node_id));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
                                      routing::GroupId(data_name_id)));
-    EXPECT_TRUE(GetUnresolvedActions<DataManager::UnresolvedPut>().size() == 0);
   }
   //  BEH_PutResponseFromPmidManagerToDataManager
   {
@@ -249,19 +232,14 @@ TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
 
 TEST_F(DataManagerServiceTest, BEH_Put) {
   PmidName pmid_name(Identity(RandomString(64)));
-  ActionDataManagerPut action_put;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
   Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
-  auto group_unresolved_action(
-      CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
-  SendSync<DataManager::UnresolvedPut>(group_unresolved_action, group_source);
 }
 
 TEST_F(DataManagerServiceTest, BEH_Delete) {
   PmidName pmid_name(Identity(RandomString(64)));
-  ActionDataManagerPut action_put;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
@@ -277,7 +255,6 @@ TEST_F(DataManagerServiceTest, BEH_Delete) {
 
 TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   PmidName pmid_name(Identity(RandomString(64)));
-  ActionDataManagerPut action_put;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
@@ -292,7 +269,6 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
 
 TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
   PmidName pmid_name(Identity(RandomString(64)));
-  ActionDataManagerPut action_put;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
