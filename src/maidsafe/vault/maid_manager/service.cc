@@ -287,6 +287,21 @@ void MaidManagerService::TransferAccount(const NodeId& destination,
 
 template <>
 void MaidManagerService::HandleMessage(
+  const AccountTransferFromMaidManagerToMaidManager& message,
+  const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
+  const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  LOG(kInfo) << "MaidManager received account from " << DebugId(sender.sender_id);
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+    HandleAccountTransferEntry(serialised_account, sender);
+  }
+}
+
+template <>
+void MaidManagerService::HandleMessage(
   const AccountQueryFromMaidManagerToMaidManager& message,
   const typename AccountQueryFromMaidManagerToMaidManager::Sender& sender,
   const typename AccountQueryFromMaidManagerToMaidManager::Receiver& receiver) {
@@ -581,24 +596,6 @@ void MaidManagerService::HandleCreateVersionTreeResponse(
 void MaidManagerService::HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id) {
   DoSync(MaidManager::UnresolvedRemoveAccount(MaidManager::MetadataKey(maid_name),
       ActionRemoveAccount(mesage_id), routing_.kNodeId()));
-}
-
-template <>
-void MaidManagerService::HandleMessage(
-    const AccountTransferFromMaidManagerToMaidManager& /*message*/,
-    const typename AccountTransferFromMaidManagerToMaidManager::Sender& /*sender*/,
-    const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
-  /*MaidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
-  LOG(kInfo) << "MaidManager received account " << DebugId(sender.group_id)
-             << " from " << DebugId(sender.sender_id);
-  auto resolved_action(account_transfer_.AddUnresolvedAction(
-      unresolved_account_transfer, sender,
-      AccountTransfer<MaidManager::UnresolvedAccountTransfer>::AddRequestChecker(
-          routing::Parameters::group_size / 2)));
-  if (resolved_action) {
-    LOG(kInfo) << "AccountTransferFromMaidManagerToMaidManager handle account transfer";
-    this->HandleAccountTransfer(std::move(resolved_action));
-  }*/
 }
 
 }  // namespace vault
