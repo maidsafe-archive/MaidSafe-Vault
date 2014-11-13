@@ -29,15 +29,17 @@
 
 #include "maidsafe/common/node_id.h"
 
-#include "maidsafe/routing/parameters.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename AccountType>
+template <typename persona>
 class AccountTransferHandler {
  public:
+  using Key = typename persona::Key;
+  using Value = typename persona::Value;
+
   enum class AddResult {
     kSuccess,
     kWaiting,
@@ -45,18 +47,19 @@ class AccountTransferHandler {
   };
 
   struct Result {
-    Result(const typename AccountType::Key& key_in,
-           const boost::optional<typename AccountType::Value> value_in,
+    Result(const Key& key_in,
+           const boost::optional<Value> value_in,
            const AddResult& result_in):
         key(key_in), value(*value_in), result(result_in) {}
-    typename AccountType::Key key;
-    boost::optional<typename AccountType::Value> value;
+    Key key;
+    boost::optional<Value> value;
     AddResult result;
   };
 
-  using KeyValuePair = std::pair<typename AccountType::Key, typename AccountType::Value>;
 
-  Result Add(const KeyValuePair& account, const NodeId& source_id);
+  AccountTransferHandler();
+
+  Result Add(const Key &key, const Value &value, const NodeId& source_id);
 
   AccountTransferHandler(const AccountTransferHandler&) = delete;
   AccountTransferHandler& operator=(const AccountTransferHandler&) = delete;
@@ -64,43 +67,53 @@ class AccountTransferHandler {
   AccountTransferHandler& operator=(AccountTransferHandler&&) = delete;
 
  private:
-  using ValueType = std::pair<NodeId, typename AccountType::Value>;
+  using SourceValuePair = std::pair<NodeId, Value>;
 
-  std::map<typename AccountType::Key, std::vector<ValueType>> kv_pairs_;
+  std::map<Key, std::vector<SourceValuePair>> kv_pairs_;
   mutable std::mutex mutex_;
 };
 
 // ==================== Implementation =============================================================
 
-template <typename AccountType>
-typename AccountTransferHandler<AccountType>::Result
-AccountTransferHandler<AccountType>::Add(const KeyValuePair& account, const NodeId& source_id) {
+template <typename Persona>
+AccountTransferHandler<Persona>::AccountTransferHandler()
+    : kv_pairs_(), mutex_() {}
+
+template <typename Persona>
+typename AccountTransferHandler<Persona>::Result
+AccountTransferHandler<Persona>::Add(const typename Persona::Key& key,
+    const typename Persona::Value& value, const NodeId& source_id) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto iter(kv_pairs_.find(account.first));
+  auto iter(kv_pairs_.find(key));
   if (iter != std::end(kv_pairs_)) {
     // replace entry from existing sender
     iter->second.erase(std::remove_if(std::begin(iter->second), std::end(iter->second),
-                                      [&](const std::pair<NodeId,
-                                          typename AccountType::Value>& pair) {
+                                      [&](const std::pair<NodeId, Value>& pair) {
                                         return pair.first == source_id;
                                       }), std::end(iter->second));
-    iter->second.push_back(std::make_pair(source_id, account.second));
+    iter->second.push_back(std::make_pair(source_id, value));
   } else {
     kv_pairs_.insert(
-        std::make_pair(account.first,
-                       std::vector<ValueType>{ std::make_pair(source_id, account.second) }));
+        std::make_pair(key, std::vector<SourceValuePair>{ std::make_pair(source_id, value) }));
   }
-  auto resolution(AccountType::Resolve(iter->first, iter->second));
-  if (resolution.result == AddResult::kSuccess) {
-    kv_pairs_.erase(account.first);
-    return Result(resolution.key, resolution.value, AddResult::kSuccess);
-  } else if (resolution.result == AddResult::kFailure) {
-    kv_pairs_.erase(account.first);
-    return Result(account.first, boost::optional<typename AccountType::Value>(),
-                  AddResult::kFailure);
-  } else {
-    return Result(account.first, boost::optional<typename AccountType::Value>(),
-                  AddResult::kWaiting);
+  std::vector<Value> values;
+  for (const auto& pair : iter->second)
+    values.push_back(pair.second);
+  try {
+    boost::optional<Value> resolved_value = Value::Resolve(values);
+    kv_pairs_.erase(key);
+    return Result(key, resolved_value, AddResult::kSuccess);
+  } catch (const maidsafe::maidsafe_error& error) {
+    if (error.code() != make_error_code(CommonErrors::unable_to_handle_request)) {
+      // Unsuccessfull resolution
+      kv_pairs_.erase(key);
+      return Result(key, boost::optional<Value>(), AddResult::kFailure);
+    } else if (error.code() != make_error_code(VaultErrors::too_few_entries_to_resolve)) {
+      // resolution requires more entries
+      return Result(key, boost::optional<Value>(), AddResult::kWaiting);
+    } else {
+      throw;
+    }
   }
 }
 

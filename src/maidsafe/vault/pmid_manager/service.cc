@@ -24,9 +24,8 @@
 
 #include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
-#include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/operation_handlers.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/utils.h"
@@ -50,13 +49,11 @@ inline bool ForThisPersona(const Message& message) {
 
 }  // namespace detail
 
-PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                                       const boost::filesystem::path& vault_root_dir)
-    : routing_(routing), group_db_(UniqueDbPath(vault_root_dir)), accumulator_mutex_(), mutex_(),
+PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Routing& routing)
+    : routing_(routing), accounts_(), accumulator_mutex_(), mutex_(),
       stopped_(false), accumulator_(), dispatcher_(routing_), asio_service_(2),
       get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
-      sync_set_pmid_health_(NodeId(pmid.name()->string())),
       sync_create_account_(NodeId(pmid.name()->string())),
       account_transfer_() {
 }
@@ -66,20 +63,21 @@ void PmidManagerService::HandleSyncedPut(
     std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedPut commit put for chunk "
                 << HexSubstr(synced_action->key.name.string())
-                << " to group_db_ and send_put_response";
+                << " to accounts and send_put_response";
   // When different DM choose same PN for the same chunk, PM will receive same Put requests twice
   // from different DM. This will trigger two different sync_put actions and will eventually
-  // got two resolved action, and committing same entry to group_db.
-  // BEFORE_RELEASE check whether a failure response shall be sent instead
+  // got two resolved action, and committing same entry to accounts_
+  // BEFORE_RELEASE check how to ensure proper stored_space can be updated
   try {
-    group_db_.Commit(synced_action->key, synced_action->action);
+    std::lock_guard<std::mutex> lock(mutex_);
+    PmidManager::Key account_name(synced_action->key.group_name());
+    auto itr(accounts_.find(account_name));
+    if (itr == std::end(accounts_))
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    synced_action->action(itr->second);
   } catch (const maidsafe_error& error) {
-    if (error.code().value() == static_cast<int>(VaultErrors::data_already_exists)) {
-      LOG(kWarning) << "Possibly different DM chose same pmid_node for the same chunk";
-      return;
-    } else {
-      throw;
-    }
+    LOG(kWarning) << "HandleSyncedPut caught an error during account commit " << error.what();
+    throw;
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
@@ -91,34 +89,27 @@ void PmidManagerService::HandleSyncedPut(
 void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
-                << HexSubstr(synced_action->key.name.string()) << " to group_db_ ";
+                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
   try {
-    group_db_.Commit(synced_action->key, synced_action->action);
+    std::lock_guard<std::mutex> lock(mutex_);
+    PmidManager::Key account_name(synced_action->key.group_name());
+    accounts_.erase(account_name);
   } catch (std::exception& e) {
     // Delete action shall be exception free and no response expected
     LOG(kWarning) << boost::diagnostic_information(e);
   }
 }
 
-void PmidManagerService::HandleSyncedSetPmidHealth(
-    std::unique_ptr<PmidManager::UnresolvedSetPmidHealth>&& synced_action) {
-  LOG(kVerbose) << "PmidManagerService::HandleSyncedSetAvailableSize for pmid_node "
-                << HexSubstr(synced_action->key.group_name()->string()) << " to group_db_ ";
-  // If no account exists, then create an account
-  // If has account, and asked to set to 0, delete the account
-  // If has account, and asked to set to non-zero, update the size
-  group_db_.Commit(synced_action->key.group_name(), synced_action->action);
-}
-
 void PmidManagerService::HandleSyncedCreatePmidAccount(
     std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedCreateAccount for pmid_node "
-                << HexSubstr(synced_action->key.group_name()->string()) << " to group_db_ ";
-  // If no account exists, then create an account
-  // If has account, and asked to set to 0, delete the account
-  // If has account, and asked to set to non-zero, update the size
-  PmidManagerMetadata metadata;
-  group_db_.AddGroup(synced_action->key.group_name(), metadata);
+                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
+  // If no account exists, then create an account. otherwise ignore the request
+  std::lock_guard<std::mutex> lock(mutex_);
+  PmidManager::Key account_name(synced_action->key);
+  auto itr(accounts_.find(account_name));
+  if (itr == std::end(accounts_))
+    accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
 }
 
 // =============== HandleMessage ===================================================================
@@ -157,56 +148,11 @@ void PmidManagerService::HandleMessage(
 
 template <>
 void PmidManagerService::HandleMessage(
-    const PmidHealthRequestFromMaidManagerToPmidManager& message,
-    const typename PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
-    const typename PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService:HandleMessage PmidHealthRequestFromMaidManagerToPmidManager";
-  typedef PmidHealthRequestFromMaidManagerToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void PmidManagerService::HandleMessage(
-    const PmidHealthResponseFromPmidNodeToPmidManager& message,
-    const typename PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
-    const typename PmidHealthResponseFromPmidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage PmidHealthResponseFromPmidNodeToPmidManager";
-  typedef PmidHealthResponseFromPmidNodeToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void PmidManagerService::HandleMessage(
     const DeleteRequestFromDataManagerToPmidManager& message,
     const typename DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "PmidManagerService::HandleMessage DeleteRequestFromDataManagerToPmidManager";
   typedef DeleteRequestFromDataManagerToPmidManager MessageType;
-  OperationHandlerWrapper<PmidManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void PmidManagerService::HandleMessage(
-    const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-    const typename GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << message;
-  typedef GetPmidAccountRequestFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
                       return this->ValidateSender(message, sender);
@@ -237,7 +183,7 @@ void PmidManagerService::HandleMessage(
     const typename IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "PmidManagerService IntegrityCheckRequestFromDataManagerToPmidManager "
                 << " received false data notification for chunk "
-                << HexSubstr(message.contents->raw_name.string())
+                << HexSubstr(message.contents->name.raw_name.string())
                 << " from " << HexSubstr(sender.sender_id.data.string());
   typedef IntegrityCheckRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
@@ -284,17 +230,6 @@ void PmidManagerService::HandleMessage(
       }
       break;
     }
-    case ActionPmidManagerSetPmidHealth::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerSetAvailableSize";
-      PmidManager::UnresolvedSetPmidHealth unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_set_pmid_health_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager HandleSyncedSetAvailableSize";
-        HandleSyncedSetPmidHealth(std::move(resolved_action));
-      }
-      break;
-    }
     case ActionCreatePmidAccount::kActionId: {
       LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionCreatePmidAccount";
       PmidManager::UnresolvedCreateAccount unresolved_action(
@@ -326,158 +261,22 @@ void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
 
 //=================================================================================================
 
-void PmidManagerService::HandleSendPmidAccount(const PmidName& pmid_node, int64_t available_size) {
-  std::vector<nfs_vault::DataName> data_names;
-  try {
-    auto contents(group_db_.GetContents(pmid_node));
-    for (const auto& kv_pair : contents.kv_pairs)
-      data_names.push_back(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-    dispatcher_.SendPmidAccount(pmid_node, data_names,
-                                nfs_client::ReturnCode(CommonErrors::success));
-    DoSync(PmidManager::UnresolvedSetPmidHealth(
-        PmidManager::MetadataKey(pmid_node), ActionPmidManagerSetPmidHealth(available_size),
-        routing_.kNodeId()));
-  } catch (const maidsafe_error& error) {
-    if (error.code() != make_error_code(VaultErrors::no_such_account))
-      throw;
-    dispatcher_.SendPmidAccount(pmid_node, data_names,
-                                nfs_client::ReturnCode(VaultErrors::no_such_account));
-  }
-}
-
-void PmidManagerService::HandleHealthRequest(const PmidName& pmid_node, const MaidName& maid_node,
-                                             nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandleHealthRequest from maid_node "
-                << HexSubstr(maid_node.value.string()) << " for pmid_node "
-                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  auto functor([=](const PmidManagerMetadata& pmid_health) {
-    LOG(kVerbose) << "PmidManagerService::HandleHealthRequest "
-                  << HexSubstr(pmid_node.value.string())
-                  << " task called from timer to DoHandleGetHealthResponse";
-    this->DoHandleHealthResponse(pmid_node, maid_node, pmid_health, message_id);
-  });
-  get_health_timer_.AddTask(detail::Parameters::kDefaultTimeout / 2, functor, 1,
-                            message_id.data);
-  dispatcher_.SendHealthRequest(pmid_node, message_id);
-}
-
-void PmidManagerService::HandleHealthResponse(const PmidName& pmid_name,
-                                              uint64_t available_size,
-                                              nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::HandleHealthResponse Get pmid_health for "
-                << HexSubstr(pmid_name.value) << " with message_id " << message_id.data;
-  try {
-    PmidManagerMetadata pmid_health(pmid_name);
-    pmid_health.SetAvailableSize(available_size);
-    get_health_timer_.AddResponse(message_id.data, pmid_health);
-  }
-  catch (...) {
-    // BEFORE_RELEASE handle
-  }
-}
-
-void PmidManagerService::DoHandleHealthResponse(const PmidName& pmid_node,
-    const MaidName& maid_node, const PmidManagerMetadata& pmid_health, nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidManagerService::DoHandleHealthResponse regarding maid_node "
-                << HexSubstr(maid_node.value.string()) << " for pmid_node "
-                << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  try {
-    PmidManagerMetadata reply(pmid_health);
-    if (pmid_health == PmidManagerMetadata()) {
-      LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse reply with local record";
-      reply = group_db_.GetContents(pmid_node).metadata;
-    } else {
-      DoSync(PmidManager::UnresolvedSetPmidHealth(
-          PmidManager::MetadataKey(pmid_node),
-          ActionPmidManagerSetPmidHealth(pmid_health.claimed_available_size),
-          routing_.kNodeId()));
-    }
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, reply,
-                                   message_id, maidsafe_error(CommonErrors::success));
-  }
-  catch (...) {
-    LOG(kInfo) << "PmidManagerService::DoHandleHealthResponse no_such_element";
-    dispatcher_.SendHealthResponse(maid_node, pmid_node, PmidManagerMetadata(), message_id,
-                                   maidsafe_error(CommonErrors::no_such_element));
-  }
-}
-
 void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_node,
                                                         const MaidName& maid_node,
                                                         nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::HandleCreatePmidAccountRequest from maid_node "
                 << HexSubstr(maid_node.value.string()) << " for pmid_node "
                 << HexSubstr(pmid_node.value.string()) << " with message_id " << message_id.data;
-  try {
-    group_db_.GetMetadata(pmid_node);
-#ifdef TESTING
-    // GetContents is a costly call to db, enabled only for testing code
-    auto contents(group_db_.GetContents(pmid_node));
-    LOG(kInfo) << "The current PmidManager already have account record with "
-               << contents.kv_pairs.size() << " kv_pair entries";
-#endif
-  } catch(const maidsafe_error& error) {
-    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest vault error : "
-                  << boost::diagnostic_information(error);
-      throw;
-    }
-    LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest no_such_element";
-    // Once synced, check whether account exists or not, if not exist then shall create an account
-    // If exist, decide whether to update or delete depending on account status and targeting size
-    DoSync(PmidManager::UnresolvedCreateAccount(
-        PmidManager::MetadataKey(pmid_node), ActionCreatePmidAccount(), routing_.kNodeId()));
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto itr(accounts_.find(PmidManager::Key(pmid_node)));
+  if (itr != std::end(accounts_))
+    DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::Key(pmid_node),
+        ActionCreatePmidAccount(), routing_.kNodeId()));
+  else
+    LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest account already existed";
 }
 
 // =================================================================================================
-
-// void PmidManagerService::GetPmidTotals(const nfs::Message& message) {
-//  try {
-//    PmidManagerMetadata
-// metadata(pmid_account_handler_.GetMetadata(PmidName(message.data().name)));
-//    if (!metadata.pmid_name->string().empty()) {
-//      nfs::Reply reply(CommonErrors::success, metadata.Serialise());
-//      nfs_.ReturnPmidTotals(message.source().node_id, reply.Serialise());
-//    } else {
-//      nfs_.ReturnFailure(message);
-//    }
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//  }
-// }
-
-// void PmidManagerService::GetPmidAccount(const nfs::Message& message) {
-//  try {
-//    PmidName pmid_name(detail::GetPmidAccountName(message));
-//    protobuf::PmidAccountResponse pmid_account_response;
-//    protobuf::PmidAccount pmid_account;
-//    PmidAccount::serialised_type serialised_account_details;
-//    pmid_account.set_pmid_name(pmid_name.data.string());
-//    try {
-//      serialised_account_details = pmid_account_handler_.GetSerialisedAccount(pmid_name, false);
-//      pmid_account.set_serialised_account_details(serialised_account_details.data.string());
-//      pmid_account_response.set_status(true);
-//    }
-//    catch(const maidsafe_error&) {
-//      pmid_account_response.set_status(false);
-//      pmid_account_handler_.CreateAccount(PmidName(detail::GetPmidAccountName(message)));
-//    }
-//    pmid_account_response.mutable_pmid_account()->CopyFrom(pmid_account);
-//    nfs_.AccountTransfer<passport::Pmid>(
-//          pmid_name, NonEmptyString(pmid_account_response.SerializeAsString()));
-//  }
-//  catch(const maidsafe_error& error) {
-//    LOG(kWarning) << error.what();
-//  }
-//  catch(...) {
-//    LOG(kWarning) << "Unknown error.";
-//  }
-// }
 
 void PmidManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
@@ -486,48 +285,11 @@ void PmidManagerService::HandleChurnEvent(
     if (stopped_)
       return;
     VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
-//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing lost node case";
-    auto lost_node(close_nodes_change->lost_node());
-    if (!lost_node.IsZero()) {
-      LOG(kVerbose) << "PmidManager HandleChurnEvent detected lost_node " << DebugId(lost_node);
-      try {
-        auto pmid_node(PmidName(Identity(lost_node.string())));
-        auto contents(group_db_.GetContents(pmid_node));
-        for (const auto& kv_pair : contents.kv_pairs) {
-          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kDropPmidNode,
-               Identity{ lost_node.string() }, kv_pair.first.name);
-          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-          dispatcher_.SendSetPmidOffline(data_name, pmid_node);
-          LOG(kVerbose) << "Broadcasting pmid_node " << DebugId(pmid_node) << " holding data "
-                        << DebugId(kv_pair.first.name) << " is offline";
-        }
-      } catch (const maidsafe_error& error) {
-        LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
-        if (error.code() != make_error_code(VaultErrors::no_such_account))
-          throw;
-      }
-    }
-//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing new_node case";
-    auto new_node(close_nodes_change->new_node());
-    if (!new_node.IsZero()) {
-      LOG(kVerbose) << "PmidManager HandleChurnEvent detected new_node " << DebugId(new_node);
-      try {
-        auto pmid_node(PmidName(Identity(new_node.string())));
-        auto contents(group_db_.GetContents(PmidName(Identity(new_node.string()))));
-        for (const auto& kv_pair : contents.kv_pairs) {
-          VLOG(nfs::Persona::kPmidManager, VisualiserAction::kJoinPmidNode,
-               Identity{ new_node.string() }, kv_pair.first.name);
-          auto data_name(nfs_vault::DataName(kv_pair.first.type, kv_pair.first.name));
-          dispatcher_.SendSetPmidOnline(data_name, pmid_node);
-        }
-      } catch (const maidsafe_error& error) {
-//      LOG(kVerbose) << "error : " << boost::diagnostic_information(error) << "\n\n";
-        if (error.code() != make_error_code(VaultErrors::no_such_account))
-          throw;
-      }
-    }
+
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
-    GroupDb<PmidManager>::TransferInfo transfer_info(group_db_.GetTransferInfo(close_nodes_change));
+    const auto transfer_info(
+        detail::GetTransferInfo<PmidManager::Key, PmidManager::Value, PmidManager::TransferInfo>(
+            close_nodes_change, accounts_));
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
 //     LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
@@ -558,35 +320,30 @@ void PmidManagerService::HandleChurnEvent(
 // =============== Account transfer ===============================================================
 
 void PmidManagerService::TransferAccount(const NodeId& dest,
-    const std::vector<GroupDb<PmidManager>::Contents>& accounts) {
+                                         const std::vector<PmidManager::KvPair>& accounts) {
   for (auto& account : accounts) {
     // If account just received, shall not pass it out as may under a startup procedure
     // i.e. existing PM will be seen as new_node in close_nodes_change
-    if (account_transfer_.CheckHandled(routing::GroupId(NodeId(account.group_name->string())))) {
-      LOG(kInfo) << "PmidManager account " << HexSubstr(account.group_name->string())
+    if (account_transfer_.CheckHandled(
+        routing::GroupId(NodeId(account.first.name.string())))) {
+      LOG(kInfo) << "PmidManager account " << HexSubstr(account.first.name.string())
                  << " just received";
       continue;
     }
-    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer, account.group_name,
-         Identity{ dest.string() });
+    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
+         account.first.name, Identity{ dest.string() });
     try {
       std::vector<std::string> actions;
-      actions.push_back(account.metadata.Serialise());
+      actions.push_back(account.second.Serialise());
       LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
-      for (auto& kv : account.kv_pairs) {
-        protobuf::PmidManagerKeyValuePair kv_msg;
-          kv_msg.set_key(kv.first.Serialise());
-          kv_msg.set_value(kv.second.Serialise());
-          actions.push_back(kv_msg.SerializeAsString());
-      }
-      nfs::MessageId message_id(HashStringToMessageId(account.group_name->string()));
-      PmidManager::UnresolvedAccountTransfer account_transfer(
-          account.group_name, message_id, actions);
-      dispatcher_.SendAccountTransfer(dest, account.group_name,
+      nfs::MessageId message_id(HashStringToMessageId(account.first.name.string()));
+      PmidName pmid_name(Identity(account.first.name.string()));
+      PmidManager::UnresolvedAccountTransfer account_transfer(pmid_name, message_id, actions);
+      dispatcher_.SendAccountTransfer(dest, PmidName(account.first.name),
                                       message_id, account_transfer.Serialise());
 #ifdef TESTING
       LOG(kVerbose) << "PmidManager sent to " << HexSubstr(dest.string())
-                    << " with account " << account.Print();
+                    << " with account " << account.second.Print();
 #endif
     } catch(...) {
       // normally, the problem is metadata hasn't populated
@@ -615,29 +372,23 @@ void PmidManagerService::HandleMessage(
 
 void PmidManagerService::HandleAccountTransfer(
     std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred, resolved_action->key);
-  GroupDb<PmidManager>::Contents content;
-  content.group_name = resolved_action->key;
+  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
+       resolved_action->key);
+  std::vector<std::pair<PmidManager::Key, PmidManagerValue>> kv_pairs;
   for (auto& action : resolved_action->actions) {
     try {
-      protobuf::PmidManagerKeyValuePair kv_msg;
-      if (kv_msg.ParseFromString(action)) {
-        PmidManager::Key key(kv_msg.key());
-        PmidManagerValue value(kv_msg.value());
-        content.kv_pairs.push_back(std::make_pair(key, std::move(value)));
-      } else {
-        LOG(kVerbose) << "HandleAccountTransfer handle metadata";
-        PmidManagerMetadata meta_data(action);
-        content.metadata = meta_data;
-      }
+      LOG(kVerbose) << "HandleAccountTransfer handle metadata";
+      PmidManagerValue meta_data(action);
+      PmidManager::Key meta_data_key(resolved_action->key);
+      kv_pairs.push_back(std::make_pair(std::move(meta_data_key), std::move(meta_data)));
     } catch(...) {
       LOG(kError) << "HandleAccountTransfer can't parse the action";
     }
   }
-#ifdef TESTING
-  LOG(kVerbose) << "PmidManagerService received account "<< content.Print();
-#endif
-  group_db_.HandleTransfer(content);
+
+  std::lock_guard<std::mutex> lock(mutex_);
+  for (const auto& kv_pair : kv_pairs)
+    accounts_[kv_pair.first] = kv_pair.second;
 }
 
 // void PmidManagerService::TransferAccount(const PmidName& account_name, const NodeId& new_node) {

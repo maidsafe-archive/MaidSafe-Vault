@@ -39,6 +39,14 @@ namespace vault {
 
 namespace detail {
 
+// option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
+// option 2 : create a map<NodeId, std::vector<std::pair<Key, value>>> and return after pruning
+template <typename Key, typename Value, typename TransferInfo>
+TransferInfo GetTransferInfo(
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change,
+    std::map<Key, Value>& accounts);
+
+
 template <typename T>
 DataNameVariant GetNameVariant(const T&);
 
@@ -70,7 +78,7 @@ template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data);
 
 template <>
-DataNameVariant GetNameVariant(const nfs_client::DataNameAndSpaceAndReturnCode& data);
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndSpaceAndReturnCode& data);
 
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndVersion& data);
@@ -261,6 +269,23 @@ struct SendSyncMessage {
     routing.Send(message);
   }
 };
+
+// ============================ miscellaneous ======================================================
+
+template <typename T>
+T Median(std::vector<T>& values)  {
+  size_t size(values.size());
+  if (size == 0)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
+  auto it(values.begin() + size / 2 + 1);
+  std::partial_sort(values.begin(), it, values.end());
+  if (size % 2 == 0) {
+    T first(*--it), second(*--it);
+    return (first + second) / 2;
+  } else {
+    return *--it;
+  }
+}
 
 }  // namespace vault
 

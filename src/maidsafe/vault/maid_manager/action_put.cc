@@ -21,46 +21,40 @@
 #include "maidsafe/common/error.h"
 
 #include "maidsafe/vault/maid_manager/action_put.pb.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-ActionMaidManagerPut::ActionMaidManagerPut(int32_t cost) : kCost(cost) {}
+ActionMaidManagerPut::ActionMaidManagerPut(int64_t size) : kSize(size) {}
 
 ActionMaidManagerPut::ActionMaidManagerPut(const std::string& serialised_action)
-    : kCost([&serialised_action]()->int32_t {
+    : kSize([&serialised_action]()->int64_t {
         protobuf::ActionMaidManagerPut action_put_proto;
         if (!action_put_proto.ParseFromString(serialised_action))
           BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-        return action_put_proto.cost();
+        return action_put_proto.size();
       }()) {}
 
 ActionMaidManagerPut::ActionMaidManagerPut(const ActionMaidManagerPut& other)
-    : kCost(other.kCost) {}
+    : kSize(other.kSize) {}
 
 ActionMaidManagerPut::ActionMaidManagerPut(ActionMaidManagerPut&& other)
-    : kCost(std::move(other.kCost)) {}
+    : kSize(std::move(other.kSize)) {}
 
 std::string ActionMaidManagerPut::Serialise() const {
   protobuf::ActionMaidManagerPut action_put_proto;
-  action_put_proto.set_cost(kCost);
+  action_put_proto.set_size(kSize);
   return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionMaidManagerPut::operator()(MaidManagerMetadata& metadata,
-                                                  std::unique_ptr<MaidManagerValue>& value) const {
-  if (!value)
-    value.reset(new MaidManagerValue());
-  value->Put(kCost);
-  metadata.PutData(kCost);
-  return detail::DbAction::kPut;
+void ActionMaidManagerPut::operator()(MaidManagerValue& value) const {
+  value.PutData(kSize);
 }
 
 bool operator==(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {
-  return lhs.kCost == rhs.kCost;
+  return lhs.kSize == rhs.kSize;
 }
 
 bool operator!=(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {

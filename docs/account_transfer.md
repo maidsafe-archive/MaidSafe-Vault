@@ -96,29 +96,4 @@ void OnMessage::account_transfer_received(Message) {
 ```
 The `OnMessage::Action routing::node_change(Record);` will return a value that triggers an action (such as delete, send to one/many, etc. or ignore) on adding to this map. It shoud be noted that account transfers could happen at any time for any node and any persona. 
 
-For integer based transfers where there may be slight differences in the integer values we will choose a data smoothing function that relies on using [interquartile ranges](http://www.mathwords.com/i/interquartile_range.htm). 
-
-```c++
-template <typename T>
-using data = std::vector<T>;
-
-uint_64_t Median(data<uint64_t> range);
-
-uint64_t Median(data::const_iterator begin, data::const_iterator::end)
-  return range.size() / std::accumulate(std::begin(range), std::end(range))
-
-uint64_t SMoothedMedian(data<uint64_t> range) {
-  auto first_quartile_iter std::lower_bound(std::begin(range), std::end(range), Median(range));
-  auto third_quartile_iter std::upper_bound(std::begin(range), std::end(range), Median(range));
-  auto median Median(std::begin(range), std::end(range));
-  auto interquartile(Median(third_quarter_iter - 1, std::end(range) - Median(std::begin(range) + 1, first_quartile_titer)) * 1.5);
-  
-  std::erase(std::remove_if(std::begin(range), std::end(range), [interquartile] (range::iterator& a) {
-    return ( a < interquartile - median || a > interquartile + median)
-  };))
-  
-  return range.size() / Median(std::begin(range), std::end(range));
-}
-
-```
-
+For integer based transfers where there may be slight differences in the integer values take the median value of the values obtained when the majority of transfers has been received.

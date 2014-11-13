@@ -35,7 +35,7 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/utils.h"
 
@@ -61,22 +61,11 @@ class PmidManagerDispatcher {
   void SendPutFailure(const typename Data::Name& name, const PmidName& pmid_node,
                       const maidsafe_error& error_code, nfs::MessageId message_id);
 
-  void SendSetPmidOnline(const nfs_vault::DataName& data_name, const PmidName& pmid_node);
-  void SendSetPmidOffline(const nfs_vault::DataName& data_name, const PmidName& pmid_node);
-
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
   void SendAccountTransfer(const NodeId& destination_peer, const PmidName& account_name,
                            nfs::MessageId message_id, const std::string& serialised_account);
-  void SendPmidAccount(const PmidName& pmid_node,
-                       const std::vector<nfs_vault::DataName>& data_names,
-                       const nfs_client::ReturnCode& return_code);
-
-  void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
-                          const PmidManagerMetadata& pmid_health, nfs::MessageId message_id,
-                          const maidsafe_error& error);
-  void SendHealthRequest(const PmidName& pmid_node, nfs::MessageId message_id);
 
  private:
   PmidManagerDispatcher();
@@ -167,7 +156,7 @@ void PmidManagerDispatcher::SendSync(const KeyType& key, const std::string& seri
   typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   SendSyncMessage<VaultMessage> sync_sender;
-  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), PmidName(key.name));
 }
 
 // ==================== General implementation =====================================================

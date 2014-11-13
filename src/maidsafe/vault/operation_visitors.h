@@ -126,7 +126,7 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
   void operator()(const Name& data_name) {
     kService_->HandlePut(
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        kMessageId_);
+        kContent_.string().size(), kMessageId_);
   }
 
  private:
@@ -264,9 +264,10 @@ class GetRequestVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:
-  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                               nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
+  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const int32_t chunk_size,
+                               const PmidName& pmid_node, nfs::MessageId message_id)
+      : kService_(service), kChunkSize_(chunk_size),
+        kPmidNode_(pmid_node), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
@@ -275,11 +276,12 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
                   << HexSubstr(data_name.value.string()) << " bearing message id "
                   << kMessageId_.data;
     kService_->template SendDeleteRequest<typename Name::data_type>(kPmidNode_, data_name,
-                                                                    kMessageId_);
+                                                                    kChunkSize_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
+  const int32_t kChunkSize_;
   const PmidName kPmidNode_;
   nfs::MessageId kMessageId_;
 };
@@ -347,6 +349,23 @@ class PmidNodeGetVisitor : public boost::static_visitor<> {
   ServiceHandlerType* const kService_;
   const NodeId kDataManagerNodeId_;
   const nfs::MessageId kMessageId_;
+};
+
+template <typename ServiceHandlerType>
+class DataManagerAccountRequestVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerAccountRequestVisitor(ServiceHandlerType* service,
+                                   const NodeId& sender_node_id)
+      : kService_(service), kDataManagerNodeId_(sender_node_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleAccountRequest(data_name, kDataManagerNodeId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NodeId kDataManagerNodeId_;
 };
 
 template <typename ServiceHandlerType>
@@ -507,6 +526,23 @@ class MaidManagerCreateVersionTreeResponseVisitor : public boost::static_visitor
 };
 
 template <typename ServiceHandlerType>
+class MaidManagerAccountRequestVisitor : public boost::static_visitor<> {
+public:
+  MaidManagerAccountRequestVisitor(ServiceHandlerType* service,
+                                   const NodeId& sender_node_id)
+    : kService_(service), kMaidManagerNodeId_(sender_node_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleAccountRequest(data_name, kMaidManagerNodeId_);
+  }
+
+private:
+  ServiceHandlerType* const kService_;
+  const NodeId kMaidManagerNodeId_;
+};
+
+template <typename ServiceHandlerType>
 class DataManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   DataManagerDeleteVisitor(ServiceHandlerType* service, nfs::MessageId message_id)
@@ -526,17 +562,19 @@ template <typename ServiceHandlerType>
 class PmidManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   PmidManagerDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
-                           nfs::MessageId message_id)
-      : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
+                           int32_t size, nfs::MessageId message_id)
+      : kService_(service), kPmidName_(pmid_name), kSize_(size), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandleDelete<typename Name::data_type>(kPmidName_, data_name, kMessageId_);
+    kService_->template HandleDelete<typename Name::data_type>(kPmidName_, data_name,
+                                                               kSize_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidName_;
+  const int32_t kSize_;
   const nfs::MessageId kMessageId_;
 };
 
@@ -564,10 +602,12 @@ template <typename ServiceHandlerType>
 class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
  public:
   PmidManagerPutResponseFailureVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
+                                       const uint64_t size,
                                        const int64_t available_size,
                                        const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
         kPmidName_(pmid_name),
+        kSize_(size),
         kAvailableSize_(available_size),
         kReturnCode_(return_code),
         kMessageId_(message_id) {}
@@ -575,12 +615,13 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandlePutFailure<typename Name::data_type>(
-        data_name, kPmidName_, kAvailableSize_, kReturnCode_, kMessageId_);
+        data_name, kPmidName_, kSize_, kAvailableSize_, kReturnCode_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidName_;
+  const uint64_t kSize_;
   const int64_t kAvailableSize_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;
@@ -590,18 +631,19 @@ template <typename ServiceHandlerType>
 class PmidManagerFalseNotificationVisitor : public boost::static_visitor<> {
  public:
   PmidManagerFalseNotificationVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
-                                      nfs::MessageId message_id)
-      : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
+                                      int32_t size, nfs::MessageId message_id)
+      : kService_(service), kPmidName_(pmid_name), kSize_(size), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleFalseNotification<typename Name::data_type>(data_name, kPmidName_,
-                                                                          kMessageId_);
+                                                                          kSize_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidName_;
+  const int32_t kSize_;
   const nfs::MessageId kMessageId_;
 };
 

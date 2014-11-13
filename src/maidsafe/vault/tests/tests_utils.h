@@ -54,8 +54,8 @@ template <>
 nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>();
 
 template <>
-nfs_client::DataNameAndSpaceAndReturnCode
-    CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>();
+nfs_client::DataNameAndSizeAndSpaceAndReturnCode
+    CreateContent<nfs_client::DataNameAndSizeAndSpaceAndReturnCode>();
 
 template <>
 nfs_vault::DataName CreateContent<nfs_vault::DataName>();

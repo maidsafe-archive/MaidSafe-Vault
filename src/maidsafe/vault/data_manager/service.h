@@ -56,7 +56,7 @@
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/account.h"
+#include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
 
@@ -73,7 +73,7 @@ class DataManagerService {
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
-  using AccountType = std::pair<DataManagerAccount::Key, DataManagerAccount::Value>;
+  using AccountType = std::pair<Key, DataManagerValue>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -192,11 +192,11 @@ class DataManagerService {
 
   template <typename Data>
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
-                         nfs::MessageId message_id);
+                         const int32_t size, nfs::MessageId message_id);
 
   template <typename Data>
   void SendFalseDataNotification(const PmidName pmid_node, const typename Data::Name& name,
-                                 nfs::MessageId message_id);
+                                 int32_t size, nfs::MessageId message_id);
 
   // =========================== Node up / Node down section =======================================
   template <typename DataName>
@@ -214,6 +214,11 @@ class DataManagerService {
                                          DataManager::Value>::KvPair>& accounts);
 
   void HandleAccountTransfer(const AccountType& account);
+
+  template<typename DataName>
+  void HandleAccountRequest(const DataName& name, const NodeId& sender);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::GroupSource& sender);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -265,6 +270,7 @@ class DataManagerService {
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
+  friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -284,7 +290,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
   Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
-  AccountTransferHandler<DataManagerAccount> account_transfer_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
 
  protected:
   std::mutex lock_guard;
@@ -384,6 +390,18 @@ void DataManagerService::HandleMessage(
     const SetPmidOfflineFromPmidManagerToDataManager& message,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
     const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const AccountQueryFromDataManagerToDataManager& message,
+    const typename AccountQueryFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryFromDataManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const AccountQueryResponseFromDataManagerToDataManager& message,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
 template <typename Data>
@@ -839,7 +857,9 @@ void DataManagerService::AssessIntegrityCheckResults(
           DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
+          // TODO(Team): DM will hold the chunk_size info, then pass this info to PM
           SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
+                                          0,
                                           get_response_op->message_id);
         } else {
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
@@ -868,7 +888,8 @@ void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
   typename DataManager::Key key(name.value, Data::Tag::kValue);
   DoSync(DataManager::UnresolvedRemovePmid(key,
              ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
-  SendDeleteRequest<Data>(pmid_node, name, message_id);
+  // TODO(Team) : the new account will hold chunk_size info
+  SendDeleteRequest<Data>(pmid_node, name, 0, message_id);
 }
 
 // =================== Delete implementation ======================================================
@@ -882,15 +903,15 @@ void DataManagerService::HandleDelete(const typename Data::Name& data_name,
 }
 
 template <typename Data>
-void DataManagerService::SendDeleteRequest(
-    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
-  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
+void DataManagerService::SendDeleteRequest(const PmidName pmid_node,
+    const typename Data::Name& name, const int32_t size, nfs::MessageId message_id) {
+  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, size, message_id);
 }
 
 template <typename Data>
-void DataManagerService::SendFalseDataNotification(
-    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
-  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, message_id);
+void DataManagerService::SendFalseDataNotification(const PmidName pmid_node,
+    const typename Data::Name& name, int32_t size, nfs::MessageId message_id) {
+  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, size, message_id);
 }
 
 // ==================== Node up / Node down implementation =========================================
@@ -922,6 +943,27 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_, unresolved_action);
+}
+
+template<typename DataName>
+void DataManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto value(db_.Get(DataManager::Key(name)));
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::DataManagerKeyValuePair kv_msg;
+    kv_msg.set_key(DataManager::Key(name).Serialise());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountResponse(account_transfer_proto.SerializeAsString(),
+                                    routing::GroupId(NodeId(name->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
 }
 
 }  // namespace vault
