@@ -64,9 +64,10 @@ class PmidManagerDispatcher {
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
-  void SendAccountTransfer(const NodeId& destination_peer, const PmidName& account_name,
-                           nfs::MessageId message_id, const std::string& serialised_account);
-
+  void SendAccountTransfer(const NodeId& destination_peer, const std::string& serialised_account);
+  void SendAccountQuery(const PmidManager::Key& key);
+  void SendAccountQueryResponse(const std::string& serialised_account,
+                                const routing::GroupId& group_id, const NodeId& sender);
  private:
   PmidManagerDispatcher();
   PmidManagerDispatcher(const PmidManagerDispatcher&);
@@ -150,13 +151,13 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
   routing_.Send(message);
 }
 
-
 template <typename KeyType>
 void PmidManagerDispatcher::SendSync(const KeyType& key, const std::string& serialised_sync) {
   typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   SendSyncMessage<VaultMessage> sync_sender;
-  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), PmidName(key.name));
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))),
+              PmidName(key.group_name()));
 }
 
 // ==================== General implementation =====================================================

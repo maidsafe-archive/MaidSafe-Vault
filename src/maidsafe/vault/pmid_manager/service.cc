@@ -103,10 +103,10 @@ void PmidManagerService::HandleSyncedDelete(
 void PmidManagerService::HandleSyncedCreatePmidAccount(
     std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedCreateAccount for pmid_node "
-                << HexSubstr(synced_action->key.name.string()) << " to accounts_ ";
+                << HexSubstr(synced_action->key.group_name()->string()) << " to accounts_ ";
   // If no account exists, then create an account. otherwise ignore the request
   std::lock_guard<std::mutex> lock(mutex_);
-  PmidManager::Key account_name(synced_action->key);
+  PmidManager::Key account_name(synced_action->key.group_name());
   auto itr(accounts_.find(account_name));
   if (itr == std::end(accounts_))
     accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
@@ -270,7 +270,7 @@ void PmidManagerService::HandleCreatePmidAccountRequest(const PmidName& pmid_nod
   std::lock_guard<std::mutex> lock(mutex_);
   auto itr(accounts_.find(PmidManager::Key(pmid_node)));
   if (itr != std::end(accounts_))
-    DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::Key(pmid_node),
+    DoSync(PmidManager::UnresolvedCreateAccount(PmidManager::SyncGroupKey(pmid_node),
         ActionCreatePmidAccount(), routing_.kNodeId()));
   else
     LOG(kError) << "PmidManagerService::HandleCreatePmidAccountRequest account already existed";
@@ -319,37 +319,27 @@ void PmidManagerService::HandleChurnEvent(
 
 // =============== Account transfer ===============================================================
 
-void PmidManagerService::TransferAccount(const NodeId& dest,
+void PmidManagerService::TransferAccount(const NodeId& destination,
                                          const std::vector<PmidManager::KvPair>& accounts) {
-  for (auto& account : accounts) {
-    // If account just received, shall not pass it out as may under a startup procedure
-    // i.e. existing PM will be seen as new_node in close_nodes_change
-    if (account_transfer_.CheckHandled(
-        routing::GroupId(NodeId(account.first.name.string())))) {
-      LOG(kInfo) << "PmidManager account " << HexSubstr(account.first.name.string())
-                 << " just received";
-      continue;
-    }
-    VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
-         account.first.name, Identity{ dest.string() });
-    try {
-      std::vector<std::string> actions;
-      actions.push_back(account.second.Serialise());
-      LOG(kVerbose) << "PmidManagerService::TransferAccount metadata serialised";
-      nfs::MessageId message_id(HashStringToMessageId(account.first.name.string()));
-      PmidName pmid_name(Identity(account.first.name.string()));
-      PmidManager::UnresolvedAccountTransfer account_transfer(pmid_name, message_id, actions);
-      dispatcher_.SendAccountTransfer(dest, PmidName(account.first.name),
-                                      message_id, account_transfer.Serialise());
-#ifdef TESTING
-      LOG(kVerbose) << "PmidManager sent to " << HexSubstr(dest.string())
-                    << " with account " << account.second.Print();
-#endif
-    } catch(...) {
-      // normally, the problem is metadata hasn't populated
-      LOG(kError) << "PmidManagerService::TransferAccount account info error";
+  assert(!accounts.empty());
+  protobuf::AccountTransfer account_transfer_proto;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& account : accounts) {
+      VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
+           account.first, Identity{ destination.string() });
+      protobuf::PmidManagerKeyValuePair kv_pair;
+      vault::Key key(account.first);
+      kv_pair.set_key(key.Serialise());
+      kv_pair.set_value(account.second.Serialise());
+      account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
+      LOG(kVerbose) << "PmidManager send account " << HexSubstr(account.first->string())
+                    << " to " << HexSubstr(destination.string())
+                    << " with value " << account.second.Print();
     }
   }
+  LOG(kVerbose) << "PmidManagerService::TransferAccount send account transfer";
+  dispatcher_.SendAccountTransfer(destination, account_transfer_proto.SerializeAsString());
 }
 
 template <>
@@ -357,62 +347,82 @@ void PmidManagerService::HandleMessage(
     const AccountTransferFromPmidManagerToPmidManager& message,
     const typename AccountTransferFromPmidManagerToPmidManager::Sender& sender,
     const typename AccountTransferFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
-  PmidManager::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
-  LOG(kInfo) << "PmidManager received account " << DebugId(sender.group_id)
-             << " from " << DebugId(sender.sender_id);
-  auto resolved_action(account_transfer_.AddUnresolvedAction(
-      unresolved_account_transfer, sender,
-      AccountTransfer<PmidManager::UnresolvedAccountTransfer>::AddRequestChecker(
-          routing::Parameters::group_size / 2)));
-  if (resolved_action) {
-    LOG(kInfo) << "AccountTransferFromPmidManagerToPmidManager handle account transfer";
-    this->HandleAccountTransfer(std::move(resolved_action));
+  LOG(kInfo) << "PmidManager received account from " << sender.data;
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+    HandleAccountTransferEntry(serialised_account, sender);
   }
 }
 
-void PmidManagerService::HandleAccountTransfer(
-    std::unique_ptr<PmidManager::UnresolvedAccountTransfer>&& resolved_action) {
-  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
-       resolved_action->key);
-  std::vector<std::pair<PmidManager::Key, PmidManagerValue>> kv_pairs;
-  for (auto& action : resolved_action->actions) {
-    try {
-      LOG(kVerbose) << "HandleAccountTransfer handle metadata";
-      PmidManagerValue meta_data(action);
-      PmidManager::Key meta_data_key(resolved_action->key);
-      kv_pairs.push_back(std::make_pair(std::move(meta_data_key), std::move(meta_data)));
-    } catch(...) {
-      LOG(kError) << "HandleAccountTransfer can't parse the action";
-    }
-  }
-
+void PmidManagerService::HandleAccountTransfer(const AccountType& account) {
+//  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
+//       account.first);
   std::lock_guard<std::mutex> lock(mutex_);
-  for (const auto& kv_pair : kv_pairs)
-    accounts_[kv_pair.first] = kv_pair.second;
+  accounts_.insert(account);
 }
 
-// void PmidManagerService::TransferAccount(const PmidName& account_name, const NodeId& new_node) {
-//  protobuf::PmidAccount pmid_account;
-//  pmid_account.set_pmid_name(account_name.data.string());
-//  PmidAccount::serialised_type
-//    serialised_account_details(pmid_account_handler_.GetSerialisedAccount(account_name, true));
-//  pmid_account.set_serialised_account_details(serialised_account_details.data.string());
-//  nfs_.TransferAccount(new_node, NonEmptyString(pmid_account.SerializeAsString()));
-// }
+template<>
+void PmidManagerService::HandleMessage(
+    const AccountQueryFromPmidManagerToPmidManager& /*message*/,
+    const typename AccountQueryFromPmidManagerToPmidManager::Sender& sender,
+    const typename AccountQueryFromPmidManagerToPmidManager::Receiver& receiver) {
+  HandleAccountQuery(PmidManager::Key{ Identity{ receiver.data.string() }} , sender.data);
+}
 
-// void PmidManagerService::HandleAccountTransfer(const nfs::Message& message) {
-//  protobuf::PmidAccount pmid_account;
-//  NodeId source_id(message.source().node_id);
-//  if (!pmid_account.ParseFromString(message.data().content.string()))
+template<>
+void PmidManagerService::HandleMessage(
+    const AccountQueryResponseFromPmidManagerToPmidManager& message,
+    const typename AccountQueryResponseFromPmidManagerToPmidManager::Sender& sender,
+    const typename AccountQueryResponseFromPmidManagerToPmidManager::Receiver& /*receiver*/) {
+  LOG(kInfo) << "PmidManager received account from " << sender.sender_id;
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  assert(account_transfer_proto.serialised_accounts_size() == 1);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0),
+                             routing::SingleSource(sender.sender_id));
+}
+
+void PmidManagerService::HandleAccountTransferEntry(
+    const std::string& serialised_account, const routing::SingleSource& sender) {
+  using Handler = AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kPmidManager>>;
+  protobuf::PmidManagerKeyValuePair kv_msg;
+  if (!kv_msg.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse action";
+  }
+
+  passport::PublicPmid::Name name(Identity(RandomString(64)));
+  auto result(account_transfer_.Add(name, PmidManagerValue(kv_msg.value()), sender.data));
+  if (result.result ==  Handler::AddResult::kSuccess) {
+    HandleAccountTransfer(std::make_pair(result.key, *result.value));
+  } else  if (result.result ==  Handler::AddResult::kFailure) {
+    dispatcher_.SendAccountQuery(result.key);
+  }
+}
+
+void PmidManagerService::HandleAccountQuery(const PmidManager::Key& key, const NodeId& sender) {
+//  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+//    LOG(kWarning) << "attempt to obtain account from non-holder";
 //    return;
-
-//  PmidName account_name(Identity(pmid_account.pmid_name()));
-//  bool finished_all_transfers(
-//      pmid_account_handler_.ApplyAccountTransfer(account_name, source_id,
-//        PmidAccount::serialised_type(NonEmptyString(pmid_account.serialised_account_details()))));
-//  if (finished_all_transfers)
-//    return;    // TODO(Team) Implement whatever else is required here?
-// }
+//  }  MAID-360 investigate the check is required
+  try {
+    auto value(accounts_.at(key));
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::DataManagerKeyValuePair kv_msg;
+    kv_msg.set_key(DataManager::Key(key).Serialise());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountQueryResponse(account_transfer_proto.SerializeAsString(),
+                                        routing::GroupId(NodeId(key->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
+}
 
 }  // namespace vault
 

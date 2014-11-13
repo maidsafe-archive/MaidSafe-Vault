@@ -47,6 +47,7 @@ struct PmidManagerValue {
   std::string Serialise() const;
   detail::GroupDbMetaDataStatus GroupStatus();
   std::string Print() const;
+  static PmidManagerValue Resolve(const std::vector<PmidManagerValue>& values);
 
   uint64_t stored_total_size;
   uint64_t lost_total_size;

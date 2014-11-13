@@ -21,6 +21,9 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/routing/parameters.h"
+
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 
 namespace maidsafe {
@@ -119,5 +122,25 @@ std::string PmidManagerValue::Print() const {
   return stream.str();
 }
 
+PmidManagerValue PmidManagerValue::Resolve(const std::vector<PmidManagerValue>& values) {
+  size_t size(values.size());
+  if (size < routing::Parameters::group_size + 1 / 2)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
+  std::vector<int64_t> stored_total_size, lost_total_size, claimed_available_size;
+  for (const auto& value : values) {
+    stored_total_size.emplace_back(value.stored_total_size);
+    lost_total_size.emplace_back(value.lost_total_size);
+    claimed_available_size.emplace_back(value.claimed_available_size);
+  }
+
+  PmidManagerValue value;
+  value.stored_total_size = Median(stored_total_size);
+  value.lost_total_size = Median(lost_total_size);
+  value.claimed_available_size = Median(claimed_available_size);
+
+  return value;
+}
+
 }  // namespace vault
+
 }  // namespace maidsafe
