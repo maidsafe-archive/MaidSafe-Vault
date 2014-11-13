@@ -49,7 +49,7 @@ PmidTotals::PmidTotals(const PmidTotals& other)
 
 PmidTotals::PmidTotals(PmidTotals&& other)
     : serialised_pmid_registration(std::move(other.serialised_pmid_registration)),
-      pmid_name(std::move(pmid_name)),
+      pmid_name(std::move(other.pmid_name)),
       pmid_metadata(std::move(other.pmid_metadata)) {}
 
 PmidTotals& PmidTotals::operator=(PmidTotals other) {
