@@ -21,7 +21,7 @@
 #include <utility>
 #include <limits>
 
-#include "maidsafe/common/utils.h"
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/routing/parameters.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
