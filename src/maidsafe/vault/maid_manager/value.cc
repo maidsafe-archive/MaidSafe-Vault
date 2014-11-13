@@ -21,8 +21,8 @@
 #include <utility>
 #include <limits>
 
+#include "maidsafe/common/utils.h"
 #include "maidsafe/routing/parameters.h"
-#include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/maid_manager/maid_manager.pb.h"
 
 namespace maidsafe {
@@ -84,6 +84,12 @@ MaidManagerValue::Status MaidManagerValue::AllowPut(
 
 template <>
 MaidManagerValue::Status MaidManagerValue::AllowPut(
+    const passport::PublicAnpmid& /*data*/) const {
+  return Status::kOk;
+}
+
+template <>
+MaidManagerValue::Status MaidManagerValue::AllowPut(
     const passport::PublicMaid& /*data*/) const {
   assert(false && "Storing PublicMaid is not allowed on existing Account");
   return Status::kNoSpace;
@@ -113,27 +119,11 @@ MaidManagerValue MaidManagerValue::Resolve(const std::vector<MaidManagerValue>& 
     space_available.emplace_back(value.space_available_);
   }
 
-  auto data_stored_it(data_stored.begin() + size / 2);
-  std::nth_element(data_stored.begin(), data_stored_it, data_stored.end());
-  auto space_available_it(space_available.begin() + size / 2);
-  std::nth_element(space_available.begin(), space_available_it, space_available.end());
-
   MaidManagerValue value;
+  value.data_stored_ = Median(data_stored);
+  value.space_available_ = Median(space_available);
 
-  if (size % 2 == 0) {
-    int64_t data_stored_first(*std::max_element(data_stored.begin(), data_stored_it)),
-      data_stored_second(*data_stored_it),
-      space_available_first(*std::max_element(space_available.begin(), space_available_it)),
-      space_available_second(*space_available_it);
-
-    value.data_stored_ = (data_stored_first + data_stored_second) / 2;
-    value.space_available_ = (space_available_first + space_available_second) / 2;
-    return value;
-  } else {
-    value.data_stored_ = *data_stored_it;
-    value.space_available_ = *space_available_it;
-    return value;
-  }
+  return value;
 }
 
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {

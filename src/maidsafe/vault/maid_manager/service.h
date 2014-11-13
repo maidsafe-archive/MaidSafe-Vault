@@ -493,10 +493,6 @@ void MaidManagerService::HandleDelete(const MaidName& /*account_name*/,
 
 template<typename DataName>
 void MaidManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
-  if (!routing::CloseNodesChange().CheckIsHolder(NodeId(name->string()), sender)) {
-    LOG(kWarning) << "attempt to obtain account from non-holder";
-    return;
-  }
   protobuf::AccountTransfer account_transfer_proto;
   {
     std::lock_guard<std::mutex> lock(mutex_);
