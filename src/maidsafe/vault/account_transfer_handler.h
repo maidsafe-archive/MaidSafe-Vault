@@ -50,12 +50,14 @@ class AccountTransferHandler {
     Result(const Key& key_in,
            const boost::optional<Value> value_in,
            const AddResult& result_in):
-        key(key_in), value(*value_in), result(result_in) {}
+        key(key_in), value(value_in), result(result_in) {}
+    bool Equals(const Result& other) const {
+      return (result == other.result) && (key == other.key) && (value == other.value);
+    }
     Key key;
     boost::optional<Value> value;
     AddResult result;
   };
-
 
   AccountTransferHandler();
 
@@ -93,8 +95,10 @@ AccountTransferHandler<Persona>::Add(const typename Persona::Key& key,
                                       }), std::end(iter->second));
     iter->second.push_back(std::make_pair(source_id, value));
   } else {
-    kv_pairs_.insert(
-        std::make_pair(key, std::vector<SourceValuePair>{ std::make_pair(source_id, value) }));
+    iter = kv_pairs_.insert(
+               std::make_pair(
+                   key,
+                   std::vector<SourceValuePair>{ std::make_pair(source_id, value) })).first;
   }
   std::vector<Value> values;
   for (const auto& pair : iter->second)
@@ -104,11 +108,11 @@ AccountTransferHandler<Persona>::Add(const typename Persona::Key& key,
     kv_pairs_.erase(key);
     return Result(key, resolved_value, AddResult::kSuccess);
   } catch (const maidsafe::maidsafe_error& error) {
-    if (error.code() != make_error_code(CommonErrors::unable_to_handle_request)) {
+    if (error.code() == make_error_code(VaultErrors::failed_to_handle_request)) {
       // Unsuccessfull resolution
       kv_pairs_.erase(key);
       return Result(key, boost::optional<Value>(), AddResult::kFailure);
-    } else if (error.code() != make_error_code(VaultErrors::too_few_entries_to_resolve)) {
+    } else if (error.code() == make_error_code(VaultErrors::too_few_entries_to_resolve)) {
       // resolution requires more entries
       return Result(key, boost::optional<Value>(), AddResult::kWaiting);
     } else {
