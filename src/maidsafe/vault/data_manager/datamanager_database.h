@@ -21,6 +21,7 @@
 
 #include <string>
 #include <utility>
+#include <map>
 
 #include "maidsafe/common/sqlite3_wrapper.h"
 
@@ -39,7 +40,7 @@ class DataManagerDataBase {
       std::function<detail::DbAction(std::unique_ptr<DataManager::Value>& value)> functor);
   DataManager::Value Get(const DataManager::Key& key);
 
-  std::vector<DataManager::Key> GetRelatedKeys(const PmidName& pmid_name);
+  std::map<DataManager::Key, DataManager::Value> GetRelatedAccounts(const PmidName& pmid_name);
   DataManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   void HandleTransfer(const std::vector<DataManager::KvPair>& contents);

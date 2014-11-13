@@ -67,6 +67,23 @@ namespace test {
 
 }
 
+template <typename ServiceHandlerType>
+class DataManagerGetForNodeDownVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerGetForNodeDownVisitor(ServiceHandlerType* service,
+                                   const std::set<PmidName>& online_pmids)
+      : kService_(service), kOnlinePmids_(online_pmids) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template DoGetForNodeDown<typename Name::data_type>(data_name, kOnlinePmids_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const std::set<PmidName> kOnlinePmids_;
+};
+
 class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
@@ -133,6 +150,9 @@ class DataManagerService {
 
   template <typename Data>
   void GetForNodeDown(const PmidName& pmid_name, const typename Data::Name& data_name);
+  template <typename Data>
+  void DoGetForNodeDown(const typename Data::Name& data_name,
+                        const std::set<PmidName>& online_pmids);
 
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                          const GetResponseContents& contents);
@@ -268,7 +288,7 @@ class DataManagerService {
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
-  friend class detail::DataManagerMarkNodeDownVisitor<DataManagerService>;
+  friend class DataManagerGetForNodeDownVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -616,9 +636,15 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
 template <typename Data>
 void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
                                         const typename Data::Name& data_name) {
-  LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   online_pmids.erase(pmid_name);
+  DoGetForNodeDown<Data>(data_name, online_pmids);
+}
+
+template <typename Data>
+void DataManagerService::DoGetForNodeDown(const typename Data::Name& data_name,
+                                          const std::set<PmidName>& online_pmids) {
+  LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
   // Only trigger the recovery procedure when not enough online_pmids.
   if (online_pmids.size() > (routing::Parameters::group_size / 2U))
     return;

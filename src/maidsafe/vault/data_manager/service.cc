@@ -420,11 +420,13 @@ void DataManagerService::HandleChurnEvent(
 //   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
 //   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
-  std::vector<DataManager::Key> targets(db_.GetRelatedKeys(pmid_name));
-  detail::DataManagerMarkNodeDownVisitor<DataManagerService> mark_node_down(this, pmid_name);
-  for (auto& target : targets) {
-    auto data_name(GetDataNameVariant(target.type, target.name));
-    boost::apply_visitor(mark_node_down, data_name);
+  std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
+  for (auto& account : accounts) {
+    auto online_pmids(account.second.online_pmids(routing_));
+    online_pmids.erase(pmid_name);
+    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids);
+    auto data_name(GetDataNameVariant(account.first.type, account.first.name));
+    boost::apply_visitor(get_for_node_down, data_name);
   }
 }
 
