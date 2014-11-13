@@ -139,20 +139,28 @@ void DataManagerDataBase::Delete(const DataManager::Key& key) {
   transaction.Commit();
 }
 
-std::vector<DataManager::Key> DataManagerDataBase::GetRelatedKeys(const PmidName& pmid_name) {
+std::map<DataManager::Key, DataManager::Value> DataManagerDataBase::GetRelatedAccounts(
+    const PmidName& pmid_name) {
   if (!data_base_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
 
-  std::vector<DataManager::Key> result;
+  std::map<DataManager::Key, DataManager::Value> result;
   std::string query(
-      "SELECT Chunk_Name FROM DataManagerAccounts WHERE Storage_Nodes LIKE ?");
+      "SELECT * FROM DataManagerAccounts WHERE Storage_Nodes LIKE ?");
   sqlite::Statement statement{*data_base_, query};
   std::string target('%' + NodeId(pmid_name->string()).ToStringEncoded(
                         NodeId::EncodingType::kHex) + '%');
   statement.BindText(1, target);
   while (statement.Step() == sqlite::StepResult::kSqliteRow) {
     DataManager::Key key(typename DataManager::Key::FixedWidthString(statement.ColumnText(0)));
-    result.push_back(std::move(key));
+    DataManagerValue value;
+    value.SetChunkSize(std::stoi(statement.ColumnText(1)));
+    std::vector<std::string> storage_nodes;
+    std::string all_pmids(statement.ColumnText(2));
+    boost::algorithm::split(storage_nodes, all_pmids, boost::is_any_of(";"));
+    for (auto& storage_node : storage_nodes)
+      value.AddPmid(PmidName(Identity(storage_node)));
+    result[key] = value;
   }
   return std::move(result);
 }
