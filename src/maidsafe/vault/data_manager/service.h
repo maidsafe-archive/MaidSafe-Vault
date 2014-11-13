@@ -515,8 +515,7 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   // if storages nodes reached cap, the existing furthest offline node need to be removed
   auto value(db_.Get(key));
   PmidName pmid_node_to_remove;
-  if (value.NeedToPrune(PmidName(Identity(data_name.value.string())),
-                        routing_, pmid_node_to_remove))
+  if (value.NeedToPrune(routing_, pmid_node_to_remove))
     DoSync(DataManager::UnresolvedRemovePmid(key,
                ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
 }

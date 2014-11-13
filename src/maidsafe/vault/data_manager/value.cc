@@ -94,25 +94,16 @@ bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
   return false;
 }
 
-bool DataManagerValue::NeedToPrune(const PmidName& target,
-                                   routing::Routing& routing,
-                                   PmidName& pmid_node_to_remove) const {
-  // Prune the furthest offline node
+bool DataManagerValue::NeedToPrune(routing::Routing& routing, PmidName& pmid_node_to_remove) const {
   if (pmids_.size() < routing::Parameters::closest_nodes_size)
     return false;
-
-  std::vector<PmidName> offline_pmids;
-  for (auto& pmid : pmids_)
-    if (!routing.IsConnectedVault(NodeId(pmid->string())))
-      offline_pmids.push_back(pmid);
-  assert(!offline_pmids.empty());
-  std::sort(offline_pmids.begin(), offline_pmids.end(),
-            [&](const PmidName& lhs, const PmidName& rhs) {
-    return NodeId::CloserToTarget(NodeId(lhs->string()), NodeId(rhs->string()),
-                                  NodeId(target->string()));
-  });
-  pmid_node_to_remove = offline_pmids.back();
-  return true;
+  // Prune the oldest offline node
+  for (auto itr(pmids_.begin()); itr != pmids_.end(); ++itr)
+    if (!routing.IsConnectedVault(NodeId((*itr)->string()))) {
+      pmid_node_to_remove = *itr;
+      return true;
+    }
+  return false;
 }
 
 std::string DataManagerValue::Serialise() const {
