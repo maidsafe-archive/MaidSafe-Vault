@@ -264,7 +264,7 @@ class GetRequestVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:
-  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const int32_t chunk_size,
+  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const uint64_t chunk_size,
                                const PmidName& pmid_node, nfs::MessageId message_id)
       : kService_(service), kChunkSize_(chunk_size),
         kPmidNode_(pmid_node), kMessageId_(message_id) {}
@@ -281,7 +281,7 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
 
  private:
   ServiceHandlerType* const kService_;
-  const int32_t kChunkSize_;
+  const uint64_t kChunkSize_;
   const PmidName kPmidNode_;
   nfs::MessageId kMessageId_;
 };

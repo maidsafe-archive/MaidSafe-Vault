@@ -164,7 +164,8 @@ void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name, cost));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name,
+                                                                    static_cast<int32_t>(cost)));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -366,7 +367,8 @@ void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, size));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name,
+                                                                    static_cast<int32_t>(size)));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -383,7 +385,8 @@ void DataManagerDispatcher::SendFalseDataNotification(const PmidName& pmid_node,
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, size));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name,
+                                                                    static_cast<int32_t>(size)));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),

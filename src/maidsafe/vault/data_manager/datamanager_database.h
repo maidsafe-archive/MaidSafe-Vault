@@ -51,7 +51,7 @@ class DataManagerDataBase {
 
   DataManager::Value ComposeValue(const std::string& chunk_size, const std::string& pmids) const;
   DataManager::Key ComposeKey(const std::string& chunk_name) const {
-    return DataManager::Key(typename DataManager::Key::FixedWidthString(chunk_name));
+    return DataManager::Key(DataManager::Key::FixedWidthString(chunk_name));
   }
   std::string EncodeKey(const DataManager::Key& key) const {
     return HexEncode(key.ToFixedWidthString().string());
