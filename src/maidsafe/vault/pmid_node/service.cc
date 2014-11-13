@@ -130,27 +130,6 @@ void PmidNodeService::HandleMessage(
       accumulator_mutex_)(message, sender, receiver);
 }
 
-template <>
-void PmidNodeService::HandleMessage(
-    const PmidHealthRequestFromPmidManagerToPmidNode& message,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver) {
-  LOG(kVerbose) << message;
-  typedef PmidHealthRequestFromPmidManagerToPmidNode MessageType;
-  OperationHandlerWrapper<PmidNodeService, MessageType>(
-      accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)), this,
-      accumulator_mutex_)(message, sender, receiver);
-}
-
-void PmidNodeService::HandleHealthRequest(const NodeId& pmid_manager_node_id,
-                                          nfs::MessageId message_id) {
-  LOG(kVerbose) << "PmidNodeService::HandleHealthRequest " << message_id;
-  dispatcher_.SendHealthResponse(handler_.AvailableSpace(), pmid_manager_node_id, message_id);
-}
-
 void PmidNodeService::StartUp() {
 //  dispatcher_.SendPmidAccountRequest(handler_.AvailableSpace());
 }
