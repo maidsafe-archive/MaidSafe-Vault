@@ -256,10 +256,17 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
                                             const std::set<PmidName>& pmids,
                                             nfs::MessageId message_id) {
   auto data_name(GetDataNameVariant(key.type, key.name));
-  for (const auto& pmid : pmids) {
-    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(
-        this, db_.Get(key).chunk_size(), pmid, message_id);
-    boost::apply_visitor(delete_visitor, data_name);
+  try {
+    for (const auto& pmid : pmids) {
+      detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(
+          this, db_.Get(key).chunk_size(), pmid, message_id);
+      boost::apply_visitor(delete_visitor, data_name);
+    }
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "caught error " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
   }
 }
 

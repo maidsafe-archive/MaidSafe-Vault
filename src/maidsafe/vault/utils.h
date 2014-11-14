@@ -270,6 +270,23 @@ struct SendSyncMessage {
   }
 };
 
+// ============================ miscellaneous ======================================================
+
+template <typename T>
+T Median(std::vector<T>& values)  {
+  size_t size(values.size());
+  if (size == 0)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
+  auto it(values.begin() + size / 2 + 1);
+  std::partial_sort(values.begin(), it, values.end());
+  if (size % 2 == 0) {
+    T first(*--it), second(*--it);
+    return (first + second) / 2;
+  } else {
+    return *--it;
+  }
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

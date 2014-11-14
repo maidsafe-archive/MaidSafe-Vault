@@ -49,6 +49,14 @@ class DataManagerDataBase {
   void Put(const DataManager::Key& key, const DataManager::Value& value);
   void Delete(const DataManager::Key& key);
 
+  DataManager::Value ComposeValue(const std::string& chunk_size, const std::string& pmids) const;
+  DataManager::Key ComposeKey(const std::string& chunk_name) const {
+    return DataManager::Key(DataManager::Key::FixedWidthString(chunk_name));
+  }
+  std::string EncodeKey(const DataManager::Key& key) const {
+    return HexEncode(key.ToFixedWidthString().string());
+  }
+
   void CheckPoint();
 
   std::unique_ptr<sqlite::Database> data_base_;

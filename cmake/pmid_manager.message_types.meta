@@ -3,8 +3,5 @@ Action:PutFailure                  Source:PmidNode:Single        Destination:Pmi
 Action:DeleteRequest               Source:DataManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndSize
 Action:Synchronise                 Source:PmidManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::Content
 Action:AccountTransfer             Source:PmidManager:Group      Destination:PmidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
-Action:PmidHealthRequest           Source:MaidManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::Empty
 Action:CreatePmidAccountRequest    Source:MaidManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
-Action:PmidHealthResponse          Source:PmidNode:Single        Destination:PmidManager:Single     Contents:struct:maidsafe::nfs_vault::AvailableSize
 Action:IntegrityCheckRequest       Source:DataManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndSize
-

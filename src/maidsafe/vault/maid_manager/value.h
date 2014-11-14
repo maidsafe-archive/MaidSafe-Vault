@@ -21,41 +21,73 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
-#include "maidsafe/common/config.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerValue {
- public:
-  explicit MaidManagerValue(const std::string& serialised_maid_manager_value);
-  MaidManagerValue();
-  MaidManagerValue(MaidManagerValue&& other) MAIDSAFE_NOEXCEPT;
-  MaidManagerValue& operator=(MaidManagerValue other);
-  std::string Serialise() const;
+namespace test {
+  class MaidManagerServiceTest;
+}
 
-  void Put(int32_t cost);
-  void IncrementCount();
-  void DecrementCount();
-  // Returns amount which was subtracted from 'total_cost'.
-  int32_t Delete();
-  int32_t count() const { return count_; }
-  int64_t total_cost() const { return total_cost_; }
+class MaidManagerValue {
+public:
+  enum class Status {
+    kOk,
+    kLowSpace,
+    kNoSpace
+  };
+  MaidManagerValue();
+  MaidManagerValue(int64_t data_stored, int64_t space_available);
+  MaidManagerValue(const MaidManagerValue& other);
+  MaidManagerValue(MaidManagerValue&& other);
+  MaidManagerValue& operator=(MaidManagerValue other);
+  explicit MaidManagerValue(const std::string& serialised_value);
+
+  std::string Serialise() const;
+  template <typename Data>
+  Status AllowPut(const Data& data) const;
+  void PutData(int64_t size);
+  void DeleteData(int64_t size);
   std::string Print() const;
 
+  static MaidManagerValue Resolve(const std::vector<MaidManagerValue>& values);
+
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
+  friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
+  friend class test::MaidManagerServiceTest;
 
- private:
-  MaidManagerValue(const MaidManagerValue&);
-
- private:
-  int32_t count_;
-  int64_t total_cost_;
+private:
+  int64_t data_stored_;
+  int64_t space_available_;
 };
 
-bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
+
+template <>
+MaidManagerValue::Status MaidManagerValue::AllowPut(const passport::PublicPmid& data) const;
+template <>
+MaidManagerValue::Status MaidManagerValue::AllowPut(const passport::PublicAnpmid& data) const;
+template <>
+MaidManagerValue::Status MaidManagerValue::AllowPut(const passport::PublicMaid& data) const;
+template <>
+MaidManagerValue::Status MaidManagerValue::AllowPut(const passport::PublicAnmaid& data) const;
+
+
+template <typename Data>
+MaidManagerValue::Status MaidManagerValue::AllowPut(const Data& data) const {
+  auto size(data.Serialise()->string().size());
+  LOG(kVerbose) << "MaidManagerValue::AllowPut data " << HexSubstr(data.name().value)
+    << " has size of " << size << " trying to put into account provding "
+    << space_available_ << " total available_size by far";
+  if (space_available_ < (static_cast<int64_t>(data_stored_ + size)))
+    return Status::kNoSpace;
+
+  return ((3 * space_available_ / 100) < static_cast<int64_t>(data_stored_ + size))
+    ? Status::kLowSpace : Status::kOk;
+}
 
 }  // namespace vault
 

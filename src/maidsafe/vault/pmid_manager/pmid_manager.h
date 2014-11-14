@@ -30,7 +30,6 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/pmid_manager/action_put.h"
-#include "maidsafe/vault/pmid_manager/action_set_pmid_health.h"
 #include "maidsafe/vault/pmid_manager/action_create_account.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 
@@ -41,8 +40,6 @@ namespace vault {
 struct ActionPmidManagerPut;
 struct ActionPmidManagerDelete;
 struct ActionPmidManagerCreateAccount;
-struct ActionGetPmidTotals;
-struct ActionPmidManagerSetPmidHealth;
 struct PmidManagerValue;
 struct ActionCreatePmidAccount;
 
@@ -61,9 +58,6 @@ struct PersonaTypes<Persona::kPmidManager> {
   typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut> UnresolvedPut;
   typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<SyncKey, vault::ActionGetPmidTotals> UnresolvedGetPmidTotals;
-  typedef vault::UnresolvedAction<
-              Key, vault::ActionPmidManagerSetPmidHealth> UnresolvedSetPmidHealth;
   typedef vault::UnresolvedAction<
               Key, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
   typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
