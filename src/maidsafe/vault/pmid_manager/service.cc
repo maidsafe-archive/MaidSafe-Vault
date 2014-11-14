@@ -38,10 +38,6 @@ namespace vault {
 
 namespace detail {
 
-// PmidName GetPmidAccountName(const nfs::Message& message) {
-//  return PmidName(Identity(message.data().name));
-// }
-
 template <typename Message>
 inline bool ForThisPersona(const Message& message) {
   return message.destination_persona() != nfs::Persona::kPmidManager;
@@ -319,7 +315,7 @@ void PmidManagerService::HandleChurnEvent(
 
 // =============== Account transfer ===============================================================
 
-void PmidManagerService::TransferAccount(const NodeId& destination,
+void PmidManagerService::TransferAccount(const NodeId& peer,
                                          const std::vector<PmidManager::KvPair>& accounts) {
   assert(!accounts.empty());
   protobuf::AccountTransfer account_transfer_proto;
@@ -327,19 +323,19 @@ void PmidManagerService::TransferAccount(const NodeId& destination,
     std::lock_guard<std::mutex> lock(mutex_);
     for (auto& account : accounts) {
       VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
-           account.first, Identity{ destination.string() });
+           account.first, Identity{ peer.string() });
       protobuf::PmidManagerKeyValuePair kv_pair;
-      vault::Key key(account.first);
+      MetadataKey<PmidName> key(account.first);
       kv_pair.set_key(key.Serialise());
       kv_pair.set_value(account.second.Serialise());
       account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
       LOG(kVerbose) << "PmidManager send account " << HexSubstr(account.first->string())
-                    << " to " << HexSubstr(destination.string())
+                    << " to " << HexSubstr(peer.string())
                     << " with value " << account.second.Print();
     }
   }
   LOG(kVerbose) << "PmidManagerService::TransferAccount send account transfer";
-  dispatcher_.SendAccountTransfer(destination, account_transfer_proto.SerializeAsString());
+  dispatcher_.SendAccountTransfer(peer, account_transfer_proto.SerializeAsString());
 }
 
 template <>
@@ -352,9 +348,8 @@ void PmidManagerService::HandleMessage(
   if (!account_transfer_proto.ParseFromString(message.contents->data)) {
     LOG(kError) << "Failed to parse account transfer ";
   }
-  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts())
     HandleAccountTransferEntry(serialised_account, sender);
-  }
 }
 
 void PmidManagerService::HandleAccountTransfer(const AccountType& account) {
@@ -395,8 +390,9 @@ void PmidManagerService::HandleAccountTransferEntry(
     LOG(kError) << "Failed to parse action";
   }
 
-  passport::PublicPmid::Name name(Identity(RandomString(64)));
-  auto result(account_transfer_.Add(name, PmidManagerValue(kv_msg.value()), sender.data));
+  auto result(account_transfer_.Add(
+      PmidManager::Key(MetadataKey<PmidName>(kv_msg.key()).group_name()),
+      PmidManagerValue(kv_msg.value()), sender.data));
   if (result.result ==  Handler::AddResult::kSuccess) {
     HandleAccountTransfer(std::make_pair(result.key, *result.value));
   } else  if (result.result ==  Handler::AddResult::kFailure) {
@@ -406,14 +402,14 @@ void PmidManagerService::HandleAccountTransferEntry(
 
 void PmidManagerService::HandleAccountQuery(const PmidManager::Key& key, const NodeId& sender) {
 //  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
-//    LOG(kWarning) << "attempt to obtain account from non-holder";
+//    LOG(kWarning) << "attempt to obtain account for non-holder";
 //    return;
-//  }  MAID-360 investigate the check is required
+//  }  MAID-360 investigate the check is required(mmoadeli)
   try {
     auto value(accounts_.at(key));
     protobuf::AccountTransfer account_transfer_proto;
-    protobuf::DataManagerKeyValuePair kv_msg;
-    kv_msg.set_key(DataManager::Key(key).Serialise());
+    protobuf::PmidManagerKeyValuePair kv_msg;
+    kv_msg.set_key(MetadataKey<PmidManager::Key>(key).Serialise());
     kv_msg.set_value(value.Serialise());
     account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
     dispatcher_.SendAccountQueryResponse(account_transfer_proto.SerializeAsString(),

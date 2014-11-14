@@ -24,7 +24,7 @@ namespace vault {
 
 PmidManagerDispatcher::PmidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
-void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination,
+void PmidManagerDispatcher::SendAccountTransfer(const NodeId& peer,
                                                 const std::string& serialised_account) {
   typedef AccountTransferFromPmidManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
@@ -32,7 +32,7 @@ void PmidManagerDispatcher::SendAccountTransfer(const NodeId& destination,
   VaultMessage vault_message{ nfs_vault::Content(serialised_account) };
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing_.kNodeId()),
-                         VaultMessage::Receiver(routing::SingleId(destination)));
+                         VaultMessage::Receiver(routing::SingleId(peer)));
   routing_.Send(message);
 }
 

@@ -68,6 +68,7 @@ class PmidManagerDispatcher {
   void SendAccountQuery(const PmidManager::Key& key);
   void SendAccountQueryResponse(const std::string& serialised_account,
                                 const routing::GroupId& group_id, const NodeId& sender);
+
  private:
   PmidManagerDispatcher();
   PmidManagerDispatcher(const PmidManagerDispatcher&);

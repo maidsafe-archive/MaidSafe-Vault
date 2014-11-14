@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_VAULT_UTILS_H_
 #define MAIDSAFE_VAULT_UTILS_H_
 
+#include <map>
 #include <string>
 #include <vector>
 

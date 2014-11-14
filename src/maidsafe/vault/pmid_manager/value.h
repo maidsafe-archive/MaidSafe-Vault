@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"

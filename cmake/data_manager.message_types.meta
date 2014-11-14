@@ -5,7 +5,7 @@ Action:GetResponse            Source:PmidNode:Single        Destination:DataMana
 Action:GetCachedResponse      Source:CacheHandler:Single    Destination:DataManager:Single     Contents:struct:maidsafe::nfs_client::DataNameAndContentOrReturnCode
 Action:DeleteRequest          Source:MaidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:Synchronise            Source:DataManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::Content
-Action:AccountTransfer        Source:DataManager:Group      Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::Content
+Action:AccountTransfer        Source:DataManager:Single     Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::Content
 Action:SetPmidOnline          Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:SetPmidOffline         Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:AccountQuery           Source:DataManager:Single     Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName

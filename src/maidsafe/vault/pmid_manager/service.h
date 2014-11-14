@@ -56,7 +56,7 @@ class PmidManagerServiceTest;
 
 class PmidManagerService {
  public:
- using PublicMessages = void;
+  using PublicMessages = void;
   using VaultMessages = PmidManagerServiceMessages;
   using Messages = PmidManagerServiceMessages;
   using HandleMessageReturnType = void;

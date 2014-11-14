@@ -216,9 +216,9 @@ class DataManagerService {
   void HandleAccountTransfer(const AccountType& account);
 
   template<typename DataName>
-  void HandleAccountRequest(const DataName& name, const NodeId& sender);
+  void HandleAccountQuery(const DataName& name, const NodeId& sender);
   void HandleAccountTransferEntry(const std::string& serialised_account,
-                                  const routing::GroupSource& sender);
+                                  const routing::SingleSource& sender);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -270,7 +270,7 @@ class DataManagerService {
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
   friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
-  friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
+  friend class detail::DataManagerAccountQueryVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -946,7 +946,7 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
 }
 
 template<typename DataName>
-void DataManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
+void DataManagerService::HandleAccountQuery(const DataName& name, const NodeId& sender) {
   if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
     LOG(kWarning) << "attempt to obtain account from non-holder";
     return;
