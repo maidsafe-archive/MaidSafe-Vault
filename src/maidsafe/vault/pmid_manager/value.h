@@ -52,7 +52,7 @@ struct PmidManagerValue {
 
   uint64_t stored_total_size;
   uint64_t lost_total_size;
-  uint64_t claimed_available_size;
+  uint64_t offered_space;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
