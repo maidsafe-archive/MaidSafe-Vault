@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_UTILS_H_
 
 #include <string>
+#include <map>
 #include <vector>
 
 #include "maidsafe/common/node_id.h"

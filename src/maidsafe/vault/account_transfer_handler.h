@@ -81,7 +81,7 @@ class AccountTransferHandler {
 
   struct Entry {
     Entry(const Key& key_in, const Value& value, const NodeId& source)
-        : key(key_in), values { std::make_pair(source, value) },
+        : key(key_in), values { 1, std::make_pair(source, value) },
           update_time(common::Clock::now()) {}
     Key key;
     std::vector<SourceValuePair> values;

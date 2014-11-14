@@ -41,7 +41,7 @@ struct Parameters {
   // Default network timeout
   static const std::chrono::milliseconds kDefaultTimeout;
   // Prune account transfer when the size is divisible by below factor
-  static size_t account_transfer_cleanup_factor;
+  static unsigned int account_transfer_cleanup_factor;
   // Removes entries which have been longer than below factor
   static std::chrono::seconds account_transfer_life;
 

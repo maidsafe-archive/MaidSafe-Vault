@@ -34,7 +34,7 @@ namespace test {
 }
 
 class MaidManagerValue {
-public:
+ public:
   enum class Status {
     kOk,
     kLowSpace,
@@ -60,7 +60,7 @@ public:
   friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
   friend class test::MaidManagerServiceTest;
 
-private:
+ private:
   int64_t data_stored_;
   int64_t space_available_;
 };
