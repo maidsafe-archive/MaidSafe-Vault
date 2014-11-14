@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
 
 #include <algorithm>
 #include <deque>
@@ -29,7 +29,7 @@
 #include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/tests/account_transfer_analyser.h"
-#include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/maid_manager/maid_manager.h"
 
 template <typename Persona> class AccountTransferHandler;
 
@@ -39,31 +39,28 @@ namespace vault {
 
 namespace test {
 
-using DataManagerPersona = nfs::PersonaTypes<nfs::Persona::kDataManager>;
-
 template <>
-class AccountTransferInfoHandler<DataManagerPersona> {
- public:
-  using Value = DataManagerPersona::Value;
-  using Key = DataManagerPersona::Key;
+class AccountTransferInfoHandler<MaidManager> {
+public:
+  using Value = MaidManager::Value;
+  using Key = MaidManager::Key;
 
   using KeyValuePair = std::pair<Key, Value>;
-  using Result = AccountTransferHandler<DataManagerPersona>::Result;
-  using AddResult = AccountTransferHandler<DataManagerPersona>::AddResult;
+  using Result = AccountTransferHandler<MaidManager>::Result;
+  using AddResult = AccountTransferHandler<MaidManager>::AddResult;
 
   AccountTransferInfoHandler()
-      : kDataSize_(64), kAcceptSize_((routing::Parameters::group_size + 1) / 2),
-        kResolutionSize_(routing::Parameters::group_size - 1) {}
+    : kDataSize_(64), kAcceptSize_((routing::Parameters::group_size + 1) / 2),
+      kResolutionSize_(routing::Parameters::group_size - 1) {}
 
   KeyValuePair CreatePair() {
-    return std::make_pair(Key(Identity { NodeId(NodeId::IdType::kRandomId).string() },
-                              ImmutableData::Tag::kValue),
+    return std::make_pair(Key(Identity{ NodeId(NodeId::IdType::kRandomId).string() }),
                           CreateValue());
   }
 
   std::pair<AddResult, boost::optional<Value>> Resolve(std::deque<KeyValuePair>& pairs) {
     std::pair<AddResult, boost::optional<Value>>
-        wait_resolution(std::make_pair(AddResult::kWaiting, boost::optional<Value>())), resolution;
+      wait_resolution(std::make_pair(AddResult::kWaiting, boost::optional<Value>())), resolution;
     if (pairs.size() < kAcceptSize_)
       return wait_resolution;
 
@@ -76,7 +73,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
       resolution = IndividualResolve(current_resolution);
       if (resolution.first == AddResult::kSuccess)
         return resolution;
-       current_resolution.clear();
+      current_resolution.clear();
     }
 
     if (pairs.empty())
@@ -86,17 +83,17 @@ class AccountTransferInfoHandler<DataManagerPersona> {
       if (std::count(std::begin(pairs), std::end(pairs), pairs.front()) == kAcceptSize_)
         return std::make_pair(AddResult::kSuccess, boost::optional<Value>(pairs.front().second));
       else
-       return wait_resolution;
+        return wait_resolution;
     }
     return wait_resolution;
   }
 
   std::pair<AddResult, boost::optional<Value>> IndividualResolve(
-      std::vector<Value>& resolution_values) {
+    std::vector<Value>& resolution_values) {
     assert(resolution_values.size() == kResolutionSize_);
     while (resolution_values.size() >= kAcceptSize_) {
       if (std::count(std::begin(resolution_values), std::end(resolution_values),
-                     resolution_values.back()) >= kAcceptSize_)
+          resolution_values.back()) >= kAcceptSize_)
         return std::make_pair(AddResult::kSuccess,
                               boost::optional<Value>(resolution_values.back()));
       else
@@ -116,18 +113,17 @@ class AccountTransferInfoHandler<DataManagerPersona> {
             same_key_pairs.push_back(entry);
         auto verdict(Resolve(same_key_pairs));
         if (verdict.first == AddResult::kSuccess)
-          results.insert(
-              std::make_pair(kv_pair.first,
-                             Result(kv_pair.first, boost::optional<Value>(verdict.second),
-                                    AddResult::kSuccess)));
+          results.insert(std::make_pair(kv_pair.first,
+                          Result(kv_pair.first, boost::optional<Value>(verdict.second),
+                                 AddResult::kSuccess)));
         else if (verdict.first == AddResult::kFailure)
           results.insert(std::make_pair(kv_pair.first,
-                                        Result(kv_pair.first, boost::optional<Value>(),
-                                               AddResult::kFailure)));
+                         Result(kv_pair.first, boost::optional<Value>(),
+                                AddResult::kFailure)));
         else
           results.insert(std::make_pair(kv_pair.first,
-                                        Result(kv_pair.first, boost::optional<Value>(),
-                                               AddResult::kWaiting)));
+                         Result(kv_pair.first, boost::optional<Value>(),
+                                AddResult::kWaiting)));
         same_key_pairs.clear();
       }
     }
@@ -139,8 +135,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
   }
 
   Value CreateValue() {
-    return Value { PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } },
-                   kDataSize_ };
+    return Value{};
   }
 
   unsigned int kAcceptSize() const {
@@ -151,7 +146,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
     return kResolutionSize_;
   }
 
- private:
+private:
   const int32_t kDataSize_;
   const unsigned int kAcceptSize_, kResolutionSize_;
 };
@@ -162,4 +157,4 @@ class AccountTransferInfoHandler<DataManagerPersona> {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
