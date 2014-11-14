@@ -116,15 +116,6 @@ TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManagerToPmidNode) {
 //                                    routing::SingleId(routing_.kNodeId())));
 //}
 
-TEST_F(PmidNodeServiceTest, BEH_PmidHealthRequestFromPmidManagerToPmidNode) {
-  auto health_request(
-      CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  EXPECT_NO_THROW(SingleSendsToSingle(&pmid_node_service_, health_request,
-                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
-                                      routing::SingleId(routing_.kNodeId())));
-}
-
 }  //  namespace test
 
 }  //  namespace vault

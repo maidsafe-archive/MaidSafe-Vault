@@ -2,6 +2,7 @@ Action:PutResponse                    Source:DataManager:Group         Destinati
 Action:PutFailure                     Source:DataManager:Group         Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_client::DataNameAndReturnCode
 Action:Synchronise                    Source:MaidManager:Group         Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_vault::Content
 Action:AccountTransfer                Source:MaidManager:Group         Destination:MaidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
-Action:PmidHealthResponse             Source:PmidManager:Group         Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_client::PmidHealthAndReturnCode
 Action:PutVersionResponse             Source:VersionHandler:Group      Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_client::TipOfTreeAndReturnCode
 Action:CreateVersionTreeResponse      Source:VersionHandler:Group      Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_client::ReturnCode
+Action:AccountQuery                   Source:MaidManager:Single        Destination:MaidManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
+Action:AccountQueryResponse           Source:MaidManager:Group         Destination:MaidManager:Single     Contents:struct:maidsafe::nfs_vault::Content

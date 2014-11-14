@@ -26,7 +26,7 @@
 
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
+#include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/version_handler/value.h"
 #include "maidsafe/vault/tests/tests_utils.h"
