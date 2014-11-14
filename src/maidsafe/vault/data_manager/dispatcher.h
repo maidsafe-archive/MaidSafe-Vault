@@ -53,7 +53,7 @@ class DataManagerDispatcher {
   // To MaidManager
   template <typename Data>
   void SendPutResponse(const MaidName& account_name, const typename Data::Name& data_name,
-                       int32_t cost, nfs::MessageId message_id);
+                       uint64_t cost, nfs::MessageId message_id);
 
   // To MaidManager
   template <typename Data>
@@ -93,11 +93,11 @@ class DataManagerDispatcher {
   // To PmidManager
   template <typename Data>
   void SendDeleteRequest(const PmidName& pmid_name, const typename Data::Name& data_name,
-                         const int32_t size, nfs::MessageId message_id);
+                         const uint64_t size, nfs::MessageId message_id);
   template <typename Data>
   void SendFalseDataNotification(const PmidName& pmid_node,
                                  const typename Data::Name& data_name,
-                                 const int32_t size,
+                                 const uint64_t size,
                                  nfs::MessageId message_id);
 
   // =========================== Sync / AccountTransfer section ====================================
@@ -159,12 +159,13 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data
 template <typename Data>
 void DataManagerDispatcher::SendPutResponse(const MaidName& account_name,
                                             const typename Data::Name& data_name,
-                                            int32_t cost, nfs::MessageId message_id) {
+                                            uint64_t cost, nfs::MessageId message_id) {
   typedef PutResponseFromDataManagerToMaidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name, cost));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name,
+                                                                    static_cast<int32_t>(cost)));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -360,13 +361,14 @@ void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCach
 template <typename Data>
 void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
                                               const typename Data::Name& data_name,
-                                              const int32_t size,
+                                              const uint64_t size,
                                               nfs::MessageId message_id) {
   typedef DeleteRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, size));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name,
+                                                                    static_cast<int32_t>(size)));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -377,13 +379,14 @@ void DataManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
 template <typename Data>
 void DataManagerDispatcher::SendFalseDataNotification(const PmidName& pmid_node,
                                                       const typename Data::Name& data_name,
-                                                      int32_t size,
+                                                      uint64_t size,
                                                       nfs::MessageId message_id) {
   typedef IntegrityCheckRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
 
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, size));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name,
+                                                                    static_cast<int32_t>(size)));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
