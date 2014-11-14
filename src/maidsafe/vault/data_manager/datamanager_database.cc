@@ -141,7 +141,8 @@ void DataManagerDataBase::Delete(const DataManager::Key& key) {
   sqlite::Transaction transaction{*data_base_};
   std::string query("DELETE FROM DataManagerAccounts WHERE Chunk_Name=?");
   sqlite::Statement statement{*data_base_, query};
-  statement.BindText(1, EncodeKey(key));
+  auto key_string(EncodeKey(key));
+  statement.BindText(1, key_string);
   statement.Step();
   transaction.Commit();
 }

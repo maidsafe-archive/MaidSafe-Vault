@@ -513,11 +513,18 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   DoSync(DataManager::UnresolvedAddPmid(key,
              ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   // if storages nodes reached cap, the existing furthest offline node need to be removed
-  auto value(db_.Get(key));
-  PmidName pmid_node_to_remove;
-  if (value.NeedToPrune(routing_, pmid_node_to_remove))
-    DoSync(DataManager::UnresolvedRemovePmid(key,
-               ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
+  try {
+    auto value(db_.Get(key));  
+    PmidName pmid_node_to_remove;
+    if (value.NeedToPrune(routing_, pmid_node_to_remove))
+      DoSync(DataManager::UnresolvedRemovePmid(key,
+                 ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
+  } catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
+      LOG(kError) << "HandlePutResponse caught unexpected error" << error.what();
+      throw error;
+    }
+  }
 }
 
 template <typename Data>
