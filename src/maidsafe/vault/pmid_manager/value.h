@@ -36,6 +36,8 @@ namespace vault {
 struct PmidManagerValue {
  public:
   PmidManagerValue();
+  PmidManagerValue(const uint64_t& stored_total_size_in, const uint64_t& lost_total_size_in,
+                   const uint64_t& offered_space_in);
   explicit PmidManagerValue(const std::string& serialised_value);
   PmidManagerValue(const PmidManagerValue& other);
   PmidManagerValue(PmidManagerValue&& other);

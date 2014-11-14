@@ -21,6 +21,7 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "maidsafe/common/node_id.h"
@@ -286,6 +287,27 @@ T Median(std::vector<T>& values)  {
   } else {
     return *--it;
   }
+}
+
+template <typename T>
+std::pair<T, unsigned int> MaxOccurance(const std::vector<T>& values) {
+  std::map<T, unsigned int> stats;
+  for (const auto& value : values) {
+    auto iter(std::find_if(std::begin(stats), std::end(stats),
+                           [&](const std::pair<T, unsigned int>& pair) {
+                             return value == pair.first;
+                           }));
+    if (iter == std::end(stats))
+      stats.push_back(std::make_pair(value, 1));
+    else
+      iter->second++;
+  }
+
+  auto max_iter(std::begin(stats));
+  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
+
+  return *max_iter;
 }
 
 }  // namespace vault

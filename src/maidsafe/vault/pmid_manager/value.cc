@@ -32,6 +32,12 @@ namespace vault {
 PmidManagerValue::PmidManagerValue()
     : stored_total_size(0), lost_total_size(0), offered_space(0) {}
 
+PmidManagerValue::PmidManagerValue(const uint64_t& stored_total_size_in,
+                                   const uint64_t& lost_total_size_in,
+                                   const uint64_t& offered_space_in)
+    : stored_total_size(stored_total_size_in), lost_total_size(lost_total_size_in),
+      offered_space(offered_space_in) {}
+
 PmidManagerValue::PmidManagerValue(const std::string &serialised_value)
     : stored_total_size(0), lost_total_size(0), offered_space(0) {
   LOG(kVerbose) << "PmidManagerValue parsing from " << HexSubstr(serialised_value);
@@ -124,7 +130,7 @@ std::string PmidManagerValue::Print() const {
 
 PmidManagerValue PmidManagerValue::Resolve(const std::vector<PmidManagerValue>& values) {
   size_t size(values.size());
-  if (size < routing::Parameters::group_size + 1 / 2)
+  if (size < (routing::Parameters::group_size + 1) / 2)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
   std::vector<int64_t> stored_total_size, lost_total_size, offered_space;
   for (const auto& value : values) {
