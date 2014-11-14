@@ -188,17 +188,21 @@ DataManagerValue DataManagerValue::Resolve(const std::vector<DataManagerValue>& 
                            [&](const std::pair<DataManagerValue, unsigned int>& pair) {
                              return value == pair.first;
                            }));
-    if (iter == std::end(stats))
-      stats.emplace_back(std::make_pair(value, 0));
-    else
+    if (iter == std::end(stats)) {
+      stats.push_back(std::make_pair(value, 1));
+      iter = std::end(stats);
+      std::advance(iter, -1);
+      max_iter = (stats.size() > 1) ? max_iter : iter;
+    } else {
       iter->second++;
+    }
     max_iter = (iter->second > max_iter->second) ? iter : max_iter;
   }
 
   if (max_iter->second == (routing::Parameters::group_size + 1) / 2)
     return max_iter->first;
 
-  if (max_iter->second == routing::Parameters::group_size - 1)
+  if (values.size() == routing::Parameters::group_size - 1)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 
   BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
