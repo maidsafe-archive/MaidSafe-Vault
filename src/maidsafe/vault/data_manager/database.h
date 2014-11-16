@@ -19,9 +19,10 @@
 #ifndef MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
 #define MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
 
+#include <map>
 #include <string>
 #include <utility>
-#include <map>
+#include <vector>
 
 #include "maidsafe/common/sqlite3_wrapper.h"
 

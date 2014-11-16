@@ -91,7 +91,7 @@ TransferInfo GetTransferInfo(
   LOG(kVerbose) << "GetTransferInfo";
   for (auto& account : accounts) {
     auto check_holder_result = close_nodes_change->CheckHolders(
-          NodeId(account.first.name.string()));
+          NodeId(account.first->string()));
     if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
       LOG(kVerbose) << "GetTransferInfo in range";
       if (check_holder_result.new_holder == NodeId())
@@ -101,12 +101,12 @@ TransferInfo GetTransferInfo(
       auto found_itr = transfer_info.find(check_holder_result.new_holder);
       if (found_itr != transfer_info.end()) {
         LOG(kInfo) << "GetTransferInfo add into transfering account "
-                   << HexSubstr(account.first.name.string())
+                   << HexSubstr(account.first->string())
                    << " to " << check_holder_result.new_holder;
         found_itr->second.push_back(account);
       } else {  // create
         LOG(kInfo) << "GetTransferInfo create transfering account "
-                   << HexSubstr(account.first.name.string())
+                   << HexSubstr(account.first->string())
                    << " to " << check_holder_result.new_holder;
         std::vector<std::pair<Key, Value>> kv_pair;
         kv_pair.push_back(account);

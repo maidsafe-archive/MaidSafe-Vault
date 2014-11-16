@@ -69,8 +69,7 @@ void DataManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message((nfs_vault::Content(serialised_account)));
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(destination_peer),
-                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::SingleId(destination_peer)));
   routing_.Send(message);
 }
