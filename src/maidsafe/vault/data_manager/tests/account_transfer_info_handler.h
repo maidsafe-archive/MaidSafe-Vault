@@ -152,7 +152,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
   }
 
  private:
-  const int32_t kDataSize_;
+  const unsigned int kDataSize_;
   const unsigned int kAcceptSize_, kResolutionSize_;
 };
 

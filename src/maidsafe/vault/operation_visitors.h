@@ -264,7 +264,7 @@ class GetRequestVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:
-  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const int32_t chunk_size,
+  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const uint64_t chunk_size,
                                const PmidName& pmid_node, nfs::MessageId message_id)
       : kService_(service), kChunkSize_(chunk_size),
         kPmidNode_(pmid_node), kMessageId_(message_id) {}
@@ -281,51 +281,7 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
 
  private:
   ServiceHandlerType* const kService_;
-  const int32_t kChunkSize_;
-  const PmidName kPmidNode_;
-  nfs::MessageId kMessageId_;
-};
-
-template <typename ServiceHandlerType>
-class DataManagerSetPmidOnlineVisitor : public boost::static_visitor<> {
- public:
-  DataManagerSetPmidOnlineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                                  nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    LOG(kWarning) << "DataManagerSetPmidOnlineVisitor::operator() set pmid_node online "
-                  << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string()) << " bearing message id "
-                  << kMessageId_.data;
-    kService_->MarkNodeUp(kPmidNode_, data_name);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
-  const PmidName kPmidNode_;
-  nfs::MessageId kMessageId_;
-};
-
-template <typename ServiceHandlerType>
-class DataManagerSetPmidOfflineVisitor : public boost::static_visitor<> {
- public:
-  DataManagerSetPmidOfflineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                                   nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    LOG(kWarning) << "DataManagerSetPmidOfflineVisitor::operator() set pmid_node offline "
-                  << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string()) << " bearing message id "
-                  << kMessageId_.data;
-    kService_->MarkNodeDown(kPmidNode_, data_name);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
+  const uint64_t kChunkSize_;
   const PmidName kPmidNode_;
   nfs::MessageId kMessageId_;
 };
@@ -527,7 +483,7 @@ class MaidManagerCreateVersionTreeResponseVisitor : public boost::static_visitor
 
 template <typename ServiceHandlerType>
 class MaidManagerAccountRequestVisitor : public boost::static_visitor<> {
-public:
+ public:
   MaidManagerAccountRequestVisitor(ServiceHandlerType* service,
                                    const NodeId& sender_node_id)
     : kService_(service), kMaidManagerNodeId_(sender_node_id) {}
@@ -537,7 +493,7 @@ public:
     kService_->HandleAccountRequest(data_name, kMaidManagerNodeId_);
   }
 
-private:
+ private:
   ServiceHandlerType* const kService_;
   const NodeId kMaidManagerNodeId_;
 };

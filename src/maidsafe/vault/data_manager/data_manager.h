@@ -20,7 +20,10 @@
 #define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
 
 #include <functional>
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/nfs/types.h"
 
@@ -30,17 +33,12 @@
 #include "maidsafe/vault/data_manager/value.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
-#include "maidsafe/vault/data_manager/action_node_down.h"
-#include "maidsafe/vault/data_manager/action_node_up.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class Metadata;
-
-struct ActionDataManagerPut;
 struct ActionDataManagerAddPmid;
 
 }  // namespace vault
@@ -52,13 +50,11 @@ struct PersonaTypes<Persona::kDataManager> {
   static const Persona persona = Persona::kDataManager;
   typedef vault::Key Key;
   typedef vault::DataManagerValue Value;
-  typedef vault::Metadata Metadata;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerPut> UnresolvedPut;
+  typedef std::pair<Key, Value> KvPair;
+  typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerDelete> UnresolvedDelete;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid> UnresolvedAddPmid;
   typedef vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid> UnresolvedRemovePmid;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerNodeUp> UnresolvedNodeUp;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerNodeDown> UnresolvedNodeDown;
 };
 
 }  // namespace nfs
