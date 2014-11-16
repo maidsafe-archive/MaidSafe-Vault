@@ -32,8 +32,6 @@
 #include "maidsafe/vault/data_manager/action_delete.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
-#include "maidsafe/vault/data_manager/action_node_down.h"
-#include "maidsafe/vault/data_manager/action_node_up.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 
 namespace maidsafe {
@@ -64,12 +62,9 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       get_timer_(asio_service_),
       get_cached_response_timer_(asio_service_),
       db_(UniqueDbPath(vault_root_dir)),
-      sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
-      sync_node_downs_(NodeId(pmid.name()->string())),
-      sync_node_ups_(NodeId(pmid.name()->string())),
       account_transfer_() {
 }
 
@@ -261,12 +256,17 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
                                             const std::set<PmidName>& pmids,
                                             nfs::MessageId message_id) {
   auto data_name(GetDataNameVariant(key.type, key.name));
-  // TODO(Team): DM shall hold the chunk_size info and pass it to PM via delete_request
-  int32_t chunk_size(0);
-  for (const auto& pmid : pmids) {
-    detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(this, chunk_size,
-                                                                            pmid, message_id);
-    boost::apply_visitor(delete_visitor, data_name);
+  try {
+    for (const auto& pmid : pmids) {
+      detail::DataManagerSendDeleteVisitor<DataManagerService> delete_visitor(
+          this, db_.Get(key).chunk_size(), pmid, message_id);
+      boost::apply_visitor(delete_visitor, data_name);
+    }
+  }
+  catch (const maidsafe_error& error) {
+    LOG(kWarning) << "caught error " << error.what();
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      throw;
   }
 }
 
@@ -284,17 +284,6 @@ void DataManagerService::HandleMessage(
   }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-    case ActionDataManagerPut::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut";
-      DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
-                                                   sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit put to db";
-        db_.Commit(resolved_action->key, resolved_action->action);
-      }
-      break;
-    }
     case ActionDataManagerDelete::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
       DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
@@ -307,12 +296,11 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
                    << "the chunk " << HexSubstr(resolved_action->key.name.string());
         if (value) {
-          assert(value->Subscribers() >= 0);
-          if (value->Subscribers() == 0) {
-            LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-            SendDeleteRequests(resolved_action->key, value->AllPmids(),
-                               resolved_action->action.MessageId());
-          }
+          // The delete operation will not depend on subscribers anymore.
+          // Owners' signatures may stored in DM later on to support deletes.
+          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
+          SendDeleteRequests(resolved_action->key, value->AllPmids(),
+                             resolved_action->action.MessageId());
         }
       }
       break;
@@ -355,42 +343,6 @@ void DataManagerService::HandleMessage(
         } catch(maidsafe_error& error) {
           LOG(kWarning) << "having error when trying to commit remove pmid to db : "
                         << boost::diagnostic_information(error);
-        }
-      }
-      break;
-    }
-    case ActionDataManagerNodeUp::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerNodeUp";
-      DataManager::UnresolvedNodeUp unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_node_ups_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager commit pmid goes online "
-                      << " for chunk " << HexSubstr(resolved_action->key.name.string())
-                      << " and pmid_node "
-                      << HexSubstr(resolved_action->action.kPmidName->string());
-        try {
-          db_.Commit(resolved_action->key, resolved_action->action);
-        } catch(maidsafe_error& error) {
-          LOG(kWarning) << "having error when trying to commit set pmid up to db : "
-                        << boost::diagnostic_information(error);
-        }
-      }
-      break;
-    }
-    case ActionDataManagerNodeDown::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerNodeDown";
-      DataManager::UnresolvedNodeDown unresolved_action(
-          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-      auto resolved_action(sync_node_downs_.AddUnresolvedAction(unresolved_action));
-      if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit pmid goes offline";
-        try {
-          db_.Commit(resolved_action->key, resolved_action->action);
-        }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(CommonErrors::no_such_element))
-            throw;
         }
       }
       break;
@@ -474,6 +426,15 @@ void DataManagerService::HandleChurnEvent(
     TransferAccount(transfer.first, transfer.second);
 //   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
 //   close_nodes_change_.Print();
+  PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
+  std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
+  for (auto& account : accounts) {
+    auto online_pmids(account.second.online_pmids(routing_));
+    online_pmids.erase(pmid_name);
+    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids);
+    auto data_name(GetDataNameVariant(account.first.type, account.first.name));
+    boost::apply_visitor(get_for_node_down, data_name);
+  }
 }
 
 void DataManagerService::TransferAccount(const NodeId& dest,
@@ -515,33 +476,7 @@ void DataManagerService::HandleMessage(
 }
 
 // ==================== General implementation =====================================================
-template <>
-void DataManagerService::HandleMessage(
-    const SetPmidOnlineFromPmidManagerToDataManager& message,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver) {
-  typedef SetPmidOnlineFromPmidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
 
-template <>
-void DataManagerService::HandleMessage(
-    const SetPmidOfflineFromPmidManagerToDataManager& message,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver) {
-  typedef SetPmidOfflineFromPmidManagerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
 
 }  // namespace vault
 

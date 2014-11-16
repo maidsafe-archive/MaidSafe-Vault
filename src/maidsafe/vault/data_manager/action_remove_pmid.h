@@ -29,7 +29,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
 class MaidManagerValue;
 class DataManagerValue;
 

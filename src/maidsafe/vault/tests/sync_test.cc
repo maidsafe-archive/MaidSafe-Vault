@@ -34,7 +34,6 @@
 #include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
-#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
