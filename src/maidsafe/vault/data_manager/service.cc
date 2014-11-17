@@ -299,7 +299,11 @@ void DataManagerService::HandleMessage(
           // The delete operation will not depend on subscribers anymore.
           // Owners' signatures may stored in DM later on to support deletes.
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-          SendDeleteRequests(resolved_action->key, value->AllPmids(),
+          std::set<PmidName> all_pmids_set;
+          auto all_pmids(value->AllPmids());
+          for (auto pmid : all_pmids)
+            all_pmids_set.insert(pmid);
+          SendDeleteRequests(resolved_action->key, all_pmids_set,
                              resolved_action->action.MessageId());
         }
       }
@@ -430,8 +434,11 @@ void DataManagerService::HandleChurnEvent(
   std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
   for (auto& account : accounts) {
     auto online_pmids(account.second.online_pmids(routing_));
-    online_pmids.erase(pmid_name);
-    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids);
+    std::set<PmidName> online_pmids_set;
+    for (auto online_pmid : online_pmids)
+      if (online_pmid != pmid_name)
+        online_pmids_set.insert(online_pmid);
+    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids_set);
     auto data_name(GetDataNameVariant(account.first.type, account.first.name));
     boost::apply_visitor(get_for_node_down, data_name);
   }
