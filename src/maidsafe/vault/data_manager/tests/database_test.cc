@@ -49,10 +49,8 @@ TEST_F(DataManagerDatabaseTest, BEH_GetFromEmpty) {
 TEST_F(DataManagerDatabaseTest, BEH_AddPmid) {
   DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
   std::vector<PmidName> pmid_nodes;
-  for (int i(0); i < 10; ++i) {
+  for (int i(0); i < 10; ++i)
     pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
-    LOG(kVerbose) << "Generated : " << HexSubstr(pmid_nodes.back()->string());
-  }
 
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
@@ -64,35 +62,69 @@ TEST_F(DataManagerDatabaseTest, BEH_AddPmid) {
   auto results(db.Get(key).AllPmids());
   EXPECT_EQ(pmid_nodes.size(), results.size());
   // The order of insertion shall get retained
-  for (size_t i(0); i < results.size(); ++i) {
-    LOG(kVerbose) << "currently checking : " << HexSubstr(results[i]->string());
+  for (size_t i(0); i < results.size(); ++i)
     EXPECT_EQ(pmid_nodes[i], results[i]);
-  }
 }
 
-//TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
-//  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
-//  // Action Add Pmid
-//  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-//  DataManager::Key key(data.name());
-//  EXPECT_ANY_THROW(db.Get(key));
+TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
+  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  std::vector<PmidName> pmid_nodes;
+  for (int i(0); i < 10; ++i)
+    pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
 
-//  // Action Delete
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  for (auto& pmid_node : pmid_nodes) {
+    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    db.Commit(key, action_add_pmid);
+  }
+  std::vector<PmidName> entries_to_remove {pmid_nodes[0], pmid_nodes[9], pmid_nodes[3]};
+  for (auto& entry_to_remove : entries_to_remove) {
+    ActionDataManagerRemovePmid action_remove_pmid(entry_to_remove);
+    db.Commit(key, action_remove_pmid);
+  }
 
-//  // Action Remove Pmid
-//}
+  auto results(db.Get(key).AllPmids());
+  EXPECT_EQ(pmid_nodes.size() - entries_to_remove.size(), results.size());
+  // The order of insertion shall get retained
+  for (auto& entry_to_remove : entries_to_remove)
+    pmid_nodes.erase(std::find(pmid_nodes.begin(), pmid_nodes.end(), entry_to_remove));
+  for (size_t i(0); i < results.size(); ++i)
+    EXPECT_EQ(pmid_nodes[i], results[i]);
+}
 
-//TEST_F(DataManagerDatabaseTest, BEH_Delete) {
-//  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
-//  // Action Add Pmid
-//  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-//  DataManager::Key key(data.name());
-//  EXPECT_ANY_THROW(db.Get(key));
+TEST_F(DataManagerDatabaseTest, BEH_Delete) {
+  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  // Delete from empty
+  nfs::MessageId message_id(RandomInt32());
+  ActionDataManagerDelete action_delete(message_id);
+  EXPECT_ANY_THROW(db.Commit(key, action_delete));
 
-//  // Action Delete
-
-//  // Action Remove Pmid
-//}
+  std::vector<PmidName> pmid_nodes;
+  for (int i(0); i < 10; ++i) {
+    pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
+    LOG(kVerbose) << "Generated : " << HexSubstr(pmid_nodes.back()->string());
+  }
+  for (auto& pmid_node : pmid_nodes) {
+    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    db.Commit(key, action_add_pmid);
+  }
+  // failing deletion
+  {
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    nfs::MessageId message_id(RandomInt32());
+    ActionDataManagerDelete action_delete(message_id);
+    EXPECT_ANY_THROW(db.Commit(key, action_delete));
+  }
+  // succeeding deletion
+  auto deleted_value(db.Commit(key, action_delete));
+  auto results(deleted_value->AllPmids());
+  EXPECT_EQ(pmid_nodes.size(), results.size());
+  EXPECT_ANY_THROW(db.Get(key));
+}
 
 
 TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccountsFromEmpty) {
