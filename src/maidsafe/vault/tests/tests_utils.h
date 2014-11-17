@@ -34,7 +34,6 @@
 
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
-#include "maidsafe/vault/account_transfer_handler.h"
 
 namespace maidsafe {
 
