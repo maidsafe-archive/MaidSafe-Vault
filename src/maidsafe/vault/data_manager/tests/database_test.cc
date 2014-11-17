@@ -118,10 +118,8 @@ TEST_F(DataManagerDatabaseTest, BEH_Delete) {
   EXPECT_ANY_THROW(db.Commit(key, action_delete));
 
   std::vector<PmidName> pmid_nodes;
-  for (int i(0); i < 10; ++i) {
+  for (int i(0); i < 10; ++i)
     pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
-    LOG(kVerbose) << "Generated : " << HexSubstr(pmid_nodes.back()->string());
-  }
   for (auto& pmid_node : pmid_nodes) {
     ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
     db.Commit(key, action_add_pmid);
@@ -144,11 +142,107 @@ TEST_F(DataManagerDatabaseTest, BEH_Delete) {
 TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
   PmidName pmid_name(Identity(RandomString(64)));
-  // from empty
+  { // from empty
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_TRUE(result.empty());
+  }
+  std::vector<PmidName> pmid_nodes;
+  for (int i(0); i < 10; ++i)
+    pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
+  // target non-exists
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  for (auto& pmid_node : pmid_nodes) {
+    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    db.Commit(key, action_add_pmid);
+  }
   auto result(db.GetRelatedAccounts(pmid_name));
   EXPECT_TRUE(result.empty());
+  // target being the last
+  {
+    ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+    db.Commit(key, action_add_pmid);
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 1);
+  }
+  { // target being the first
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    std::vector<PmidName> local_pmid_nodes;
+    std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
+    local_pmid_nodes[0] = pmid_name;
+    for (auto& pmid_node : local_pmid_nodes) {
+      ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+      db.Commit(key, action_add_pmid);
+    }
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 2);
+  }
+  { // target in the middle
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    std::vector<PmidName> local_pmid_nodes;
+    std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
+    local_pmid_nodes[3] = pmid_name;
+    for (auto& pmid_node : local_pmid_nodes) {
+      ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+      db.Commit(key, action_add_pmid);
+    }
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 3);
+  }
+  { // target being the only pmid_node
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+    db.Commit(key, action_add_pmid);
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 4);
+  }
+}
 
-  // 
+TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
+  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  DataManager::Value value;
+  value.SetChunkSize(kTestChunkSize);
+  std::vector<PmidName> pmid_nodes;
+  for (int i(0); i < 10; ++i) {
+    pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
+    value.AddPmid(pmid_nodes.back());
+  }
+  PmidName pmid_name(pmid_nodes[3]);
+  { // Handle Transfer
+    std::vector<DataManager::KvPair> transferred;
+    transferred.push_back(std::make_pair<>(key, value));
+    db.HandleTransfer(transferred);
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 1);
+    auto result_pmids(db.Get(key).AllPmids());
+    for (size_t i(0); i < result_pmids.size(); ++i)
+      EXPECT_EQ(pmid_nodes[i], result_pmids[i]);
+  }
+  { // Handle Duplicated Transfer
+    DataManager::Value duplicated_value(value);
+    std::vector<DataManager::KvPair> transferred;
+    transferred.push_back(std::make_pair<>(key, duplicated_value));
+    db.HandleTransfer(transferred);
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 1);
+    auto result_pmids(db.Get(key).AllPmids());
+    for (size_t i(0); i < result_pmids.size(); ++i)
+      EXPECT_EQ(pmid_nodes[i], result_pmids[i]);
+  }
+  { // Handle one more Transfer
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    std::vector<DataManager::KvPair> transferred;
+    transferred.push_back(std::make_pair<>(key, value));
+    db.HandleTransfer(transferred);
+    auto result(db.GetRelatedAccounts(pmid_name));
+    EXPECT_EQ(result.size(), 2);
+  }
 }
 
 }  //  namespace test
