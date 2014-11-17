@@ -30,8 +30,7 @@
 
 #include "maidsafe/vault/tests/account_transfer_analyser.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
-
-template <typename Persona> class AccountTransferHandler;
+#include "maidsafe/vault/account_transfer_handler.h"
 
 namespace maidsafe {
 

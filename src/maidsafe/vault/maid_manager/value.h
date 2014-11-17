@@ -41,7 +41,7 @@ class MaidManagerValue {
     kNoSpace
   };
   MaidManagerValue();
-  MaidManagerValue(int64_t data_stored, int64_t space_available);
+  MaidManagerValue(uint64_t data_stored, uint64_t space_available);
   MaidManagerValue(const MaidManagerValue& other);
   MaidManagerValue(MaidManagerValue&& other);
   MaidManagerValue& operator=(MaidManagerValue other);
@@ -50,19 +50,17 @@ class MaidManagerValue {
   std::string Serialise() const;
   template <typename Data>
   Status AllowPut(const Data& data) const;
-  void PutData(int64_t size);
-  void DeleteData(int64_t size);
+  void PutData(uint64_t size);
+  void DeleteData(uint64_t size);
   std::string Print() const;
 
   static MaidManagerValue Resolve(const std::vector<MaidManagerValue>& values);
 
   friend void swap(MaidManagerValue& lhs, MaidManagerValue& rhs);
   friend bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs);
-  friend class test::MaidManagerServiceTest;
 
- private:
-  int64_t data_stored_;
-  int64_t space_available_;
+  uint64_t data_stored;
+  uint64_t space_available;
 };
 
 
@@ -81,11 +79,11 @@ MaidManagerValue::Status MaidManagerValue::AllowPut(const Data& data) const {
   auto size(data.Serialise()->string().size());
   LOG(kVerbose) << "MaidManagerValue::AllowPut data " << HexSubstr(data.name().value)
     << " has size of " << size << " trying to put into account provding "
-    << space_available_ << " total available_size by far";
-  if (space_available_ < (static_cast<int64_t>(data_stored_ + size)))
+    << space_available << " total available_size by far";
+  if (space_available < (static_cast<uint64_t>(data_stored + size)))
     return Status::kNoSpace;
 
-  return ((3 * space_available_ / 100) < static_cast<int64_t>(data_stored_ + size))
+  return ((3 * space_available / 100) < static_cast<uint64_t>(data_stored + size))
     ? Status::kLowSpace : Status::kOk;
 }
 

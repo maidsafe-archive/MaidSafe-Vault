@@ -33,13 +33,12 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/maid_manager/value.h"
 
 
 namespace maidsafe {
 
 namespace vault {
-
-class MaidManagerValue;
 
 template <bool Remove>
 struct ActionCreateRemoveAccount;

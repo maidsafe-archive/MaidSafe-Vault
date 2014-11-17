@@ -283,7 +283,7 @@ T Median(std::vector<T>& values)  {
   std::partial_sort(values.begin(), it, values.end());
   if (size % 2 == 0) {
     T first(*--it), second(*--it);
-    return (first + second) / 2;
+    return second + ((first - second) / 2);
   } else {
     return *--it;
   }

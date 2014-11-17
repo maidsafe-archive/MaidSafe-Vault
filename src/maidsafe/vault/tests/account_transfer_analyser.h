@@ -41,8 +41,7 @@ namespace vault {
 
 namespace test {
 
-template <typename Persona>
-class  AccountTransferInfoHandler {};
+template <typename Persona> class  AccountTransferInfoHandler;
 
 template <typename Persona>
 class AccountTransferAnalyser : public AccountTransferInfoHandler<Persona> {
