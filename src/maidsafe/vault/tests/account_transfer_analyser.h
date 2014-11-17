@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <map>
 #include <mutex>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -31,6 +32,7 @@
 
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 
 namespace maidsafe {
@@ -67,6 +69,7 @@ class AccountTransferAnalyser : public AccountTransferInfoHandler<Persona> {
   void ReplicateWithDifferentValue(typename std::vector<KeyValuePair>::iterator& start_iter,
                                    typename std::vector<KeyValuePair>::iterator& end_iter,
                                    unsigned int quantity = 1);
+  std::string Print(const Key& key);
 
   std::vector<KeyValuePair> kv_pairs_;
 };
@@ -82,9 +85,24 @@ bool AccountTransferAnalyser<Persona>::CheckResults(
   if (results_in.size() != expected_results.size())
     return false;
   for (const auto& expected_result : expected_results)
-    if (!expected_result.Equals(results_in.at(expected_result.key)))
+    if (!expected_result.Equals(results_in.at(expected_result.key))) {
+      LOG(kError) << static_cast<int>(expected_result.result) << ", "
+                  << static_cast<int>(results_in.at(expected_result.key).result);
+      LOG(kError) << expected_result.value->Print() << ", "
+                  << results_in.at(expected_result.key).value->Print();
+      LOG(kError)  << "Print\n" << Print(expected_result.key);
       return false;
+    }
   return true;
+}
+
+template <typename Persona>
+std::string AccountTransferAnalyser<Persona>::Print(const Key& key) {
+  std::stringstream stream;
+  for (const auto& kv_pairs : kv_pairs_)
+    if (kv_pairs.first == key)
+      stream << kv_pairs.second.Print();
+  return stream.str();
 }
 
 template <typename Persona>
@@ -119,7 +137,6 @@ void AccountTransferAnalyser<Persona>::DefaultReplicate() {
 
 template <typename Persona>
 void AccountTransferAnalyser<Persona>::RandomReplicate(unsigned int replicates) {
-  std::vector<KeyValuePair> new_pairs;
   bool same_value(true);
   typename std::vector<KeyValuePair>::iterator start_iter, end_iter;
   for (; replicates > 1; --replicates) {

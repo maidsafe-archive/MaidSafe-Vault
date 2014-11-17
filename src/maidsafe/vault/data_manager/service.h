@@ -54,7 +54,7 @@
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/datamanager_database.h"
+#include "maidsafe/vault/data_manager/database.h"
 #include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
@@ -235,9 +235,9 @@ class DataManagerService {
   void HandleAccountTransfer(const AccountType& account);
 
   template<typename DataName>
-  void HandleAccountRequest(const DataName& name, const NodeId& sender);
+  void HandleAccountQuery(const DataName& name, const NodeId& sender);
   void HandleAccountTransferEntry(const std::string& serialised_account,
-                                  const routing::GroupSource& sender);
+                                  const routing::SingleSource& sender);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
@@ -287,7 +287,7 @@ class DataManagerService {
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
-  friend class detail::DataManagerAccountRequestVisitor<DataManagerService>;
+  friend class detail::DataManagerAccountQueryVisitor<DataManagerService>;
   friend class DataManagerGetForNodeDownVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
@@ -393,18 +393,6 @@ void DataManagerService::HandleMessage(
     const AccountTransferFromDataManagerToDataManager& message,
     const typename AccountTransferFromDataManagerToDataManager::Sender& sender,
     const typename AccountTransferFromDataManagerToDataManager::Receiver& receiver);
-
-//template <>
-//void DataManagerService::HandleMessage(
-//  const SetPmidOnlineFromPmidManagerToDataManager& message,
-//    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-//    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
-
-//template <>
-//void DataManagerService::HandleMessage(
-//    const SetPmidOfflineFromPmidManagerToDataManager& message,
-//    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-//    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
@@ -942,20 +930,8 @@ template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
   LOG(kWarning) << "DataManager marking node " << HexSubstr(pmid_node->string())
                 << " down for chunk " << HexSubstr(name.value.string());
-//  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-//  DoSync(DataManager::UnresolvedNodeDown(key,
-//             ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
   GetForNodeDown<typename DataName::data_type>(pmid_node, name);
 }
-
-// MAID-315 No need to mark node up
-// template <typename DataName>
-// void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
-//   VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node.value, name.value);
-//   typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-//   DoSync(DataManager::UnresolvedNodeUp(key,
-//              ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
-// }
 
 // ==================== Sync =======================================================================
 
@@ -967,7 +943,7 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
 }
 
 template<typename DataName>
-void DataManagerService::HandleAccountRequest(const DataName& name, const NodeId& sender) {
+void DataManagerService::HandleAccountQuery(const DataName& name, const NodeId& sender) {
   if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
     LOG(kWarning) << "attempt to obtain account from non-holder";
     return;

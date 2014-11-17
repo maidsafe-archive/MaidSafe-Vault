@@ -150,22 +150,20 @@ std::string DataManagerValue::Print() const {
 
 DataManagerValue DataManagerValue::Resolve(const std::vector<DataManagerValue>& values) {
   std::vector<std::pair<DataManagerValue, unsigned int>> stats;
-  auto max_iter(std::begin(stats));
   for (const auto& value : values) {
     auto iter(std::find_if(std::begin(stats), std::end(stats),
                            [&](const std::pair<DataManagerValue, unsigned int>& pair) {
                              return value == pair.first;
                            }));
-    if (iter == std::end(stats)) {
+    if (iter == std::end(stats))
       stats.push_back(std::make_pair(value, 1));
-      iter = std::end(stats);
-      std::advance(iter, -1);
-      max_iter = (stats.size() > 1) ? max_iter : iter;
-    } else {
+    else
       iter->second++;
-    }
-    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
   }
+
+  auto max_iter(std::begin(stats));
+  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
 
   if (max_iter->second == (routing::Parameters::group_size + 1) / 2)
     return max_iter->first;

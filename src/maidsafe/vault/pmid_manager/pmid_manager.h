@@ -19,7 +19,10 @@
 #ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
 #define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
 
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
@@ -50,24 +53,24 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
-  typedef passport::PublicPmid::Name GroupName;
-  typedef vault::GroupKey<GroupName> SyncKey;
-  typedef vault::Key Key;
-  typedef vault::PmidManagerValue Value;
-  typedef std::pair<Key, Value> KvPair;
-  typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
-  typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut> UnresolvedPut;
-  typedef vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<
-              Key, vault::ActionCreatePmidAccount> UnresolvedCreateAccount;
-  typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
+  using GroupName = passport::PublicPmid::Name;
+  using SyncKey = vault::GroupKey<GroupName>;
+  using Key = passport::PublicPmid::Name;
+  using Value = vault::PmidManagerValue;
+  using SyncGroupKey = vault::MetadataKey<Key>;
+  using KvPair = std::pair<Key, Value>;
+  using TransferInfo = std::map<NodeId, std::vector<KvPair>>;
+  using UnresolvedPut = vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut>;
+  using UnresolvedDelete = vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete>;
+  using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey,
+                                                          vault::ActionCreatePmidAccount>;
 };
 
 }  // namespace nfs
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kPmidManager> PmidManager;
+using  PmidManager = nfs::PersonaTypes<nfs::Persona::kPmidManager>;
 
 }  // namespace vault
 
