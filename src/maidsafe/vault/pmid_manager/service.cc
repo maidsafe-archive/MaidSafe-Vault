@@ -115,9 +115,6 @@ void PmidManagerService::HandleMessage(
     const PutRequestFromDataManagerToPmidManager& message,
     const typename PutRequestFromDataManagerToPmidManager::Sender& sender,
     const typename PutRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage PutRequestFromDataManagerToPmidManager"
-                << " from " << HexSubstr(sender.sender_id->string())
-                << " being asked send to " << HexSubstr(receiver->string());
   typedef PutRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType & message, const MessageType::Sender & sender) {
@@ -132,7 +129,6 @@ void PmidManagerService::HandleMessage(
     const PutFailureFromPmidNodeToPmidManager& message,
     const typename PutFailureFromPmidNodeToPmidManager::Sender& sender,
     const typename PutFailureFromPmidNodeToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage PutFailureFromPmidNodeToPmidManager";
   typedef PutFailureFromPmidNodeToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -147,7 +143,6 @@ void PmidManagerService::HandleMessage(
     const DeleteRequestFromDataManagerToPmidManager& message,
     const typename DeleteRequestFromDataManagerToPmidManager::Sender& sender,
     const typename DeleteRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService::HandleMessage DeleteRequestFromDataManagerToPmidManager";
   typedef DeleteRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -162,7 +157,6 @@ void PmidManagerService::HandleMessage(
     const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
     const typename CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << message;
   typedef CreatePmidAccountRequestFromMaidManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
@@ -177,10 +171,6 @@ void PmidManagerService::HandleMessage(
     const IntegrityCheckRequestFromDataManagerToPmidManager& message,
     const typename IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
     const typename IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "PmidManagerService IntegrityCheckRequestFromDataManagerToPmidManager "
-                << " received false data notification for chunk "
-                << HexSubstr(message.contents->name.raw_name.string())
-                << " from " << HexSubstr(sender.sender_id.data.string());
   typedef IntegrityCheckRequestFromDataManagerToPmidManager MessageType;
   OperationHandlerWrapper<PmidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {

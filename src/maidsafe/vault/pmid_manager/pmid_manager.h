@@ -35,6 +35,7 @@
 #include "maidsafe/vault/pmid_manager/action_put.h"
 #include "maidsafe/vault/pmid_manager/action_create_account.h"
 #include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
@@ -53,9 +54,9 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kPmidManager> {
   static const Persona persona = Persona::kPmidManager;
-  using GroupName = passport::PublicPmid::Name;
-  using SyncKey = vault::GroupKey<GroupName>;
-  using Key = passport::PublicPmid::Name;
+  using Key = vault::PmidName;
+  using GroupName = Key;
+  using SyncKey = vault::GroupKey<Key>;
   using Value = vault::PmidManagerValue;
   using SyncGroupKey = vault::MetadataKey<Key>;
   using KvPair = std::pair<Key, Value>;
