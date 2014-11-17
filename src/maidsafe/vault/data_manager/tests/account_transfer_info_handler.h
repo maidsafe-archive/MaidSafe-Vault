@@ -39,7 +39,7 @@ namespace vault {
 
 namespace test {
 
-using DataManagerPersona = typename nfs::PersonaTypes<nfs::Persona::kDataManager>;
+using DataManagerPersona = nfs::PersonaTypes<nfs::Persona::kDataManager>;
 
 template <>
 class AccountTransferInfoHandler<DataManagerPersona> {
@@ -139,8 +139,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
   }
 
   Value CreateValue() {
-    return Value { PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } },
-                   kDataSize_ };
+    return Value(PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } }, kDataSize_);
   }
 
   unsigned int kAcceptSize() const {

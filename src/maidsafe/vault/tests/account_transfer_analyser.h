@@ -61,6 +61,8 @@ class AccountTransferAnalyser : public AccountTransferInfoHandler<Persona> {
   std::vector<KeyValuePair> GetKeyValuePairs() const;
   void DefaultReplicate();
   void RandomReplicate(unsigned int replicates);
+  unsigned int kAcceptSize();
+  unsigned int kResolutionSize();
 
  private:
   void ReplicateWithSameValue(typename std::vector<KeyValuePair>::iterator& start_iter,
@@ -94,6 +96,16 @@ bool AccountTransferAnalyser<Persona>::CheckResults(
       return false;
     }
   return true;
+}
+
+template <typename Persona>
+unsigned int AccountTransferAnalyser<Persona>::kAcceptSize() {
+  return AccountTransferInfoHandler<Persona>::kAcceptSize();
+}
+
+template <typename Persona>
+unsigned int AccountTransferAnalyser<Persona>::kResolutionSize() {
+  return AccountTransferInfoHandler<Persona>::kResolutionSize();
 }
 
 template <typename Persona>
