@@ -238,7 +238,7 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
 //   } catch(...) {
 //   }
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
-  PmidManager::SyncKey group_key(PmidManager::GroupName(pmid_node), data.name().value,
+  PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), data.name().value,
                                  Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedPut(group_key,
       ActionPmidManagerPut(static_cast<uint32_t>(data.Serialise().data.string().size()),
@@ -255,7 +255,7 @@ void PmidManagerService::HandlePutFailure(
                 << " . available_space -- " << available_space << " , error_code -- "
                 << boost::diagnostic_information(error_code);
   dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
-  PmidManager::SyncKey group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
+  PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, false, true),
                                        routing_.kNodeId()));
 }
@@ -266,7 +266,7 @@ void PmidManagerService::HandleFalseNotification(const typename Data::Name& name
   LOG(kVerbose) << "PmidManagerService::HandleFlaseNotification regarding pmid_node -- "
                 << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
-  PmidManager::SyncKey group_key(PmidManager::GroupName(pmid_node), name.value, Data::Tag::kValue);
+  PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, true, true),
                                        routing_.kNodeId()));
 }
@@ -290,7 +290,7 @@ void PmidManagerService::HandleDelete(
                 << " on pmid_node " << HexSubstr(pmid_name.value.string())
                 << " , with message_id -- " << message_id.data;
   dispatcher_.SendDeleteRequest<Data>(pmid_name, data_name, message_id);
-  PmidManager::SyncKey group_key(typename PmidManager::GroupName(pmid_name),
+  PmidManager::SyncKey group_key(typename PmidManager::Key(pmid_name),
                                  data_name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, true, false),
                                        routing_.kNodeId()));
