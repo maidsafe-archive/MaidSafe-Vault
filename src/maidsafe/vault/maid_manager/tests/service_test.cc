@@ -84,7 +84,7 @@ class MaidManagerServiceTest : public testing::Test {
                 const std::vector<routing::GroupSource>& group_source);
 
   bool Equal(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
-    if (lhs.data_stored_ != rhs.data_stored_ || lhs.space_available_ != rhs.space_available_)
+    if (lhs.data_stored != rhs.data_stored || lhs.space_available != rhs.space_available)
       return false;
     return true;
   }

@@ -144,6 +144,16 @@ protobuf::Sync CreateProtoSync(nfs::MessageAction action_type,
   return proto_sync;
 }
 
+template <>
+MaidManager::Value CreateValue<MaidManager>() {
+  return MaidManager::Value(RandomUint32(), std::numeric_limits<uint64_t>().max());
+}
+
+template <>
+PmidManager::Value CreateValue<PmidManager>() {
+  return PmidManager::Value(RandomUint32() % 1000, RandomUint32() % 1000, RandomUint32() % 1000);
+}
+
 }  // namespace test
 
 }  // namespace vault
