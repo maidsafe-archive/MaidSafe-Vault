@@ -28,6 +28,8 @@
 #include "maidsafe/common/visualiser_log.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
+#include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/types.h"
 
@@ -38,26 +40,23 @@ namespace vault {
 // not thread safe
 class DataManagerValue {
  public:
-  explicit DataManagerValue(const std::string& serialised_metadata_value);
+  DataManagerValue();
+  explicit DataManagerValue(const std::string& serialised_value);
   DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT;
-  DataManagerValue(const PmidName& pmid_name, int32_t size);
+  DataManagerValue(const PmidName& pmid_name, uint64_t size);
   std::string Serialise() const;
 
   DataManagerValue& operator=(const DataManagerValue& other);
 
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
-  void IncrementSubscribers() {
-    ++subscribers_;
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kIncreaseSubscribers, subscribers_);
-  }
-  int64_t DecrementSubscribers();
-  void SetPmidOnline(const PmidName& pmid_name);
-  void SetPmidOffline(const PmidName& pmid_name);
-  int64_t Subscribers() const { return subscribers_; }
-  std::set<PmidName> AllPmids() const;
-  std::set<PmidName> online_pmids() const { return online_pmids_; }
+  bool HasTarget(const PmidName& pmid_name) const;
+  std::set<PmidName> AllPmids() const { return pmids_; }
+  std::set<PmidName> online_pmids(maidsafe::routing::Routing& routing) const;
+  bool NeedToPrune(routing::Routing& routing, PmidName& pmid_node_to_remove) const;
   std::string Print() const;
+  uint64_t chunk_size() const { return size_; }
+  void SetChunkSize(const uint64_t chunk_size) { size_ = chunk_size; }
 
   static DataManagerValue Resolve(const std::vector<DataManagerValue>& values);
   friend bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
@@ -67,9 +66,8 @@ class DataManagerValue {
 
  private:
   void PrintRecords();
-  int64_t subscribers_;
-  int32_t size_;
-  std::set<PmidName> online_pmids_, offline_pmids_;
+  uint64_t size_;
+  std::set<PmidName> pmids_;
 };
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);

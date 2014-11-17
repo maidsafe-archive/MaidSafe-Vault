@@ -42,13 +42,8 @@ std::string ActionDataManagerDelete::Serialise() const {
 
 detail::DbAction ActionDataManagerDelete::operator()(std::unique_ptr<DataManagerValue>& value) {
   if (value) {
-    LOG(kWarning) << "ActionDataManagerDelete::operator() value->DecrementSubscribers()";
-    value->DecrementSubscribers();
-    assert((value->Subscribers() >= 0) && "Subscribers quantity may not be less than zero");
-    if (value->Subscribers() == 0)
-      return detail::DbAction::kDelete;
-    else
-      return detail::DbAction::kPut;
+    // Eventually shall always return kPut to block deletion
+    return detail::DbAction::kDelete;
   } else {
     LOG(kWarning) << "ActionDataManagerDelete::operator() no_such_element";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));

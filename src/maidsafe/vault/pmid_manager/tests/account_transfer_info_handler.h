@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
 
 #include <algorithm>
 #include <deque>
@@ -30,6 +30,7 @@
 
 #include "maidsafe/vault/tests/account_transfer_analyser.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/utils.h"
 
 template <typename Persona> class AccountTransferHandler;
 
@@ -39,76 +40,60 @@ namespace vault {
 
 namespace test {
 
-using DataManagerPersona = nfs::PersonaTypes<nfs::Persona::kDataManager>;
+using PmidManagerPersona = typename nfs::PersonaTypes<nfs::Persona::kPmidManager>;
 
 template <>
-class AccountTransferInfoHandler<DataManagerPersona> {
+class AccountTransferInfoHandler<PmidManagerPersona> {
  public:
-  using Value = DataManagerPersona::Value;
-  using Key = DataManagerPersona::Key;
+  using Value = PmidManagerPersona::Value;
+  using Key = PmidManagerPersona::Key;
 
   using KeyValuePair = std::pair<Key, Value>;
-  using Result = AccountTransferHandler<DataManagerPersona>::Result;
-  using AddResult = AccountTransferHandler<DataManagerPersona>::AddResult;
+  using Result = AccountTransferHandler<PmidManagerPersona>::Result;
+  using AddResult = AccountTransferHandler<PmidManagerPersona>::AddResult;
 
   AccountTransferInfoHandler()
-      : kDataSize_(64), kAcceptSize_((routing::Parameters::group_size + 1) / 2),
-        kResolutionSize_(routing::Parameters::group_size - 1) {}
+      : kAcceptSize_((routing::Parameters::group_size + 1) / 2),
+        kResolutionSize_(kAcceptSize_) {}
 
   KeyValuePair CreatePair() {
-    return std::make_pair(Key(Identity { NodeId(NodeId::IdType::kRandomId).string() },
-                              ImmutableData::Tag::kValue),
+    return std::make_pair(Key(Identity { NodeId(NodeId::IdType::kRandomId).string() }),
                           CreateValue());
   }
 
-  std::pair<AddResult, boost::optional<Value>> Resolve(std::deque<KeyValuePair>& pairs) {
+  std::pair<AddResult, boost::optional<Value>> Resolve(const std::vector<KeyValuePair>& pairs) {
     std::pair<AddResult, boost::optional<Value>>
-        wait_resolution(std::make_pair(AddResult::kWaiting, boost::optional<Value>())), resolution;
-    if (pairs.size() < kAcceptSize_)
+        wait_resolution(std::make_pair(AddResult::kWaiting, boost::optional<Value>()));
+    if (pairs.size() < kResolutionSize_)
       return wait_resolution;
 
-    while (pairs.size() >= kResolutionSize_) {
-      std::vector<Value> current_resolution;
-      for (unsigned int index(0); index < kResolutionSize_; ++index) {
-        current_resolution.push_back(pairs.front().second);
-        pairs.pop_front();
-      }
-      resolution = IndividualResolve(current_resolution);
-      if (resolution.first == AddResult::kSuccess)
-        return resolution;
-       current_resolution.clear();
-    }
-
-    if (pairs.empty())
-      return resolution;
-
-    if (pairs.size() == kAcceptSize_) {
-      if (std::count(std::begin(pairs), std::end(pairs), pairs.front()) == kAcceptSize_)
-        return std::make_pair(AddResult::kSuccess, boost::optional<Value>(pairs.front().second));
-      else
-       return wait_resolution;
-    }
-    return wait_resolution;
+    auto limit_iter(std::begin(pairs));
+    std::advance(limit_iter, kResolutionSize_);
+    std::vector<KeyValuePair> resolution_pairs { std::begin(pairs), limit_iter };
+    return ApplyMedian(resolution_pairs);
   }
 
-  std::pair<AddResult, boost::optional<Value>> IndividualResolve(
-      std::vector<Value>& resolution_values) {
-    assert(resolution_values.size() == kResolutionSize_);
-    while (resolution_values.size() >= kAcceptSize_) {
-      if (std::count(std::begin(resolution_values), std::end(resolution_values),
-                     resolution_values.back()) >= kAcceptSize_)
-        return std::make_pair(AddResult::kSuccess,
-                              boost::optional<Value>(resolution_values.back()));
-      else
-        resolution_values.pop_back();
+  std::pair<AddResult, boost::optional<Value>> ApplyMedian(
+      const std::vector<KeyValuePair>& pairs) {
+    std::vector<int64_t> stored_total_size, lost_total_size, offered_space;
+    for (const auto& value : pairs) {
+      stored_total_size.emplace_back(value.second.stored_total_size);
+      lost_total_size.emplace_back(value.second.lost_total_size);
+      offered_space.emplace_back(value.second.offered_space);
     }
-    return std::make_pair(AddResult::kFailure, boost::optional<Value>());
+
+    PmidManagerValue value;
+    value.stored_total_size = Median(stored_total_size);
+    value.lost_total_size = Median(lost_total_size);
+    value.offered_space = Median(offered_space);
+
+    return std::make_pair(AddResult::kSuccess, boost::optional<Value>(value));
   }
 
   std::vector<Result> ProduceResults(const std::vector<KeyValuePair>& kv_pairs) {
     std::map<Key, Result> results;
     std::vector<KeyValuePair> copy(kv_pairs);
-    std::deque<KeyValuePair> same_key_pairs;
+    std::vector<KeyValuePair> same_key_pairs;
     for (const auto& kv_pair : kv_pairs) {
       if (results.find(kv_pair.first) == std::end(results)) {
         for (const auto& entry : copy)
@@ -120,10 +105,6 @@ class AccountTransferInfoHandler<DataManagerPersona> {
               std::make_pair(kv_pair.first,
                              Result(kv_pair.first, boost::optional<Value>(verdict.second),
                                     AddResult::kSuccess)));
-        else if (verdict.first == AddResult::kFailure)
-          results.insert(std::make_pair(kv_pair.first,
-                                        Result(kv_pair.first, boost::optional<Value>(),
-                                               AddResult::kFailure)));
         else
           results.insert(std::make_pair(kv_pair.first,
                                         Result(kv_pair.first, boost::optional<Value>(),
@@ -139,7 +120,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
   }
 
   Value CreateValue() {
-    return Value(PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } }, kDataSize_);
+    return Value(RandomUint32() % 1000, RandomUint32() % 1000, RandomUint32() % 1000);
   }
 
   unsigned int kAcceptSize() const {
@@ -151,7 +132,6 @@ class AccountTransferInfoHandler<DataManagerPersona> {
   }
 
  private:
-  const unsigned int kDataSize_;
   const unsigned int kAcceptSize_, kResolutionSize_;
 };
 
@@ -161,4 +141,4 @@ class AccountTransferInfoHandler<DataManagerPersona> {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_TESTS_ACCOUNT_TRANSFER_INFO_HANDLER_H_
