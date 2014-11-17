@@ -66,6 +66,21 @@ TEST_F(DataManagerDatabaseTest, BEH_AddPmid) {
     EXPECT_EQ(pmid_nodes[i], results[i]);
 }
 
+TEST_F(DataManagerDatabaseTest, BEH_AddDuplicatedPmid) {
+  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  PmidName pmid_name(Identity(RandomString(64)));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+
+  ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+  db.Commit(key, action_add_pmid);
+  db.Commit(key, action_add_pmid);
+
+  auto results(db.Get(key).AllPmids());
+  EXPECT_EQ(1, results.size());
+  EXPECT_EQ(results.back(), pmid_name);
+}
+
 TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
   DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
   std::vector<PmidName> pmid_nodes;
@@ -126,12 +141,14 @@ TEST_F(DataManagerDatabaseTest, BEH_Delete) {
   EXPECT_ANY_THROW(db.Get(key));
 }
 
-
-TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccountsFromEmpty) {
+TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
   PmidName pmid_name(Identity(RandomString(64)));
+  // from empty
   auto result(db.GetRelatedAccounts(pmid_name));
   EXPECT_TRUE(result.empty());
+
+  // 
 }
 
 }  //  namespace test

@@ -72,7 +72,8 @@ DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
-  pmids_.push_back(pmid_name);
+  if (pmids_.end() == std::find(pmids_.begin(), pmids_.end(), pmid_name))
+    pmids_.push_back(pmid_name);
 //  PrintRecords();
 }
 
