@@ -55,10 +55,6 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_value) {
   }
   data_stored = maid_manager_value_proto.data_stored();
   space_available = maid_manager_value_proto.space_available();
-  if (data_stored < 0) {
-    LOG(kError) << "negative data stored " << data_stored;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
 }
 
 void MaidManagerValue::PutData(uint64_t size) {
@@ -68,11 +64,6 @@ void MaidManagerValue::PutData(uint64_t size) {
 
 void MaidManagerValue::DeleteData(uint64_t size) {
   data_stored -= size;
-  if (data_stored < 0) {
-    LOG(kError) << "negative data stored " << data_stored;
-    data_stored += size;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
   space_available += size;
 }
 
