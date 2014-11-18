@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/passport/passport.h"
+#include "maidsafe/routing/close_nodes_change.h"
 
 #include "maidsafe/vault/data_manager/datamanager_database.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
@@ -198,6 +199,53 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
     db.Commit(key, action_add_pmid);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 4);
+  }
+}
+
+TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
+  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  std::map<DataManager::Key, DataManager::Value> key_value_map;
+  std::vector<NodeId> pmid_nodes;
+  for (int i(0); i < 10; ++i) {
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    PmidName pmid_node(Identity(key.name.string()));
+    pmid_nodes.push_back(NodeId(key.name.string()));
+    DataManager::Value value(pmid_node, kTestChunkSize);
+    value.AddPmid(PmidName(Identity(RandomString(64))));
+    key_value_map[key] = value;
+    auto pmids(value.AllPmids());
+    for (auto& pmid : pmids) {
+      ActionDataManagerAddPmid action_add_pmid(pmid, kTestChunkSize);
+      db.Commit(key, action_add_pmid);
+    }
+  }
+  for (int i(0); i < 100; ++i) {
+    std::vector<NodeId> old_close_nodes, new_close_nodes;
+    for (auto& pmid_node : pmid_nodes) {
+      old_close_nodes.push_back(pmid_node);
+      new_close_nodes.push_back(pmid_node);
+    }
+    NodeId new_node(RandomString(64));
+    new_close_nodes.push_back(new_node);
+    std::shared_ptr<routing::CloseNodesChange> close_node_change_ptr(new
+        routing::CloseNodesChange(NodeId(RandomString(64)), old_close_nodes, new_close_nodes));
+    DataManager::TransferInfo result(db.GetTransferInfo(close_node_change_ptr));
+    EXPECT_EQ(1, result.size());
+    EXPECT_EQ(new_node, result.begin()->first);
+    size_t expected_entries(0);
+    for (auto& pmid_node : pmid_nodes) {
+      std::vector<NodeId> new_holders(routing::Parameters::group_size);    
+      std::partial_sort_copy(std::begin(new_close_nodes), std::end(new_close_nodes),
+                             std::begin(new_holders), std::end(new_holders),
+                             [pmid_node](const NodeId& lhs, const NodeId& rhs) {
+        return NodeId::CloserToTarget(lhs, rhs, pmid_node);
+      });
+      auto in_range(std::find(new_holders.begin(), new_holders.end(), new_node));
+      if (in_range != new_holders.end())
+        ++expected_entries;
+    }
+    EXPECT_EQ(expected_entries, result.begin()->second.size())<< i;
   }
 }
 
