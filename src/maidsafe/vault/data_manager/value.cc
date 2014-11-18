@@ -94,16 +94,21 @@ bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
   return false;
 }
 
-bool DataManagerValue::NeedToPrune(routing::Routing& routing, PmidName& pmid_node_to_remove) const {
+bool DataManagerValue::NeedToPrune(const std::vector<NodeId>& close_nodes,
+                                   PmidName& pmid_node_to_remove) const {
   if (pmids_.size() < routing::Parameters::closest_nodes_size)
     return false;
   // Prune the oldest offline node
-  for (auto itr(pmids_.begin()); itr != pmids_.end(); ++itr)
-    if (!routing.IsConnectedVault(NodeId((*itr)->string()))) {
+  for (auto itr(pmids_.begin()); itr != pmids_.end(); ++itr) {
+    auto spotted(std::find(close_nodes.begin(), close_nodes.end(), NodeId((*itr)->string())));
+    if (spotted == close_nodes.end()) {
       pmid_node_to_remove = *itr;
       return true;
     }
-  return false;
+  }
+  // if all nodes are online, remove the oldest one
+  pmid_node_to_remove = *(pmids_.begin());
+  return true;
 }
 
 std::string DataManagerValue::Serialise() const {
@@ -124,19 +129,20 @@ bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
   return lhs.size_ == rhs.size_ && lhs.pmids_ == rhs.pmids_;
 }
 
-std::set<PmidName> DataManagerValue::online_pmids(routing::Routing& routing) const {
+std::set<PmidName> DataManagerValue::online_pmids(const std::vector<NodeId>& close_nodes) const {
   std::set<PmidName> online_pmids;
-  for (auto& pmid : pmids_)
-    if (routing.IsConnectedVault(NodeId(pmid->string())))
+  for (auto& pmid : pmids_) {
+    auto spotted(std::find(close_nodes.begin(), close_nodes.end(), NodeId(pmid->string())));
+    if (spotted != close_nodes.end())
       online_pmids.insert(pmid);
+  }
   return online_pmids;
 }
 
 void DataManagerValue::PrintRecords() {
   LOG(kVerbose) << "pmids_ now having : ";
-  for (auto pmid : pmids_) {
+  for (auto pmid : pmids_)
     LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
-  }
 }
 
 std::string DataManagerValue::Print() const {

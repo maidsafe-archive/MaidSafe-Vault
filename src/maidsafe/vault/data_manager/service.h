@@ -503,7 +503,12 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   // if storages nodes reached cap, the existing furthest offline node need to be removed
   auto value(db_.Get(key));
   PmidName pmid_node_to_remove;
-  if (value.NeedToPrune(routing_, pmid_node_to_remove))
+  auto need_to_prune(false);
+  {
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    need_to_prune = value.NeedToPrune(close_nodes_change_.new_close_nodes(), pmid_node_to_remove);
+  }
+  if (need_to_prune)
     DoSync(DataManager::UnresolvedRemovePmid(key,
                ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
 }
@@ -686,7 +691,8 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
   std::set<PmidName> online_pmids;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    online_pmids = std::move(value.online_pmids(routing_));
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    online_pmids = std::move(value.online_pmids(close_nodes_change_.new_close_nodes()));
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
