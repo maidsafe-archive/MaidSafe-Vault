@@ -43,8 +43,8 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 1024 * 1024;
-static const size_t kAverageChunksStored = 1000;
+static const uint64_t kTestChunkSize = 1024 * 1024;
+static const uint64_t kAverageChunksStored = 1000;
 
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
 
@@ -172,9 +172,7 @@ void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActi
 }
 
 template <typename Persona>
-typename Persona::Value CreateValue() {
-  return Persona::Value();
-}
+typename Persona::Value CreateValue();
 
 template <>
 MaidManager::Value CreateValue<MaidManager>();
