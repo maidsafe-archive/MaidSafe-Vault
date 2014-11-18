@@ -172,9 +172,7 @@ void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActi
 }
 
 template <typename Persona>
-typename Persona::Value CreateValue() {
-  return Persona::Value();
-}
+typename Persona::Value CreateValue();
 
 template <>
 MaidManager::Value CreateValue<MaidManager>();
