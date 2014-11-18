@@ -124,7 +124,7 @@ class  AccountTransferInfoHandler {
     return kResolutionSize_;
   }
 
-private:
+ private:
   const unsigned int kAcceptSize_, kResolutionSize_;
 };
 
