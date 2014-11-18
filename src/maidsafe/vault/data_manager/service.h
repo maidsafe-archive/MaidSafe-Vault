@@ -114,8 +114,7 @@ class DataManagerService {
 
   // =========================== Put section =======================================================
   template <typename Data>
-  void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name,
-                 nfs::MessageId message_id);
+  void HandlePut(const Data& data, const MaidName& maid_name, nfs::MessageId message_id);
 
   template <typename Data>
   bool EntryExist(const typename Data::Name& name);
@@ -409,33 +408,25 @@ void DataManagerService::HandleMessage(
 // ================================== Put implementation ===========================================
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
-                                   const PmidName& pmid_name_in, nfs::MessageId message_id) {
+                                   nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << HexSubstr(maid_name->string())
-                << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
+                << " from maid_node " << HexSubstr(maid_name->string());
   uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;
     PmidName pmid_name;
-    if (routing_.ClosestToId(NodeId(data.name().value)) &&
-        (pmid_name_in.value.string() != NodeId().string()) &&
-        (pmid_name_in.value.string() != data.name().value.string())) {
-      LOG(kInfo) << "using the pmid_name_in";
-      pmid_name = pmid_name_in;
-    } else {
-      do {
-        LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
-        // it is observed during the startup period, a vault may receive a request before
-        // it's routing_table having any entry.
-        auto picked_node(routing_.RandomConnectedNode());
-        if (picked_node != NodeId()) {
-          pmid_name = PmidName(Identity(picked_node.string()));
-        } else {
-          LOG(kError) << "no entry in routing_table";
-          return;
-        }
-      } while (pmid_name->string() == data.name().value.string());
-    }
+    do {
+      LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
+      // it is observed during the startup period, a vault may receive a request before
+      // it's routing_table having any entry.
+      auto picked_node(routing_.RandomConnectedNode());
+      if (picked_node != NodeId()) {
+        pmid_name = PmidName(Identity(picked_node.string()));
+      } else {
+        LOG(kError) << "no entry in routing_table";
+        return;
+      }
+    } while (pmid_name->string() == data.name().value.string());
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string())
                << " . SendPutRequest with message_id " << message_id.data

@@ -129,8 +129,7 @@ class MaidManagerService {
 
   // =============== Put/Delete data ===============================================================
   template <typename Data>
-  void HandlePut(const MaidName& account_name, const Data& data, const PmidName& pmid_node_hint,
-                 nfs::MessageId message_id);
+  void HandlePut(const MaidName& account_name, const Data& data, nfs::MessageId message_id);
 
   template <typename Data>
   void HandlePutResponse(const MaidName& maid_name, const typename Data::Name& data_name,
@@ -375,11 +374,10 @@ struct can_create_account<passport::PublicMaid> : public std::true_type {};
 
 template <typename Data>
 void MaidManagerService::HandlePut(const MaidName& account_name, const Data& data,
-                                   const PmidName& pmid_node_hint, nfs::MessageId message_id) {
+                                   nfs::MessageId message_id) {
   LOG(kVerbose) << "MaidManagerService::HandlePut for account " << HexSubstr(account_name->string())
                 << " with data " << HexSubstr(data.name().value)
-                << " and pmid_node_hint " << HexSubstr(pmid_node_hint->string())
-                << " message_id " << message_id.data;
+                << " and message_id " << message_id.data;
   MaidManagerValue value;
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -401,7 +399,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
   DoSync(typename MaidManager::UnresolvedPut(group_key,
          ActionMaidManagerPut(static_cast<int64_t>(data.Serialise().data.string().size())),
          routing_.kNodeId()));
-  dispatcher_.SendPutRequest(account_name, data, pmid_node_hint, message_id);
+  dispatcher_.SendPutRequest(account_name, data, message_id);
 }
 
 template <typename Data>
