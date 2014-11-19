@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
-#define MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 
 #include <map>
 #include <string>
@@ -69,5 +69,5 @@ class DataManagerDataBase {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 

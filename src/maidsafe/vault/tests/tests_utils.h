@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_TESTS_TESTS_UTILS_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "maidsafe/routing/message.h"
@@ -34,6 +35,7 @@
 
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -41,8 +43,8 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 1024 * 1024;
-static const size_t kAverageChunksStored = 1000;
+static const uint64_t kTestChunkSize = 1024 * 1024;
+static const uint64_t kAverageChunksStored = 1000;
 
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
 
@@ -167,7 +169,7 @@ void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActi
 }
 
 template <typename Persona>
-typename Persona::Value CreateValue() {};
+typename Persona::Value CreateValue();
 
 template <>
 MaidManager::Value CreateValue<MaidManager>();

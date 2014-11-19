@@ -21,9 +21,11 @@
 
 #include <algorithm>
 #include <cmath>
+#include <map>
 #include <vector>
 #include <set>
 #include <string>
+#include <utility>
 
 #include "maidsafe/routing/parameters.h"
 
