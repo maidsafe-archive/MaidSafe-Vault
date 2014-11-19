@@ -129,13 +129,13 @@ set(VaultPersonaLibs
     maidsafe_vault_version_handler)
 foreach(VaultLib maidsafe_vault ${VaultPersonaLibs})
   target_include_directories(${VaultLib}
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PUBLIC ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_compile_options(${VaultLib} PRIVATE $<$<BOOL:${MSVC}>:/bigobj>)
   if(VaultLib STREQUAL "maidsafe_vault")
     target_link_libraries(${VaultLib} maidsafe_vault_manager maidsafe_nfs_vault)
   else()
-    target_link_libraries(${VaultLib} maidsafe_vault maidsafe_nfs_vault)
+    target_link_libraries(${VaultLib} maidsafe_vault maidsafe_nfs_vault protobuf_lite)
   endif()
   add_dependencies(${VaultLib} vault_protobuf_files_generator)
 endforeach()
@@ -160,11 +160,11 @@ if(MaidsafeTesting)
                                            ${VersionHandlerAllFiles}
                                            ${OutputFile} ${InputFile} ${MetaFiles})
   target_include_directories(maidsafe_vault_mal
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PUBLIC ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   # TODO - Investigate why boost variant requires this warning to be disabled.
   target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
-  target_link_libraries(maidsafe_vault_mal maidsafe_vault_manager maidsafe_nfs_vault)
+  target_link_libraries(maidsafe_vault_mal maidsafe_vault_manager maidsafe_nfs_vault protobuf_lite)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
 
   ms_add_executable(vault_mal "Tools/Vault" ${VaultSourcesDir}/vault_main.cc)
