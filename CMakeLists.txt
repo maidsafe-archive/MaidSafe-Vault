@@ -149,7 +149,7 @@ target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BIN
 target_link_libraries(maidsafe_vault ${VaultPersonaLibs})
 target_link_libraries(vault maidsafe_vault)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
                                            ${CacheHandlerAllFiles}
                                            ${DataManagerAllFiles}
@@ -192,7 +192,7 @@ ms_rename_outdated_built_exes()
 #==================================================================================================#
 include(standard_flags)
 
-if(MSVC AND MaidsafeTesting)
+if(MSVC AND INCLUDE_TESTS)
   set_property(TARGET maidsafe_vault test_vault network_test_vault maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 if(MSVC)
@@ -203,7 +203,7 @@ endif()
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_vault)
   ms_add_network_gtests(network_test_vault)
@@ -220,7 +220,7 @@ endif()
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Release RUNTIME DESTINATION bin)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   install(TARGETS test_vault network_test_vault COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
   install(TARGETS test_vault network_test_vault COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
