@@ -11,7 +11,7 @@
 
 --
 #####PmidManager::PutResponse
-|__PmidManager__ *->> |__DataManager__ [(Sync)(Value.Pmids.Count > Threshold ? NoOp : SendPutResponseWithCachedData)]
+|__PmidManager__ *->> |__DataManager__ [(Sync)(Value.Pmids.Count > Threshold ? NoOp : SendPutWithCachedData)]
 
 --
 #####PmidNode::PutFailure
