@@ -11,7 +11,7 @@
 
 --
 #####PmidManager::PutResponse
-|__PmidManager__ *->> |__DataManager__ [Sync(Pmid.Size > (group_size + 1) / 2 ? NoOp : SendPutResponseWithCachedData)]
+|__PmidManager__ *->> |__DataManager__ [(Sync)(Pmid.Size > (group_size + 1) / 2 ? NoOp : SendPutResponseWithCachedData)]
 
 --
 #####PmidNode::PutFailure
