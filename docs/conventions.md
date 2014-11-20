@@ -8,7 +8,7 @@
 * *-> : represents a group to single message (no callback)
 * *=>> :represents a group to group message (callback)
 * *=> : represents a group to single message (callback)
-* Action.Sy : denotes synchronising action
+* Action.Sy : denotes synchronising the Action
 * | : represents [Ac, FW]
 * [*Operation1*, *Operation2*, .. *OperationN*] : denotes sequential operations
 * {*Operation1*, *Operation2*, .. *OperationN*} : denotes parallel operations
