@@ -1,9 +1,9 @@
 ###Put<Data>
-MaidNode =>> |__MaidManager__ [PutResponse]  *->> |__DataManager__  [EXIST(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ {So, Sy, PutResponse} *-> |PmidNode [Store ? NoOp : PutFailure]
+_MaidNode_ =>> |__MaidManager__ [PutResponse]  *->> |__DataManager__  [EXIST(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ {So, Sy, PutResponse} *-> |PmidNode [Store ? NoOp : PutFailure]
 
 --
 #####MaidManager::PutResponse
-__MaidManager__ *-> |MaidNode 
+__MaidManager__ *-> |_MaidNode_ 
 
 --
 #####DataManager::PutResponse
@@ -15,5 +15,5 @@ __PmidManager__ *->> |__DataManager__ [(Sy)(Value.Pmids.Count > Threshold ? NoOp
 
 --
 #####PmidNode::PutFailure
-PmidNode ->> |__PmidManager__ {So, Sy} *->> |__DataManager__ {Sy, [LyingPmidNode ? SendCorrectionToPmidManager : NoOp]} 
+_PmidNode_ ->> |__PmidManager__ {So, Sy} *->> |__DataManager__ {Sy, [LyingPmidNode ? SendCorrectionToPmidManager : NoOp]} 
 
