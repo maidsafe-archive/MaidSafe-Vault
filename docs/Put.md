@@ -1,8 +1,8 @@
-###Put<Data>
-_MaidNode_ =>> |__MaidManager__ [PutResponse]  *->> |__DataManager__  [EXIST(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ {So, Sy, PutResponse} *-> |_PmidNode_ [Store ? NoOp : PutFailure]
+###Put(D)
+_MaidNode_ =>> |__MaidManager__ [Allow ? So : PutFailure]  *->> |__DataManager__  [EXISTS(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ {So, Sy, PutResponse} *-> |_PmidNode_ [Store ? NoOp : PutFailure]
 
 --
-#####MaidManager::PutResponse
+#####MaidManager::PutFailure
 __MaidManager__ *-> |_MaidNode_ 
 
 --
