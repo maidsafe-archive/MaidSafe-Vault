@@ -1,5 +1,5 @@
 ###Put<Data>
-|MaidNode =>> |__MaidManager__ [PutResponse]  *->> |__DataManager__  [EXIST(D) ? PutResponse : ((So, PutToCache, PutResponse))] *->> |__PmidManager__ ((So, Sync, PutResponse)) *-> |PmidNode [Store ? NoOp : PutFailure]
+|MaidNode =>> |__MaidManager__ [PutResponse]  *->> |__DataManager__  [EXIST(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ ((So, Sync, PutResponse)) *-> |PmidNode [Store ? NoOp : PutFailure]
 
 --
 #####MaidManager::PutResponse
@@ -15,5 +15,5 @@
 
 --
 #####PmidNode::PutFailure
-|PmidNode ->> |__PmidManager__ ((So, Sync)) *->> |__DataManager__ (([LyingPmidNode ? DoubleDerank : Derank)(Sync)], [LyingPmidNode ? SendCorrectionToPmidManager : NoOp)])) 
+|PmidNode ->> |__PmidManager__ {So, Sync} *->> |__DataManager__ {[LyingPmidNode ? DoubleDerank : Derank)(Sync)], [LyingPmidNode ? SendCorrectionToPmidManager : NoOp)]} 
 
