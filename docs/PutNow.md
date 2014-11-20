@@ -7,7 +7,7 @@ __MaidManager__ *-> |_MaidNode_
 
 --
 #####DataManager::PutResponse
-__DataManager__ *->> |__MaidManager__ {So Sy} *-> |_MaidNode_
+__DataManager__ *->> |__MaidManager__ {So, Sy} *-> |_MaidNode_
 
 --
 #####PmidManager::PutResponse
