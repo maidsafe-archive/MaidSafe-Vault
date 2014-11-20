@@ -93,9 +93,8 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
     pending_account_map_.insert(std::make_pair(message_id, account_creation_status));
   }
 
-  PmidName pmid_name(Identity(NodeId().string()));
-  dispatcher_.SendPutRequest(key, public_maid, pmid_name, message_id);
-  dispatcher_.SendPutRequest(key, public_anmaid, pmid_name, message_id);
+  dispatcher_.SendPutRequest(key, public_maid, message_id);
+  dispatcher_.SendPutRequest(key, public_anmaid, message_id);
 }
 
 template <>

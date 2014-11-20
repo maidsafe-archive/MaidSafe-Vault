@@ -71,9 +71,6 @@ template <>
 nfs_vault::Empty CreateContent<nfs_vault::Empty>();
 
 template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>();
-
-template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>();
 
 template <>
