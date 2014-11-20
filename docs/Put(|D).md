@@ -15,5 +15,5 @@
 
 --
 #####PmidNode::PutFailure
-|PmidNode ->> |__PmidManager__ {So, Sync} *->> |__DataManager__ {[(LyingPmidNode ? DoubleDerank : Derank)(Sync)], [LyingPmidNode ? SendCorrectionToPmidManager : NoOp]} 
+|PmidNode ->> |__PmidManager__ {So, Sync} *->> |__DataManager__ {Sync, [LyingPmidNode ? SendCorrectionToPmidManager : NoOp]} 
 
