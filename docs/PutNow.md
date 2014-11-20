@@ -1,5 +1,5 @@
 ###Put(D)
-_MaidNode_ =>> |__MaidManager__ [Allow ? {Put.Sy, So} : PutFailure]  *->> |__DataManager__  [EXISTS(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ {So, (Sy)(PutResponse)} *-> |_PmidNode_ [Store ? NoOp : PutFailure]
+_MaidNode_ =>> |__MaidManager__ [Allow ? {Put.Sy, So} : PutFailure]  *->> |__DataManager__  [EXISTS(D) ? PutResponse : {So, PutToCache, PutResponse}] *->> |__PmidManager__ {So, (Put.Sy)(PutResponse)} *-> |_PmidNode_ [Store ? NoOp : PutFailure]
 
 --
 #####MaidManager::PutFailure
@@ -7,7 +7,7 @@ __MaidManager__ *-> |_MaidNode_
 
 --
 #####DataManager::PutResponse
-__DataManager__ *->> |__MaidManager__ {So, Sy} *-> |_MaidNode_
+__DataManager__ *->> |__MaidManager__ {So, Put.Sy} *-> |_MaidNode_
 
 --
 #####PmidManager::PutResponse
