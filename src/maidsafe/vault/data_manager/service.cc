@@ -434,7 +434,8 @@ void DataManagerService::HandleChurnEvent(
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
   std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
   for (auto& account : accounts) {
-    auto online_pmids(account.second.online_pmids(routing_));
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    auto online_pmids(account.second.online_pmids(close_nodes_change_.new_close_nodes()));
     std::set<PmidName> online_pmids_set;
     for (auto online_pmid : online_pmids)
       if (online_pmid != pmid_name)

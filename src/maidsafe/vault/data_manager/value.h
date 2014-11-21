@@ -52,8 +52,9 @@ class DataManagerValue {
   void RemovePmid(const PmidName& pmid_name);
   bool HasTarget(const PmidName& pmid_name) const;
   std::vector<PmidName> AllPmids() const { return pmids_; }
-  std::vector<PmidName> online_pmids(maidsafe::routing::Routing& routing) const;
-  bool NeedToPrune(routing::Routing& routing, PmidName& pmid_node_to_remove) const;
+  std::vector<PmidName> online_pmids(const std::vector<NodeId>& close_nodes) const;
+  bool NeedToPrune(const std::vector<NodeId>& close_nodes, PmidName& pmid_node_to_remove) const;
+
   std::string Print() const;
   uint64_t chunk_size() const { return size_; }
   void SetChunkSize(const uint64_t chunk_size) { size_ = chunk_size; }

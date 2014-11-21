@@ -493,9 +493,14 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
              ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   // if storages nodes reached cap, the existing furthest offline node need to be removed
   try {
-    auto value(db_.Get(key));  
+    auto value(db_.Get(key));
     PmidName pmid_node_to_remove;
-    if (value.NeedToPrune(routing_, pmid_node_to_remove))
+    auto need_to_prune(false);
+    {
+      std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+      need_to_prune = value.NeedToPrune(close_nodes_change_.new_close_nodes(), pmid_node_to_remove);
+    }
+    if (need_to_prune)
       DoSync(DataManager::UnresolvedRemovePmid(key,
                  ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
   } catch (const maidsafe_error& error) {
@@ -686,7 +691,8 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
   std::set<PmidName> online_pmids_set;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    auto online_pmids(value.online_pmids(routing_));
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    auto online_pmids(value.online_pmids(close_nodes_change_.new_close_nodes()));
     for (auto online_pmid : online_pmids)
       online_pmids_set.insert(online_pmid);
   } catch (const maidsafe_error& error) {
