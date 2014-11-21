@@ -138,9 +138,10 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class PutResponseFailureVisitor : public boost::static_visitor<> {
  public:
-  PutResponseFailureVisitor(ServiceHandlerType* service, const Identity& pmid_node,
+  PutResponseFailureVisitor(ServiceHandlerType* service, uint64_t size, const Identity& pmid_node,
                             const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
+        kSize_(size),
         kPmidNode_(pmid_node),
         kReturnCode_(return_code),
         kMessageId_(message_id) {}
@@ -148,11 +149,12 @@ class PutResponseFailureVisitor : public boost::static_visitor<> {
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandlePutFailure<typename Name::data_type>(
-        data_name, kPmidNode_, kMessageId_, maidsafe_error(kReturnCode_));
+        data_name, kSize_, kPmidNode_, kMessageId_, maidsafe_error(kReturnCode_));
   }
 
  private:
   ServiceHandlerType* const kService_;
+  const uint64_t kSize_;
   const PmidName kPmidNode_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;

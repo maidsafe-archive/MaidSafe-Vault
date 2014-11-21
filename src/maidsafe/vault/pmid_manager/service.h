@@ -254,7 +254,7 @@ void PmidManagerService::HandlePutFailure(
                 << " , with message_id -- " << message_id.data
                 << " . available_space -- " << available_space << " , error_code -- "
                 << boost::diagnostic_information(error_code);
-  dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
+  dispatcher_.SendPutFailure<Data>(name, size, pmid_node, error_code, message_id);
   PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, false, true),
                                        routing_.kNodeId()));

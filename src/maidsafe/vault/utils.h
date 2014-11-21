@@ -83,6 +83,9 @@ template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndSpaceAndReturnCode& data);
 
 template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndReturnCode& data);
+
+template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndVersion& data);
 
 template <>

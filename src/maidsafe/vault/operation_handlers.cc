@@ -275,8 +275,8 @@ void DoOperation(DataManagerService* service, const PutFailureFromPmidManagerToD
   LOG(kVerbose) << "DoOperation PutFailureFromPmidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   PutResponseFailureVisitor<DataManagerService> put_visitor(
-      service, Identity(sender.sender_id.data.string()), message.contents->return_code.value,
-      message.id);
+      service, message.contents->size, Identity(sender.sender_id.data.string()),
+      message.contents->return_code.value, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 

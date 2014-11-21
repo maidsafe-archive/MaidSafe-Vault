@@ -510,6 +510,7 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
 
 template <typename Data>
 void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
+                                          uint64_t size,
                                           const PmidName& attempted_pmid_node,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {

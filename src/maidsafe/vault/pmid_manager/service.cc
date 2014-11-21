@@ -81,7 +81,6 @@ void PmidManagerService::HandleSyncedPut(
                   synced_action->action.kMessageId);
 }
 
-
 void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedDelete commit delete for chunk "
