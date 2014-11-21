@@ -11,9 +11,9 @@ __DataManager__ *->> |__MaidManager__ [Put.Sy]
 
 --
 #####PmidManager::PutResponse
-__PmidManager__ *->> |__DataManager__ [(AddPmid.Sy)(Value.Pmids.Count > Threshold ? NoOp : SendPutWithCachedData)]
+__PmidManager__ *->> |__DataManager__ {[Value.Pmids.Count > Threshold ? NoOp : Replicate(D)], [AddPmid.Sy]}
 
 --
 #####PmidNode::PutFailure
-_PmidNode_ ->> |__PmidManager__ {So, Sy} *->> |__DataManager__ {Removepmid.Sy, [LyingPmidNode ? SendCorrectionToPmidManager : NoOp]} 
+_PmidNode_ ->> |__PmidManager__ {So, Delete.Sy} *->> |__DataManager__ {[Value.Pmids.Count > Threshold ? NoOp : Replicate(D)], [Removepmid.Sy], [LyingPmidNode ? SendCorrectionToPmidManager : NoOp]} 
 
