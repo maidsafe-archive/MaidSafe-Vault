@@ -14,3 +14,4 @@
 * {*Operation1*, *Operation2*, .. *OperationN*} : denotes parallel operations
 * (*Operation1*)(*Operation2*) .. (*OperationN*) : denotes sequential dependent operations, for instance, *Operation2* requires results from *Operation1* and produces results for *Operation3*
 * condition ? A : B : C/C++ syntax
+* condition ? A : condition ? A : NoOp
