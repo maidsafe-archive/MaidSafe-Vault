@@ -8,7 +8,7 @@ __MaidManager__ *-> |_MaidNode_
 --
 #####DataManager::PutResponse
 __DataManager__ *->> |__MaidManager__ [Put.Sy]
-
+--
 #####DataManager::Replicate
 __DataManager__ ([!TempStoreHas(D) ? NetworkGet(D)])(PutRequest.So(D))
 --
