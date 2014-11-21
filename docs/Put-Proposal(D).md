@@ -10,6 +10,9 @@ __MaidManager__ *-> |_MaidNode_
 __DataManager__ *->> |__MaidManager__ [Put.Sy]
 
 --
+<dl>
+  <dd>Description: Get D from TempStore or from network, then PutRequest</ddt>
+</dl>  
 #####DataManager::Replicate
 __DataManager__ ([!TempStoreHas(D) ? NetworkGet(D)])(PutRequest.So(D))
 
