@@ -20,5 +20,5 @@ __PmidManager__ *->> |__DataManager__ {[Value.Pmids.Count < Threshold ? Replicat
 
 --
 #####PmidNode::PutFailure
-_PmidNode_ ->> |__PmidManager__ {So, Delete.Sy} *->> |__DataManager__ {[Value.Pmids.Count <= Threshold ? Replicate(D) : RemoveTempStore(D)], Removepmid.Sy, [[LyingPmidNode ? CorrectionToPmidManager.So], DownRank(PN)]}
+_PmidNode_ ->> |__PmidManager__ {So, Delete.Sy} *->> |__DataManager__ {[Value.Pmids.Count <= Threshold ? Replicate(D) : RemoveTempStore(D)], RemovePmid.Sy, [[LyingPmidNode ? CorrectionToPmidManager.So], DownRank(PN)]}
 
