@@ -44,6 +44,7 @@
 
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
+#include "maidsafe/vault/memory_fifo.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/parameters.h"
@@ -308,6 +309,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
+  MemoryFIFO temp_memory_store;
 
  protected:
   std::mutex lock_guard;

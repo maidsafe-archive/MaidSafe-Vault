@@ -22,6 +22,8 @@
 #include <cstddef>
 #include <chrono>
 
+#include "maidsafe/common/types.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -44,6 +46,8 @@ struct Parameters {
   static unsigned int account_transfer_cleanup_factor;
   // Removes entries which have been longer than below factor
   static std::chrono::seconds account_transfer_life;
+  // Maximum number of chunks stored in data manager temporary store
+  static MemoryUsage temp_memory_store_size;
 
  private:
   Parameters();

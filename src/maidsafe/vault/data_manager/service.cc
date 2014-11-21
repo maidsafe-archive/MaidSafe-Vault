@@ -28,6 +28,7 @@
 #include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/operation_handlers.h"
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
@@ -66,8 +67,8 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
-      account_transfer_() {
-}
+      account_transfer_(),
+      temp_memory_store(detail::Parameters::temp_memory_store_size) {}
 
 // ==================== Put implementation =========================================================
 template <>
