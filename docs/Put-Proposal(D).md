@@ -1,5 +1,5 @@
 ###Put(D)
-_MaidNode_ =>> |__MaidManager__ [Allow ? So : PutFailure]  *->> |__DataManager__  [EXISTS(D) ? PutResponse : {([AddTempStore(D), Put.Sy])(So), PutToCache, PutResponse}] *->> |__PmidManager__ {So, Put.Sy, PutResponse} *-> |_PmidNode_ [!Store ? PutFailure]
+_MaidNode_ =>> |__MaidManager__ [Allow ? So : PutFailure]  *->> |__DataManager__  [Exist(D) ? PutResponse : {([AddTempStore(D), Put.Sy])(So), PutToCache, PutResponse}] *->> |__PmidManager__ {So, Put.Sy, PutResponse} *-> |_PmidNode_ [!Store ? PutFailure]
 
 --
 #####MaidManager::PutFailure
@@ -20,5 +20,5 @@ __PmidManager__ *->> |__DataManager__ {[Value.Pmids.Count < Threshold ? Replicat
 
 --
 #####PmidNode::PutFailure
-_PmidNode_ ->> |__PmidManager__ {So, Delete.Sy} *->> |__DataManager__ {[Value.Pmids.Count <= Threshold ? Replicate(D) : RemoveTempStore(D)], [Removepmid.Sy], [LyingPmidNode ? SendCorrectionToPmidManager]}
+_PmidNode_ ->> |__PmidManager__ {So, Delete.Sy} *->> |__DataManager__ {[Value.Pmids.Count <= Threshold ? Replicate(D) : RemoveTempStore(D)], Removepmid.Sy, [LyingPmidNode ? CorrectionToPmidManager.So]}
 
