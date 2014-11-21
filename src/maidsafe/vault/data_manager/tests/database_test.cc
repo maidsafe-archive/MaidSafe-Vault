@@ -20,7 +20,7 @@
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/close_nodes_change.h"
 
-#include "maidsafe/vault/data_manager/datamanager_database.h"
+#include "maidsafe/vault/data_manager/database.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 #include "maidsafe/vault/utils.h"

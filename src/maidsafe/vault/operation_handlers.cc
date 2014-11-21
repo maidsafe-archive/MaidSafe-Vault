@@ -52,9 +52,8 @@ void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation PutRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
-  MaidManagerPutVisitor<MaidManagerService> put_visitor(service, message.contents->data.content,
-                                                        sender.data, message.contents->pmid_hint,
-                                                        message.id);
+  MaidManagerPutVisitor<MaidManagerService> put_visitor(service, message.contents->content,
+                                                        sender.data, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -185,9 +184,9 @@ void DoOperation(DataManagerService* service, const PutRequestFromMaidManagerToD
                  const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
   LOG(kVerbose) << "DoOperation PutRequestFromMaidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
-  DataManagerPutVisitor<DataManagerService> put_visitor(service, message.contents->data.content,
+  DataManagerPutVisitor<DataManagerService> put_visitor(service, message.contents->content,
                                                         Identity(sender.group_id.data.string()),
-                                                        message.contents->pmid_hint, message.id);
+                                                        message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -300,7 +299,7 @@ void DoOperation(DataManagerService* service,
                  const AccountQueryFromDataManagerToDataManager::Sender& sender,
                  const AccountQueryFromDataManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(*message.contents));
-  DataManagerAccountRequestVisitor<DataManagerService> account_request_visitor(service, sender);
+  DataManagerAccountQueryVisitor<DataManagerService> account_request_visitor(service, sender);
   boost::apply_visitor(account_request_visitor, data_name);
 }
 

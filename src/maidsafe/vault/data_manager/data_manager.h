@@ -20,7 +20,10 @@
 #define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
 
 #include <functional>
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/nfs/types.h"
 
@@ -45,13 +48,13 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kDataManager> {
   static const Persona persona = Persona::kDataManager;
-  typedef vault::Key Key;
-  typedef vault::DataManagerValue Value;
-  typedef std::pair<Key, Value> KvPair;
-  typedef std::map<NodeId, std::vector<KvPair>> TransferInfo;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid> UnresolvedAddPmid;
-  typedef vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid> UnresolvedRemovePmid;
+  using Key = vault::Key;
+  using Value = vault::DataManagerValue;
+  using KvPair = std::pair<Key, Value>;
+  using TransferInfo = std::map<NodeId, std::vector<KvPair>>;
+  using UnresolvedDelete = vault::UnresolvedAction<Key, vault::ActionDataManagerDelete>;
+  using UnresolvedAddPmid = vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid>;
+  using UnresolvedRemovePmid = vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid>;
 };
 
 }  // namespace nfs

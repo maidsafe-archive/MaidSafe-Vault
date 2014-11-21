@@ -155,23 +155,25 @@ std::string DataManagerValue::Print() const {
 
 DataManagerValue DataManagerValue::Resolve(const std::vector<DataManagerValue>& values) {
   std::vector<std::pair<DataManagerValue, unsigned int>> stats;
-  auto max_iter(std::begin(stats));
   for (const auto& value : values) {
     auto iter(std::find_if(std::begin(stats), std::end(stats),
                            [&](const std::pair<DataManagerValue, unsigned int>& pair) {
                              return value == pair.first;
                            }));
     if (iter == std::end(stats))
-      stats.emplace_back(std::make_pair(value, 0));
+      stats.push_back(std::make_pair(value, 1));
     else
       iter->second++;
-    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
   }
+
+  auto max_iter(std::begin(stats));
+  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
 
   if (max_iter->second == (routing::Parameters::group_size + 1) / 2)
     return max_iter->first;
 
-  if (max_iter->second == routing::Parameters::group_size - 1)
+  if (values.size() == routing::Parameters::group_size - 1)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
 
   BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));

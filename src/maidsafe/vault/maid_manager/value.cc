@@ -30,17 +30,17 @@ namespace maidsafe {
 namespace vault {
 
 MaidManagerValue::MaidManagerValue()
-    : data_stored_(0), space_available_(std::numeric_limits<int64_t>().max()) {}
+    : data_stored(0), space_available(std::numeric_limits<uint64_t>().max()) {}
 
-MaidManagerValue::MaidManagerValue(int64_t data_stored, int64_t space_available)
-    : data_stored_(data_stored), space_available_(space_available) {}
+MaidManagerValue::MaidManagerValue(uint64_t data_stored, uint64_t space_available)
+    : data_stored(data_stored), space_available(space_available) {}
 
 MaidManagerValue::MaidManagerValue(const MaidManagerValue& other)
-    : data_stored_(other.data_stored_), space_available_(other.space_available_) {}
+    : data_stored(other.data_stored), space_available(other.space_available) {}
 
 MaidManagerValue::MaidManagerValue(MaidManagerValue&& other)
-    : data_stored_(std::move(other.data_stored_)),
-      space_available_(std::move(other.space_available_)) {}
+    : data_stored(std::move(other.data_stored)),
+      space_available(std::move(other.space_available)) {}
 
 MaidManagerValue& MaidManagerValue::operator=(MaidManagerValue other) {
   swap(*this, other);
@@ -53,27 +53,18 @@ MaidManagerValue::MaidManagerValue(const std::string& serialised_value) {
     LOG(kError) << "Failed to read or parse serialised maid manager value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-  data_stored_ = maid_manager_value_proto.data_stored();
-  space_available_ = maid_manager_value_proto.space_available();
-  if (data_stored_ < 0) {
-    LOG(kError) << "negative data stored " << data_stored_;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
+  data_stored = maid_manager_value_proto.data_stored();
+  space_available = maid_manager_value_proto.space_available();
 }
 
-void MaidManagerValue::PutData(int64_t size) {
-  data_stored_ += size;
-  space_available_ -= size;
+void MaidManagerValue::PutData(uint64_t size) {
+  data_stored += size;
+  space_available -= size;
 }
 
-void MaidManagerValue::DeleteData(int64_t size) {
-  data_stored_ -= size;
-  if (data_stored_ < 0) {
-    LOG(kError) << "negative data stored " << data_stored_;
-    data_stored_ += size;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-  space_available_ += size;
+void MaidManagerValue::DeleteData(uint64_t size) {
+  data_stored -= size;
+  space_available += size;
 }
 
 template <>
@@ -104,42 +95,42 @@ MaidManagerValue::Status MaidManagerValue::AllowPut(
 
 std::string MaidManagerValue::Serialise() const {
   protobuf::MaidManagerValue maid_manager_value_proto;
-  maid_manager_value_proto.set_data_stored(data_stored_);
-  maid_manager_value_proto.set_space_available(space_available_);
+  maid_manager_value_proto.set_data_stored(data_stored);
+  maid_manager_value_proto.set_space_available(space_available);
   return maid_manager_value_proto.SerializeAsString();
 }
 
 MaidManagerValue MaidManagerValue::Resolve(const std::vector<MaidManagerValue>& values) {
   size_t size(values.size());
-  if (size < routing::Parameters::group_size + 1 / 2)
+  if (size < (routing::Parameters::group_size + 1) / 2)
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
   std::vector<int64_t> data_stored, space_available;
   for (const auto& value : values) {
-    data_stored.emplace_back(value.data_stored_);
-    space_available.emplace_back(value.space_available_);
+    data_stored.emplace_back(value.data_stored);
+    space_available.emplace_back(value.space_available);
   }
 
   MaidManagerValue value;
-  value.data_stored_ = Median(data_stored);
-  value.space_available_ = Median(space_available);
+  value.data_stored = Median(data_stored);
+  value.space_available = Median(space_available);
 
   return value;
 }
 
 void swap(MaidManagerValue& lhs, MaidManagerValue& rhs) {
   using std::swap;
-  swap(lhs.data_stored_, rhs.data_stored_);
-  swap(lhs.space_available_, rhs.space_available_);
+  swap(lhs.data_stored, rhs.data_stored);
+  swap(lhs.space_available, rhs.space_available);
 }
 
 bool operator==(const MaidManagerValue& lhs, const MaidManagerValue& rhs) {
-  return lhs.data_stored_ == rhs.data_stored_ && lhs.space_available_ == rhs.space_available_;
+  return lhs.data_stored == rhs.data_stored && lhs.space_available == rhs.space_available;
 }
 
 std::string MaidManagerValue::Print() const {
   std::stringstream stream;
-  stream << "\tspace available," << space_available_ << " with " << "data stored, "
-         << data_stored_;
+  stream << "\tspace available," << space_available << " with " << "data stored, "
+         << data_stored;
   return stream.str();
 }
 

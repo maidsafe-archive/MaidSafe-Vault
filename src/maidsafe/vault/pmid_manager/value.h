@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
@@ -35,6 +36,8 @@ namespace vault {
 struct PmidManagerValue {
  public:
   PmidManagerValue();
+  PmidManagerValue(const uint64_t& stored_total_size_in, const uint64_t& lost_total_size_in,
+                   const uint64_t& offered_space_in);
   explicit PmidManagerValue(const std::string& serialised_value);
   PmidManagerValue(const PmidManagerValue& other);
   PmidManagerValue(PmidManagerValue&& other);
@@ -47,10 +50,11 @@ struct PmidManagerValue {
   std::string Serialise() const;
   detail::GroupDbMetaDataStatus GroupStatus();
   std::string Print() const;
+  static PmidManagerValue Resolve(const std::vector<PmidManagerValue>& values);
 
   uint64_t stored_total_size;
   uint64_t lost_total_size;
-  uint64_t claimed_available_size;
+  uint64_t offered_space;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);

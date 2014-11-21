@@ -85,7 +85,7 @@ TEST(UtilsTest, BEH_MedianOfTwoValues) {
   size_t value1(RandomUint32()), value2(RandomUint32());
   values.push_back(value1);
   values.push_back(value2);
-  EXPECT_EQ((value1 + value2) / 2, Median(values));
+  EXPECT_EQ((value1 / 2) + (value2 / 2) + (value1 & value2 & 1), Median(values));
 }
 
 TEST(UtilsTest, BEH_MedianOfOddNumberOfValues) {

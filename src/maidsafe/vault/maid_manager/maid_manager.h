@@ -19,7 +19,10 @@
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
@@ -30,13 +33,12 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/maid_manager/value.h"
 
 
 namespace maidsafe {
 
 namespace vault {
-
-class MaidManagerValue;
 
 template <bool Remove>
 struct ActionCreateRemoveAccount;

@@ -23,7 +23,12 @@ package maidsafe.vault.protobuf;
 message PmidManagerValue {
   required int64 stored_total_size = 1;
   required int64 lost_total_size = 2;
-  required int64 claimed_available_size = 3;
+  required int64 offered_space = 3;
+}
+
+message PmidManagerKeyValuePair {
+  required bytes key = 1;
+  required bytes value = 2;
 }
 
 message PmidAccountResponse {
