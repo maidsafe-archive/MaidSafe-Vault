@@ -12,6 +12,7 @@ __DataManager__ *->> |__MaidManager__ [Put.Sy]
 --
 #####DataManager::Replicate
 __DataManager__ ([!TempStoreHas(D) ? NetworkGet(D)])(PutRequest.So(D))
+
 --
 #####PmidManager::PutResponse
 __PmidManager__ *->> |__DataManager__ {[Value.Pmids.Count < Threshold ? Replicate(D) : RemoveTempStore(D)], [AddPmid.Sy]}
