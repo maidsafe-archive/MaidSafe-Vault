@@ -11,7 +11,7 @@ __DataManager__ *->> |__MaidManager__ [Put.Sy]
 
 --
 #####PmidManager::PutResponse
-__PmidManager__ *->> |__DataManager__ {[Value.Pmids.Count > Threshold ? NoOp : Replicate(D)], [AddPmid.Sy]}
+__PmidManager__ *->> |__DataManager__ {[Value.Pmids.Count >= Threshold ? NoOp : Replicate(D)], [AddPmid.Sy]}
 
 --
 #####PmidNode::PutFailure
