@@ -31,8 +31,9 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/action_add_pmid.h"
+#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
+#include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 
 namespace maidsafe {
@@ -40,6 +41,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionDataManagerAddPmid;
+struct ActionDataManagerPut;
 
 }  // namespace vault
 
@@ -52,6 +54,7 @@ struct PersonaTypes<Persona::kDataManager> {
   using Value = vault::DataManagerValue;
   using KvPair = std::pair<Key, Value>;
   using TransferInfo = std::map<NodeId, std::vector<KvPair>>;
+  using UnresolvedPut = vault::UnresolvedAction<Key, vault::ActionDataManagerPut>;
   using UnresolvedDelete = vault::UnresolvedAction<Key, vault::ActionDataManagerDelete>;
   using UnresolvedAddPmid = vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid>;
   using UnresolvedRemovePmid = vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid>;

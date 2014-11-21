@@ -134,8 +134,9 @@ class DataManagerService {
                          uint64_t size, nfs::MessageId message_id);
 
   template <typename Data>
-  void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
-                        nfs::MessageId message_id, const maidsafe_error& error);
+  void HandlePutFailure(const typename Data::Name& data_name, uint64_t size,
+                        const PmidName& attempted_pmid_node, nfs::MessageId message_id,
+                        const maidsafe_error& error);
 
   template <typename DataName>
   bool SendPutRetryRequired(const DataName& data_name);
@@ -302,6 +303,7 @@ class DataManagerService {
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
   DataManagerDataBase db_;
+  Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
@@ -492,14 +494,14 @@ void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidN
 
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
-                                           const PmidName& pmid_node, uint64_t size,
+                                           const PmidName& pmid_node, uint64_t /*size*/,
                                            nfs::MessageId /*message_id*/) {
   LOG(kVerbose) << "DataManagerService::HandlePutResponse for chunk "
                 << HexSubstr(data_name.value.string()) << " storing on pmid_node "
                 << HexSubstr(pmid_node.value.string());
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   DoSync(DataManager::UnresolvedAddPmid(key,
-             ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
+             ActionDataManagerAddPmid(pmid_node), routing_.kNodeId()));
   // if storages nodes reached cap, the existing furthest offline node need to be removed
   auto value(db_.Get(key));
   PmidName pmid_node_to_remove;
@@ -510,7 +512,7 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
 
 template <typename Data>
 void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
-                                          uint64_t size,
+                                          uint64_t /*size*/,
                                           const PmidName& attempted_pmid_node,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
@@ -938,6 +940,7 @@ void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName&
 
 template <typename UnresolvedAction>
 void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);

@@ -138,7 +138,9 @@ class AccountTransferInfoHandler<DataManagerPersona> {
   }
 
   Value CreateValue() {
-    return Value(PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } }, kDataSize_);
+    Value value(kDataSize_);
+    value.AddPmid(PmidName { Identity { NodeId(NodeId::IdType::kRandomId).string() } });
+    return value;
   }
 
   unsigned int kAcceptSize() const {

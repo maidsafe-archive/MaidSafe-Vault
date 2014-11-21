@@ -224,7 +224,7 @@ TEST_F(DataManagerServiceTest, BEH_Delete) {
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
   // store key value in db
-  Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
   EXPECT_TRUE(Get(key).chunk_size() == kTestChunkSize);
   // key value is in db
   ActionDataManagerDelete action_delete((nfs::MessageId(RandomInt32())));
@@ -242,7 +242,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   // check key value is not in db
   EXPECT_ANY_THROW(Get(key));
   // Sync AddPmid
-  ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+  ActionDataManagerAddPmid action_add_pmid(pmid_name);
   auto group_unresolved_action(CreateGroupUnresolvedAction<DataManager::UnresolvedAddPmid>(
       key, action_add_pmid, group_source));
   SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action, group_source);
@@ -256,8 +256,8 @@ TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
   auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   PmidName pmid_name_two(Identity(RandomString(64)));
-  Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
-  Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
+  Commit(key, ActionDataManagerAddPmid(pmid_name_two));
   auto value(Get(key));
   EXPECT_TRUE(Get(key).chunk_size() == kTestChunkSize);
   EXPECT_TRUE(value.AllPmids().size() == 2);

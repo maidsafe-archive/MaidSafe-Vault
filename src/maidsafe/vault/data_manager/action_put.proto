@@ -20,6 +20,6 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message ActionDataManagerAddPmid {
-  required bytes pmid_name = 1;
+message ActionDataManagerPut {
+  required uint64 size = 1;
 }

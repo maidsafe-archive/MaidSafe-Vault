@@ -62,6 +62,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       get_timer_(asio_service_),
       get_cached_response_timer_(asio_service_),
       db_(UniqueDbPath(vault_root_dir)),
+      sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
@@ -284,6 +285,20 @@ void DataManagerService::HandleMessage(
   }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionDataManagerPut::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut";
+      DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                   sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut "
+                   << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
+        db_.Commit(resolved_action->key, resolved_action->action);
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut "
+                     << "the chunk " << HexSubstr(resolved_action->key.name.string());
+      }
+      break;
+    }
     case ActionDataManagerDelete::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
       DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
@@ -319,9 +334,8 @@ void DataManagerService::HandleMessage(
         try {
           db_.Commit(resolved_action->key, resolved_action->action);
         }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(VaultErrors::account_already_exists))
-            throw;
+        catch (const maidsafe_error& /*error*/) {
+          throw;
         }
       }
       break;

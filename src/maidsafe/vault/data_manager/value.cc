@@ -62,10 +62,8 @@ DataManagerValue::DataManagerValue(const DataManagerValue& other) {
   pmids_ = other.pmids_;
 }
 
-DataManagerValue::DataManagerValue(const PmidName& pmid_name, uint64_t size)
-    : size_(size), pmids_() {
-  AddPmid(pmid_name);
-}
+DataManagerValue::DataManagerValue(uint64_t size)
+    : size_(size), pmids_() {}
 
 DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
     : size_(std::move(other.size_)), pmids_(std::move(other.pmids_)) {}

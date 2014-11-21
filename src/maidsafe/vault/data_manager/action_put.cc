@@ -16,52 +16,54 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/data_manager/action_add_pmid.h"
+#include "maidsafe/vault/data_manager/action_put.h"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
-#include "maidsafe/vault/data_manager/action_add_pmid.pb.h"
+#include "maidsafe/vault/data_manager/action_put.pb.h"
 #include "maidsafe/vault/data_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const PmidName& pmid_name)
-    : kPmidName(pmid_name) {}
+ActionDataManagerPut::ActionDataManagerPut(uint64_t size)
+    : kSize(size) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const std::string& serialised_action)
-    : kPmidName([&serialised_action]()->PmidName {
-        protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
-        if (!action_add_pmid_proto.ParseFromString(serialised_action))
+ActionDataManagerPut::ActionDataManagerPut(const std::string& serialised_action)
+    : kSize([&serialised_action]()->uint64_t {
+        protobuf::ActionDataManagerPut action_put_proto;
+        if (!action_put_proto.ParseFromString(serialised_action))
           BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-        return PmidName(Identity(action_add_pmid_proto.pmid_name()));
+        return action_put_proto.size();
       }()) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other)
-    : kPmidName(other.kPmidName) {}
+ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& other)
+    : kSize(other.kSize) {}
 
-ActionDataManagerAddPmid::ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other)
-    : kPmidName(std::move(other.kPmidName)) {}
+ActionDataManagerPut::ActionDataManagerPut(ActionDataManagerPut&& other)
+    : kSize(std::move(other.kSize)) {}
 
-std::string ActionDataManagerAddPmid::Serialise() const {
-  protobuf::ActionDataManagerAddPmid action_add_pmid_proto;
-  action_add_pmid_proto.set_pmid_name(kPmidName->string());
-  return action_add_pmid_proto.SerializeAsString();
+std::string ActionDataManagerPut::Serialise() const {
+  protobuf::ActionDataManagerPut action_put_proto;
+  action_put_proto.set_size(kSize);
+  return action_put_proto.SerializeAsString();
 }
 
-detail::DbAction ActionDataManagerAddPmid::operator()(std::unique_ptr<DataManagerValue>& value) {
-  if (value)
-    value->AddPmid(kPmidName);
+detail::DbAction ActionDataManagerPut::operator()(std::unique_ptr<DataManagerValue>& value) {
+  if (!value)
+    value.reset(new DataManagerValue(kSize));
+  else
+    assert(value->chunk_size() == kSize);
   return detail::DbAction::kPut;
 }
 
-bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {
-  return lhs.kPmidName == rhs.kPmidName;
+bool operator==(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs) {
+  return lhs.kSize == rhs.kSize;
 }
 
-bool operator!=(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs) {
+bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs) {
   return !operator==(lhs, rhs);
 }
 
