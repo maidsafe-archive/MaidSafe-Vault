@@ -67,7 +67,7 @@ ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests"
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 set(TestsFunctionalMain ${VaultSourcesDir}/tests/tests_func_main.cc)
 
-set(VaultTests         ${VaultTestsAllFiles} 
+set(VaultTests         ${VaultTestsAllFiles}
                        ${PmidNodeTestsAllFiles}
                        ${PmidManagerTestsAllFiles}
                        ${DataManagerTestsAllFiles}
@@ -109,7 +109,7 @@ set(AllProtos
     ${PmidManagerProtos}
     ${PmidNodeProtos}
     ${VersionHandlerProtos})
-if(MSVC OR CMAKE_GENERATOR STREQUAL Xcode)
+if(MSVC OR CMAKE_GENERATOR STREQUAL "Xcode")
   add_custom_target(vault_protobuf_files_generator DEPENDS ${AllProtos} SOURCES ${AllProtos}
                     COMMENT "Generated all vault protocol buffer files.")
 else()
