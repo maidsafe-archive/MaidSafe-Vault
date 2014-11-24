@@ -43,7 +43,7 @@ DataManagerValue::DataManagerValue(const std::string &serialised_value)
     }
     size_ = value_proto.size();
     for (auto& i : value_proto.pmid_names())
-      pmids_.insert(PmidName(Identity(i)));
+      pmids_.push_back(PmidName(Identity(i)));
     if (pmids_.size() < 1) {
       LOG(kError) << "Invalid pmids";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
@@ -72,19 +72,23 @@ DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
-  pmids_.insert(pmid_name);
+  if (pmids_.end() == std::find(pmids_.begin(), pmids_.end(), pmid_name))
+    pmids_.push_back(pmid_name);
 //  PrintRecords();
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string());
+  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string())
+                << " from the list of " << pmids_.size() << " pmid_nodes";
 //  if (online_pmids_.size() + offline_pmids_.size() < 4) {
 //    LOG(kError) << "RemovePmid not allowed";
 //    // TODO add error - not_allowed
 //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
-  pmids_.erase(pmid_name);
-  PrintRecords();
+  auto itr(std::find(pmids_.begin(), pmids_.end(), pmid_name));
+  if (itr != pmids_.end())
+    pmids_.erase(itr);
+//  PrintRecords();
 }
 
 bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
@@ -129,12 +133,12 @@ bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
   return lhs.size_ == rhs.size_ && lhs.pmids_ == rhs.pmids_;
 }
 
-std::set<PmidName> DataManagerValue::online_pmids(const std::vector<NodeId>& close_nodes) const {
-  std::set<PmidName> online_pmids;
+std::vector<PmidName> DataManagerValue::online_pmids(const std::vector<NodeId>& close_nodes) const {
+  std::vector<PmidName> online_pmids;
   for (auto& pmid : pmids_) {
     auto spotted(std::find(close_nodes.begin(), close_nodes.end(), NodeId(pmid->string())));
     if (spotted != close_nodes.end())
-      online_pmids.insert(pmid);
+      online_pmids.push_back(pmid);
   }
   return online_pmids;
 }

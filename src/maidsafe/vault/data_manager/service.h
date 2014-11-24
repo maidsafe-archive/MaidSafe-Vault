@@ -492,16 +492,23 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   DoSync(DataManager::UnresolvedAddPmid(key,
              ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
   // if storages nodes reached cap, the existing furthest offline node need to be removed
-  auto value(db_.Get(key));
-  PmidName pmid_node_to_remove;
-  auto need_to_prune(false);
-  {
-    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
-    need_to_prune = value.NeedToPrune(close_nodes_change_.new_close_nodes(), pmid_node_to_remove);
+  try {
+    auto value(db_.Get(key));
+    PmidName pmid_node_to_remove;
+    auto need_to_prune(false);
+    {
+      std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+      need_to_prune = value.NeedToPrune(close_nodes_change_.new_close_nodes(), pmid_node_to_remove);
+    }
+    if (need_to_prune)
+      DoSync(DataManager::UnresolvedRemovePmid(key,
+                 ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
+  } catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account)) {
+      LOG(kError) << "HandlePutResponse caught unexpected error" << error.what();
+      throw error;
+    }
   }
-  if (need_to_prune)
-    DoSync(DataManager::UnresolvedRemovePmid(key,
-               ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
 }
 
 template <typename Data>
@@ -518,7 +525,9 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
     std::set<PmidName> pmids_to_avoid;
     try {
       auto value(db_.Get(key));
-      pmids_to_avoid = std::move(value.AllPmids());
+      auto all_pmids(value.AllPmids());
+      for (auto pmid : all_pmids)
+        pmids_to_avoid.insert(pmid);
     } catch (const maidsafe_error& error) {
       if (error.code() != make_error_code(VaultErrors::no_such_account)) {
         LOG(kError) << "HandlePutFailure db error";
@@ -679,11 +688,13 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 
 template <typename Data>
 std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name& data_name) {
-  std::set<PmidName> online_pmids;
+  std::set<PmidName> online_pmids_set;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
     std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
-    online_pmids = std::move(value.online_pmids(close_nodes_change_.new_close_nodes()));
+    auto online_pmids(value.online_pmids(close_nodes_change_.new_close_nodes()));
+    for (auto online_pmid : online_pmids)
+      online_pmids_set.insert(online_pmid);
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
@@ -694,7 +705,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
 //     throw VaultErrors::no_such_account;
   }
-  return online_pmids;
+  return online_pmids_set;
 }
 
 

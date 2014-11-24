@@ -51,9 +51,10 @@ class DataManagerValue {
   void AddPmid(const PmidName& pmid_name);
   void RemovePmid(const PmidName& pmid_name);
   bool HasTarget(const PmidName& pmid_name) const;
-  std::set<PmidName> AllPmids() const { return pmids_; }
-  std::set<PmidName> online_pmids(const std::vector<NodeId>& close_nodes) const;
+  std::vector<PmidName> AllPmids() const { return pmids_; }
+  std::vector<PmidName> online_pmids(const std::vector<NodeId>& close_nodes) const;
   bool NeedToPrune(const std::vector<NodeId>& close_nodes, PmidName& pmid_node_to_remove) const;
+
   std::string Print() const;
   uint64_t chunk_size() const { return size_; }
   void SetChunkSize(const uint64_t chunk_size) { size_ = chunk_size; }
@@ -67,7 +68,7 @@ class DataManagerValue {
  private:
   void PrintRecords();
   uint64_t size_;
-  std::set<PmidName> pmids_;
+  std::vector<PmidName> pmids_;
 };
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs);
