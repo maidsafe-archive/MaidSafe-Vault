@@ -7,7 +7,7 @@ __MaidManager__ *-> |_MaidNode_
 
 --
 #####DataManager::PutResponse
-__DataManager__ *->> |__MaidManager__ [Put.Sy]
+__DataManager__ *->> |__MaidManager__ [So, Put.Sy] *-> |_MaidNode_ 
 
 --
 <dd>Description: Get D from TempStore or network, then PutRequest(D).</ddt>
