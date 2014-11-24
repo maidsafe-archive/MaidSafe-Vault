@@ -78,18 +78,17 @@ void DataManagerValue::AddPmid(const PmidName& pmid_name) {
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string());
+  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string())
+                << " from the list of " << pmids_.size() << " pmid_nodes";
 //  if (online_pmids_.size() + offline_pmids_.size() < 4) {
 //    LOG(kError) << "RemovePmid not allowed";
 //    // TODO add error - not_allowed
 //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
-  for (auto itr(pmids_.begin()); itr != pmids_.end(); ++itr)
-    if (*itr == pmid_name) {
-      pmids_.erase(itr);
-      break;
-    }
-  PrintRecords();
+  auto itr(std::find(pmids_.begin(), pmids_.end(), pmid_name));
+  if (itr != pmids_.end())
+    pmids_.erase(itr);
+//  PrintRecords();
 }
 
 bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
