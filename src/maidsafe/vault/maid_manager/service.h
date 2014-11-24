@@ -394,11 +394,6 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     return;
   }
 
-  LOG(kInfo) << "MaidManagerService::HandlePut allowing put";
-  typename MaidManager::SyncKey group_key(account_name, data.name(), Data::Tag::kValue);
-  DoSync(typename MaidManager::UnresolvedPut(group_key,
-         ActionMaidManagerPut(static_cast<int64_t>(data.Serialise().data.string().size())),
-         routing_.kNodeId()));
   dispatcher_.SendPutRequest(account_name, data, message_id);
 }
 

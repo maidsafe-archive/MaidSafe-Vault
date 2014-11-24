@@ -32,7 +32,7 @@
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
-
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/utils.h"
