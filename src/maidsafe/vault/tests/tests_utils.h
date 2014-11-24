@@ -32,7 +32,7 @@
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
-
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/utils.h"
@@ -73,9 +73,6 @@ nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>();
 
 template <>
 nfs_vault::Empty CreateContent<nfs_vault::Empty>();
-
-template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>();
 
 template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>();

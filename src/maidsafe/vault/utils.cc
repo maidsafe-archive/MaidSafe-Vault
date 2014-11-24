@@ -67,11 +67,6 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data) {
 }
 
 template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data) {
-  return GetNameVariant(data.data.name);
-}
-
-template <>
 DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
   return GetNameVariant(data.data.name);
 }

@@ -42,29 +42,26 @@ template <typename ServiceHandlerType>
 class MaidManagerPutVisitor : public boost::static_visitor<> {
  public:
   MaidManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, NodeId sender,
-                        Identity pmid_hint, nfs::MessageId message_id)
+                        nfs::MessageId message_id)
       : kService_(service),
         kContent_(std::move(content)),
         kSender_(std::move(sender)),
-        kPmidHint_(std::move(pmid_hint)),
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     LOG(kVerbose) << "MaidManagerPutVisitor HandlePut for chunk "
-                  << HexSubstr(data_name.value.string()) << " to PmidHint "
-                  << HexSubstr(kPmidHint_.string());
+                  << HexSubstr(data_name.value.string());
     kService_->HandlePut(
         MaidName(Identity(kSender_.string())),
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        PmidName(kPmidHint_), kMessageId_);
+        kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const NonEmptyString kContent_;
   const NodeId kSender_;
-  const Identity kPmidHint_;
   const nfs::MessageId kMessageId_;
 };
 
@@ -72,25 +69,23 @@ template <typename ServiceHandlerType>
 class DataManagerPutVisitor : public boost::static_visitor<> {
  public:
   DataManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, Identity maid_name,
-                        Identity pmid_name, nfs::MessageId message_id)
+                        nfs::MessageId message_id)
       : kService_(service),
         kContent_(std::move(content)),
         kMaidName_(std::move(maid_name)),
-        kPmidName_(std::move(pmid_name)),
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandlePut(
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        kMaidName_, kPmidName_, kMessageId_);
+        kMaidName_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const NonEmptyString kContent_;
   const MaidName kMaidName_;
-  const PmidName kPmidName_;
   const nfs::MessageId kMessageId_;
 };
 

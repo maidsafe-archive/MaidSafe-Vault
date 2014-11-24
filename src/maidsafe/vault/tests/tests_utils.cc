@@ -72,13 +72,6 @@ nfs_vault::Empty CreateContent<nfs_vault::Empty>() {
 }
 
 template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>() {
-  ImmutableData data(NonEmptyString(RandomString(128)));
-  return nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.data(),
-                                    Identity(RandomString(64)));
-}
-
-template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>() {
   return nfs_vault::DataNameAndSize(DataTagValue::kImmutableDataValue, Identity(RandomString(64)),
                                     kTestChunkSize);

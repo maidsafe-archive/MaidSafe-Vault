@@ -146,7 +146,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   {
     NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
     auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.data.name.raw_name.string());
+    data_name_id = NodeId(content.name.raw_name.string());
     auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
     auto group_source(CreateGroupSource(maid_node_id));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,

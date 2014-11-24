@@ -115,8 +115,7 @@ class DataManagerService {
 
   // =========================== Put section =======================================================
   template <typename Data>
-  void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name,
-                 nfs::MessageId message_id);
+  void HandlePut(const Data& data, const MaidName& maid_name, nfs::MessageId message_id);
 
   template <typename Data>
   bool EntryExist(const typename Data::Name& name);
@@ -413,33 +412,25 @@ void DataManagerService::HandleMessage(
 // ================================== Put implementation ===========================================
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
-                                   const PmidName& pmid_name_in, nfs::MessageId message_id) {
+                                   nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << HexSubstr(maid_name->string())
-                << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
+                << " from maid_node " << HexSubstr(maid_name->string());
   uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;
     PmidName pmid_name;
-    if (routing_.ClosestToId(NodeId(data.name().value)) &&
-        (pmid_name_in.value.string() != NodeId().string()) &&
-        (pmid_name_in.value.string() != data.name().value.string())) {
-      LOG(kInfo) << "using the pmid_name_in";
-      pmid_name = pmid_name_in;
-    } else {
-      do {
-        LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
-        // it is observed during the startup period, a vault may receive a request before
-        // it's routing_table having any entry.
-        auto picked_node(routing_.RandomConnectedNode());
-        if (picked_node != NodeId()) {
-          pmid_name = PmidName(Identity(picked_node.string()));
-        } else {
-          LOG(kError) << "no entry in routing_table";
-          return;
-        }
-      } while (pmid_name->string() == data.name().value.string());
-    }
+    do {
+      LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
+      // it is observed during the startup period, a vault may receive a request before
+      // it's routing_table having any entry.
+      auto picked_node(routing_.RandomConnectedNode());
+      if (picked_node != NodeId()) {
+        pmid_name = PmidName(Identity(picked_node.string()));
+      } else {
+        LOG(kError) << "no entry in routing_table";
+        return;
+      }
+    } while (pmid_name->string() == data.name().value.string());
     LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
                << " from maid_node " << HexSubstr(maid_name->string())
                << " . SendPutRequest with message_id " << message_id.data
@@ -507,7 +498,12 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   // if storages nodes reached cap, the existing furthest offline node need to be removed
   auto value(db_.Get(key));
   PmidName pmid_node_to_remove;
-  if (value.NeedToPrune(routing_, pmid_node_to_remove))
+  auto need_to_prune(false);
+  {
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    need_to_prune = value.NeedToPrune(close_nodes_change_.new_close_nodes(), pmid_node_to_remove);
+  }
+  if (need_to_prune)
     DoSync(DataManager::UnresolvedRemovePmid(key,
                ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
 }
@@ -691,7 +687,8 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
   std::set<PmidName> online_pmids;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    online_pmids = std::move(value.online_pmids(routing_));
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    online_pmids = std::move(value.online_pmids(close_nodes_change_.new_close_nodes()));
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
