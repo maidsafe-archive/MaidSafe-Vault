@@ -28,15 +28,19 @@ namespace vault {
 
 PmidManagerMetadata::PmidManagerMetadata()
     : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
-      claimed_available_size(0) {}
+      claimed_available_size(0), return_code() {}
 
 PmidManagerMetadata::PmidManagerMetadata(const PmidName& pmid_name_in)
     : pmid_name(pmid_name_in), stored_count(0), stored_total_size(0), lost_count(0),
-      lost_total_size(0), claimed_available_size(0) {}
+      lost_total_size(0), claimed_available_size(0), return_code() {}
+
+PmidManagerMetadata::PmidManagerMetadata(maidsafe_error error)
+  : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0),
+    lost_total_size(0), claimed_available_size(0), return_code(error) {}
 
 PmidManagerMetadata::PmidManagerMetadata(const std::string &serialised_metadata)
     : pmid_name(), stored_count(0), stored_total_size(0), lost_count(0), lost_total_size(0),
-      claimed_available_size(0) {
+      claimed_available_size(0), return_code(make_error_code(CommonErrors::success)) {
   LOG(kVerbose) << "PmidManagerMetadata parsing from " << HexSubstr(serialised_metadata);
   protobuf::PmidManagerMetadata proto_metadata;
   if (!proto_metadata.ParseFromString(serialised_metadata)) {
@@ -61,7 +65,8 @@ PmidManagerMetadata::PmidManagerMetadata(const PmidManagerMetadata& other)
       stored_total_size(other.stored_total_size),
       lost_count(other.lost_count),
       lost_total_size(other.lost_total_size),
-      claimed_available_size(other.claimed_available_size) {}
+      claimed_available_size(other.claimed_available_size),
+      return_code(other.return_code) {}
 
 PmidManagerMetadata::PmidManagerMetadata(PmidManagerMetadata&& other)
     : pmid_name(std::move(other.pmid_name)),
@@ -69,7 +74,8 @@ PmidManagerMetadata::PmidManagerMetadata(PmidManagerMetadata&& other)
       stored_total_size(std::move(other.stored_total_size)),
       lost_count(std::move(other.lost_count)),
       lost_total_size(std::move(other.lost_total_size)),
-      claimed_available_size(std::move(other.claimed_available_size)) {}
+      claimed_available_size(std::move(other.claimed_available_size)),
+      return_code(other.return_code) {}
 
 PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
   using std::swap;
@@ -79,6 +85,7 @@ PmidManagerMetadata& PmidManagerMetadata::operator=(PmidManagerMetadata other) {
   swap(lost_count, other.lost_count);
   swap(lost_total_size, other.lost_total_size);
   swap(claimed_available_size, other.claimed_available_size);
+  swap(return_code, other.return_code);
   return *this;
 }
 

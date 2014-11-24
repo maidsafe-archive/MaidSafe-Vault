@@ -47,9 +47,8 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data.reset(nfs_client::StructuredData(versions));
   } else {
-    nfs_message.contents->data_name_and_return_code =
-        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
-                                          nfs_client::ReturnCode(return_code));
+    nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
+    nfs_message.contents->return_code = nfs_client::ReturnCode(return_code);
   }
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
@@ -71,9 +70,8 @@ void VersionHandlerDispatcher::SendGetVersionsResponse(
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data.reset(nfs_client::StructuredData(versions));
   } else {
-    nfs_message.contents->data_name_and_return_code =
-        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
-                                          nfs_client::ReturnCode(return_code));
+    nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
+    nfs_message.contents->return_code = nfs_client::ReturnCode(return_code);
   }
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
@@ -95,9 +93,8 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
-    nfs_message.contents->data_name_and_return_code =
-        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
-                                          nfs_client::ReturnCode(return_code));
+    nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
+    nfs_message.contents->return_code = nfs_client::ReturnCode(return_code);
   }
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),
@@ -119,10 +116,8 @@ void VersionHandlerDispatcher::SendGetBranchResponse(
   if (return_code.code() == CommonErrors::success) {
     nfs_message.contents->structured_data = nfs_client::StructuredData(versions);
   } else {
-    nfs_message.contents->data_name_and_return_code.reset();
-    nfs_message.contents->data_name_and_return_code =
-        nfs_client::DataNameAndReturnCode(nfs_vault::DataName(key.type, key.name),
-                                          nfs_client::ReturnCode(return_code));
+    nfs_message.contents->data_name = nfs_vault::DataName(key.type, key.name);
+    nfs_message.contents->return_code = nfs_client::ReturnCode(return_code);
   }
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(key.name.string())),

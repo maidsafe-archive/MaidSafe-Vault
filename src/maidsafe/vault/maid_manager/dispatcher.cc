@@ -36,7 +36,7 @@ void MaidManagerDispatcher::SendPutResponse(const MaidName& maid_name,
   typedef nfs::PutResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
-  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(result));
+  NfsMessage nfs_message(message_id, nfs_client::PutReturnCode(result));
   RoutingMessage message(nfs_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name)));
@@ -66,7 +66,7 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
 
-  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(result));
+  NfsMessage nfs_message(message_id, nfs_client::CreateAccountReturnCode(result));
   RoutingMessage message(nfs_message.Serialise(),
       GroupOrKeyHelper::GroupSender(routing_, account_name),
       NfsMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
@@ -96,7 +96,7 @@ void MaidManagerDispatcher::SendCreateVersionTreeResponse(
   typedef nfs::CreateVersionTreeResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
-  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
+  NfsMessage nfs_message(message_id, nfs_client::CreateVersionTreeReturnCode(error));
   RoutingMessage message(nfs_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name->string())));
@@ -108,7 +108,7 @@ void MaidManagerDispatcher::SendRegisterPmidResponse(
   typedef nfs::RegisterPmidResponseFromMaidManagerToMaidNode NfsMessage;
   typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<NfsMessage>();
-  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(error));
+  NfsMessage nfs_message(message_id, nfs_client::PmidRegistrationAndReturnCode(error));
   RoutingMessage message(nfs_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, maid_name),
                          NfsMessage::Receiver(NodeId(maid_name->string())));
