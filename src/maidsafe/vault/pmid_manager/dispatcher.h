@@ -54,8 +54,8 @@ class PmidManagerDispatcher {
   void SendDeleteRequest(const PmidName& pmid_node, const typename Data::Name& data_name,
                          nfs::MessageId message_id);
   template <typename Data>
-  void SendPutResponse(const typename Data::Name& data_name, int32_t size,
-                       const PmidName& pmid_node, nfs::MessageId message_id);
+  void SendPutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
+                       nfs::MessageId message_id);
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name, uint64_t size, const PmidName& pmid_node,
@@ -119,12 +119,11 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
 
 template<typename Data>
 void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& data_name,
-                                            int32_t data_size,
                                             const PmidName& pmid_node,
                                             nfs::MessageId message_id) {
   typedef PutResponseFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, data_size));
+  VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
   CheckSourcePersonaType<VaultMessage>();
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),

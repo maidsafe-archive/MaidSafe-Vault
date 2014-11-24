@@ -33,6 +33,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/key_utils.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -48,6 +49,8 @@ TransferInfo GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change,
     std::map<Key, Value>& accounts);
 
+NodeId GetRandomCloseNode(routing::Routing& routing,
+                         const std::set<PmidName>& exclude = std::set<PmidName>());
 
 template <typename T>
 DataNameVariant GetNameVariant(const T&);

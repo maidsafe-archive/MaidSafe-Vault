@@ -81,8 +81,8 @@ class PmidManagerService {
     return true;
   }
   template <typename Data>
-  void SendPutResponse(const typename Data::Name& data_name, int32_t size,
-                       const PmidName& pmid_node, nfs::MessageId message_id);
+  void SendPutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
+                       nfs::MessageId message_id);
 
   void HandleCreatePmidAccountRequest(const PmidName& pmid_node, const MaidName& maid_node,
                                       nfs::MessageId message_id);
@@ -125,7 +125,7 @@ class PmidManagerService {
 
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
-  void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
+  void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node,
                        nfs::MessageId message_id);
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
@@ -273,13 +273,11 @@ void PmidManagerService::HandleFalseNotification(const typename Data::Name& name
 
 template <typename Data>
 void PmidManagerService::SendPutResponse(
-    const typename Data::Name& data_name, int32_t size, const PmidName& pmid_name,
-    nfs::MessageId message_id) {
+  const typename Data::Name& data_name, const PmidName& pmid_node, nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::SendPutResponse of pmid_name -- "
-                << HexSubstr(pmid_name.value.string())
-                << " , with message_id -- " << message_id.data
-                << " . size -- " << size;
-  dispatcher_.SendPutResponse<Data>(data_name, size, pmid_name, message_id);
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
+  dispatcher_.SendPutResponse<Data>(data_name, pmid_node, message_id);
 }
 
 template <typename Data>

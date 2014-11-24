@@ -22,4 +22,5 @@ package maidsafe.vault.protobuf;
 
 message ActionDataManagerPut {
   required uint64 size = 1;
+  required int32 message_id = 2;
 }

@@ -41,6 +41,15 @@ DataNameVariant GetNameVariant(const T&) {
   return DataNameVariant();
 }
 
+NodeId GetRandomCloseNode(routing::Routing& routing, const std::set<PmidName>& exclude) {
+  assert(exclude.size() < routing::Parameters::closest_nodes_size);
+  NodeId random_node;
+  do {
+    random_node = routing.RandomConnectedNode();
+  } while (exclude.find(PmidName(Identity(random_node.string()))) != std::end(exclude));
+  return random_node;
+}
+
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataName& data) {
   return GetDataNameVariant(data.type, data.raw_name);

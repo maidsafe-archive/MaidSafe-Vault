@@ -200,8 +200,7 @@ void DoOperation(DataManagerService* service,
                 << HexSubstr(sender.group_id.data.string()) << " msg id: " << message.id;
   auto data_name(GetNameVariant(*message.contents));
   DataManagerPutResponseVisitor<DataManagerService> put_response_visitor(
-      service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
-      message.id);
+      service, PmidName(Identity(sender.group_id.data.string())), message.id);
   boost::apply_visitor(put_response_visitor, data_name);
 }
 

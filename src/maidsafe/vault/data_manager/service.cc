@@ -34,6 +34,7 @@
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -68,7 +69,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
       account_transfer_(),
-      temp_memory_store(detail::Parameters::temp_memory_store_size) {}
+      temp_memory_store_(detail::Parameters::temp_memory_store_size) {}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -272,6 +273,35 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
   }
 }
 
+void DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id) {
+  std::set<PmidName> storing_pmid_nodes;
+  try {
+    auto value(db_.Get(key));
+    storing_pmid_nodes = value.online_pmids(close_nodes_change_.new_close_nodes());
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+      LOG(kInfo) << "No storing pmid so far...";
+    }
+  }
+  if (storing_pmid_nodes.size() >= routing::Parameters::closest_nodes_size / 2)
+    return;
+  auto pmid_name(detail::GetRandomCloseNode(routing_, storing_pmid_nodes));
+  auto data_name(GetDataNameVariant(key.type, key.name));
+  try {
+    auto serialises_value(temp_memory_store_.Get(data_name));
+    detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
+       this, PmidName(Identity(pmid_name.string())), serialises_value, message_id);
+    boost::apply_visitor(send_put_request_visitor, data_name);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+      LOG(kError) << HexSubstr(key.name.string()) << " not in temp storage ";
+      // MAID-448 could re-attempt by Getting then storing.
+    }
+  }
+}
+
 // ==================== Sync / AccountTransfer implementation ======================================
 template <>
 void DataManagerService::HandleMessage(
@@ -295,8 +325,7 @@ void DataManagerService::HandleMessage(
         LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut "
                    << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
         db_.Commit(resolved_action->key, resolved_action->action);
-        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut "
-                     << "the chunk " << HexSubstr(resolved_action->key.name.string());
+        SendPutRequest(resolved_action->key, resolved_action->action.kMessageId);
       }
       break;
     }

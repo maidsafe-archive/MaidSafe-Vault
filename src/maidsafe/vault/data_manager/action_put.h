@@ -35,7 +35,7 @@ namespace vault {
 class DataManagerValue;
 
 struct ActionDataManagerPut {
-  ActionDataManagerPut(uint64_t size);
+  ActionDataManagerPut(uint64_t size, nfs::MessageId message_id);
   explicit ActionDataManagerPut(const std::string& serialised_action);
   ActionDataManagerPut(const ActionDataManagerPut& other);
   ActionDataManagerPut(ActionDataManagerPut&& other);
@@ -45,6 +45,7 @@ struct ActionDataManagerPut {
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
   const uint64_t kSize;
+  const nfs::MessageId kMessageId;
 
  private:
   ActionDataManagerPut();

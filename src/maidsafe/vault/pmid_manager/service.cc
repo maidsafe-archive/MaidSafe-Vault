@@ -76,9 +76,7 @@ void PmidManagerService::HandleSyncedPut(
     throw;
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
-  SendPutResponse(data_name, synced_action->key.group_name(),
-                  synced_action->action.kSize,
-                  synced_action->action.kMessageId);
+  SendPutResponse(data_name, synced_action->key.group_name(), synced_action->action.kMessageId);
 }
 
 void PmidManagerService::HandleSyncedDelete(
@@ -236,10 +234,9 @@ void PmidManagerService::HandleMessage(
 //=================================================================================================
 
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
-                                         const PmidName& pmid_node, int32_t size,
-                                         nfs::MessageId message_id) {
+                                         const PmidName& pmid_node, nfs::MessageId message_id) {
   LOG(kInfo) << "PmidManagerService::SendPutResponse";
-  detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, size, pmid_node,
+  detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, pmid_node,
                                                                          message_id);
   boost::apply_visitor(put_response, data_name);
 }
