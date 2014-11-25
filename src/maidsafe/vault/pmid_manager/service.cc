@@ -68,8 +68,15 @@ void PmidManagerService::HandleSyncedPut(
     std::lock_guard<std::mutex> lock(mutex_);
     PmidManager::Key account_name(synced_action->key.group_name());
     auto itr(accounts_.find(account_name));
-    if (itr == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (itr == std::end(accounts_)) {
+      // create an empty account for non-registered pmid_node
+      auto result(accounts_.insert(std::make_pair(account_name, PmidManager::Value())));
+      if (result.second)
+        itr = result.first;
+      else
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+      synced_action->action(itr->second);
+    }
     synced_action->action(itr->second);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "HandleSyncedPut caught an error during account commit " << error.what();
