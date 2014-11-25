@@ -671,11 +671,13 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 
 template <typename Data>
 std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name& data_name) {
-  std::set<PmidName> online_pmids;
+  std::set<PmidName> online_pmids_set;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
     std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
-    online_pmids = std::move(value.online_pmids(close_nodes_change_.new_close_nodes()));
+    auto online_pmids(value.online_pmids(close_nodes_change_.new_close_nodes()));
+    for (auto online_pmid : online_pmids)
+      online_pmids_set.insert(online_pmid);
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
@@ -686,7 +688,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
 //     throw VaultErrors::no_such_account;
   }
-  return online_pmids;
+  return online_pmids_set;
 }
 
 

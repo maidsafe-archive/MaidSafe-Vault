@@ -275,14 +275,14 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
 
 uint64_t DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id,
                                             const PmidName& tried_pmid_node) {
-  std::set<PmidName> storing_pmid_nodes;
+  std::vector<PmidName> storing_pmid_nodes;
   uint64_t chunk_size(0);
   auto data_name(GetDataNameVariant(key.type, key.name));
   try {
     auto value(db_.Get(key));
     storing_pmid_nodes = value.online_pmids(close_nodes_change_.new_close_nodes());
     if (tried_pmid_node != PmidName())
-      storing_pmid_nodes.insert(tried_pmid_node);
+      storing_pmid_nodes.push_back(tried_pmid_node);
   }
   catch (const maidsafe_error& error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element)) {
@@ -364,7 +364,11 @@ void DataManagerService::HandleMessage(
           // The delete operation will not depend on subscribers anymore.
           // Owners' signatures may stored in DM later on to support deletes.
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-          SendDeleteRequests(resolved_action->key, value->AllPmids(),
+          std::set<PmidName> all_pmids_set;
+          auto all_pmids(value->AllPmids());
+          for (auto pmid : all_pmids)
+            all_pmids_set.insert(pmid);
+          SendDeleteRequests(resolved_action->key, all_pmids_set,
                              resolved_action->action.MessageId());
         }
       }
@@ -496,8 +500,11 @@ void DataManagerService::HandleChurnEvent(
   for (auto& account : accounts) {
     std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
     auto online_pmids(account.second.online_pmids(close_nodes_change_.new_close_nodes()));
-    online_pmids.erase(pmid_name);
-    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids);
+    std::set<PmidName> online_pmids_set;
+    for (auto online_pmid : online_pmids)
+      if (online_pmid != pmid_name)
+        online_pmids_set.insert(online_pmid);
+    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids_set);
     auto data_name(GetDataNameVariant(account.first.type, account.first.name));
     boost::apply_visitor(get_for_node_down, data_name);
   }

@@ -42,7 +42,7 @@ DataNameVariant GetNameVariant(const T&) {
 }
 
 boost::optional<PmidName> GetRandomCloseNode(routing::Routing& routing,
-                                             const std::set<PmidName>& exclude) {
+                                             const std::vector<PmidName>& exclude) {
   assert(exclude.size() < routing::Parameters::closest_nodes_size);
   NodeId node_id;
   PmidName pmid_name;
@@ -51,7 +51,7 @@ boost::optional<PmidName> GetRandomCloseNode(routing::Routing& routing,
     if (node_id.IsZero())
       return boost::optional<PmidName>();
     pmid_name = PmidName{ Identity{ node_id.string() }};
-  } while (exclude.find(pmid_name) != std::end(exclude));
+  } while (std::find(std::begin(exclude), std::end(exclude), pmid_name) != std::end(exclude));
   return boost::optional<PmidName>(pmid_name);
 }
 

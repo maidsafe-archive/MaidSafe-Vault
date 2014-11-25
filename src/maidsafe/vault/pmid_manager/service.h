@@ -297,6 +297,7 @@ template <typename UnresolvedAction>
 void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_account_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_account_, unresolved_action);
 }
 

@@ -50,7 +50,7 @@ TransferInfo GetTransferInfo(
     std::map<Key, Value>& accounts);
 
 boost::optional<PmidName> GetRandomCloseNode(
-    routing::Routing& routing, const std::set<PmidName>& exclude = std::set<PmidName>());
+    routing::Routing& routing, const std::vector<PmidName> &exclude = std::vector<PmidName>());
 
 template <typename T>
 DataNameVariant GetNameVariant(const T&);
