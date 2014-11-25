@@ -312,6 +312,12 @@ void DoOperation(PmidManagerService* service,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
 
+template <>
+void DoOperation(PmidManagerService* service,
+                 const UpdateAccountFromDataManagerToPmidManager& message,
+                 const UpdateAccountFromDataManagerToPmidManager::Sender& sender,
+                 const UpdateAccountFromDataManagerToPmidManager::Receiver& receiver);
+
 //=============================== To PmidNode ======================================================
 template <>
 void DoOperation(PmidNodeService* service, const DeleteRequestFromPmidManagerToPmidNode& message,

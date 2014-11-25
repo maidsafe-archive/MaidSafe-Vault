@@ -141,6 +141,10 @@ class DataManagerService {
   template <typename DataName>
   bool SendPutRetryRequired(const DataName& data_name);
 
+  template <typename Data>
+  void SendPmidUpdateAccount(const typename Data::Name& data_name, const PmidName& pmid_node,
+                             uint64_t chunk_size, uint64_t given_size);
+
   // =========================== Get section (includes integrity checks) ===========================
   typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
   typedef GetCachedResponseFromCacheHandlerToDataManager::Contents GetCachedResponseContents;
@@ -530,7 +534,7 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   bool malicious(false);
   if ((chunk_size != 0) && chunk_size != size) {
     malicious = true;
-    // SendCorrections(attempted_pmid_node);
+    SendPmidUpdateAccount<Data>(data_name, attempted_pmid_node, chunk_size, size);
   }
   DerankPmidNode(attempted_pmid_node, malicious);
 }
@@ -940,6 +944,13 @@ void DataManagerService::HandleAccountQuery(const DataName& name, const NodeId& 
   catch (const std::exception& error) {
     LOG(kError) << "failed to retrieve account: " << error.what();
   }
+}
+
+template <typename Data>
+void DataManagerService::SendPmidUpdateAccount(
+    const typename Data::Name& data_name, const PmidName& pmid_node, uint64_t chunk_size,
+    uint64_t given_size) {
+  dispatcher_.SendPmidUpdateAccount<Data>(data_name, pmid_node, chunk_size, given_size);
 }
 
 }  // namespace vault

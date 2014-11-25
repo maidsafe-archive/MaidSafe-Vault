@@ -132,11 +132,14 @@ class PmidManagerService {
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
   void HandleSyncedCreatePmidAccount(
       std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
+  void HandleSyncedUpdateAccount(
+      std::unique_ptr<PmidManager::UnresolvedUpdateAccount>&& synced_action);
   void TransferAccount(const NodeId& dest, const std::vector<PmidManager::KvPair>& accounts);
   void HandleAccountTransfer(const AccountType& account);
   void HandleAccountTransferEntry(const std::string& serialised_account,
                                   const routing::SingleSource& sender);
   void HandleAccountQuery(const PmidManager::Key& key, const NodeId& sender);
+  void HandleUpdateAccount(const PmidName& pmid_node, int32_t diff_size);
 
   routing::Routing& routing_;
   std::map<PmidManager::Key, PmidManager::Value> accounts_;
@@ -149,6 +152,7 @@ class PmidManagerService {
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedCreateAccount> sync_create_account_;
+  Sync<PmidManager::UnresolvedUpdateAccount> sync_update_account_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kPmidManager>> account_transfer_;
 };
 
@@ -213,6 +217,12 @@ void PmidManagerService::HandleMessage(
     const AccountQueryResponseFromPmidManagerToPmidManager& message,
     const typename AccountQueryResponseFromPmidManagerToPmidManager::Sender& sender,
     const typename AccountQueryResponseFromPmidManagerToPmidManager::Receiver& receiver);
+
+template<>
+void PmidManagerService::HandleMessage(
+    const UpdateAccountFromDataManagerToPmidManager& message,
+    const typename UpdateAccountFromDataManagerToPmidManager::Sender& sender,
+    const typename UpdateAccountFromDataManagerToPmidManager::Receiver& receiver);
 
 // =================================== Implementation =============================================
 // ================================= Put Implementation ===========================================

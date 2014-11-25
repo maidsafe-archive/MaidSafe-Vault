@@ -60,6 +60,9 @@ class DataManagerDispatcher {
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error, nfs::MessageId message_id);
 
+  template <typename Data>
+  void SendPmidUpdateAccount(const typename Data::Name& data_name, const PmidName& pmid_node,
+                             uint64_t chunk_size, uint64_t given_size);
   // =========================== Get section (includes integrity checks) ===========================
   // To PmidNode
   template <typename Data>
@@ -400,6 +403,22 @@ template<typename Message>
 void DataManagerDispatcher::CheckSourcePersonaType() const {
   static_assert(Message::SourcePersona::value == nfs::Persona::kDataManager,
                 "The source Persona must be kDataManager.");
+}
+
+template <typename Data>
+void DataManagerDispatcher::SendPmidUpdateAccount(const typename Data::Name& data_name,
+    const PmidName& pmid_node, uint64_t chunk_size, uint64_t given_size) {
+  using VaultMessage = UpdateAccountFromDataManagerToPmidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message{ VaultMessage::Contents(static_cast<int32_t>(chunk_size) -
+                                                     static_cast<int32_t>(given_size)) };
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_node.value.string())));
+  routing_.Send(message);
+
 }
 
 }  // namespace vault

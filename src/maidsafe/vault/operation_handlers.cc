@@ -353,6 +353,16 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
+                 const UpdateAccountFromDataManagerToPmidManager& message,
+                 const UpdateAccountFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const UpdateAccountFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation UpdateAccountFromDataManagerToPmidManager";
+  service->HandleUpdateAccount(PmidName(Identity(receiver.data.string())),
+                               message.contents->diff_size);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidManager& message,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
