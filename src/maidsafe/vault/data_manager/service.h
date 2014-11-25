@@ -195,9 +195,7 @@ class DataManagerService {
   void AssessGetContentRequestedPmidNode(
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
-  template <typename Data>
-  void DerankPmidNode(const PmidName pmid_node, const typename Data::Name& name,
-                      nfs::MessageId message_id);
+  void DerankPmidNode(const PmidName& pmid_node, bool malicious);
 
   template <typename Data>
   void DeletePmidNodeAsHolder(const PmidName pmid_node, const typename Data::Name& name,
@@ -214,7 +212,8 @@ class DataManagerService {
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
                          const uint64_t size, nfs::MessageId message_id);
 
-  void SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id);
+  uint64_t SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id,
+                          const PmidName& tried_pmid_name = PmidName());
 
   template <typename Data>
   void HandleSendPutRequest(const PmidName& pmid_name, const Data& data, nfs::MessageId);
@@ -424,20 +423,6 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
   uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;
-    PmidName pmid_name;
-    do {
-      LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
-      // it is observed during the startup period, a vault may receive a request before
-      // it's routing_table having any entry.
-      auto picked_node(routing_.RandomConnectedNode());
-      if (picked_node != NodeId()) {
-        pmid_name = PmidName(Identity(picked_node.string()));
-      } else {
-        LOG(kError) << "no entry in routing_table";
-        return;
-      }
-    } while (pmid_name->string() == data.name().value.string());
-
     try {
       LOG(kVerbose) << "Store in temp memeory";
       auto serialised_data(data.Serialise().data);
@@ -527,46 +512,27 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
 
 template <typename Data>
 void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
-                                          uint64_t /*size*/,
+                                          uint64_t size,
                                           const PmidName& attempted_pmid_node,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
   LOG(kVerbose) << "DataManagerService::HandlePutFailure " << HexSubstr(data_name.value)
                 << " from attempted_pmid_node " << HexSubstr(attempted_pmid_node->string());
   // TODO(Team): Following should be done only if error is fixable by repeat
+  uint64_t chunk_size(0);
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
-  // Get all pmid nodes for this data.
-  if (SendPutRetryRequired(data_name)) {
-    std::set<PmidName> pmids_to_avoid;
-    try {
-      auto value(db_.Get(key));
-      pmids_to_avoid = std::move(value.AllPmids());
-    } catch (const maidsafe_error& error) {
-      if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-        LOG(kError) << "HandlePutFailure db error";
-        throw error;  // For db errors
-      }
-    }
-
-    pmids_to_avoid.insert(attempted_pmid_node);
-    auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
-    while (pmids_to_avoid.find(pmid_name) != std::end(pmids_to_avoid))
-      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
-
-    try {
-      NonEmptyString content(GetContentFromCache<Data>(data_name));
-      dispatcher_.SendPutRequest<Data>(pmid_name,
-                                       Data(data_name, typename Data::serialised_type(content)),
-                                       message_id);
-    }
-    catch (std::exception& /*ex*/) {
-      // handle failure to retrieve content from cache, a Get->Then->call
-      // dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id); )
-    }
-  }
+  if (SendPutRetryRequired(data_name))
+    chunk_size = SendPutRequest(key, message_id, attempted_pmid_node);
 
   DoSync(DataManager::UnresolvedRemovePmid(
       key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
+
+  bool malicious(false);
+  if ((chunk_size != 0) && chunk_size != size) {
+    malicious = true;
+    // SendCorrections(attempted_pmid_node);
+  }
+  DerankPmidNode(attempted_pmid_node, malicious);
 }
 
 template <typename DataName>
@@ -885,7 +851,7 @@ void DataManagerService::AssessIntegrityCheckResults(
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
                         << HexSubstr(itr.first->string()) << " returned invalid data for "
                         << HexSubstr(get_response_op->data_name.value.string());
-          DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
+          DerankPmidNode(itr.first, false);
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
           typename DataManager::Key key(get_response_op->data_name.value, Data::Tag::kValue);
@@ -903,13 +869,6 @@ void DataManagerService::AssessIntegrityCheckResults(
   } catch(...) {
     LOG(kWarning) << "caught exception in DataManagerService::AssessIntegrityCheckResults";
   }
-}
-
-template <typename Data>
-void DataManagerService::DerankPmidNode(const PmidName /*pmid_node*/,
-                                        const typename Data::Name& /*name*/,
-                                        nfs::MessageId /*message_id*/) {
-  // BEFORE_RELEASE: to be implemented
 }
 
 template <typename Data>

@@ -48,6 +48,10 @@ struct Parameters {
   static std::chrono::seconds account_transfer_life;
   // Maximum number of chunks stored in data manager temporary store
   static MemoryUsage temp_memory_store_size;
+  // Maximum number of pmids storing a chunk
+  static unsigned int max_replication_factor;
+  // Minimum required number of online pmids for a chunk
+  static unsigned int min_replication_factor;
 
  private:
   Parameters();

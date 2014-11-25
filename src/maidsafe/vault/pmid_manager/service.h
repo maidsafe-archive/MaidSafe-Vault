@@ -214,9 +214,7 @@ void PmidManagerService::HandleMessage(
     const typename AccountQueryResponseFromPmidManagerToPmidManager::Sender& sender,
     const typename AccountQueryResponseFromPmidManagerToPmidManager::Receiver& receiver);
 
-// ==================== Implementation =============================================================
-
-
+// =================================== Implementation =============================================
 // ================================= Put Implementation ===========================================
 
 template <typename Data>
@@ -226,17 +224,6 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                 <<  HexSubstr(data.name().value)
                 << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
-//   try {
-//     PmidManagerValue reply(group_db_.GetContents(pmid_node).metadata);
-//     if (reply.claimed_available_size <
-//         static_cast<uint32_t>(data.Serialise().data.string().size())) {
-//       dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,
-//                                        maidsafe_error(VaultErrors::not_enough_space),
-//                                        message_id);
-//       return;
-//     }
-//   } catch(...) {
-//   }
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), data.name().value,
                                  Data::Tag::kValue);

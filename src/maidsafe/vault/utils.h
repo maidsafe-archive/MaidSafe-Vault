@@ -49,8 +49,8 @@ TransferInfo GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change,
     std::map<Key, Value>& accounts);
 
-NodeId GetRandomCloseNode(routing::Routing& routing,
-                         const std::set<PmidName>& exclude = std::set<PmidName>());
+boost::optional<PmidName> GetRandomCloseNode(
+    routing::Routing& routing, const std::set<PmidName>& exclude = std::set<PmidName>());
 
 template <typename T>
 DataNameVariant GetNameVariant(const T&);

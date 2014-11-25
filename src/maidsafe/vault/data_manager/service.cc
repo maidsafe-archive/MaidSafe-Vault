@@ -273,25 +273,44 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
   }
 }
 
-void DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id) {
+uint64_t DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id,
+                                            const PmidName& tried_pmid_node) {
   std::set<PmidName> storing_pmid_nodes;
+  uint64_t chunk_size(0);
+  auto data_name(GetDataNameVariant(key.type, key.name));
   try {
     auto value(db_.Get(key));
     storing_pmid_nodes = value.online_pmids(close_nodes_change_.new_close_nodes());
+    if (tried_pmid_node != PmidName())
+      storing_pmid_nodes.insert(tried_pmid_node);
   }
   catch (const maidsafe_error& error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element)) {
       LOG(kInfo) << "No storing pmid so far...";
     }
   }
-  if (storing_pmid_nodes.size() >= routing::Parameters::closest_nodes_size / 2)
-    return;
+  if (storing_pmid_nodes.size() >= detail::Parameters::min_replication_factor) {
+    try {
+      temp_memory_store_.Delete(data_name);
+    }
+    catch (const maidsafe_error& error) {
+      if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+        LOG(kVerbose) << "chunk not available";
+      }
+      throw;
+    }
+    return chunk_size;
+  }
+
   auto pmid_name(detail::GetRandomCloseNode(routing_, storing_pmid_nodes));
-  auto data_name(GetDataNameVariant(key.type, key.name));
+  if (!pmid_name) {
+    LOG(kError) << "Failed to find a valid close pmid node";
+    return chunk_size;
+  }
   try {
     auto serialises_value(temp_memory_store_.Get(data_name));
     detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
-       this, PmidName(Identity(pmid_name.string())), serialises_value, message_id);
+       this, *pmid_name, serialises_value, message_id);
     boost::apply_visitor(send_put_request_visitor, data_name);
   }
   catch (const maidsafe_error& error) {
@@ -300,6 +319,7 @@ void DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::Messag
       // MAID-448 could re-attempt by Getting then storing.
     }
   }
+  return chunk_size;
 }
 
 // ==================== Sync / AccountTransfer implementation ======================================
@@ -523,6 +543,9 @@ void DataManagerService::HandleMessage(
 
 // ==================== General implementation =====================================================
 
+void DataManagerService::DerankPmidNode(const PmidName& /*pmid_node*/, bool /*malicious*/) {
+  // BEFORE_RELEASE: to be implemented
+}
 
 }  // namespace vault
 
