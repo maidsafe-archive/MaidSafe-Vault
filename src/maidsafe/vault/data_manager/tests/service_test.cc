@@ -156,11 +156,11 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   {
     NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
+    DataManager::Key key(data.name().value, ImmutableData::Tag::kValue);
     Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     data_name_id = NodeId(key.name.string());
     auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.raw_name.string());
+    content.raw_name = data.name().value;
     auto group_source(CreateGroupSource(pmid_node_id));
     auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,

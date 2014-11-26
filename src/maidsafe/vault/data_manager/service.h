@@ -480,7 +480,18 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
   DoSync(DataManager::UnresolvedAddPmid(key, ActionDataManagerAddPmid(pmid_node),
          routing_.kNodeId()));
   // if storages nodes reached cap, the existing furthest offline node need to be removed
-  auto value(db_.Get(key));
+  DataManager::Value value;
+  try {
+    value = db_.Get(key);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(VaultErrors::no_such_account)) {
+      LOG(kError) << "DataManagerService::HandlePutResponse value does not exist..."
+                  << boost::diagnostic_information(error);
+      // return; BEFORE_RELEASE this line should be uncommented
+    }
+    throw error;  // For db errors
+  }
   PmidName pmid_node_to_remove;
   auto need_to_prune(false);
   {
