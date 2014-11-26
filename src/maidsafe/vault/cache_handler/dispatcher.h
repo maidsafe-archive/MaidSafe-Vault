@@ -47,11 +47,6 @@ struct GetCacheResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kDataG
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter Type;
 };
 
-template <>
-struct GetCacheResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kDataManager>>> {
-  typedef GetCachedResponseFromCacheHandlerToDataManager Type;
-};
-
 }  // namespace detail
 
 

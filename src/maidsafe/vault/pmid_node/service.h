@@ -198,16 +198,6 @@ class PmidNodeService {
     return true;
   }
 
-  // ===================================Cache=====================================================
-  template <typename T>
-  bool DoGetFromCache(const T& message, const typename T::Sender& sender,
-                      const typename T::Receiver& receiver);
-
-  template <typename T>
-  void SendCachedData(const T& message, const typename T::Sender& sender,
-                      const typename T::Receiver& receiver,
-                      const std::shared_ptr<NonEmptyString> content);
-
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
 #ifdef USE_MAL_BEHAVIOUR

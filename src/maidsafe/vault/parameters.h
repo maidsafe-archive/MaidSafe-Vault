@@ -47,7 +47,7 @@ struct Parameters {
   // Removes entries which have been longer than below factor
   static std::chrono::seconds account_transfer_life;
   // Maximum number of chunks stored in data manager temporary store
-  static MemoryUsage temp_memory_store_size;
+  static MemoryUsage temp_store_size;
   // Maximum number of pmids storing a chunk
   static unsigned int max_replication_factor;
   // Minimum required number of online pmids for a chunk

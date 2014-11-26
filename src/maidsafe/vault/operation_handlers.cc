@@ -280,20 +280,6 @@ void DoOperation(DataManagerService* service, const PutFailureFromPmidManagerToD
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const GetCachedResponseFromCacheHandlerToDataManager& message,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
-  if (!message.contents->content)
-    return;
-  auto data_name(GetNameVariant(*message.contents));
-  CheckDataNameVisitor check_data_name_visitor(NonEmptyString(message.contents->content->data));
-  if (boost::apply_visitor(check_data_name_visitor, data_name)) {
-    service->HandleGetCachedResponse(message.id, *message.contents);
-  }
-}
-
-template <>
-void DoOperation(DataManagerService* service,
                  const AccountQueryFromDataManagerToDataManager& message,
                  const AccountQueryFromDataManagerToDataManager::Sender& sender,
                  const AccountQueryFromDataManagerToDataManager::Receiver& /*receiver*/) {
@@ -560,18 +546,6 @@ void OperationHandler<
 operator()(const IntegrityCheckRequestFromDataManagerToPmidNode& message,
            const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
            const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
-  DoOperation(service, message, sender, receiver);
-}
-
-template <>
-template <>
-void OperationHandler<
-    typename ValidateSenderType<GetCachedResponseFromCacheHandlerToDataManager>::type,
-    Accumulator<DataManagerServiceMessages>,
-    typename Accumulator<DataManagerServiceMessages>::AddCheckerFunctor, DataManagerService>::
-operator()(const GetCachedResponseFromCacheHandlerToDataManager& message,
-           const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-           const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {
   DoOperation(service, message, sender, receiver);
 }
 

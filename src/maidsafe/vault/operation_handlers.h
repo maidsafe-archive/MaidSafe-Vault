@@ -133,16 +133,6 @@ void OperationHandler<
                const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
                const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
-template <>
-template <>
-void OperationHandler<
-    typename ValidateSenderType<GetCachedResponseFromCacheHandlerToDataManager>::type,
-    Accumulator<DataManagerServiceMessages>,
-    typename Accumulator<DataManagerServiceMessages>::AddCheckerFunctor, DataManagerService>::
-    operator()(const GetCachedResponseFromCacheHandlerToDataManager& message,
-               const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-               const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
-
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
@@ -270,12 +260,6 @@ template <>
 void DoOperation(DataManagerService* service, const PutFailureFromPmidManagerToDataManager& message,
                  const PutFailureFromPmidManagerToDataManager::Sender& sender,
                  const PutFailureFromPmidManagerToDataManager::Receiver& receiver);
-
-template <>
-void DoOperation(DataManagerService* service,
-                 const GetCachedResponseFromCacheHandlerToDataManager& message,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,

@@ -147,7 +147,6 @@ class DataManagerService {
 
   // =========================== Get section (includes integrity checks) ===========================
   typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
-  typedef GetCachedResponseFromCacheHandlerToDataManager::Contents GetCachedResponseContents;
 
   template <typename Data, typename RequestorIdType>
   void HandleGet(const typename Data::Name& data_name, const RequestorIdType& requestor,
@@ -162,9 +161,6 @@ class DataManagerService {
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                          const GetResponseContents& contents);
 
-  void HandleGetCachedResponse(nfs::MessageId message_id,
-                               const GetCachedResponseContents& contents);
-
   // Removes a pmid_name from the set and returns it.
   template <typename DataName>
   PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
@@ -175,11 +171,6 @@ class DataManagerService {
   template <typename Data, typename RequestorIdType>
   void DoHandleGetResponse(
       const PmidName& pmid_node, const GetResponseContents& contents,
-      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
-
-  template <typename Data, typename RequestorIdType>
-  void DoHandleGetCachedResponse(
-      const GetCachedResponseContents& contents,
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data>
@@ -250,12 +241,6 @@ class DataManagerService {
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
 
-  template <typename Data>
-  NonEmptyString GetContentFromCache(const typename Data::Name& /*name*/) {
-    // BEFORE_RELEASE implementation missing
-    return NonEmptyString("remove me");
-  }
-
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const {
@@ -310,14 +295,13 @@ class DataManagerService {
   routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
-  routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
   DataManagerDataBase db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
-  MemoryFIFO temp_memory_store_;
+  MemoryFIFO temp_store_;
 
  protected:
   std::mutex lock_guard;
@@ -384,12 +368,6 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const GetCachedResponseFromCacheHandlerToDataManager& message,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
@@ -430,7 +408,7 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     try {
       LOG(kVerbose) << "Store in temp memeory";
       auto serialised_data(data.Serialise().data);
-      temp_memory_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+      temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
                                serialised_data);
       DoSync(DataManager::UnresolvedPut(DataManager::Key(data.name()),
                                         ActionDataManagerPut(serialised_data.string().size(),
@@ -556,6 +534,18 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
+  try {
+    dispatcher_.SendGetResponseSuccess(
+        requestor,
+        Data(data_name,
+             typename Data::serialised_type(temp_store_.Get(DataNameVariant(data_name)))),
+        message_id);
+    return;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    LOG(kVerbose) << "data not available in temporary store";
+  }
+
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   int expected_response_count(static_cast<int>(online_pmids.size()));
@@ -736,24 +726,6 @@ void DataManagerService::DoHandleGetResponse(
     AssessGetContentRequestedPmidNode<Data, RequestorIdType>(get_response_op);
 }
 
-template <typename Data, typename RequestorIdType>
-void DataManagerService::DoHandleGetCachedResponse(
-    const GetCachedResponseContents& contents,
-    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  if (contents == GetCachedResponseContents()) {
-    LOG(kError) << "Failure to retrieve data from network";
-    return;
-  }
-  if (SendGetResponse<Data, RequestorIdType>(
-          Data(get_response_op->data_name,
-               typename Data::serialised_type(NonEmptyString(contents.content->data))),
-          get_response_op)) {
-    get_response_op->serialised_contents =
-        typename Data::serialised_type(NonEmptyString(contents.content->data));
-    AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
-  }
-}
-
 template <typename Data>
 void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
                                                   const typename Data::Name& data_name,
@@ -803,8 +775,9 @@ bool DataManagerService::SendGetResponse(
                << get_response_op->message_id;
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
-    // Put to the CacheHandler in this vault.
-    dispatcher_.SendPutToCache(data);
+    auto serialised_data(data.Serialise().data);
+    temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+                             serialised_data);
     return true;
   } catch(const maidsafe_error& e) {
     error = e;

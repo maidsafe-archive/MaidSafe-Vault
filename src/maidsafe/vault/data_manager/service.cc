@@ -62,14 +62,13 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       close_nodes_change_(),
       dispatcher_(routing_, pmid),
       get_timer_(asio_service_),
-      get_cached_response_timer_(asio_service_),
       db_(UniqueDbPath(vault_root_dir)),
       sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
       account_transfer_(),
-      temp_memory_store_(detail::Parameters::temp_memory_store_size) {}
+      temp_store_(detail::Parameters::temp_store_size) {}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -190,20 +189,6 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-template <>
-void DataManagerService::HandleMessage(
-    const GetCachedResponseFromCacheHandlerToDataManager& message,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {
-  typedef GetCachedResponseFromCacheHandlerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                                            const GetResponseContents& contents) {
   LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
@@ -225,18 +210,6 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
                   << boost::diagnostic_information(error);
       throw;
     }
-  }
-}
-
-void DataManagerService::HandleGetCachedResponse(nfs::MessageId message_id,
-                                                 const GetCachedResponseContents& contents) {
-  LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
-                << " with message_id " << message_id.data;
-  try {
-    get_cached_response_timer_.AddResponse(message_id.data, contents);
-  }
-  catch (...) {
-    // BEFORE_RELEASE handle
   }
 }
 
@@ -291,7 +264,7 @@ uint64_t DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::Me
   }
   if (storing_pmid_nodes.size() >= detail::Parameters::min_replication_factor) {
     try {
-      temp_memory_store_.Delete(data_name);
+      temp_store_.Delete(data_name);
     }
     catch (const maidsafe_error& error) {
       if (error.code() == make_error_code(CommonErrors::no_such_element)) {
@@ -308,7 +281,7 @@ uint64_t DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::Me
     return chunk_size;
   }
   try {
-    auto serialises_value(temp_memory_store_.Get(data_name));
+    auto serialises_value(temp_store_.Get(data_name));
     detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
        this, *pmid_name, serialises_value, message_id);
     boost::apply_visitor(send_put_request_visitor, data_name);

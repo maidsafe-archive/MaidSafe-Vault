@@ -55,7 +55,6 @@ PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Rout
       account_transfer_() {
 }
 
-
 void PmidManagerService::HandleSyncedPut(
     std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action) {
   LOG(kVerbose) << "PmidManagerService::HandleSyncedPut commit put for chunk "
@@ -69,15 +68,23 @@ void PmidManagerService::HandleSyncedPut(
     std::lock_guard<std::mutex> lock(mutex_);
     PmidManager::Key account_name(synced_action->key.group_name());
     auto itr(accounts_.find(account_name));
-    if (itr == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (itr == std::end(accounts_)) {
+      // create an empty account for non-registered pmid_node
+      auto result(accounts_.insert(std::make_pair(account_name, PmidManager::Value())));
+      if (result.second)
+        itr = result.first;
+      else
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+      synced_action->action(itr->second);
+    }
     synced_action->action(itr->second);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "HandleSyncedPut caught an error during account commit " << error.what();
     throw;
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
-  SendPutResponse(data_name, synced_action->key.group_name(), synced_action->action.kMessageId);
+  SendPutResponse(data_name, synced_action->key.group_name(),
+                  synced_action->action.kMessageId);
 }
 
 void PmidManagerService::HandleSyncedDelete(
