@@ -319,8 +319,8 @@ void DoOperation(DataManagerService* service, const GetResponseFromPmidNodeToDat
                  const GetResponseFromPmidNodeToDataManager::Sender& sender,
                  const GetResponseFromPmidNodeToDataManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation GetResponseFromPmidNodeToDataManager";
-  service->HandleGetResponse(PmidName(Identity(sender.data.string())), message.id,
-                             *message.contents);
+  message.contents->pmid_name = PmidName(Identity(sender.data.string()));
+  service->HandleGetResponse(*message.contents, message.id);
   LOG(kVerbose) << "Done Operation GetResponseFromPmidNodeToDataManager";
 }
 
