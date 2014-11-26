@@ -55,9 +55,10 @@ TEST_F(DataManagerDatabaseTest, BEH_AddPmid) {
 
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
+  db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
 
   for (auto& pmid_node : pmid_nodes) {
-    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_node);
     db.Commit(key, action_add_pmid);
   }
   auto results(db.Get(key).AllPmids());
@@ -72,8 +73,9 @@ TEST_F(DataManagerDatabaseTest, BEH_AddDuplicatedPmid) {
   PmidName pmid_name(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
+  db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
 
-  ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+  ActionDataManagerAddPmid action_add_pmid(pmid_name);
   db.Commit(key, action_add_pmid);
   db.Commit(key, action_add_pmid);
 
@@ -90,8 +92,9 @@ TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
 
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
+  db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
   for (auto& pmid_node : pmid_nodes) {
-    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_node);
     db.Commit(key, action_add_pmid);
   }
   std::vector<PmidName> entries_to_remove {pmid_nodes[0], pmid_nodes[9], pmid_nodes[3]};
@@ -118,11 +121,12 @@ TEST_F(DataManagerDatabaseTest, BEH_Delete) {
   ActionDataManagerDelete action_delete(message_id);
   EXPECT_ANY_THROW(db.Commit(key, action_delete));
 
+  db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
   std::vector<PmidName> pmid_nodes;
   for (int i(0); i < 10; ++i)
     pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
   for (auto& pmid_node : pmid_nodes) {
-    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_node);
     db.Commit(key, action_add_pmid);
   }
   // failing deletion
@@ -147,21 +151,23 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_TRUE(result.empty());
   }
+
   std::vector<PmidName> pmid_nodes;
   for (int i(0); i < 10; ++i)
     pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
   // target non-exists
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
+  db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
   for (auto& pmid_node : pmid_nodes) {
-    ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_node);
     db.Commit(key, action_add_pmid);
   }
   auto result(db.GetRelatedAccounts(pmid_name));
   EXPECT_TRUE(result.empty());
   // target being the last
   {
-    ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_name);
     db.Commit(key, action_add_pmid);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 1);
@@ -173,7 +179,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
     std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
     local_pmid_nodes[0] = pmid_name;
     for (auto& pmid_node : local_pmid_nodes) {
-      ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+      ActionDataManagerAddPmid action_add_pmid(pmid_node);
       db.Commit(key, action_add_pmid);
     }
     auto result(db.GetRelatedAccounts(pmid_name));
@@ -186,7 +192,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
     std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
     local_pmid_nodes[3] = pmid_name;
     for (auto& pmid_node : local_pmid_nodes) {
-      ActionDataManagerAddPmid action_add_pmid(pmid_node, kTestChunkSize);
+      ActionDataManagerAddPmid action_add_pmid(pmid_node);
       db.Commit(key, action_add_pmid);
     }
     auto result(db.GetRelatedAccounts(pmid_name));
@@ -195,7 +201,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target being the only pmid_node
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
-    ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_name);
     db.Commit(key, action_add_pmid);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 4);
@@ -231,12 +237,13 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
   for (auto& account : data_entries) {
     PmidName pmid_node(Identity(account.string()));
     DataManager::Key key(Identity(pmid_node->string()), ImmutableData::Tag::kValue);
-    DataManager::Value value(pmid_node, kTestChunkSize);
+    DataManager::Value value(kTestChunkSize);
     value.AddPmid(PmidName(Identity(RandomString(64))));
     key_value_map[key] = value;
     auto pmids(value.AllPmids());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     for (auto& pmid : pmids) {
-      ActionDataManagerAddPmid action_add_pmid(pmid, kTestChunkSize);
+      ActionDataManagerAddPmid action_add_pmid(pmid);
       db.Commit(key, action_add_pmid);
     }
   }

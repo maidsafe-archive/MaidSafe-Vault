@@ -155,8 +155,12 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   //  BEH_PutResponseFromPmidManagerToDataManager
   {
     NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
+    data_name_id = NodeId(key.name.string());
     auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.name.raw_name.string());
+    data_name_id = NodeId(content.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
     auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
@@ -210,15 +214,6 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   }
 }
 
-TEST_F(DataManagerServiceTest, BEH_GetCachedResponseFromCacheHandlerToDataManager) {
-  NodeId cache_handler_id(NodeId::IdType::kRandomId);
-  auto content(CreateContent<GetCachedResponseFromCacheHandlerToDataManager::Contents>());
-  auto get_cache_response(CreateMessage<GetCachedResponseFromCacheHandlerToDataManager>(content));
-  EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_cache_response,
-                                      routing::SingleSource(cache_handler_id),
-                                      routing::SingleId(routing_.kNodeId())));
-}
-
 TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
   NodeId maid_node_id(NodeId::IdType::kRandomId);
   auto content(CreateContent<DeleteRequestFromMaidManagerToDataManager::Contents>());
@@ -247,7 +242,7 @@ TEST_F(DataManagerServiceTest, BEH_PutAgain) {
 
   PmidName pmid_name(Identity(RandomString(64)));
   DataManager::Key key(content.name.raw_name, content.name.type);
-  Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
 
   NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
   data_name_id = NodeId(content.name.raw_name.string());
@@ -264,7 +259,7 @@ TEST_F(DataManagerServiceTest, BEH_Delete) {
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
   // store key value in db
-  Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
   EXPECT_TRUE(Get(key).chunk_size() == kTestChunkSize);
   // key value is in db
   ActionDataManagerDelete action_delete((nfs::MessageId(RandomInt32())));
@@ -278,11 +273,12 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
   // check key value is not in db
   EXPECT_ANY_THROW(Get(key));
   {// Add first Pmid
     PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_name);
     auto group_unresolved_action(CreateGroupUnresolvedAction<
         DataManager::UnresolvedAddPmid>(key, action_add_pmid, group_source));
     SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action, group_source);
@@ -292,7 +288,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   }
   {// Add second Pmid
     PmidName pmid_name(Identity(RandomString(64)));
-    ActionDataManagerAddPmid action_add_pmid(pmid_name, kTestChunkSize);
+    ActionDataManagerAddPmid action_add_pmid(pmid_name);
     auto group_unresolved_action(CreateGroupUnresolvedAction<
         DataManager::UnresolvedAddPmid>(key, action_add_pmid, group_source));
     SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action, group_source);
@@ -309,8 +305,8 @@ TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
   auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   PmidName pmid_name_two(Identity(RandomString(64)));
-  Commit(key, ActionDataManagerAddPmid(pmid_name, kTestChunkSize));
-  Commit(key, ActionDataManagerAddPmid(pmid_name_two, kTestChunkSize));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
+  Commit(key, ActionDataManagerAddPmid(pmid_name_two));
   auto value(Get(key));
   EXPECT_TRUE(value.chunk_size() == kTestChunkSize);
   EXPECT_TRUE(value.AllPmids().size() == 2);
