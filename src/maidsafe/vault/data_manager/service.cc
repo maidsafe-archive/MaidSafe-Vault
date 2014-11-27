@@ -523,7 +523,7 @@ void DataManagerService::HandleMessage(
 
 // ==================== General implementation =====================================================
 
-void DataManagerService::DerankPmidNode(const PmidName& /*pmid_node*/, bool /*malicious*/) {
+void DataManagerService::DerankPmidNode(const PmidName& /*pmid_node*/) {
   // BEFORE_RELEASE: to be implemented
 }
 

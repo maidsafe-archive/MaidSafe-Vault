@@ -54,7 +54,7 @@ TEST_F(DataManagerValueTest, BEH_ChunkSize) {
   }
   {
     uint64_t chunk_size(RandomUint32());
-    DataManager::Value value(PmidName(Identity(RandomString(64))), chunk_size);
+    DataManager::Value value(chunk_size);
     EXPECT_EQ(chunk_size, value.chunk_size());
   }
 }
@@ -62,9 +62,8 @@ TEST_F(DataManagerValueTest, BEH_ChunkSize) {
 TEST_F(DataManagerValueTest, BEH_AddPmid) {
   PmidName pmid_node(Identity(RandomString(64)));
   // Add from constructor
-  DataManager::Value value(pmid_node, kTestChunkSize);
-  EXPECT_EQ(1, value.AllPmids().size());
-  EXPECT_EQ(pmid_node, value.AllPmids().front());
+  DataManager::Value value(kTestChunkSize);
+  EXPECT_EQ(0, value.AllPmids().size());
   // Duplication Add
   value.AddPmid(pmid_node);
   EXPECT_EQ(1, value.AllPmids().size());
@@ -105,7 +104,7 @@ TEST_F(DataManagerValueTest, BEH_HasTarget) {
   PmidName target(Identity(RandomString(64)));
   PmidName pmid_node(Identity(RandomString(64)));
 
-  DataManager::Value value(pmid_node, kTestChunkSize);
+  DataManager::Value value(kTestChunkSize);
   EXPECT_FALSE(value.HasTarget(target));
   value.AddPmid(target);
   EXPECT_TRUE(value.HasTarget(target));
