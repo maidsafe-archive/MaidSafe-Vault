@@ -24,6 +24,8 @@
 
 #include "maidsafe/routing/parameters.h"
 
+#include "maidsafe/vault/parameters.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -44,7 +46,7 @@ DataManagerValue::DataManagerValue(const std::string &serialised_value)
     size_ = value_proto.size();
     for (auto& i : value_proto.pmid_names())
       pmids_.push_back(PmidName(Identity(i)));
-    if (pmids_.size() < 1) {
+    if (pmids_.empty()) {
       LOG(kError) << "Invalid pmids";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
@@ -98,18 +100,17 @@ bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
 
 bool DataManagerValue::NeedToPrune(const std::vector<NodeId>& close_nodes,
                                    PmidName& pmid_node_to_remove) const {
-  if (pmids_.size() < routing::Parameters::closest_nodes_size)
+  if (pmids_.size() < detail::Parameters::max_replication_factor)
     return false;
-  // Prune the oldest offline node
-  for (auto itr(pmids_.begin()); itr != pmids_.end(); ++itr) {
-    auto spotted(std::find(close_nodes.begin(), close_nodes.end(), NodeId((*itr)->string())));
-    if (spotted == close_nodes.end()) {
+  for (auto itr(std::begin(pmids_)); itr != std::end(pmids_); ++itr) {
+    if (std::find(std::begin(close_nodes), std::end(close_nodes), NodeId((*itr)->string()))
+            == std::end(close_nodes)) {
       pmid_node_to_remove = *itr;
       return true;
     }
   }
   // if all nodes are online, remove the oldest one
-  pmid_node_to_remove = *(pmids_.begin());
+  pmid_node_to_remove = *(std::begin(pmids_));
   return true;
 }
 
@@ -134,8 +135,8 @@ bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
 std::vector<PmidName> DataManagerValue::online_pmids(const std::vector<NodeId>& close_nodes) const {
   std::vector<PmidName> online_pmids;
   for (auto& pmid : pmids_) {
-    auto spotted(std::find(close_nodes.begin(), close_nodes.end(), NodeId(pmid->string())));
-    if (spotted != close_nodes.end())
+    if (std::find(std::begin(close_nodes), std::end(close_nodes), NodeId(pmid->string()))
+            != std::end(close_nodes))
       online_pmids.push_back(pmid);
   }
   return online_pmids;

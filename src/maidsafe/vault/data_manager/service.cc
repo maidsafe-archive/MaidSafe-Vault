@@ -289,7 +289,9 @@ uint64_t DataManagerService::SendPutRequest(const DataManager::Key& key, nfs::Me
   catch (const maidsafe_error& error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element)) {
       LOG(kError) << HexSubstr(key.name.string()) << " not in temp storage ";
-      // MAID-448 could re-attempt by Getting then storing.
+      detail::DataManagerGetForNodeDownVisitor<DataManagerService>
+          get_for_node_down(this, storing_pmid_nodes);
+      boost::apply_visitor(get_for_node_down, data_name);
     }
   }
   return chunk_size;
@@ -477,7 +479,8 @@ void DataManagerService::HandleChurnEvent(
     for (auto online_pmid : online_pmids)
       if (online_pmid != pmid_name)
         online_pmids_set.insert(online_pmid);
-    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids_set);
+    detail::DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(
+                                                                     this, online_pmids_set);
     auto data_name(GetDataNameVariant(account.first.type, account.first.name));
     boost::apply_visitor(get_for_node_down, data_name);
   }

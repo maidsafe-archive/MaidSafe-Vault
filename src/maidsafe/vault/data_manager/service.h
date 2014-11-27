@@ -68,23 +68,6 @@ namespace test {
 
 }
 
-template <typename ServiceHandlerType>
-class DataManagerGetForNodeDownVisitor : public boost::static_visitor<> {
- public:
-  DataManagerGetForNodeDownVisitor(ServiceHandlerType* service,
-                                   const std::set<PmidName>& online_pmids)
-      : kService_(service), kOnlinePmids_(online_pmids) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    kService_->template DoGetForNodeDown<typename Name::data_type>(data_name, kOnlinePmids_);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
-  const std::set<PmidName> kOnlinePmids_;
-};
-
 class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
@@ -283,7 +266,7 @@ class DataManagerService {
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerAccountQueryVisitor<DataManagerService>;
-  friend class DataManagerGetForNodeDownVisitor<DataManagerService>;
+  friend class detail::DataManagerGetForNodeDownVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -619,15 +602,11 @@ template <typename Data>
 void DataManagerService::DoGetForNodeDown(const typename Data::Name& data_name,
                                           const std::set<PmidName>& online_pmids) {
   LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
-  // Only trigger the recovery procedure when not enough online_pmids.
-  if (online_pmids.size() > (routing::Parameters::group_size / 2U))
-    return;
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
                   << " task called from timer to DoGetForNodeDownResponse";
-    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first,
-                                         data_name,
+    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first, data_name,
                                          pmid_node_and_contents.second);
   });
   nfs::MessageId message_id(get_timer_.NewTaskId());
@@ -756,21 +735,10 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
                   << HexSubstr(contents.content->string());
 
   if (contents.content) {
-    std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
-    PmidName pmid_name;
-    bool already_picked(false);
-    do {
-      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
-      auto itr(online_pmids.find(pmid_name));
-      already_picked = (itr != online_pmids.end());
-    } while (pmid_name->string() == data_name.value.string() && already_picked);
-
-    Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
-    nfs::MessageId message_id(HashStringToMessageId(data_name.value.string()));
-    // Moving chunk 'contents.name.raw_name' to Pmid node 'pmid_name.value'
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kMoveChunk, contents.name.raw_name,
-         pmid_name.value);
-    dispatcher_.SendPutRequest(pmid_name, data, message_id);
+    temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data_name.value),
+                      typename Data::serialised_type(*contents.content));
+    SendPutRequest(DataManager::Key(data_name.value, Data::Tag::kValue),
+                   nfs::MessageId(RandomInt32()));
   }
 }
 
@@ -784,9 +752,8 @@ bool DataManagerService::SendGetResponse(
                << get_response_op->message_id;
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
-    auto serialised_data(data.Serialise().data);
     temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
-                             serialised_data);
+                      data.Serialise().data);
     return true;
   } catch(const maidsafe_error& e) {
     error = e;
