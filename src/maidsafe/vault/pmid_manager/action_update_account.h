@@ -16,46 +16,48 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_NODE_UP_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_NODE_UP_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_ACTION_UPDATE_ACCOUNT_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_ACTION_UPDATE_ACCOUNT_H_
 
-#include <cstdint>
 #include <string>
 
-#include "maidsafe/nfs/types.h"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
+
 #include "maidsafe/vault/config.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
+
+#include "maidsafe/vault/pmid_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class DataManagerValue;
+struct ActionPmidManagerUpdateAccount {
+  ActionPmidManagerUpdateAccount(int32_t size);
+  explicit ActionPmidManagerUpdateAccount(const std::string& serialised_action);
+  ActionPmidManagerUpdateAccount(const ActionPmidManagerUpdateAccount& other);
+  ActionPmidManagerUpdateAccount(ActionPmidManagerUpdateAccount&& other);
 
-struct ActionDataManagerNodeUp {
- public:
-  explicit ActionDataManagerNodeUp(const PmidName& pmid_name);
-  explicit ActionDataManagerNodeUp(const std::string& serialised_action);
-  ActionDataManagerNodeUp(const ActionDataManagerNodeUp& other);
-  ActionDataManagerNodeUp(ActionDataManagerNodeUp&& other);
+  void operator()(PmidManagerValue& value);
+
   std::string Serialise() const;
 
-  detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
-
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kSetPmidOnline;
-  const PmidName kPmidName;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kUpdateAccount;
+  const int32_t kDiffSize;
 
  private:
-  ActionDataManagerNodeUp();
-  ActionDataManagerNodeUp& operator=(ActionDataManagerNodeUp other);
+  ActionPmidManagerUpdateAccount();
+  ActionPmidManagerUpdateAccount& operator=(ActionPmidManagerUpdateAccount other);
 };
 
-bool operator==(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs);
-
-bool operator!=(const ActionDataManagerNodeUp& lhs, const ActionDataManagerNodeUp& rhs);
+bool operator==(const ActionPmidManagerUpdateAccount& lhs,
+                const ActionPmidManagerUpdateAccount& rhs);
+bool operator!=(const ActionPmidManagerUpdateAccount& lhs,
+                const ActionPmidManagerUpdateAccount& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_NODE_UP_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACTION_UPDATE_ACCOUNT_H_

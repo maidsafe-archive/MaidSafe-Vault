@@ -19,7 +19,9 @@
 #ifndef MAIDSAFE_VAULT_UTILS_H_
 #define MAIDSAFE_VAULT_UTILS_H_
 
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "maidsafe/common/node_id.h"
@@ -31,6 +33,7 @@
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/key_utils.h"
+#include "maidsafe/vault/types.h"
 
 
 namespace maidsafe {
@@ -38,6 +41,16 @@ namespace maidsafe {
 namespace vault {
 
 namespace detail {
+
+// option 1 : Fire functor here with check_holder_result.new_holder & the corresponding value
+// option 2 : create a map<NodeId, std::vector<std::pair<Key, value>>> and return after pruning
+template <typename Key, typename Value, typename TransferInfo>
+TransferInfo GetTransferInfo(
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change,
+    std::map<Key, Value>& accounts);
+
+boost::optional<PmidName> GetRandomCloseNode(
+    routing::Routing& routing, const std::vector<PmidName> &exclude = std::vector<PmidName>());
 
 template <typename T>
 DataNameVariant GetNameVariant(const T&);
@@ -58,9 +71,6 @@ template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data);
 
 template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data);
-
-template <>
 DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data);
 
 template <>
@@ -70,7 +80,10 @@ template <>
 DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data);
 
 template <>
-DataNameVariant GetNameVariant(const nfs_client::DataNameAndSpaceAndReturnCode& data);
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndSpaceAndReturnCode& data);
+
+template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndReturnCode& data);
 
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataNameAndVersion& data);
@@ -261,6 +274,44 @@ struct SendSyncMessage {
     routing.Send(message);
   }
 };
+
+// ============================ miscellaneous ======================================================
+
+template <typename T>
+T Median(std::vector<T>& values)  {
+  size_t size(values.size());
+  if (size == 0)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
+  auto it(values.begin() + size / 2 + 1);
+  std::partial_sort(values.begin(), it, values.end());
+  if (size % 2 == 0) {
+    T first(*--it), second(*--it);
+    return second + ((first - second) / 2);
+  } else {
+    return *--it;
+  }
+}
+
+template <typename T>
+std::pair<T, unsigned int> MaxOccurance(const std::vector<T>& values) {
+  std::map<T, unsigned int> stats;
+  for (const auto& value : values) {
+    auto iter(std::find_if(std::begin(stats), std::end(stats),
+                           [&](const std::pair<T, unsigned int>& pair) {
+                             return value == pair.first;
+                           }));
+    if (iter == std::end(stats))
+      stats.push_back(std::make_pair(value, 1));
+    else
+      iter->second++;
+  }
+
+  auto max_iter(std::begin(stats));
+  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
+
+  return *max_iter;
+}
 
 }  // namespace vault
 

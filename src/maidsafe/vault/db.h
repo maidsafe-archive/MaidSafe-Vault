@@ -54,6 +54,7 @@ class Db {
   std::unique_ptr<Value> Commit(
       const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+  std::vector<Key> GetTargets(const PmidName& pmid_node);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
  private:
@@ -76,8 +77,8 @@ Db<Key, Value>::Db(const boost::filesystem::path& db_path)
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
-  static_assert(!std::is_copy_constructible<Value>::value,
-                "value should not be copy constructible !");
+//  static_assert(!std::is_copy_constructible<Value>::value,
+//                "value should not be copy constructible !"); MAID-357
   static_assert(std::is_move_constructible<Value>::value, "value should be move constructible !");
 #endif
 }
@@ -164,6 +165,21 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   for (const auto& key_string : prune_vector)
     sqlitedb_->Delete(key_string);  // Ignore Delete failure here ?
   return transfer_info;
+}
+
+template <typename Key, typename Value>
+std::vector<Key> Db<Key, Value>::GetTargets(const PmidName& pmid_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::vector<Key> result;
+  std::pair<std::string, std::string> db_iter;
+  while (sqlitedb_->SeekNext(db_iter)) {
+    Value value(db_iter.second);
+    if (value.HasTarget(pmid_name)) {
+      Key key(typename Key::FixedWidthString(db_iter.first));
+      result.push_back(std::move(key));
+    }
+  }
+  return result;
 }
 
 // Ignores values which are already in db

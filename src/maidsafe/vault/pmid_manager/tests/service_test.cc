@@ -38,26 +38,23 @@ class PmidManagerServiceTest : public testing::Test {
         kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
         vault_root_dir_(*kTestRoot_),
         routing_(pmid_),
-        pmid_manager_service_(pmid_, routing_, vault_root_dir_) {}
+        pmid_manager_service_(pmid_, routing_) {}
 
   template <typename UnresolvedActionType>
   std::vector<std::unique_ptr<UnresolvedActionType>> GetUnresolvedActions();
 
-  void AddGroup(const PmidManager::GroupName& group_name, const PmidManager::Metadata& metadata) {
-    pmid_manager_service_.group_db_.AddGroup(group_name, metadata);
-  }
-
-  PmidManager::Metadata GetMetadata(const PmidManager::GroupName& group_name) {
-    return pmid_manager_service_.group_db_.GetMetadata(group_name);
+  void AddGroup(PmidManager::Key key, const PmidManager::Value& value) {
+    pmid_manager_service_.accounts_.insert(std::make_pair(key, value));
   }
 
   PmidManager::Value GetValue(const PmidManager::Key& key) {
-    return pmid_manager_service_.group_db_.GetValue(key);
+    return pmid_manager_service_.accounts_.at(key);
   }
 
   template <typename ActionType>
   void Commit(const PmidManager::Key& key, const ActionType& action) {
-    pmid_manager_service_.group_db_.Commit(key, action);
+    auto& value_ref(pmid_manager_service_.accounts_.at(key));
+    action(value_ref);
   }
 
   template <typename UnresolvedActionType>
@@ -129,73 +126,53 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
 
   //  BEH_PutFailureFromPmidNodeToPmidManager)
   {
-    PmidManagerMetadata metadata(PmidName(pmid_.name()));
-    metadata.claimed_available_size = kTestChunkSize * 100;
-    AddGroup(PmidName(pmid_.name()), PmidManagerMetadata());
+    AddGroup(PmidName(pmid_.name()), PmidManagerValue());
     auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
     auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
     EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
                                        routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
                                        routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
-    metadata = GetMetadata(PmidName(pmid_.name()));
-    EXPECT_TRUE(metadata.claimed_available_size == 0);
+    auto value(GetValue(PmidName(pmid_.name())));
+    EXPECT_TRUE(value.offered_space == 0);
   }
 
   //  BEH_DeleteRequestFromDataManagerToPmidManager)
   {
     auto content(CreateContent<DeleteRequestFromDataManagerToPmidManager::Contents>());
     auto delete_request(CreateMessage<DeleteRequestFromDataManagerToPmidManager>(content));
-    auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
+    auto group_source(CreateGroupSource(NodeId(content.name.raw_name.string())));
     EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, delete_request, group_source,
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
   }
-
-  //  BEH_GetPmidAccountRequestFromPmidNodeToPmidManager
-  {
-    auto content(CreateContent<GetPmidAccountRequestFromPmidNodeToPmidManager::Contents>());
-    auto get_pmid_account_request(
-        CreateMessage<GetPmidAccountRequestFromPmidNodeToPmidManager>(content));
-    EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, get_pmid_account_request,
-                                       routing::SingleSource(NodeId(pmid_.name()->string())),
-                                       routing::GroupId(NodeId(pmid_.name()->string()))));
-  }
-  {
-    auto content(CreateContent<PmidHealthRequestFromMaidManagerToPmidManager::Contents>());
-    auto get_pmid_account_request(
-        CreateMessage<PmidHealthRequestFromMaidManagerToPmidManager>(content));
-    NodeId maid_node(NodeId::IdType::kRandomId);
-    auto group_source(CreateGroupSource(maid_node));
-  }
 }
-
 
 TEST_F(PmidManagerServiceTest, BEH_PutThenDelete) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(NodeId(pmid_.name()->string())));
-  PmidManager::Key key(PmidName(pmid_.name()), data.name(), ImmutableData::Tag::kValue);
-  AddGroup(PmidName(pmid_.name()), PmidManagerMetadata());
+  PmidManager::Key key(pmid_.name());
+  AddGroup(PmidName(pmid_.name()), PmidManagerValue());
 
   {  // Put
     ActionPmidManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
     auto group_unresolved_action(
-        CreateGroupUnresolvedAction<PmidManager::UnresolvedPut>(key, action_put, group_source));
+        CreateGroupUnresolvedAction<PmidManager::UnresolvedPut>(
+            PmidManager::SyncKey(key, data.name(), ImmutableData::Tag::kValue),
+            action_put, group_source));
     SendSync<PmidManager::UnresolvedPut>(group_unresolved_action, group_source);
     auto value(GetValue(key));
-    auto metadata(GetMetadata(PmidName(pmid_.name())));
-    EXPECT_TRUE(value.size() == kTestChunkSize);
-    EXPECT_TRUE(metadata.stored_total_size == kTestChunkSize);
-    EXPECT_TRUE(metadata.stored_count == 1);
+    EXPECT_TRUE(value.stored_total_size == kTestChunkSize);
   }
   {  //  Delete
-    ActionPmidManagerDelete action_delete(false, false);
-    EXPECT_NO_THROW(GetMetadata(PmidName(pmid_.name()))) << "pmid name should be here";
+    ActionPmidManagerDelete action_delete(kTestChunkSize, false, false);
+    EXPECT_NO_THROW(GetValue(PmidName(pmid_.name()))) << "pmid name should be here";
     auto group_unresolved_action(CreateGroupUnresolvedAction<PmidManager::UnresolvedDelete>(
-        key, action_delete, group_source));
+        PmidManager::SyncKey(key, data.name(), ImmutableData::Tag::kValue),
+        action_delete, group_source));
     SendSync<PmidManager::UnresolvedDelete>(group_unresolved_action, group_source);
     EXPECT_ANY_THROW(GetValue(key)) << " this key shoud have been deleted";
-    EXPECT_THROW(GetMetadata(PmidName(pmid_.name())), std::exception)
+    EXPECT_THROW(GetValue(PmidName(pmid_.name())), std::exception)
         << " Added one pmid and deleted it so account should be removed";
   }
 }

@@ -42,20 +42,21 @@
 #include "maidsafe/nfs/message_types.h"
 #include "maidsafe/nfs/message_types_partial.h"
 
-#include "maidsafe/vault/account_transfer.h"
+#include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/group_db.h"
+#include "maidsafe/vault/memory_fifo.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
 #include "maidsafe/vault/data_manager/dispatcher.h"
 #include "maidsafe/vault/data_manager/helpers.h"
 #include "maidsafe/vault/data_manager/value.h"
+#include "maidsafe/vault/data_manager/database.h"
+#include "maidsafe/vault/account_transfer.pb.h"
 
 namespace maidsafe {
 
@@ -72,6 +73,7 @@ class DataManagerService {
   typedef nfs::DataManagerServiceMessages PublicMessages;
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
+  using AccountType = std::pair<Key, DataManagerValue>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -96,8 +98,7 @@ class DataManagerService {
 
   // =========================== Put section =======================================================
   template <typename Data>
-  void HandlePut(const Data& data, const MaidName& maid_name, const PmidName& pmid_name,
-                 nfs::MessageId message_id);
+  void HandlePut(const Data& data, const MaidName& maid_name, nfs::MessageId message_id);
 
   template <typename Data>
   bool EntryExist(const typename Data::Name& name);
@@ -106,25 +107,29 @@ class DataManagerService {
   typedef std::false_type EntryNeedNotBeUnique;
   template <typename Data>
   void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                 nfs::MessageId message_id, int32_t cost, EntryMustBeUnique);
+                                 nfs::MessageId message_id, uint64_t cost, EntryMustBeUnique);
   template <typename Data>
   void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                 nfs::MessageId message_id, int32_t cost, EntryNeedNotBeUnique);
+                                 nfs::MessageId message_id, uint64_t cost, EntryNeedNotBeUnique);
 
   template <typename Data>
   void HandlePutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
-                         int32_t size, nfs::MessageId message_id);
+                         nfs::MessageId message_id);
 
   template <typename Data>
-  void HandlePutFailure(const typename Data::Name& data_name, const PmidName& attempted_pmid_node,
-                        nfs::MessageId message_id, const maidsafe_error& error);
+  void HandlePutFailure(const typename Data::Name& data_name, uint64_t size,
+                        const PmidName& attempted_pmid_node, nfs::MessageId message_id,
+                        const maidsafe_error& error);
 
   template <typename DataName>
   bool SendPutRetryRequired(const DataName& data_name);
 
+  template <typename Data>
+  void SendPmidUpdateAccount(const typename Data::Name& data_name, const PmidName& pmid_node,
+                             uint64_t chunk_size, uint64_t given_size);
+
   // =========================== Get section (includes integrity checks) ===========================
   typedef GetResponseFromPmidNodeToDataManager::Contents GetResponseContents;
-  typedef GetCachedResponseFromCacheHandlerToDataManager::Contents GetCachedResponseContents;
 
   template <typename Data, typename RequestorIdType>
   void HandleGet(const typename Data::Name& data_name, const RequestorIdType& requestor,
@@ -132,12 +137,12 @@ class DataManagerService {
 
   template <typename Data>
   void GetForNodeDown(const PmidName& pmid_name, const typename Data::Name& data_name);
+  template <typename Data>
+  void DoGetForNodeDown(const typename Data::Name& data_name,
+                        const std::set<PmidName>& online_pmids);
 
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                          const GetResponseContents& contents);
-
-  void HandleGetCachedResponse(nfs::MessageId message_id,
-                               const GetCachedResponseContents& contents);
 
   // Removes a pmid_name from the set and returns it.
   template <typename DataName>
@@ -149,11 +154,6 @@ class DataManagerService {
   template <typename Data, typename RequestorIdType>
   void DoHandleGetResponse(
       const PmidName& pmid_node, const GetResponseContents& contents,
-      std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
-
-  template <typename Data, typename RequestorIdType>
-  void DoHandleGetCachedResponse(
-      const GetCachedResponseContents& contents,
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data>
@@ -173,9 +173,7 @@ class DataManagerService {
   void AssessGetContentRequestedPmidNode(
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
-  template <typename Data>
-  void DerankPmidNode(const PmidName pmid_node, const typename Data::Name& name,
-                      nfs::MessageId message_id);
+  void DerankPmidNode(const PmidName& pmid_node);
 
   template <typename Data>
   void DeletePmidNodeAsHolder(const PmidName pmid_node, const typename Data::Name& name,
@@ -190,11 +188,17 @@ class DataManagerService {
 
   template <typename Data>
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
-                         nfs::MessageId message_id);
+                         const uint64_t size, nfs::MessageId message_id);
+
+  uint64_t SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id,
+                          const PmidName& tried_pmid_name = PmidName());
+
+  template <typename Data>
+  void HandleSendPutRequest(const PmidName& pmid_name, const Data& data, nfs::MessageId);
 
   template <typename Data>
   void SendFalseDataNotification(const PmidName pmid_node, const typename Data::Name& name,
-                                 nfs::MessageId message_id);
+                                 uint64_t size, nfs::MessageId message_id);
 
   // =========================== Node up / Node down section =======================================
   template <typename DataName>
@@ -211,16 +215,14 @@ class DataManagerService {
                        const std::vector<Db<DataManager::Key,
                                          DataManager::Value>::KvPair>& accounts);
 
-  void HandleAccountTransfer(
-      std::unique_ptr<DataManager::UnresolvedAccountTransfer>&& resolved_action);
+  void HandleAccountTransfer(const AccountType& account);
+
+  template<typename DataName>
+  void HandleAccountQuery(const DataName& name, const NodeId& sender);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::SingleSource& sender);
   // =========================== General functions =================================================
   void HandleDataIntegrityResponse(const GetResponseContents& response, nfs::MessageId message_id);
-
-  template <typename Data>
-  NonEmptyString GetContentFromCache(const typename Data::Name& /*name*/) {
-    // BEFORE_RELEASE implementation missing
-    return NonEmptyString("remove me");
-  }
 
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
@@ -259,11 +261,12 @@ class DataManagerService {
 
   friend class detail::DataManagerPutVisitor<DataManagerService>;
   friend class detail::DataManagerPutResponseVisitor<DataManagerService>;
+  friend class detail::DataManagerSendPutRequestVisitor<DataManagerService>;
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
-  friend class detail::DataManagerSetPmidOnlineVisitor<DataManagerService>;
-  friend class detail::DataManagerSetPmidOfflineVisitor<DataManagerService>;
+  friend class detail::DataManagerAccountQueryVisitor<DataManagerService>;
+  friend class detail::DataManagerGetForNodeDownVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -275,15 +278,13 @@ class DataManagerService {
   routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
-  routing::Timer<GetCachedResponseContents> get_cached_response_timer_;
-  Db<DataManager::Key, DataManager::Value> db_;
+  DataManagerDataBase db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
-  Sync<DataManager::UnresolvedNodeDown> sync_node_downs_;
-  Sync<DataManager::UnresolvedNodeUp> sync_node_ups_;
-  AccountTransfer<DataManager::UnresolvedAccountTransfer> account_transfer_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
+  MemoryFIFO temp_store_;
 
  protected:
   std::mutex lock_guard;
@@ -350,12 +351,6 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const GetCachedResponseFromCacheHandlerToDataManager& message,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
-
-template <>
-void DataManagerService::HandleMessage(
     const DeleteRequestFromMaidManagerToDataManager& message,
     const typename DeleteRequestFromMaidManagerToDataManager::Sender& sender,
     const typename DeleteRequestFromMaidManagerToDataManager::Receiver& receiver);
@@ -374,59 +369,48 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-  const SetPmidOnlineFromPmidManagerToDataManager& message,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
+    const AccountQueryFromDataManagerToDataManager& message,
+    const typename AccountQueryFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryFromDataManagerToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
-    const SetPmidOfflineFromPmidManagerToDataManager& message,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-    const typename SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
+    const AccountQueryResponseFromDataManagerToDataManager& message,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Sender& sender,
+    const typename AccountQueryResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
 template <typename Data>
 void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
-                                   const PmidName& pmid_name_in, nfs::MessageId message_id) {
+                                   nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << HexSubstr(maid_name->string())
-                << " with pmid_name_in " << HexSubstr(pmid_name_in->string());
-  int32_t cost(static_cast<int32_t>(data.Serialise().data.string().size()));
+                << " from maid_node " << HexSubstr(maid_name->string());
+  uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;
-    PmidName pmid_name;
-    if (routing_.ClosestToId(NodeId(data.name().value)) &&
-        (pmid_name_in.value.string() != NodeId().string()) &&
-        (pmid_name_in.value.string() != data.name().value.string())) {
-      LOG(kInfo) << "using the pmid_name_in";
-      pmid_name = pmid_name_in;
-    } else {
-      do {
-        LOG(kInfo) << "pick from routing_.RandomConnectedNode()";
-        // it is observed during the startup period, a vault may receive a request before
-        // it's routing_table having any entry.
-        auto picked_node(routing_.RandomConnectedNode());
-        if (picked_node != NodeId()) {
-          pmid_name = PmidName(Identity(picked_node.string()));
-        } else {
-          LOG(kError) << "no entry in routing_table";
-          return;
-        }
-      } while (pmid_name->string() == data.name().value.string());
+    try {
+      LOG(kVerbose) << "Store in temp memeory";
+      auto serialised_data(data.Serialise().data);
+      temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+                               serialised_data);
+      DoSync(DataManager::UnresolvedPut(DataManager::Key(data.name()),
+                                        ActionDataManagerPut(serialised_data.string().size(),
+                                                             message_id),
+                                        routing_.kNodeId()));
+      dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
     }
-    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-               << " from maid_node " << HexSubstr(maid_name->string())
-               << " . SendPutRequest with message_id " << message_id.data
-               << " to picked up pmid_node " << HexSubstr(pmid_name->string());
-    dispatcher_.SendPutRequest(pmid_name, data, message_id);
-    LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << HexSubstr(maid_name->string())
-                << " . SendPutResponse with message_id " << message_id.data;
-    dispatcher_.SendPutToCache(data);
-    dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
+    catch (const std::exception&) {
+      LOG(kError) << "Failed to store data in to the cache";
+    }
   } else {
     HandlePutWhereEntryExists(data, maid_name, message_id, cost, is_unique_on_network<Data>());
   }
+}
+
+template <typename Data>
+void DataManagerService::HandleSendPutRequest(
+    const PmidName& pmid_name, const Data& data, nfs::MessageId message_id) {
+  dispatcher_.SendPutRequest(pmid_name, data, message_id);
 }
 
 template <typename Data>
@@ -448,7 +432,7 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
 
 template <typename Data>
 void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                                   nfs::MessageId message_id, int32_t /*cost*/,
+                                                   nfs::MessageId message_id, uint64_t /*cost*/,
                                                    EntryMustBeUnique) {
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
               << " from maid_node " << HexSubstr(maid_name->string())
@@ -459,12 +443,9 @@ void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidN
 
 template <typename Data>
 void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                                   nfs::MessageId message_id, int32_t cost,
+                                                   nfs::MessageId message_id, uint64_t cost,
                                                    EntryNeedNotBeUnique) {
-  LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-              << " from maid_node " << HexSubstr(maid_name->string()) << " syncing";
-  typename DataManager::Key key(data.name().value, Data::Tag::kValue);
-  DoSync(DataManager::UnresolvedPut(key, ActionDataManagerPut(), routing_.kNodeId()));
+  // As the subscribers has been removed, no need to carry out any further actions for duplicates
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
               << " from maid_node " << HexSubstr(maid_name->string())
               << " . SendPutResponse with message_id " << message_id.data;
@@ -473,57 +454,59 @@ void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidN
 
 template <typename Data>
 void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
-                                           const PmidName& pmid_node, int32_t size,
+                                           const PmidName& pmid_node,
                                            nfs::MessageId /*message_id*/) {
   LOG(kVerbose) << "DataManagerService::HandlePutResponse for chunk "
                 << HexSubstr(data_name.value.string()) << " storing on pmid_node "
                 << HexSubstr(pmid_node.value.string());
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
-  DoSync(DataManager::UnresolvedAddPmid(key,
-             ActionDataManagerAddPmid(pmid_node, size), routing_.kNodeId()));
+  DoSync(DataManager::UnresolvedAddPmid(key, ActionDataManagerAddPmid(pmid_node),
+         routing_.kNodeId()));
+  // if storages nodes reached cap, the existing furthest offline node need to be removed
+  DataManager::Value value;
+  try {
+    value = db_.Get(key);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(VaultErrors::no_such_account)) {
+      LOG(kError) << "DataManagerService::HandlePutResponse value does not exist..."
+                  << boost::diagnostic_information(error);
+      // return; BEFORE_RELEASE this line should be uncommented
+    }
+    throw error;  // For db errors
+  }
+  PmidName pmid_node_to_remove;
+  auto need_to_prune(false);
+  {
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    need_to_prune = value.NeedToPrune(close_nodes_change_.new_close_nodes(), pmid_node_to_remove);
+  }
+  if (need_to_prune)
+    DoSync(DataManager::UnresolvedRemovePmid(key,
+               ActionDataManagerRemovePmid(pmid_node_to_remove), routing_.kNodeId()));
 }
 
 template <typename Data>
 void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
+                                          uint64_t size,
                                           const PmidName& attempted_pmid_node,
                                           nfs::MessageId message_id,
                                           const maidsafe_error& /*error*/) {
   LOG(kVerbose) << "DataManagerService::HandlePutFailure " << HexSubstr(data_name.value)
                 << " from attempted_pmid_node " << HexSubstr(attempted_pmid_node->string());
   // TODO(Team): Following should be done only if error is fixable by repeat
+  uint64_t chunk_size(0);
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
-  // Get all pmid nodes for this data.
-  if (SendPutRetryRequired(data_name)) {
-    std::set<PmidName> pmids_to_avoid;
-    try {
-      auto value(db_.Get(key));
-      pmids_to_avoid = std::move(value.AllPmids());
-    } catch (const common_error& error) {
-      if (error.code() != make_error_code(CommonErrors::no_such_element)) {
-        LOG(kError) << "HandlePutFailure db error";
-        throw error;  // For db errors
-      }
-    }
-
-    pmids_to_avoid.insert(attempted_pmid_node);
-    auto pmid_name(PmidName(Identity(routing_.RandomConnectedNode().string())));
-    while (pmids_to_avoid.find(pmid_name) != std::end(pmids_to_avoid))
-      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
-
-    try {
-      NonEmptyString content(GetContentFromCache<Data>(data_name));
-      dispatcher_.SendPutRequest<Data>(pmid_name,
-                                       Data(data_name, typename Data::serialised_type(content)),
-                                       message_id);
-    }
-    catch (std::exception& /*ex*/) {
-      // handle failure to retrieve content from cache, a Get->Then->call
-      // dispatcher_.SendPutRequest(pmid_name, Data(data_name, content), message_id); )
-    }
-  }
+  if (SendPutRetryRequired(data_name))
+    chunk_size = SendPutRequest(key, message_id, attempted_pmid_node);
 
   DoSync(DataManager::UnresolvedRemovePmid(
       key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
+
+  if ((chunk_size != 0) && chunk_size != size)
+    SendPmidUpdateAccount<Data>(data_name, attempted_pmid_node, chunk_size, size);
+
+  DerankPmidNode(attempted_pmid_node);
 }
 
 template <typename DataName>
@@ -543,6 +526,18 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
+  try {
+    dispatcher_.SendGetResponseSuccess(
+        requestor,
+        Data(data_name,
+             typename Data::serialised_type(temp_store_.Get(DataNameVariant(data_name)))),
+        message_id);
+    return;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    LOG(kVerbose) << "data not available in temporary store";
+  }
+
   // Get all pmid nodes that are online.
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   int expected_response_count(static_cast<int>(online_pmids.size()));
@@ -598,18 +593,20 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
 template <typename Data>
 void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
                                         const typename Data::Name& data_name) {
-  LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   online_pmids.erase(pmid_name);
-  // Only trigger the recovery procedure when not enough online_pmids.
-  if (online_pmids.size() > (routing::Parameters::group_size / 2U))
-    return;
+  DoGetForNodeDown<Data>(data_name, online_pmids);
+}
+
+template <typename Data>
+void DataManagerService::DoGetForNodeDown(const typename Data::Name& data_name,
+                                          const std::set<PmidName>& online_pmids) {
+  LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
                   << " task called from timer to DoGetForNodeDownResponse";
-    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first,
-                                         data_name,
+    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first, data_name,
                                          pmid_node_and_contents.second);
   });
   nfs::MessageId message_id(get_timer_.NewTaskId());
@@ -652,10 +649,13 @@ PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_
 
 template <typename Data>
 std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name& data_name) {
-  std::set<PmidName> online_pmids;
+  std::set<PmidName> online_pmids_set;
   try {
     auto value(db_.Get(DataManager::Key(data_name.value, Data::Tag::kValue)));
-    online_pmids = std::move(value.online_pmids());
+    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
+    auto online_pmids(value.online_pmids(close_nodes_change_.new_close_nodes()));
+    for (auto online_pmid : online_pmids)
+      online_pmids_set.insert(online_pmid);
   } catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
@@ -666,7 +666,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";
 //     throw VaultErrors::no_such_account;
   }
-  return online_pmids;
+  return online_pmids_set;
 }
 
 
@@ -714,24 +714,6 @@ void DataManagerService::DoHandleGetResponse(
     AssessGetContentRequestedPmidNode<Data, RequestorIdType>(get_response_op);
 }
 
-template <typename Data, typename RequestorIdType>
-void DataManagerService::DoHandleGetCachedResponse(
-    const GetCachedResponseContents& contents,
-    std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op) {
-  if (contents == GetCachedResponseContents()) {
-    LOG(kError) << "Failure to retrieve data from network";
-    return;
-  }
-  if (SendGetResponse<Data, RequestorIdType>(
-          Data(get_response_op->data_name,
-               typename Data::serialised_type(NonEmptyString(contents.content->data))),
-          get_response_op)) {
-    get_response_op->serialised_contents =
-        typename Data::serialised_type(NonEmptyString(contents.content->data));
-    AssessIntegrityCheckResults<Data, RequestorIdType>(get_response_op);
-  }
-}
-
 template <typename Data>
 void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
                                                   const typename Data::Name& data_name,
@@ -753,21 +735,10 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
                   << HexSubstr(contents.content->string());
 
   if (contents.content) {
-    std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
-    PmidName pmid_name;
-    bool already_picked(false);
-    do {
-      pmid_name = PmidName(Identity(routing_.RandomConnectedNode().string()));
-      auto itr(online_pmids.find(pmid_name));
-      already_picked = (itr != online_pmids.end());
-    } while (pmid_name->string() == data_name.value.string() && already_picked);
-
-    Data data(Data(data_name, typename Data::serialised_type(*contents.content)));
-    nfs::MessageId message_id(HashStringToMessageId(data_name.value.string()));
-    // Moving chunk 'contents.name.raw_name' to Pmid node 'pmid_name.value'
-    VLOG(nfs::Persona::kDataManager, VisualiserAction::kMoveChunk, contents.name.raw_name,
-         pmid_name.value);
-    dispatcher_.SendPutRequest(pmid_name, data, message_id);
+    temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data_name.value),
+                      typename Data::serialised_type(*contents.content));
+    SendPutRequest(DataManager::Key(data_name.value, Data::Tag::kValue),
+                   nfs::MessageId(RandomInt32()));
   }
 }
 
@@ -781,8 +752,8 @@ bool DataManagerService::SendGetResponse(
                << get_response_op->message_id;
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
-    // Put to the CacheHandler in this vault.
-    dispatcher_.SendPutToCache(data);
+    temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
+                      data.Serialise().data);
     return true;
   } catch(const maidsafe_error& e) {
     error = e;
@@ -835,10 +806,12 @@ void DataManagerService::AssessIntegrityCheckResults(
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
                         << HexSubstr(itr.first->string()) << " returned invalid data for "
                         << HexSubstr(get_response_op->data_name.value.string());
-          DerankPmidNode<Data>(itr.first, get_response_op->data_name, get_response_op->message_id);
+          DerankPmidNode(itr.first);
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
+          typename DataManager::Key key(get_response_op->data_name.value, Data::Tag::kValue);
           SendFalseDataNotification<Data>(itr.first, get_response_op->data_name,
+                                          db_.Get(key).chunk_size(),
                                           get_response_op->message_id);
         } else {
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
@@ -854,20 +827,13 @@ void DataManagerService::AssessIntegrityCheckResults(
 }
 
 template <typename Data>
-void DataManagerService::DerankPmidNode(const PmidName /*pmid_node*/,
-                                        const typename Data::Name& /*name*/,
-                                        nfs::MessageId /*message_id*/) {
-  // BEFORE_RELEASE: to be implemented
-}
-
-template <typename Data>
 void DataManagerService::DeletePmidNodeAsHolder(const PmidName pmid_node,
                                                 const typename Data::Name& name,
                                                 nfs::MessageId message_id) {
   typename DataManager::Key key(name.value, Data::Tag::kValue);
   DoSync(DataManager::UnresolvedRemovePmid(key,
              ActionDataManagerRemovePmid(pmid_node), routing_.kNodeId()));
-  SendDeleteRequest<Data>(pmid_node, name, message_id);
+  SendDeleteRequest<Data>(pmid_node, name, db_.Get(key).chunk_size(), message_id);
 }
 
 // =================== Delete implementation ======================================================
@@ -881,15 +847,15 @@ void DataManagerService::HandleDelete(const typename Data::Name& data_name,
 }
 
 template <typename Data>
-void DataManagerService::SendDeleteRequest(
-    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
-  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, message_id);
+void DataManagerService::SendDeleteRequest(const PmidName pmid_node,
+    const typename Data::Name& name, const uint64_t size, nfs::MessageId message_id) {
+  dispatcher_.SendDeleteRequest<Data>(pmid_node, name, size, message_id);
 }
 
 template <typename Data>
-void DataManagerService::SendFalseDataNotification(
-    const PmidName pmid_node, const typename Data::Name& name, nfs::MessageId message_id) {
-  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, message_id);
+void DataManagerService::SendFalseDataNotification(const PmidName pmid_node,
+    const typename Data::Name& name, uint64_t size, nfs::MessageId message_id) {
+  dispatcher_.SendFalseDataNotification<Data>(pmid_node, name, size, message_id);
 }
 
 // ==================== Node up / Node down implementation =========================================
@@ -897,18 +863,7 @@ template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
   LOG(kWarning) << "DataManager marking node " << HexSubstr(pmid_node->string())
                 << " down for chunk " << HexSubstr(name.value.string());
-  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  DoSync(DataManager::UnresolvedNodeDown(key,
-             ActionDataManagerNodeDown(pmid_node), routing_.kNodeId()));
   GetForNodeDown<typename DataName::data_type>(pmid_node, name);
-}
-
-template <typename DataName>
-void DataManagerService::MarkNodeUp(const PmidName& pmid_node, const DataName& name) {
-  VLOG(nfs::Persona::kDataManager, VisualiserAction::kMarkNodeUp, pmid_node.value, name.value);
-  typename DataManager::Key key(name.value, DataName::data_type::Tag::kValue);
-  DoSync(DataManager::UnresolvedNodeUp(key,
-             ActionDataManagerNodeUp(pmid_node), routing_.kNodeId()));
 }
 
 // ==================== Sync =======================================================================
@@ -919,8 +874,34 @@ void DataManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_add_pmids_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_pmids_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_downs_, unresolved_action);
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_node_ups_, unresolved_action);
+}
+
+template<typename DataName>
+void DataManagerService::HandleAccountQuery(const DataName& name, const NodeId& sender) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto value(db_.Get(DataManager::Key(name)));
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::DataManagerKeyValuePair kv_msg;
+    kv_msg.set_key(DataManager::Key(name).Serialise());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountResponse(account_transfer_proto.SerializeAsString(),
+                                    routing::GroupId(NodeId(name->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
+}
+
+template <typename Data>
+void DataManagerService::SendPmidUpdateAccount(
+    const typename Data::Name& data_name, const PmidName& pmid_node, uint64_t chunk_size,
+    uint64_t given_size) {
+  dispatcher_.SendPmidUpdateAccount<Data>(data_name, pmid_node, chunk_size, given_size);
 }
 
 }  // namespace vault

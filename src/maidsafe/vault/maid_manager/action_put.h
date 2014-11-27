@@ -29,21 +29,19 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
 class MaidManagerValue;
 
 struct ActionMaidManagerPut {
-  explicit ActionMaidManagerPut(int32_t cost);
+  explicit ActionMaidManagerPut(int64_t size);
   explicit ActionMaidManagerPut(const std::string& serialised_action);
   ActionMaidManagerPut(const ActionMaidManagerPut& other);
   ActionMaidManagerPut(ActionMaidManagerPut&& other);
   std::string Serialise() const;
 
-  detail::DbAction operator()(MaidManagerMetadata& metadata,
-                              std::unique_ptr<MaidManagerValue>& value) const;
+  void operator()(MaidManagerValue& value) const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
-  const int32_t kCost;
+  const int64_t kSize;
 
  private:
   ActionMaidManagerPut();

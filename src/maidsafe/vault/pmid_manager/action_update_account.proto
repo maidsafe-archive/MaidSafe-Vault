@@ -20,6 +20,6 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message ActionPmidManagerSetPmidHealth {
-  required int64 disk_available_size = 1;
+message ActionPmidManagerUpdateAccount {
+  required int32 size = 1;
 }

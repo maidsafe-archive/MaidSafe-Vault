@@ -42,29 +42,26 @@ template <typename ServiceHandlerType>
 class MaidManagerPutVisitor : public boost::static_visitor<> {
  public:
   MaidManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, NodeId sender,
-                        Identity pmid_hint, nfs::MessageId message_id)
+                        nfs::MessageId message_id)
       : kService_(service),
         kContent_(std::move(content)),
         kSender_(std::move(sender)),
-        kPmidHint_(std::move(pmid_hint)),
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     LOG(kVerbose) << "MaidManagerPutVisitor HandlePut for chunk "
-                  << HexSubstr(data_name.value.string()) << " to PmidHint "
-                  << HexSubstr(kPmidHint_.string());
+                  << HexSubstr(data_name.value.string());
     kService_->HandlePut(
         MaidName(Identity(kSender_.string())),
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        PmidName(kPmidHint_), kMessageId_);
+        kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const NonEmptyString kContent_;
   const NodeId kSender_;
-  const Identity kPmidHint_;
   const nfs::MessageId kMessageId_;
 };
 
@@ -72,26 +69,71 @@ template <typename ServiceHandlerType>
 class DataManagerPutVisitor : public boost::static_visitor<> {
  public:
   DataManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, Identity maid_name,
-                        Identity pmid_name, nfs::MessageId message_id)
+                        nfs::MessageId message_id)
       : kService_(service),
         kContent_(std::move(content)),
         kMaidName_(std::move(maid_name)),
-        kPmidName_(std::move(pmid_name)),
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandlePut(
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        kMaidName_, kPmidName_, kMessageId_);
+        kMaidName_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const NonEmptyString kContent_;
   const MaidName kMaidName_;
-  const PmidName kPmidName_;
   const nfs::MessageId kMessageId_;
+};
+
+template <typename ServiceHandlerType>
+class DataManagerSendPutRequestVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerSendPutRequestVisitor(ServiceHandlerType* const service, const PmidName& pmid_name,
+                                   const NonEmptyString& data, nfs::MessageId message_id)
+      : kService_(service), kPmidName_(pmid_name), kData_(data), kMessageId_(message_id) {}
+
+  template<typename DataName>
+  void operator()(const DataName& name) {
+    using Data = typename DataName::data_type;
+    kService_->template HandleSendPutRequest<Data>(
+        kPmidName_, Data(name, typename Data::serialised_type(kData_)), kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidName_;
+  const NonEmptyString kData_;
+  const nfs::MessageId kMessageId_;
+};
+
+template <typename ServiceHandlerType>
+class DataManagerGetForNodeDownVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerGetForNodeDownVisitor(ServiceHandlerType* service,
+                                   const std::set<PmidName>& online_pmids)
+      : kService_(service), online_pmids_(online_pmids) {}
+
+  DataManagerGetForNodeDownVisitor(ServiceHandlerType* service,
+                                   const std::vector<PmidName>& online_pmids)
+      : kService_(service), online_pmids_() {
+    std::for_each(std::begin(online_pmids), std::end(online_pmids),
+                  [&](const PmidName& pmid_node) {
+                    online_pmids_.insert(pmid_node);
+                  });
+  }
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template DoGetForNodeDown<typename Name::data_type>(data_name, online_pmids_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  std::set<PmidName> online_pmids_;
 };
 
 template <typename ServiceHandlerType>
@@ -126,7 +168,7 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
   void operator()(const Name& data_name) {
     kService_->HandlePut(
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        kMessageId_);
+        kContent_.string().size(), kMessageId_);
   }
 
  private:
@@ -138,9 +180,10 @@ class PmidNodePutVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class PutResponseFailureVisitor : public boost::static_visitor<> {
  public:
-  PutResponseFailureVisitor(ServiceHandlerType* service, const Identity& pmid_node,
+  PutResponseFailureVisitor(ServiceHandlerType* service, uint64_t size, const Identity& pmid_node,
                             const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
+        kSize_(size),
         kPmidNode_(pmid_node),
         kReturnCode_(return_code),
         kMessageId_(message_id) {}
@@ -148,11 +191,12 @@ class PutResponseFailureVisitor : public boost::static_visitor<> {
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandlePutFailure<typename Name::data_type>(
-        data_name, kPmidNode_, kMessageId_, maidsafe_error(kReturnCode_));
+        data_name, kSize_, kPmidNode_, kMessageId_, maidsafe_error(kReturnCode_));
   }
 
  private:
   ServiceHandlerType* const kService_;
+  const uint64_t kSize_;
   const PmidName kPmidNode_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;
@@ -224,19 +268,18 @@ template <typename ServiceHandlerType>
 class DataManagerPutResponseVisitor : public boost::static_visitor<> {
  public:
   DataManagerPutResponseVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                                int32_t size, nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kSize_(size), kMessageId_(message_id) {}
+                                nfs::MessageId message_id)
+      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kPmidNode_, kSize_,
+    kService_->template HandlePutResponse<typename Name::data_type>(data_name, kPmidNode_,
                                                                     kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidNode_;
-  const int32_t kSize_;
   const nfs::MessageId kMessageId_;
 };
 
@@ -264,9 +307,10 @@ class GetRequestVisitor : public boost::static_visitor<> {
 template <typename ServiceHandlerType>
 class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
  public:
-  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                               nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
+  DataManagerSendDeleteVisitor(ServiceHandlerType* service, const uint64_t chunk_size,
+                               const PmidName& pmid_node, nfs::MessageId message_id)
+      : kService_(service), kChunkSize_(chunk_size),
+        kPmidNode_(pmid_node), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
@@ -275,55 +319,12 @@ class DataManagerSendDeleteVisitor : public boost::static_visitor<> {
                   << HexSubstr(data_name.value.string()) << " bearing message id "
                   << kMessageId_.data;
     kService_->template SendDeleteRequest<typename Name::data_type>(kPmidNode_, data_name,
-                                                                    kMessageId_);
+                                                                    kChunkSize_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
-  const PmidName kPmidNode_;
-  nfs::MessageId kMessageId_;
-};
-
-template <typename ServiceHandlerType>
-class DataManagerSetPmidOnlineVisitor : public boost::static_visitor<> {
- public:
-  DataManagerSetPmidOnlineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                                  nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    LOG(kWarning) << "DataManagerSetPmidOnlineVisitor::operator() set pmid_node online "
-                  << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string()) << " bearing message id "
-                  << kMessageId_.data;
-    kService_->MarkNodeUp(kPmidNode_, data_name);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
-  const PmidName kPmidNode_;
-  nfs::MessageId kMessageId_;
-};
-
-template <typename ServiceHandlerType>
-class DataManagerSetPmidOfflineVisitor : public boost::static_visitor<> {
- public:
-  DataManagerSetPmidOfflineVisitor(ServiceHandlerType* service, const PmidName& pmid_node,
-                                   nfs::MessageId message_id)
-      : kService_(service), kPmidNode_(pmid_node), kMessageId_(message_id) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    LOG(kWarning) << "DataManagerSetPmidOfflineVisitor::operator() set pmid_node offline "
-                  << HexSubstr(kPmidNode_->string()) << " for chunk "
-                  << HexSubstr(data_name.value.string()) << " bearing message id "
-                  << kMessageId_.data;
-    kService_->MarkNodeDown(kPmidNode_, data_name);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
+  const uint64_t kChunkSize_;
   const PmidName kPmidNode_;
   nfs::MessageId kMessageId_;
 };
@@ -347,6 +348,23 @@ class PmidNodeGetVisitor : public boost::static_visitor<> {
   ServiceHandlerType* const kService_;
   const NodeId kDataManagerNodeId_;
   const nfs::MessageId kMessageId_;
+};
+
+template <typename ServiceHandlerType>
+class DataManagerAccountQueryVisitor : public boost::static_visitor<> {
+ public:
+  DataManagerAccountQueryVisitor(ServiceHandlerType* service,
+                                   const NodeId& sender_node_id)
+      : kService_(service), kDataManagerNodeId_(sender_node_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleAccountQuery(data_name, kDataManagerNodeId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NodeId kDataManagerNodeId_;
 };
 
 template <typename ServiceHandlerType>
@@ -507,6 +525,23 @@ class MaidManagerCreateVersionTreeResponseVisitor : public boost::static_visitor
 };
 
 template <typename ServiceHandlerType>
+class MaidManagerAccountRequestVisitor : public boost::static_visitor<> {
+ public:
+  MaidManagerAccountRequestVisitor(ServiceHandlerType* service,
+                                   const NodeId& sender_node_id)
+    : kService_(service), kMaidManagerNodeId_(sender_node_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->HandleAccountRequest(data_name, kMaidManagerNodeId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NodeId kMaidManagerNodeId_;
+};
+
+template <typename ServiceHandlerType>
 class DataManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   DataManagerDeleteVisitor(ServiceHandlerType* service, nfs::MessageId message_id)
@@ -526,31 +561,13 @@ template <typename ServiceHandlerType>
 class PmidManagerDeleteVisitor : public boost::static_visitor<> {
  public:
   PmidManagerDeleteVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
-                           nfs::MessageId message_id)
-      : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
-
-  template <typename Name>
-  void operator()(const Name& data_name) {
-    kService_->template HandleDelete<typename Name::data_type>(kPmidName_, data_name, kMessageId_);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
-  const PmidName kPmidName_;
-  const nfs::MessageId kMessageId_;
-};
-
-template <typename ServiceHandlerType>
-class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
- public:
-  PmidManagerPutResponseVisitor(ServiceHandlerType* service, int32_t size,
-                                const PmidName& pmid_name, nfs::MessageId message_id)
+                           int32_t size, nfs::MessageId message_id)
       : kService_(service), kPmidName_(pmid_name), kSize_(size), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template SendPutResponse<typename Name::data_type>(data_name, kSize_, kPmidName_,
-                                                                  kMessageId_);
+    kService_->template HandleDelete<typename Name::data_type>(kPmidName_, data_name,
+                                                               kSize_, kMessageId_);
   }
 
  private:
@@ -561,13 +578,34 @@ class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
 };
 
 template <typename ServiceHandlerType>
+class PmidManagerPutResponseVisitor : public boost::static_visitor<> {
+ public:
+  PmidManagerPutResponseVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
+                                nfs::MessageId message_id)
+      : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
+
+  template <typename Name>
+  void operator()(const Name& data_name) {
+    kService_->template SendPutResponse<typename Name::data_type>(data_name, kPmidName_,
+                                                                  kMessageId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const PmidName kPmidName_;
+  const nfs::MessageId kMessageId_;
+};
+
+template <typename ServiceHandlerType>
 class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
  public:
   PmidManagerPutResponseFailureVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
+                                       const uint64_t size,
                                        const int64_t available_size,
                                        const maidsafe_error& return_code, nfs::MessageId message_id)
       : kService_(service),
         kPmidName_(pmid_name),
+        kSize_(size),
         kAvailableSize_(available_size),
         kReturnCode_(return_code),
         kMessageId_(message_id) {}
@@ -575,12 +613,13 @@ class PmidManagerPutResponseFailureVisitor : public boost::static_visitor<> {
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandlePutFailure<typename Name::data_type>(
-        data_name, kPmidName_, kAvailableSize_, kReturnCode_, kMessageId_);
+        data_name, kPmidName_, kSize_, kAvailableSize_, kReturnCode_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidName_;
+  const uint64_t kSize_;
   const int64_t kAvailableSize_;
   const maidsafe_error kReturnCode_;
   const nfs::MessageId kMessageId_;
@@ -590,18 +629,19 @@ template <typename ServiceHandlerType>
 class PmidManagerFalseNotificationVisitor : public boost::static_visitor<> {
  public:
   PmidManagerFalseNotificationVisitor(ServiceHandlerType* service, const PmidName& pmid_name,
-                                      nfs::MessageId message_id)
-      : kService_(service), kPmidName_(pmid_name), kMessageId_(message_id) {}
+                                      int32_t size, nfs::MessageId message_id)
+      : kService_(service), kPmidName_(pmid_name), kSize_(size), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->template HandleFalseNotification<typename Name::data_type>(data_name, kPmidName_,
-                                                                          kMessageId_);
+                                                                          kSize_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const PmidName kPmidName_;
+  const int32_t kSize_;
   const nfs::MessageId kMessageId_;
 };
 

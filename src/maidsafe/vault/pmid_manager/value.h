@@ -21,38 +21,47 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
-#include "maidsafe/common/config.h"
+#include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/types.h"
+
+#include "maidsafe/vault/config.h"
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
+
 namespace vault {
 
-class PmidManagerValue {
+struct PmidManagerValue {
  public:
   PmidManagerValue();
-  explicit PmidManagerValue(int32_t size);
-  explicit PmidManagerValue(const std::string& serialised_pmid_manager_value);
-  PmidManagerValue(PmidManagerValue&& other) MAIDSAFE_NOEXCEPT;
+  PmidManagerValue(const uint64_t& stored_total_size_in, const uint64_t& lost_total_size_in,
+                   const uint64_t& offered_space_in);
+  explicit PmidManagerValue(const std::string& serialised_value);
+  PmidManagerValue(const PmidManagerValue& other);
+  PmidManagerValue(PmidManagerValue&& other);
   PmidManagerValue& operator=(PmidManagerValue other);
-
+  void PutData(uint64_t size);
+  void DeleteData(uint64_t size);
+  void HandleLostData(uint64_t size);
+  void HandleFailure(uint64_t size);
+  void SetAvailableSize(const int64_t& available_size);
+  void UpdateAccount(int32_t diff_size);
   std::string Serialise() const;
-  int32_t size() const { return size_; }
-
+  detail::GroupDbMetaDataStatus GroupStatus();
   std::string Print() const;
+  static PmidManagerValue Resolve(const std::vector<PmidManagerValue>& values);
 
-  friend void swap(PmidManagerValue& lhs, PmidManagerValue& rhs);
-  friend bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
-
- private:
-  PmidManagerValue(const PmidManagerValue&);
-
- private:
-  int32_t size_;
+  uint64_t stored_total_size;
+  uint64_t lost_total_size;
+  uint64_t offered_space;
 };
 
 bool operator==(const PmidManagerValue& lhs, const PmidManagerValue& rhs);
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_PMID_MANAGER_VALUE_H_
