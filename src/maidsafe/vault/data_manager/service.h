@@ -190,7 +190,7 @@ class DataManagerService {
   void AssessGetContentRequestedPmidNode(
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
-  void DerankPmidNode(const PmidName& pmid_node, bool malicious);
+  void DerankPmidNode(const PmidName& pmid_node);
 
   template <typename Data>
   void DeletePmidNodeAsHolder(const PmidName pmid_node, const typename Data::Name& name,
@@ -520,12 +520,10 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   DoSync(DataManager::UnresolvedRemovePmid(
       key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
 
-  bool malicious(false);
-  if ((chunk_size != 0) && chunk_size != size) {
-    malicious = true;
+  if ((chunk_size != 0) && chunk_size != size)
     SendPmidUpdateAccount<Data>(data_name, attempted_pmid_node, chunk_size, size);
-  }
-  DerankPmidNode(attempted_pmid_node, malicious);
+
+  DerankPmidNode(attempted_pmid_node);
 }
 
 template <typename DataName>
@@ -841,7 +839,7 @@ void DataManagerService::AssessIntegrityCheckResults(
           LOG(kWarning) << "DataManagerService::AssessIntegrityCheckResults detected pmid_node "
                         << HexSubstr(itr.first->string()) << " returned invalid data for "
                         << HexSubstr(get_response_op->data_name.value.string());
-          DerankPmidNode(itr.first, false);
+          DerankPmidNode(itr.first);
           DeletePmidNodeAsHolder<Data>(itr.first, get_response_op->data_name,
                                       get_response_op->message_id);
           typename DataManager::Key key(get_response_op->data_name.value, Data::Tag::kValue);
