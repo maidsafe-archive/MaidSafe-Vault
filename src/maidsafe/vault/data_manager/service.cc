@@ -472,18 +472,8 @@ void DataManagerService::HandleChurnEvent(
 //   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
   std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
-  for (auto& account : accounts) {
-    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
-    auto online_pmids(account.second.online_pmids(close_nodes_change_.new_close_nodes()));
-    std::set<PmidName> online_pmids_set;
-    for (auto online_pmid : online_pmids)
-      if (online_pmid != pmid_name)
-        online_pmids_set.insert(online_pmid);
-    detail::DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(
-                                                                     this, online_pmids_set);
-    auto data_name(GetDataNameVariant(account.first.type, account.first.name));
-    boost::apply_visitor(get_for_node_down, data_name);
-  }
+  for (auto& account : accounts)
+    SendPutRequest(account.first, nfs::MessageId(RandomInt32()));
 }
 
 void DataManagerService::TransferAccount(const NodeId& dest,
