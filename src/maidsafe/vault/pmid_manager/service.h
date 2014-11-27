@@ -81,8 +81,8 @@ class PmidManagerService {
     return true;
   }
   template <typename Data>
-  void SendPutResponse(const typename Data::Name& data_name, int32_t size,
-                       const PmidName& pmid_node, nfs::MessageId message_id);
+  void SendPutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
+                       nfs::MessageId message_id);
 
   void HandleCreatePmidAccountRequest(const PmidName& pmid_node, const MaidName& maid_node,
                                       nfs::MessageId message_id);
@@ -125,18 +125,21 @@ class PmidManagerService {
 
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
-  void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node, int32_t size,
+  void SendPutResponse(const DataNameVariant& data_name, const PmidName& pmid_node,
                        nfs::MessageId message_id);
 
   void HandleSyncedPut(std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action);
   void HandleSyncedDelete(std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action);
   void HandleSyncedCreatePmidAccount(
       std::unique_ptr<PmidManager::UnresolvedCreateAccount>&& synced_action);
+  void HandleSyncedUpdateAccount(
+      std::unique_ptr<PmidManager::UnresolvedUpdateAccount>&& synced_action);
   void TransferAccount(const NodeId& dest, const std::vector<PmidManager::KvPair>& accounts);
   void HandleAccountTransfer(const AccountType& account);
   void HandleAccountTransferEntry(const std::string& serialised_account,
                                   const routing::SingleSource& sender);
   void HandleAccountQuery(const PmidManager::Key& key, const NodeId& sender);
+  void HandleUpdateAccount(const PmidName& pmid_node, int32_t diff_size);
 
   routing::Routing& routing_;
   std::map<PmidManager::Key, PmidManager::Value> accounts_;
@@ -149,6 +152,7 @@ class PmidManagerService {
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;
   Sync<PmidManager::UnresolvedCreateAccount> sync_create_account_;
+  Sync<PmidManager::UnresolvedUpdateAccount> sync_update_account_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kPmidManager>> account_transfer_;
 };
 
@@ -214,9 +218,13 @@ void PmidManagerService::HandleMessage(
     const typename AccountQueryResponseFromPmidManagerToPmidManager::Sender& sender,
     const typename AccountQueryResponseFromPmidManagerToPmidManager::Receiver& receiver);
 
-// ==================== Implementation =============================================================
+template<>
+void PmidManagerService::HandleMessage(
+    const UpdateAccountFromDataManagerToPmidManager& message,
+    const typename UpdateAccountFromDataManagerToPmidManager::Sender& sender,
+    const typename UpdateAccountFromDataManagerToPmidManager::Receiver& receiver);
 
-
+// =================================== Implementation =============================================
 // ================================= Put Implementation ===========================================
 
 template <typename Data>
@@ -226,17 +234,6 @@ void PmidManagerService::HandlePut(const Data& data, const PmidName& pmid_node,
                 <<  HexSubstr(data.name().value)
                 << " to pmid_node -- " << HexSubstr(pmid_node.value.string())
                 << " , with message_id -- " << message_id.data;
-//   try {
-//     PmidManagerValue reply(group_db_.GetContents(pmid_node).metadata);
-//     if (reply.claimed_available_size <
-//         static_cast<uint32_t>(data.Serialise().data.string().size())) {
-//       dispatcher_.SendPutFailure<Data>(data.name(), pmid_node,
-//                                        maidsafe_error(VaultErrors::not_enough_space),
-//                                        message_id);
-//       return;
-//     }
-//   } catch(...) {
-//   }
   dispatcher_.SendPutRequest(data, pmid_node, message_id);
   PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), data.name().value,
                                  Data::Tag::kValue);
@@ -254,7 +251,7 @@ void PmidManagerService::HandlePutFailure(
                 << " , with message_id -- " << message_id.data
                 << " . available_space -- " << available_space << " , error_code -- "
                 << boost::diagnostic_information(error_code);
-  dispatcher_.SendPutFailure<Data>(name, pmid_node, error_code, message_id);
+  dispatcher_.SendPutFailure<Data>(name, size, pmid_node, error_code, message_id);
   PmidManager::SyncKey group_key(PmidManager::Key(pmid_node), name.value, Data::Tag::kValue);
   DoSync(PmidManager::UnresolvedDelete(group_key, ActionPmidManagerDelete(size, false, true),
                                        routing_.kNodeId()));
@@ -273,13 +270,11 @@ void PmidManagerService::HandleFalseNotification(const typename Data::Name& name
 
 template <typename Data>
 void PmidManagerService::SendPutResponse(
-    const typename Data::Name& data_name, int32_t size, const PmidName& pmid_name,
-    nfs::MessageId message_id) {
+  const typename Data::Name& data_name, const PmidName& pmid_node, nfs::MessageId message_id) {
   LOG(kVerbose) << "PmidManagerService::SendPutResponse of pmid_name -- "
-                << HexSubstr(pmid_name.value.string())
-                << " , with message_id -- " << message_id.data
-                << " . size -- " << size;
-  dispatcher_.SendPutResponse<Data>(data_name, size, pmid_name, message_id);
+                << HexSubstr(pmid_node.value.string())
+                << " , with message_id -- " << message_id.data;
+  dispatcher_.SendPutResponse<Data>(data_name, pmid_node, message_id);
 }
 
 template <typename Data>
@@ -302,6 +297,7 @@ template <typename UnresolvedAction>
 void PmidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_puts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_deletes_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_update_account_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_account_, unresolved_action);
 }
 

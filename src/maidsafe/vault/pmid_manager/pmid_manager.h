@@ -33,6 +33,7 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/pmid_manager/action_put.h"
+#include "maidsafe/vault/pmid_manager/action_update_account.h"
 #include "maidsafe/vault/pmid_manager/action_create_account.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/types.h"
@@ -46,6 +47,7 @@ struct ActionPmidManagerDelete;
 struct ActionPmidManagerCreateAccount;
 struct PmidManagerValue;
 struct ActionCreatePmidAccount;
+struct ActionPmidManagerUpdateAccount;
 
 }  // namespace vault
 
@@ -65,6 +67,8 @@ struct PersonaTypes<Persona::kPmidManager> {
   using UnresolvedDelete = vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete>;
   using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey,
                                                           vault::ActionCreatePmidAccount>;
+  using UnresolvedUpdateAccount = vault::UnresolvedAction<SyncGroupKey,
+                                                          vault::ActionPmidManagerUpdateAccount>;
 };
 
 }  // namespace nfs
