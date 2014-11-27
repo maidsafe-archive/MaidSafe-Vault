@@ -239,11 +239,10 @@ TEST_F(DataManagerServiceTest, BEH_FirstPut) {
 
 TEST_F(DataManagerServiceTest, BEH_PutAgain) {
   auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-
   PmidName pmid_name(Identity(RandomString(64)));
   DataManager::Key key(content.name.raw_name, content.name.type);
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   Commit(key, ActionDataManagerAddPmid(pmid_name));
-
   NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
   data_name_id = NodeId(content.name.raw_name.string());
   auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
@@ -257,6 +256,7 @@ TEST_F(DataManagerServiceTest, BEH_Delete) {
   PmidName pmid_name(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   Commit(key, ActionDataManagerAddPmid(pmid_name));
@@ -274,8 +274,6 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
-  // check key value is not in db
-  EXPECT_ANY_THROW(Get(key));
   {// Add first Pmid
     PmidName pmid_name(Identity(RandomString(64)));
     ActionDataManagerAddPmid action_add_pmid(pmid_name);
@@ -302,6 +300,7 @@ TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
   PmidName pmid_name(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
   auto group_source(CreateGroupSource(data.name()));
   // store key value in db
   PmidName pmid_name_two(Identity(RandomString(64)));
