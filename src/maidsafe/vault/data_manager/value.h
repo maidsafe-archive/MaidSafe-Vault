@@ -53,6 +53,8 @@ class DataManagerValue {
   bool HasTarget(const PmidName& pmid_name) const;
   std::vector<PmidName> AllPmids() const { return pmids_; }
   std::vector<PmidName> online_pmids(const std::vector<NodeId>& close_nodes) const;
+
+  // Prune the oldest offline node
   bool NeedToPrune(const std::vector<NodeId>& close_nodes, PmidName& pmid_node_to_remove) const;
 
   std::string Print() const;
