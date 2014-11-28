@@ -111,14 +111,14 @@ class DataManagerSendPutRequestVisitor : public boost::static_visitor<> {
 };
 
 template <typename ServiceHandlerType>
-class DataManagerGetForNodeDownVisitor : public boost::static_visitor<> {
+class DataManagerGetForReplicationVisitor : public boost::static_visitor<> {
  public:
-  DataManagerGetForNodeDownVisitor(ServiceHandlerType* service,
-                                   const std::set<PmidName>& online_pmids)
+  DataManagerGetForReplicationVisitor(ServiceHandlerType* service,
+                                      const std::set<PmidName>& online_pmids)
       : kService_(service), online_pmids_(online_pmids) {}
 
-  DataManagerGetForNodeDownVisitor(ServiceHandlerType* service,
-                                   const std::vector<PmidName>& online_pmids)
+  DataManagerGetForReplicationVisitor(ServiceHandlerType* service,
+                                      const std::vector<PmidName>& online_pmids)
       : kService_(service), online_pmids_() {
     std::for_each(std::begin(online_pmids), std::end(online_pmids),
                   [&](const PmidName& pmid_node) {
@@ -128,7 +128,7 @@ class DataManagerGetForNodeDownVisitor : public boost::static_visitor<> {
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template DoGetForNodeDown<typename Name::data_type>(data_name, online_pmids_);
+    kService_->template DoGetForReplication<typename Name::data_type>(data_name, online_pmids_);
   }
 
  private:
