@@ -398,8 +398,10 @@ void DataManagerService::HandleAccountTransferEntry(
   auto result(account_transfer_.Add(Key(kv_msg.key()), DataManagerValue(kv_msg.value()),
                                     sender.data));
   if (result.result ==  Handler::AddResult::kSuccess) {
+    LOG(kVerbose) << "DataManager AcoccountTransfer HandleAccountTransfer";
     HandleAccountTransfer(std::make_pair(result.key, *result.value));
   } else  if (result.result ==  Handler::AddResult::kFailure) {
+    LOG(kVerbose) << "DataManager AcoccountTransfer SendAccountRequest";
     dispatcher_.SendAccountRequest(result.key);
   }
 }
@@ -409,7 +411,7 @@ void DataManagerService::HandleAccountTransfer(const AccountType& account) {
     db_.HandleTransfer(std::vector<AccountType> {account});
   }
   catch (const std::exception& error) {
-    LOG(kError) << "Failed to store account " << error.what();
+    LOG(kError) << "DataManager AcoccountTransfer Failed to store account " << error.what();
     throw;  // MAID-357
   }
 }
