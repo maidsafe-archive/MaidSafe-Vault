@@ -136,10 +136,10 @@ class DataManagerService {
                  nfs::MessageId message_id);
 
   template <typename Data>
-  void GetForNodeDown(const PmidName& pmid_name, const typename Data::Name& data_name);
+  void GetForReplication(const PmidName& pmid_name, const typename Data::Name& data_name);
   template <typename Data>
-  void DoGetForNodeDown(const typename Data::Name& data_name,
-                        const std::set<PmidName>& online_pmids);
+  void DoGetForReplication(const typename Data::Name& data_name,
+                           const std::set<PmidName>& online_pmids);
 
   void HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                          const GetResponseContents& contents);
@@ -157,8 +157,8 @@ class DataManagerService {
       std::shared_ptr<detail::GetResponseOp<typename Data::Name, RequestorIdType>> get_response_op);
 
   template <typename Data>
-  void DoGetForNodeDownResponse(const PmidName& pmid_node, const typename Data::Name& data_name,
-                                const GetResponseContents& contents);
+  void DoGetResponseForReplication(const PmidName& pmid_node, const typename Data::Name& data_name,
+                                   const GetResponseContents& contents);
 
   template <typename Data, typename RequestorIdType>
   bool SendGetResponse(
@@ -190,8 +190,8 @@ class DataManagerService {
   void SendDeleteRequest(const PmidName pmid_node, const typename Data::Name& name,
                          const uint64_t size, nfs::MessageId message_id);
 
-  uint64_t SendPutRequest(const DataManager::Key& key, nfs::MessageId message_id,
-                          const PmidName& tried_pmid_name = PmidName());
+  uint64_t Replicate(const DataManager::Key& key, nfs::MessageId message_id,
+                     const PmidName& tried_pmid_name = PmidName());
 
   template <typename Data>
   void HandleSendPutRequest(const PmidName& pmid_name, const Data& data, nfs::MessageId);
@@ -266,7 +266,7 @@ class DataManagerService {
   friend class detail::DataManagerSendDeleteVisitor<DataManagerService>;
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerAccountQueryVisitor<DataManagerService>;
-  friend class detail::DataManagerGetForNodeDownVisitor<DataManagerService>;
+  friend class detail::DataManagerGetForReplicationVisitor<DataManagerService>;
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
@@ -498,12 +498,12 @@ void DataManagerService::HandlePutFailure(const typename Data::Name& data_name,
   uint64_t chunk_size(0);
   typename DataManager::Key key(data_name.value, Data::Tag::kValue);
   if (SendPutRetryRequired(data_name))
-    chunk_size = SendPutRequest(key, message_id, attempted_pmid_node);
+    chunk_size = Replicate(key, message_id, attempted_pmid_node);
 
   DoSync(DataManager::UnresolvedRemovePmid(
       key, ActionDataManagerRemovePmid(attempted_pmid_node), routing_.kNodeId()));
 
-  if ((chunk_size != 0) && chunk_size != size)
+  if (chunk_size != 0 && chunk_size != size)
     SendPmidUpdateAccount<Data>(data_name, attempted_pmid_node, chunk_size, size);
 
   DerankPmidNode(attempted_pmid_node);
@@ -591,23 +591,23 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
 }
 
 template <typename Data>
-void DataManagerService::GetForNodeDown(const PmidName& pmid_name,
-                                        const typename Data::Name& data_name) {
+void DataManagerService::GetForReplication(const PmidName& pmid_name,
+                                           const typename Data::Name& data_name) {
   std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
   online_pmids.erase(pmid_name);
-  DoGetForNodeDown<Data>(data_name, online_pmids);
+  DoGetForReplication<Data>(data_name, online_pmids);
 }
 
 template <typename Data>
-void DataManagerService::DoGetForNodeDown(const typename Data::Name& data_name,
-                                          const std::set<PmidName>& online_pmids) {
+void DataManagerService::DoGetForReplication(const typename Data::Name& data_name,
+                                             const std::set<PmidName>& online_pmids) {
   LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
                   << " task called from timer to DoGetForNodeDownResponse";
-    this->DoGetForNodeDownResponse<Data>(pmid_node_and_contents.first, data_name,
-                                         pmid_node_and_contents.second);
+    this->DoGetResponseForReplication<Data>(pmid_node_and_contents.first, data_name,
+                                            pmid_node_and_contents.second);
   });
   nfs::MessageId message_id(get_timer_.NewTaskId());
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1, message_id);
@@ -715,12 +715,12 @@ void DataManagerService::DoHandleGetResponse(
 }
 
 template <typename Data>
-void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
-                                                  const typename Data::Name& data_name,
-                                                  const GetResponseContents& contents) {
+void DataManagerService::DoGetResponseForReplication(const PmidName& pmid_node,
+                                                     const typename Data::Name& data_name,
+                                                     const GetResponseContents& contents) {
   // Note: if 'pmid_node' and 'contents' is default-constructed, it's probably a result of this
   // function being invoked by the timer after timeout.
-  LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse "
+  LOG(kVerbose) << "DataManagerService::DoGetForReplicationResponse "
                 << HexSubstr(data_name->string());
   {
     std::lock_guard<std::mutex> lock(this->close_nodes_change_mutex_);
@@ -729,7 +729,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
   }
 
   if (contents.content && pmid_node.value.IsInitialised())
-    LOG(kVerbose) << "DataManagerService::DoGetForNodeDownResponse received response from "
+    LOG(kVerbose) << "DataManagerService::DoGetForReplicationResponse received response from "
                   << HexSubstr(pmid_node->string()) << " for chunk "
                   << HexSubstr(contents.name.raw_name) << " with content "
                   << HexSubstr(contents.content->string());
@@ -737,8 +737,7 @@ void DataManagerService::DoGetForNodeDownResponse(const PmidName& pmid_node,
   if (contents.content) {
     temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data_name.value),
                       typename Data::serialised_type(*contents.content));
-    SendPutRequest(DataManager::Key(data_name.value, Data::Tag::kValue),
-                   nfs::MessageId(RandomInt32()));
+    Replicate(DataManager::Key(data_name.value, Data::Tag::kValue), nfs::MessageId(RandomInt32()));
   }
 }
 
@@ -863,7 +862,7 @@ template <typename DataName>
 void DataManagerService::MarkNodeDown(const PmidName& pmid_node, const DataName& name) {
   LOG(kWarning) << "DataManager marking node " << HexSubstr(pmid_node->string())
                 << " down for chunk " << HexSubstr(name.value.string());
-  GetForNodeDown<typename DataName::data_type>(pmid_node, name);
+  Replicate(DataManager::Key(name), nfs::MessageId(RandomInt32()), pmid_node);
 }
 
 // ==================== Sync =======================================================================
