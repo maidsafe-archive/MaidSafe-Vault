@@ -243,18 +243,18 @@ void MaidManagerService::HandleSyncedDelete(
 // =========================== Sync / AccountTransfer ==============================================
 
 void MaidManagerService::HandleChurnEvent(
-  std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {
+  std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   try {
     std::lock_guard<std::mutex> lock(mutex_);
     if (stopped_)
       return;
     //    VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
-
-    // TransferInfo transfer_info(detail::GetTransferInfo<Key, Value, TransferInfo>(
-    //    close_nodes_change, accounts_));
-
-    // for (const auto& transfer : transfer_info)
-    //  TransferAccount(transfer.first, transfer.second);
+    LOG(kVerbose) << "MaidManager HandleChurnEvent processing accounts_ holding " << accounts_.size() << " accounts";
+     TransferInfo transfer_info(detail::GetTransferInfo<Key, Value, TransferInfo>(
+        close_nodes_change, accounts_));
+    LOG(kVerbose) << "MaidManager HandleChurnEvent transferring " << transfer_info.size() << " accounts";
+     for (const auto& transfer : transfer_info)
+      TransferAccount(transfer.first, transfer.second);
   }
   catch (const std::exception& e) {
     LOG(kVerbose) << "Error : " << boost::diagnostic_information(e) << "\n\n";
@@ -266,13 +266,12 @@ void MaidManagerService::TransferAccount(const NodeId& destination,
   assert(!accounts.empty());
   protobuf::AccountTransfer account_transfer_proto;
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+//    std::lock_guard<std::mutex> lock(mutex_);
     for (auto& account : accounts) {
       VLOG(nfs::Persona::kMaidManager, VisualiserAction::kAccountTransfer, account.first.value,
         Identity{ destination.string() });
       protobuf::MaidManagerKeyValuePair kv_pair;
-      vault::Key key(account.first.value, MaidManager::Key::data_type::Tag::kValue);
-      kv_pair.set_key(key.Serialise());
+      kv_pair.set_key(account.first.value.string());
       kv_pair.set_value(account.second.Serialise());
       account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
       LOG(kVerbose) << "MaidManager send account " << DebugId(account.first.value)
@@ -337,14 +336,18 @@ void MaidManagerService::HandleAccountTransferEntry(
   auto result(account_transfer_.Add(Key(Identity(kv_pair.key())),
     MaidManagerValue(kv_pair.value()), sender.sender_id.data));
   if (result.result == Handler::AddResult::kSuccess) {
+    LOG(kVerbose) << "MaidManager AcoccountTransfer HandleAccountTransfer";
     HandleAccountTransfer(std::make_pair(result.key, *result.value));
   } else  if (result.result == Handler::AddResult::kFailure) {
+    LOG(kVerbose) << "MaidManager AcoccountTransfer SendAccountRequest";
     dispatcher_.SendAccountRequest(result.key);
   }
 }
 
 void MaidManagerService::HandleAccountTransfer(const AccountType& account) {
   std::lock_guard<std::mutex> lock(mutex_);
+  LOG(kVerbose) << "MaidManager AcoccountTransfer inserting account "
+                << HexSubstr(account.first.value.string());
   accounts_.insert(account);
 }
 
