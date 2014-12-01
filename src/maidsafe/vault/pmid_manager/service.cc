@@ -279,13 +279,14 @@ void PmidManagerService::HandleChurnEvent(
       return;
     VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
 
-//     LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
+    LOG(kVerbose) << "PmidManager HandleChurnEvent processing account transfer";
     const auto transfer_info(
         detail::GetTransferInfo<PmidManager::Key, PmidManager::Value, PmidManager::TransferInfo>(
             close_nodes_change, accounts_));
+    LOG(kVerbose) << "PmidManager HandleChurnEvent transferring " << transfer_info.size() << " accounts";
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
-//     LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
+    LOG(kVerbose) << "PmidManager HandleChurnEvent completed";
   } catch (const std::exception& e) {
     LOG(kVerbose) << "error : " << boost::diagnostic_information(e) << "\n\n";
   }
@@ -317,7 +318,7 @@ void PmidManagerService::TransferAccount(const NodeId& peer,
   assert(!accounts.empty());
   protobuf::AccountTransfer account_transfer_proto;
   {
-    std::lock_guard<std::mutex> lock(mutex_);
+//    std::lock_guard<std::mutex> lock(mutex_);
     for (auto& account : accounts) {
       VLOG(nfs::Persona::kPmidManager, VisualiserAction::kAccountTransfer,
            account.first, Identity{ peer.string() });
@@ -353,6 +354,8 @@ void PmidManagerService::HandleAccountTransfer(const AccountType& account) {
 //  VLOG(nfs::Persona::kPmidManager, VisualiserAction::kGotAccountTransferred,
 //       account.first);
   std::lock_guard<std::mutex> lock(mutex_);
+  LOG(kVerbose) << "PmidManager AcoccountTransfer inserting account "
+                << HexSubstr(account.first.value.string());
   accounts_.insert(account);
 }
 
@@ -391,8 +394,10 @@ void PmidManagerService::HandleAccountTransferEntry(
       PmidManager::Key(MetadataKey<PmidName>(kv_msg.key()).group_name()),
       PmidManagerValue(kv_msg.value()), sender.data));
   if (result.result ==  Handler::AddResult::kSuccess) {
+    LOG(kVerbose) << "PmidManager AcoccountTransfer HandleAccountTransfer";
     HandleAccountTransfer(std::make_pair(result.key, *result.value));
   } else  if (result.result ==  Handler::AddResult::kFailure) {
+    LOG(kVerbose) << "PmidManager AcoccountTransfer SendAccountQuery";
     dispatcher_.SendAccountQuery(result.key);
   }
 }
