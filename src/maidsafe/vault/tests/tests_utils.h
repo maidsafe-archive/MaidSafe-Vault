@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_TESTS_TESTS_UTILS_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "maidsafe/routing/message.h"
@@ -31,9 +32,10 @@
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
-
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -41,8 +43,8 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 1024 * 1024;
-static const size_t kAverageChunksStored = 1000;
+static const uint64_t kTestChunkSize = 1024 * 1024;
+static const uint64_t kAverageChunksStored = 1000;
 
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
 
@@ -60,6 +62,10 @@ nfs_client::DataNameAndSizeAndSpaceAndReturnCode
     CreateContent<nfs_client::DataNameAndSizeAndSpaceAndReturnCode>();
 
 template <>
+nfs_client::DataNameAndSizeAndReturnCode
+    CreateContent<nfs_client::DataNameAndSizeAndReturnCode>();
+
+template <>
 nfs_vault::DataName CreateContent<nfs_vault::DataName>();
 
 template <>
@@ -67,9 +73,6 @@ nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>();
 
 template <>
 nfs_vault::Empty CreateContent<nfs_vault::Empty>();
-
-template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>();
 
 template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>();
@@ -170,7 +173,7 @@ void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActi
 }
 
 template <typename Persona>
-typename Persona::Value CreateValue() {};
+typename Persona::Value CreateValue();
 
 template <>
 MaidManager::Value CreateValue<MaidManager>();

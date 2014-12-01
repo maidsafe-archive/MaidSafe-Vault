@@ -51,9 +51,9 @@ PmidManagerService::PmidManagerService(const passport::Pmid& pmid, routing::Rout
       get_health_timer_(asio_service_), sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_create_account_(NodeId(pmid.name()->string())),
+      sync_update_account_(NodeId(pmid.name()->string())),
       account_transfer_() {
 }
-
 
 void PmidManagerService::HandleSyncedPut(
     std::unique_ptr<PmidManager::UnresolvedPut>&& synced_action) {
@@ -68,8 +68,15 @@ void PmidManagerService::HandleSyncedPut(
     std::lock_guard<std::mutex> lock(mutex_);
     PmidManager::Key account_name(synced_action->key.group_name());
     auto itr(accounts_.find(account_name));
-    if (itr == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (itr == std::end(accounts_)) {
+      // create an empty account for non-registered pmid_node
+      auto result(accounts_.insert(std::make_pair(account_name, PmidManager::Value())));
+      if (result.second)
+        itr = result.first;
+      else
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
+      synced_action->action(itr->second);
+    }
     synced_action->action(itr->second);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "HandleSyncedPut caught an error during account commit " << error.what();
@@ -77,10 +84,8 @@ void PmidManagerService::HandleSyncedPut(
   }
   auto data_name(GetDataNameVariant(synced_action->key.type, synced_action->key.name));
   SendPutResponse(data_name, synced_action->key.group_name(),
-                  synced_action->action.kSize,
                   synced_action->action.kMessageId);
 }
-
 
 void PmidManagerService::HandleSyncedDelete(
     std::unique_ptr<PmidManager::UnresolvedDelete>&& synced_action) {
@@ -106,6 +111,21 @@ void PmidManagerService::HandleSyncedCreatePmidAccount(
   auto itr(accounts_.find(account_name));
   if (itr == std::end(accounts_))
     accounts_.insert(std::make_pair(account_name, PmidManager::Value()));
+}
+
+void PmidManagerService::HandleSyncedUpdateAccount(
+    std::unique_ptr<PmidManager::UnresolvedUpdateAccount>&& synced_action) {
+  try {
+    std::lock_guard<std::mutex> lock(mutex_);
+    PmidManager::Key account_name(synced_action->key.group_name());
+    auto itr(accounts_.find(account_name));
+    if (itr == std::end(accounts_))
+      LOG(kWarning) << "accound does not exist";
+    synced_action->action(itr->second);
+  } catch (const maidsafe_error& error) {
+    LOG(kWarning) << "HandleSyncedUpdateAccount error " << error.what();
+    throw;
+  }
 }
 
 // =============== HandleMessage ===================================================================
@@ -180,6 +200,20 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template<>
+void PmidManagerService::HandleMessage(
+    const UpdateAccountFromDataManagerToPmidManager& message,
+    const typename UpdateAccountFromDataManagerToPmidManager::Sender& sender,
+    const typename UpdateAccountFromDataManagerToPmidManager::Receiver& receiver) {
+  using  MessageType = UpdateAccountFromDataManagerToPmidManager;
+  OperationHandlerWrapper<PmidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender & sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Handle Sync Messages ============================================================
 
 template<>
@@ -227,6 +261,17 @@ void PmidManagerService::HandleMessage(
       }
       break;
     }
+    case ActionPmidManagerUpdateAccount::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromPmidManagerToPmidManager ActionPmidManagerUpdateAccount";
+      PmidManager::UnresolvedUpdateAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_update_account_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromPmidManagerToPmidManager HandleSyncedUpdateAccount";
+        HandleSyncedUpdateAccount(std::move(resolved_action));
+      }
+      break;
+    }
     default: {
       LOG(kError) << "Unhandled action type";
       assert(false);
@@ -237,10 +282,9 @@ void PmidManagerService::HandleMessage(
 //=================================================================================================
 
 void PmidManagerService::SendPutResponse(const DataNameVariant& data_name,
-                                         const PmidName& pmid_node, int32_t size,
-                                         nfs::MessageId message_id) {
+                                         const PmidName& pmid_node, nfs::MessageId message_id) {
   LOG(kInfo) << "PmidManagerService::SendPutResponse";
-  detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, size, pmid_node,
+  detail::PmidManagerPutResponseVisitor<PmidManagerService> put_response(this, pmid_node,
                                                                          message_id);
   boost::apply_visitor(put_response, data_name);
 }
@@ -408,6 +452,11 @@ void PmidManagerService::HandleAccountQuery(const PmidManager::Key& key, const N
   catch (const std::exception& error) {
     LOG(kError) << "failed to retrieve account: " << error.what();
   }
+}
+
+void PmidManagerService::HandleUpdateAccount(const PmidName& pmid_node, int32_t diff_size) {
+  DoSync(PmidManager::UnresolvedUpdateAccount(PmidManager::SyncGroupKey(pmid_node),
+      ActionPmidManagerUpdateAccount(diff_size), routing_.kNodeId()));
 }
 
 }  // namespace vault

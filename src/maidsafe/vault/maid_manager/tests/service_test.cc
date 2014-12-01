@@ -53,7 +53,7 @@ class MaidManagerServiceTest : public testing::Test {
 
   MaidManager::Value GetValue(const MaidManager::GroupName& group_name) {
     std::lock_guard<std::mutex> lock(maid_manager_service_.mutex_);
-    return maid_manager_service_.accounts_[group_name];
+    return maid_manager_service_.accounts_.at(group_name);
   }
 
   void AddAccount(const MaidManager::GroupName& group_name,

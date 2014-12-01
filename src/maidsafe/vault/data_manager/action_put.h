@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_ADD_PMID_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_ADD_PMID_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
 
 #include <cstdint>
 #include <string>
@@ -34,28 +34,29 @@ namespace vault {
 
 class DataManagerValue;
 
-struct ActionDataManagerAddPmid {
-  ActionDataManagerAddPmid(const PmidName& pmid_name);
-  explicit ActionDataManagerAddPmid(const std::string& serialised_action);
-  ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
-  ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
+struct ActionDataManagerPut {
+  ActionDataManagerPut(uint64_t size, nfs::MessageId message_id);
+  explicit ActionDataManagerPut(const std::string& serialised_action);
+  ActionDataManagerPut(const ActionDataManagerPut& other);
+  ActionDataManagerPut(ActionDataManagerPut&& other);
   std::string Serialise() const;
 
   detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kAddPmid;
-  const PmidName kPmidName;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
+  const uint64_t kSize;
+  const nfs::MessageId kMessageId;
 
  private:
-  ActionDataManagerAddPmid();
-  ActionDataManagerAddPmid& operator=(ActionDataManagerAddPmid other);
+  ActionDataManagerPut();
+  ActionDataManagerPut& operator=(ActionDataManagerPut other);
 };
 
-bool operator==(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs);
-bool operator!=(const ActionDataManagerAddPmid& lhs, const ActionDataManagerAddPmid& rhs);
+bool operator==(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs);
+bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_ADD_PMID_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_

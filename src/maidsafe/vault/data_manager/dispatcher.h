@@ -60,6 +60,9 @@ class DataManagerDispatcher {
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error, nfs::MessageId message_id);
 
+  template <typename Data>
+  void SendPmidUpdateAccount(const typename Data::Name& data_name, const PmidName& pmid_node,
+                             uint64_t chunk_size, uint64_t given_size);
   // =========================== Get section (includes integrity checks) ===========================
   // To PmidNode
   template <typename Data>
@@ -80,14 +83,6 @@ class DataManagerDispatcher {
   template <typename RequestorIdType, typename DataName>
   void SendGetResponseFailure(const RequestorIdType& requestor_id, const DataName& data_name,
                               const maidsafe_error& result, nfs::MessageId message_id);
-
-  // To Self
-  template<typename Data>
-  void SendPutToCache(const Data& data);
-
-  // To DataManager
-  template<typename DataName>
-  void SendGetFromCache(const DataName& data_name);
 
   // =========================== Delete section ====================================================
   // To PmidManager
@@ -114,21 +109,6 @@ class DataManagerDispatcher {
   DataManagerDispatcher(const DataManagerDispatcher&);
   DataManagerDispatcher(DataManagerDispatcher&&);
   DataManagerDispatcher& operator=(DataManagerDispatcher);
-
-  typedef std::true_type IsCacheable;
-  typedef std::false_type IsNotCacheable;
-
-  template<typename Data>
-  void DoSendPutToCache(const Data& data, IsCacheable);
-
-  template<typename Data>
-  void DoSendPutToCache(const Data& /*data*/, IsNotCacheable) {}  // No-op
-
-  template<typename DataName>
-  void DoSendGetFromCache(const DataName& data_name, IsCacheable);
-
-  template<typename DataName>
-  void DoSendGetFromCache(const DataName& /*data_name*/, IsNotCacheable) {}  // No-op
 
   template <typename Message>
   void CheckSourcePersonaType() const;
@@ -289,7 +269,6 @@ void DataManagerDispatcher::SendGetResponseSuccess(const RequestorIdType& reques
                            routing::SingleId(routing_.kNodeId())),
       typename NfsMessage::Receiver(detail::GetDestination(requestor_id)), kCacheable);
   LOG(kVerbose) << "DataManagerDispatcher::SendGetResponseSuccess routing send msg to "
-//                << HexSubstr(requestor_id.node_id.string())
                 << " regarding chunk of "
                 << HexSubstr(data.name().value.string());
   routing_.Send(message);
@@ -316,44 +295,6 @@ void DataManagerDispatcher::SendGetResponseFailure(const RequestorIdType& reques
 //                << HexSubstr(requestor_id.node_id.string())
                 << " regarding chunk of "
                 << HexSubstr(data_name.value.string());
-  routing_.Send(message);
-}
-
-template<typename Data>
-void DataManagerDispatcher::SendPutToCache(const Data& data) {
-  DoSendPutToCache(data, is_cacheable<Data>());
-}
-
-template<typename Data>
-void DataManagerDispatcher::DoSendPutToCache(const Data& data, IsCacheable) {
-  typedef PutRequestFromDataManagerToCacheHandler VaultMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-
-  VaultMessage vault_message((VaultMessage::Contents(data)));
-  LOG(kVerbose) << "DataManagerDispatcher::DoSendPutToCache: " << vault_message.id
-                << " " << HexSubstr(data.name()->string());
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing_.kNodeId()), routing::Cacheable::kPut);
-  routing_.Send(message);
-}
-
-template<typename DataName>
-void DataManagerDispatcher::SendGetFromCache(const DataName& data_name) {
-  DoSendGetFromCache(data_name, is_cacheable<typename DataName::data_type>());
-}
-
-template<typename DataName>
-void DataManagerDispatcher::DoSendGetFromCache(const DataName& data_name, IsCacheable) {
-  typedef GetRequestFromDataManagerToCacheHandler VaultMessage;
-  CheckSourcePersonaType<VaultMessage>();
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message((VaultMessage::Contents(data_name)));
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::GroupId(NodeId(data_name->string()))),
-                         routing::Cacheable::kGet);
   routing_.Send(message);
 }
 
@@ -400,6 +341,22 @@ template<typename Message>
 void DataManagerDispatcher::CheckSourcePersonaType() const {
   static_assert(Message::SourcePersona::value == nfs::Persona::kDataManager,
                 "The source Persona must be kDataManager.");
+}
+
+template <typename Data>
+void DataManagerDispatcher::SendPmidUpdateAccount(const typename Data::Name& data_name,
+    const PmidName& pmid_node, uint64_t chunk_size, uint64_t given_size) {
+  using VaultMessage = UpdateAccountFromDataManagerToPmidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message{ VaultMessage::Contents(static_cast<int32_t>(chunk_size) -
+                                                     static_cast<int32_t>(given_size)) };
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(data_name.value.string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(pmid_node.value.string())));
+  routing_.Send(message);
+
 }
 
 }  // namespace vault

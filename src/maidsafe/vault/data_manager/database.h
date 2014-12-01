@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
-#define MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 
 #include <map>
 #include <string>
@@ -52,7 +52,7 @@ class DataManagerDataBase {
 
   DataManager::Value ComposeValue(const std::string& chunk_size, const std::string& pmids) const;
   DataManager::Key ComposeKey(const std::string& chunk_name) const {
-    return DataManager::Key(DataManager::Key::FixedWidthString(chunk_name));
+    return DataManager::Key(DataManager::Key::FixedWidthString(HexDecode(chunk_name)));
   }
   std::string EncodeKey(const DataManager::Key& key) const {
     return HexEncode(key.ToFixedWidthString().string());
@@ -69,5 +69,5 @@ class DataManagerDataBase {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATAMANAGER_DATABASE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 

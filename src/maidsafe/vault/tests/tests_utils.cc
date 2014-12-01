@@ -16,6 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include <limits>
 
 #include "maidsafe/vault/tests/tests_utils.h"
 
@@ -47,6 +48,14 @@ CreateContent<nfs_client::DataNameAndSizeAndSpaceAndReturnCode>() {
 }
 
 template <>
+nfs_client::DataNameAndSizeAndReturnCode
+    CreateContent<nfs_client::DataNameAndSizeAndReturnCode>() {
+  ImmutableData data(NonEmptyString(RandomString(128)));
+  nfs_client::ReturnCode return_code(VaultErrors::not_enough_space);
+  return nfs_client::DataNameAndSizeAndReturnCode(data.name(), 1024, return_code);
+}
+
+template <>
 nfs_vault::DataName CreateContent<nfs_vault::DataName>() {
   ImmutableData data(NonEmptyString(RandomString(128)));
   return nfs_vault::DataName(ImmutableData::Name(data.name()));
@@ -60,13 +69,6 @@ nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>() {
 template <>
 nfs_vault::Empty CreateContent<nfs_vault::Empty>() {
   return nfs_vault::Empty();
-}
-
-template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>() {
-  ImmutableData data(NonEmptyString(RandomString(128)));
-  return nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.data(),
-                                    Identity(RandomString(64)));
 }
 
 template <>

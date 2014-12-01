@@ -1,5 +1,5 @@
 ###Put(D)
-_MaidNode_ =>> |__MaidManager__ [Allow ? So : PutFailure]  *->> |__DataManager__  [Exist(D) ? PutResponse : {([AddTempStore(D), Put.Sy])(So), PutToCache, PutResponse}] *->> |__PmidManager__ {So, Put.Sy, PutResponse} *-> |_PmidNode_ [!Store ? PutFailure]
+_MaidNode_ =>> |__MaidManager__ [Allow ? So : PutFailure]  *->> |__DataManager__  [Exist(D) ? PutResponse : {([AddTempStore(D), Put.Sy])(So), PutResponse}] *->> |__PmidManager__ {So, Put.Sy, PutResponse} *-> |_PmidNode_ [!Store ? PutFailure]
 
 --
 #####MaidManager::PutFailure
@@ -7,7 +7,7 @@ __MaidManager__ *-> |_MaidNode_
 
 --
 #####DataManager::PutResponse
-__DataManager__ *->> |__MaidManager__ [Put.Sy]
+__DataManager__ *->> |__MaidManager__ [So, Put.Sy] *-> |_MaidNode_ 
 
 --
 <dd>Description: Get D from TempStore or network, then PutRequest(D).</ddt>

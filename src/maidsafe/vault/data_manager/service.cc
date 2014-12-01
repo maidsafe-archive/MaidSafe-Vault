@@ -28,11 +28,13 @@
 #include "maidsafe/nfs/utils.h"
 
 #include "maidsafe/vault/operation_handlers.h"
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/sync.pb.h"
 #include "maidsafe/vault/data_manager/action_delete.h"
 #include "maidsafe/vault/data_manager/action_add_pmid.h"
 #include "maidsafe/vault/data_manager/action_remove_pmid.h"
 #include "maidsafe/vault/data_manager/data_manager.pb.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -60,13 +62,13 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       close_nodes_change_(),
       dispatcher_(routing_, pmid),
       get_timer_(asio_service_),
-      get_cached_response_timer_(asio_service_),
       db_(UniqueDbPath(vault_root_dir)),
+      sync_puts_(NodeId(pmid.name()->string())),
       sync_deletes_(NodeId(pmid.name()->string())),
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
-      account_transfer_() {
-}
+      account_transfer_(),
+      temp_store_(detail::Parameters::temp_store_size) {}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -187,20 +189,6 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-template <>
-void DataManagerService::HandleMessage(
-    const GetCachedResponseFromCacheHandlerToDataManager& message,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-    const typename GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {
-  typedef GetCachedResponseFromCacheHandlerToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
-
 void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::MessageId message_id,
                                            const GetResponseContents& contents) {
   LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
@@ -222,18 +210,6 @@ void DataManagerService::HandleGetResponse(const PmidName& pmid_name, nfs::Messa
                   << boost::diagnostic_information(error);
       throw;
     }
-  }
-}
-
-void DataManagerService::HandleGetCachedResponse(nfs::MessageId message_id,
-                                                 const GetCachedResponseContents& contents) {
-  LOG(kVerbose) << "Get content for " << HexSubstr(contents.name.raw_name)
-                << " with message_id " << message_id.data;
-  try {
-    get_cached_response_timer_.AddResponse(message_id.data, contents);
-  }
-  catch (...) {
-    // BEFORE_RELEASE handle
   }
 }
 
@@ -270,6 +246,59 @@ void DataManagerService::SendDeleteRequests(const DataManager::Key& key,
   }
 }
 
+uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::MessageId message_id,
+                                       const PmidName& tried_pmid_node) {
+  std::vector<PmidName> storing_pmid_nodes;
+  uint64_t chunk_size(0);
+  auto data_name(GetDataNameVariant(key.type, key.name));
+  try {
+    auto value(db_.Get(key));
+    storing_pmid_nodes = value.online_pmids(close_nodes_change_.new_close_nodes());
+    chunk_size = value.chunk_size();
+    if (tried_pmid_node != PmidName())
+      storing_pmid_nodes.push_back(tried_pmid_node);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+      LOG(kInfo) << "No value in db so far...";
+    }
+    return chunk_size;
+  }
+  if (storing_pmid_nodes.size() >= detail::Parameters::min_replication_factor) {
+    try {
+      temp_store_.Delete(data_name);
+    }
+    catch (const maidsafe_error& error) {
+      if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+        LOG(kVerbose) << "chunk not available";
+      }
+      throw;
+    }
+    return chunk_size;
+  }
+
+  auto pmid_name(detail::GetRandomCloseNode(routing_, storing_pmid_nodes));
+  if (!pmid_name) {
+    LOG(kError) << "Failed to find a valid close pmid node";
+    return chunk_size;
+  }
+  try {
+    auto serialises_value(temp_store_.Get(data_name));
+    detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
+       this, *pmid_name, serialises_value, message_id);
+    boost::apply_visitor(send_put_request_visitor, data_name);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+      LOG(kError) << HexSubstr(key.name.string()) << " not in temp storage ";
+      detail::DataManagerGetForReplicationVisitor<DataManagerService>
+          get_for_replication(this, storing_pmid_nodes);
+      boost::apply_visitor(get_for_replication, data_name);
+    }
+  }
+  return chunk_size;
+}
+
 // ==================== Sync / AccountTransfer implementation ======================================
 template <>
 void DataManagerService::HandleMessage(
@@ -284,6 +313,19 @@ void DataManagerService::HandleMessage(
   }
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionDataManagerPut::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut";
+      DataManager::UnresolvedPut unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                   sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_puts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerPut "
+                   << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
+        db_.Commit(resolved_action->key, resolved_action->action);
+        Replicate(resolved_action->key, resolved_action->action.kMessageId);
+      }
+      break;
+    }
     case ActionDataManagerDelete::kActionId: {
       LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
       DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
@@ -299,7 +341,11 @@ void DataManagerService::HandleMessage(
           // The delete operation will not depend on subscribers anymore.
           // Owners' signatures may stored in DM later on to support deletes.
           LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-          SendDeleteRequests(resolved_action->key, value->AllPmids(),
+          std::set<PmidName> all_pmids_set;
+          auto all_pmids(value->AllPmids());
+          for (auto pmid : all_pmids)
+            all_pmids_set.insert(pmid);
+          SendDeleteRequests(resolved_action->key, all_pmids_set,
                              resolved_action->action.MessageId());
         }
       }
@@ -319,9 +365,8 @@ void DataManagerService::HandleMessage(
         try {
           db_.Commit(resolved_action->key, resolved_action->action);
         }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(VaultErrors::account_already_exists))
-            throw;
+        catch (const maidsafe_error& /*error*/) {
+          throw;
         }
       }
       break;
@@ -429,13 +474,8 @@ void DataManagerService::HandleChurnEvent(
 //   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
   std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
-  for (auto& account : accounts) {
-    auto online_pmids(account.second.online_pmids(routing_));
-    online_pmids.erase(pmid_name);
-    DataManagerGetForNodeDownVisitor<DataManagerService> get_for_node_down(this, online_pmids);
-    auto data_name(GetDataNameVariant(account.first.type, account.first.name));
-    boost::apply_visitor(get_for_node_down, data_name);
-  }
+  for (auto& account : accounts)
+    Replicate(account.first, nfs::MessageId(RandomInt32()));
 }
 
 void DataManagerService::TransferAccount(const NodeId& dest,
@@ -478,6 +518,9 @@ void DataManagerService::HandleMessage(
 
 // ==================== General implementation =====================================================
 
+void DataManagerService::DerankPmidNode(const PmidName& /*pmid_node*/) {
+  // BEFORE_RELEASE: to be implemented
+}
 
 }  // namespace vault
 

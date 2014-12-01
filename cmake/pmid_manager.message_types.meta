@@ -7,3 +7,4 @@ Action:CreatePmidAccountRequest    Source:MaidManager:Group      Destination:Pmi
 Action:IntegrityCheckRequest       Source:DataManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndSize
 Action:AccountQuery                Source:PmidManager:Single     Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::Empty
 Action:AccountQueryResponse        Source:PmidManager:Group      Destination:PmidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
+Action:UpdateAccount               Source:DataManager:Group      Destination:PmidManager:Group      Contents:struct:maidsafe::nfs_vault::DiffSize

@@ -92,13 +92,17 @@ void PmidManagerValue::HandleLostData(uint64_t size) {
 
 void PmidManagerValue::HandleFailure(uint64_t size) {
   HandleLostData(size);
-  offered_space = 0;
 }
 
 void PmidManagerValue::SetAvailableSize(const int64_t& available_size) {
   offered_space = available_size;
 }
 
+void PmidManagerValue::UpdateAccount(int32_t diff_size) {
+  stored_total_size =
+      (static_cast<int64_t>(stored_total_size) < diff_size) ? 0 : (stored_total_size - diff_size);
+  lost_total_size += diff_size;
+}
 
 // BEFORE_RELEASE check if group can be deleted with below check
 detail::GroupDbMetaDataStatus PmidManagerValue::GroupStatus() {

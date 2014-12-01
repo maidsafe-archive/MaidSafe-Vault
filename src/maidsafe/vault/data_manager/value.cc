@@ -24,6 +24,8 @@
 
 #include "maidsafe/routing/parameters.h"
 
+#include "maidsafe/vault/parameters.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -43,8 +45,8 @@ DataManagerValue::DataManagerValue(const std::string &serialised_value)
     }
     size_ = value_proto.size();
     for (auto& i : value_proto.pmid_names())
-      pmids_.insert(PmidName(Identity(i)));
-    if (pmids_.size() < 1) {
+      pmids_.push_back(PmidName(Identity(i)));
+    if (pmids_.empty()) {
       LOG(kError) << "Invalid pmids";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
@@ -62,29 +64,31 @@ DataManagerValue::DataManagerValue(const DataManagerValue& other) {
   pmids_ = other.pmids_;
 }
 
-DataManagerValue::DataManagerValue(const PmidName& pmid_name, uint64_t size)
-    : size_(size), pmids_() {
-  AddPmid(pmid_name);
-}
+DataManagerValue::DataManagerValue(uint64_t size)
+    : size_(size), pmids_() {}
 
 DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
     : size_(std::move(other.size_)), pmids_(std::move(other.pmids_)) {}
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
-  pmids_.insert(pmid_name);
+  if (pmids_.end() == std::find(pmids_.begin(), pmids_.end(), pmid_name))
+    pmids_.push_back(pmid_name);
 //  PrintRecords();
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string());
+  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string())
+                << " from the list of " << pmids_.size() << " pmid_nodes";
 //  if (online_pmids_.size() + offline_pmids_.size() < 4) {
 //    LOG(kError) << "RemovePmid not allowed";
 //    // TODO add error - not_allowed
 //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
-  pmids_.erase(pmid_name);
-  PrintRecords();
+  auto itr(std::find(pmids_.begin(), pmids_.end(), pmid_name));
+  if (itr != pmids_.end())
+    pmids_.erase(itr);
+//  PrintRecords();
 }
 
 bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
@@ -94,16 +98,20 @@ bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
   return false;
 }
 
-bool DataManagerValue::NeedToPrune(routing::Routing& routing, PmidName& pmid_node_to_remove) const {
-  if (pmids_.size() < routing::Parameters::closest_nodes_size)
+bool DataManagerValue::NeedToPrune(const std::vector<NodeId>& close_nodes,
+                                   PmidName& pmid_node_to_remove) const {
+  if (pmids_.size() < detail::Parameters::max_replication_factor)
     return false;
-  // Prune the oldest offline node
-  for (auto itr(pmids_.begin()); itr != pmids_.end(); ++itr)
-    if (!routing.IsConnectedVault(NodeId((*itr)->string()))) {
+  for (auto itr(std::begin(pmids_)); itr != std::end(pmids_); ++itr) {
+    if (std::find(std::begin(close_nodes), std::end(close_nodes), NodeId((*itr)->string()))
+            == std::end(close_nodes)) {
       pmid_node_to_remove = *itr;
       return true;
     }
-  return false;
+  }
+  // if all nodes are online, remove the oldest one
+  pmid_node_to_remove = *(std::begin(pmids_));
+  return true;
 }
 
 std::string DataManagerValue::Serialise() const {
@@ -124,19 +132,20 @@ bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
   return lhs.size_ == rhs.size_ && lhs.pmids_ == rhs.pmids_;
 }
 
-std::set<PmidName> DataManagerValue::online_pmids(routing::Routing& routing) const {
-  std::set<PmidName> online_pmids;
-  for (auto& pmid : pmids_)
-    if (routing.IsConnectedVault(NodeId(pmid->string())))
-      online_pmids.insert(pmid);
+std::vector<PmidName> DataManagerValue::online_pmids(const std::vector<NodeId>& close_nodes) const {
+  std::vector<PmidName> online_pmids;
+  for (auto& pmid : pmids_) {
+    if (std::find(std::begin(close_nodes), std::end(close_nodes), NodeId(pmid->string()))
+            != std::end(close_nodes))
+      online_pmids.push_back(pmid);
+  }
   return online_pmids;
 }
 
 void DataManagerValue::PrintRecords() {
   LOG(kVerbose) << "pmids_ now having : ";
-  for (auto pmid : pmids_) {
+  for (auto pmid : pmids_)
     LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
-  }
 }
 
 std::string DataManagerValue::Print() const {

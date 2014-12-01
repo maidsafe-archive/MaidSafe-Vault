@@ -49,8 +49,7 @@ class MaidManagerDispatcher {
   void SendGetVersionRequest(const MaidName& account_name, const typename Data::Name& data_name);
 
   template <typename Data>
-  void SendPutRequest(const MaidName& account_name, const Data& data,
-                      const PmidName& pmid_node_hint, nfs::MessageId message_id);
+  void SendPutRequest(const MaidName& account_name, const Data& data, nfs::MessageId message_id);
 
   void SendPutResponse(const MaidName& account_name, const maidsafe_error& result,
                        nfs::MessageId message_id);
@@ -122,20 +121,14 @@ class MaidManagerDispatcher {
 
 template <typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const Data& data,
-                                           const PmidName& pmid_node_hint,
                                            nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerDispatcher SendPutRequest to pmid_node_hint -- "
-                << HexSubstr(pmid_node_hint.value.string())
-                << " , with message_id -- " << message_id.data
+  LOG(kVerbose) << "MaidManagerDispatcher SendPutRequest, with message_id -- " << message_id.data
                 << " of account " << HexSubstr(account_name.value.string());
   typedef PutRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
 
-  VaultMessage vault_message(
-      message_id,
-      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(),
-                                 pmid_node_hint));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
