@@ -25,11 +25,11 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionPmidManagerUpdateAccount::ActionPmidManagerUpdateAccount(int32_t size)
+ActionPmidManagerUpdateAccount::ActionPmidManagerUpdateAccount(int64_t size)
     : kDiffSize(size) {}
 
 ActionPmidManagerUpdateAccount::ActionPmidManagerUpdateAccount(const std::string& serialised_action)
-  : kDiffSize([&serialised_action]()->int32_t {
+  : kDiffSize([&serialised_action]()->int64_t {
             protobuf::ActionPmidManagerUpdateAccount action_put_proto;
             if (!action_put_proto.ParseFromString(serialised_action))
               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));

@@ -98,7 +98,7 @@ void PmidManagerValue::SetAvailableSize(const int64_t& available_size) {
   offered_space = available_size;
 }
 
-void PmidManagerValue::UpdateAccount(int32_t diff_size) {
+void PmidManagerValue::UpdateAccount(int64_t diff_size) {
   stored_total_size =
       (static_cast<int64_t>(stored_total_size) < diff_size) ? 0 : (stored_total_size - diff_size);
   lost_total_size += diff_size;
