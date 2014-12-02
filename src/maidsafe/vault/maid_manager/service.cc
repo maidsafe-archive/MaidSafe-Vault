@@ -128,7 +128,6 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
   auto pending_account_itr(pending_account_map_.find(message_id));
   if (pending_account_itr == pending_account_map_.end()) {
-    assert(false);
     return;
   }
   assert(pending_account_itr->second.anmaid_name == data_name);
