@@ -471,9 +471,9 @@ void DataManagerService::HandlePutResponse(const typename Data::Name& data_name,
     if (error.code() == make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::HandlePutResponse value does not exist..."
                   << boost::diagnostic_information(error);
-      // return; BEFORE_RELEASE this line should be uncommented
+      return;
     }
-    throw error;  // For db errors
+    throw;
   }
   PmidName pmid_node_to_remove;
   auto need_to_prune(false);
@@ -660,7 +660,7 @@ std::set<PmidName> DataManagerService::GetOnlinePmids(const typename Data::Name&
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerService::GetOnlinePmids encountered unknown error "
                   << boost::diagnostic_information(error);
-      throw error;  // For db errors
+      throw;  // For db errors
     }
     // TODO(Fraser#5#): 2013-10-03 - Request for non-existent data should possibly generate an alert
     LOG(kWarning) << "Entry for " << HexSubstr(data_name.value) << " doesn't exist.";

@@ -261,8 +261,9 @@ uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::Message
   catch (const maidsafe_error& error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element)) {
       LOG(kInfo) << "No value in db so far...";
+      return chunk_size;
     }
-    return chunk_size;
+    throw;
   }
   if (storing_pmid_nodes.size() >= detail::Parameters::min_replication_factor) {
     try {
@@ -365,8 +366,9 @@ void DataManagerService::HandleMessage(
         try {
           db_.Commit(resolved_action->key, resolved_action->action);
         }
-        catch (const maidsafe_error& /*error*/) {
-          throw;
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(CommonErrors::no_such_element))
+            throw;
         }
       }
       break;
