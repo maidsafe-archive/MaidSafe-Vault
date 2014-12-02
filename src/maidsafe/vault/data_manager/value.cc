@@ -18,157 +18,169 @@
 
 #include "maidsafe/vault/data_manager/value.h"
 
-#include <string>
+#include <utility>
 
 #include "maidsafe/common/utils.h"
+
+#include "maidsafe/routing/parameters.h"
+
+#include "maidsafe/vault/parameters.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-DataManagerValue::DataManagerValue(const std::string &serialised_metadata_value)
-    : subscribers_(0), size_(0), online_pmids_(), offline_pmids_() {
-  protobuf::DataManagerValue metadata_value_proto;
-  if (!metadata_value_proto.ParseFromString(serialised_metadata_value)) {
-    LOG(kError) << "Failed to read or parse serialised metadata value";
+DataManagerValue::DataManagerValue() : size_(0), pmids_() {}
+
+DataManagerValue::DataManagerValue(const std::string &serialised_value)
+    : size_(0), pmids_() {
+  protobuf::DataManagerValue value_proto;
+  if (!value_proto.ParseFromString(serialised_value)) {
+    LOG(kError) << "Failed to read or parse serialised value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   } else {
-    if ((metadata_value_proto.subscribers() < 1) || (metadata_value_proto.size() <= 0)) {
+    if (value_proto.size() <= 0) {
       LOG(kError) << "Invalid parameters";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
-    subscribers_ = metadata_value_proto.subscribers();
-    size_ = metadata_value_proto.size();
-
-    for (auto& i : metadata_value_proto.online_pmid_name())
-      online_pmids_.insert(PmidName(Identity(i)));
-    for (auto& i : metadata_value_proto.offline_pmid_name())
-      offline_pmids_.insert(PmidName(Identity(i)));
-    if (online_pmids_.size() + offline_pmids_.size() < 1) {
-      LOG(kError) << "Invalid online/offline pmids";
+    size_ = value_proto.size();
+    for (auto& i : value_proto.pmid_names())
+      pmids_.push_back(PmidName(Identity(i)));
+    if (pmids_.empty()) {
+      LOG(kError) << "Invalid pmids";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
   }
 }
 
 DataManagerValue& DataManagerValue::operator=(const DataManagerValue& other) {
-  subscribers_ = other.subscribers_;
   size_ = other.size_;
-  online_pmids_ = other.online_pmids_;
-  offline_pmids_ = other.offline_pmids_;
+  pmids_ = other.pmids_;
   return *this;
 }
 
-DataManagerValue::DataManagerValue(const PmidName& pmid_name, int32_t size)
-    : subscribers_(0), size_(size), online_pmids_(), offline_pmids_() {
-  AddPmid(pmid_name);
+DataManagerValue::DataManagerValue(const DataManagerValue& other) {
+  size_ = other.size_;
+  pmids_ = other.pmids_;
 }
 
+DataManagerValue::DataManagerValue(uint64_t size)
+    : size_(size), pmids_() {}
+
 DataManagerValue::DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT
-    : subscribers_(std::move(other.subscribers_)),
-      size_(std::move(other.size_)),
-      online_pmids_(std::move(other.online_pmids_)),
-      offline_pmids_(std::move(other.offline_pmids_)) {}
+    : size_(std::move(other.size_)), pmids_(std::move(other.pmids_)) {}
 
 void DataManagerValue::AddPmid(const PmidName& pmid_name) {
   LOG(kVerbose) << "DataManagerValue::AddPmid adding " << HexSubstr(pmid_name->string());
-  online_pmids_.insert(pmid_name);
-  offline_pmids_.erase(pmid_name);
+  if (pmids_.end() == std::find(pmids_.begin(), pmids_.end(), pmid_name))
+    pmids_.push_back(pmid_name);
 //  PrintRecords();
 }
 
 void DataManagerValue::RemovePmid(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string());
+  LOG(kVerbose) << "DataManagerValue::RemovePmid removing " << HexSubstr(pmid_name->string())
+                << " from the list of " << pmids_.size() << " pmid_nodes";
 //  if (online_pmids_.size() + offline_pmids_.size() < 4) {
 //    LOG(kError) << "RemovePmid not allowed";
 //    // TODO add error - not_allowed
 //    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
 //  }
-  online_pmids_.erase(pmid_name);
-  offline_pmids_.erase(pmid_name);
-  PrintRecords();
-}
-
-int64_t DataManagerValue::DecrementSubscribers() {
-  --subscribers_;
-  VLOG(nfs::Persona::kDataManager, VisualiserAction::kDecreaseSubscribers, subscribers_);
-  return subscribers_;
-}
-
-void DataManagerValue::SetPmidOnline(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::SetPmidOnline " << HexSubstr(pmid_name->string());
-  auto deleted = offline_pmids_.erase(pmid_name);
-  if (deleted == 1) {
-    online_pmids_.insert(pmid_name);
-  } else {
-    LOG(kError) << "Invalid Pmid reported";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
-  PrintRecords();
-}
-
-void DataManagerValue::SetPmidOffline(const PmidName& pmid_name) {
-  LOG(kVerbose) << "DataManagerValue::SetPmidOffline " << HexSubstr(pmid_name->string());
-  auto deleted = online_pmids_.erase(pmid_name);
-  if (deleted == 1) {
-    offline_pmids_.insert(pmid_name);
-  } else {
-    LOG(kError) << "Invalid Pmid reported";
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-  }
+  auto itr(std::find(pmids_.begin(), pmids_.end(), pmid_name));
+  if (itr != pmids_.end())
+    pmids_.erase(itr);
 //  PrintRecords();
 }
 
+bool DataManagerValue::HasTarget(const PmidName& pmid_name) const {
+  for (const auto& pmid : pmids_)
+    if (pmid_name == pmid)
+      return true;
+  return false;
+}
+
+bool DataManagerValue::NeedToPrune(const std::vector<NodeId>& close_nodes,
+                                   PmidName& pmid_node_to_remove) const {
+  if (pmids_.size() < detail::Parameters::max_replication_factor)
+    return false;
+  for (auto itr(std::begin(pmids_)); itr != std::end(pmids_); ++itr) {
+    if (std::find(std::begin(close_nodes), std::end(close_nodes), NodeId((*itr)->string()))
+            == std::end(close_nodes)) {
+      pmid_node_to_remove = *itr;
+      return true;
+    }
+  }
+  // if all nodes are online, remove the oldest one
+  pmid_node_to_remove = *(std::begin(pmids_));
+  return true;
+}
+
 std::string DataManagerValue::Serialise() const {
-  if (subscribers_ < 1 || size_ <= 0) {
+  if (size_ <= 0) {
     LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
-  assert(!(online_pmids_.empty() && offline_pmids_.empty()));
-  protobuf::DataManagerValue metadata_value_proto;
-  metadata_value_proto.set_subscribers(subscribers_);
-  metadata_value_proto.set_size(size_);
-  for (const auto& i : online_pmids_)
-    metadata_value_proto.add_online_pmid_name(i->string());
-  for (const auto& i : offline_pmids_)
-    metadata_value_proto.add_offline_pmid_name(i->string());
-  assert(metadata_value_proto.IsInitialized());
-  return metadata_value_proto.SerializeAsString();
+  assert(!pmids_.empty());
+  protobuf::DataManagerValue value_proto;
+  value_proto.set_size(size_);
+  for (const auto& i : pmids_)
+    value_proto.add_pmid_names(i->string());
+  assert(value_proto.IsInitialized());
+  return value_proto.SerializeAsString();
 }
 
 bool operator==(const DataManagerValue& lhs, const DataManagerValue& rhs) {
-  return lhs.subscribers_ == rhs.subscribers_ && lhs.size_ == rhs.size_ &&
-         lhs.online_pmids_ == rhs.online_pmids_ && lhs.offline_pmids_ == rhs.offline_pmids_;
+  return lhs.size_ == rhs.size_ && lhs.pmids_ == rhs.pmids_;
 }
 
-std::set<PmidName> DataManagerValue::AllPmids() const {
-  std::set<PmidName> pmids_union;
-  std::set_union(std::begin(online_pmids_), std::end(online_pmids_), std::begin(offline_pmids_),
-                 std::end(offline_pmids_), std::inserter(pmids_union, std::begin(pmids_union)));
-  return pmids_union;
+std::vector<PmidName> DataManagerValue::online_pmids(const std::vector<NodeId>& close_nodes) const {
+  std::vector<PmidName> online_pmids;
+  for (auto& pmid : pmids_) {
+    if (std::find(std::begin(close_nodes), std::end(close_nodes), NodeId(pmid->string()))
+            != std::end(close_nodes))
+      online_pmids.push_back(pmid);
+  }
+  return online_pmids;
 }
 
 void DataManagerValue::PrintRecords() {
-  LOG(kVerbose) << " online_pmids_ now having : ";
-  for (auto pmid : online_pmids_) {
+  LOG(kVerbose) << "pmids_ now having : ";
+  for (auto pmid : pmids_)
     LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
-  }
-  LOG(kVerbose) << " offline_pmids_ now having : ";
-  for (auto pmid : offline_pmids_) {
-    LOG(kVerbose) << "     ----     " << HexSubstr(pmid.value.string());
-  }
 }
 
 std::string DataManagerValue::Print() const {
   std::stringstream stream;
-  stream << "\n\t[size_," << size_ << "] [subscribers_," << subscribers_ << "]";
-  stream << "\n\t\t online_pmids_ now having : ";
-  for (auto pmid : online_pmids_)
-    stream << "\n\t\t     ----     " << HexSubstr(pmid.value.string());
-  stream << "\n\t\t offline_pmids_ now having : ";
-  for (auto pmid : offline_pmids_)
+  stream << "\n\t[size_," << size_ << "]";
+  stream << "\n\t\t pmids_ now having : ";
+  for (auto pmid : pmids_)
     stream << "\n\t\t     ----     " << HexSubstr(pmid.value.string());
   return stream.str();
+}
+
+DataManagerValue DataManagerValue::Resolve(const std::vector<DataManagerValue>& values) {
+  std::vector<std::pair<DataManagerValue, unsigned int>> stats;
+  for (const auto& value : values) {
+    auto iter(std::find_if(std::begin(stats), std::end(stats),
+                           [&](const std::pair<DataManagerValue, unsigned int>& pair) {
+                             return value == pair.first;
+                           }));
+    if (iter == std::end(stats))
+      stats.push_back(std::make_pair(value, 1));
+    else
+      iter->second++;
+  }
+
+  auto max_iter(std::begin(stats));
+  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
+
+  if (max_iter->second == (routing::Parameters::group_size + 1) / 2)
+    return max_iter->first;
+
+  if (values.size() == routing::Parameters::group_size - 1)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+
+  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
 }
 
 }  // namespace vault

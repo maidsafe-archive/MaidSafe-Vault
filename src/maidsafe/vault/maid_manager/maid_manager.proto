@@ -20,26 +20,17 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message MaidManagerValue {
-  required int64 total_cost = 1;
-  required int32 count = 2;
-}
-
 message MaidManagerKeyValuePair {
   required bytes key = 1;
   required bytes value = 2;
 }
 
-message MaidManagerMetadata {
-  message PmidTotal {
-    required bytes serialised_pmid_registration = 1;
-    required bytes serialised_pmid_metadata = 2;  // this is a serialised PmidManagerMetadata
-  }
-  repeated PmidTotal pmid_totals = 1;
-  required int64 total_put_data = 2;
+message MaidManagerValue {
+  required int64 space_available = 1;
+  required int64 data_stored = 2;
 }
 
 // Used as data field in MM's Reply to Put request.
-message Cost {
-  required int32 cost = 1;
+message Size {
+  required int64 size = 1;
 }

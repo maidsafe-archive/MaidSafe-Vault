@@ -19,28 +19,26 @@
 #ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 #define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 
+#include <map>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/passport/types.h"
 
+#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/metadata_key.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_account_transfer_action.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/maid_manager/value.h"
-#include "maidsafe/vault/maid_manager/action_update_pmid_health.h"
-#include "maidsafe/vault/maid_manager/action_register_pmid.h"
-#include "maidsafe/vault/maid_manager/action_unregister_pmid.h"
-#include "maidsafe/vault/maid_manager/action_reference_counts.h"
 
 
 namespace maidsafe {
 
 namespace vault {
-
-class MaidManagerMetadata;
 
 template <bool Remove>
 struct ActionCreateRemoveAccount;
@@ -48,8 +46,6 @@ typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 struct ActionMaidManagerPut;
 struct ActionMaidManagerDelete;
-struct ActionRegisterUnregisterPmid;
-struct ActionMaidManagerRegisterPmid;
 
 }  // namespace vault
 
@@ -58,26 +54,18 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kMaidManager> {
   static const Persona persona = Persona::kMaidManager;
-  typedef passport::PublicMaid::Name GroupName;
-  typedef vault::GroupKey<GroupName> Key;
-  typedef vault::MaidManagerValue Value;
-  typedef vault::MaidManagerMetadata Metadata;
-  typedef vault::MetadataKey<GroupName> MetadataKey;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount> UnresolvedCreateAccount;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionRemoveAccount> UnresolvedRemoveAccount;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUpdatePmidHealth>
-              UnresolvedUpdatePmidHealth;
-  typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerPut> UnresolvedPut;
-  typedef vault::UnresolvedAction<Key, vault::ActionMaidManagerDelete> UnresolvedDelete;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerRegisterPmid>
-              UnresolvedRegisterPmid;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerUnregisterPmid>
-              UnresolvedUnregisterPmid;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerIncrementReferenceCounts>
-              UnresolvedIncrementReferenceCounts;
-  typedef vault::UnresolvedAction<MetadataKey, vault::ActionMaidManagerDecrementReferenceCounts>
-              UnresolvedDecrementReferenceCounts;
-  typedef vault::UnresolvedAccountTransferAction<GroupName, std::string> UnresolvedAccountTransfer;
+  using GroupName = passport::PublicMaid::Name;
+  using Key = GroupName;
+  using Value = vault::MaidManagerValue;
+  using SyncKey = vault::GroupKey<GroupName>;
+  using MetadataKey = vault::MetadataKey<GroupName>;
+  using AccountType = std::pair<Key, Value>;
+  using TransferInfo = std::map<NodeId, std::vector<AccountType>>;
+  using UnresolvedCreateAccount = vault::UnresolvedAction<MetadataKey, vault::ActionCreateAccount>;
+  using UnresolvedRemoveAccount = vault::UnresolvedAction<MetadataKey, vault::ActionRemoveAccount>;
+  using UnresolvedPut = vault::UnresolvedAction<SyncKey, vault::ActionMaidManagerPut>;
+  using UnresolvedDelete = vault::UnresolvedAction<SyncKey, vault::ActionMaidManagerDelete>;
+  using UnresolvedAccountTransfer = vault::UnresolvedAccountTransferAction<GroupName, std::string>;
 };
 
 }  // namespace nfs

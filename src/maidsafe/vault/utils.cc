@@ -41,6 +41,20 @@ DataNameVariant GetNameVariant(const T&) {
   return DataNameVariant();
 }
 
+boost::optional<PmidName> GetRandomCloseNode(routing::Routing& routing,
+                                             const std::vector<PmidName>& exclude) {
+  assert(exclude.size() < routing::Parameters::closest_nodes_size);
+  NodeId node_id;
+  PmidName pmid_name;
+  do {
+    node_id = routing.RandomConnectedNode();
+    if (node_id.IsZero())
+      return boost::optional<PmidName>();
+    pmid_name = PmidName{ Identity{ node_id.string() }};
+  } while (std::find(std::begin(exclude), std::end(exclude), pmid_name) != std::end(exclude));
+  return boost::optional<PmidName>(pmid_name);
+}
+
 template <>
 DataNameVariant GetNameVariant(const nfs_vault::DataName& data) {
   return GetDataNameVariant(data.type, data.raw_name);
@@ -67,11 +81,6 @@ DataNameVariant GetNameVariant(const nfs_vault::DataNameAndSize& data) {
 }
 
 template <>
-DataNameVariant GetNameVariant(const nfs_vault::DataAndPmidHint& data) {
-  return GetNameVariant(data.data.name);
-}
-
-template <>
 DataNameVariant GetNameVariant(const nfs_client::DataAndReturnCode& data) {
   return GetNameVariant(data.data.name);
 }
@@ -87,7 +96,12 @@ DataNameVariant GetNameVariant(const nfs_client::DataNameAndReturnCode& data) {
 }
 
 template <>
-DataNameVariant GetNameVariant(const nfs_client::DataNameAndSpaceAndReturnCode& data) {
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndSpaceAndReturnCode& data) {
+  return GetNameVariant(data.name);
+}
+
+template <>
+DataNameVariant GetNameVariant(const nfs_client::DataNameAndSizeAndReturnCode& data) {
   return GetNameVariant(data.name);
 }
 

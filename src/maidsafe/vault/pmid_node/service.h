@@ -159,8 +159,6 @@ class PmidNodeService {
 
   // Unless StartUp is called, PmidNode is not un-usable
   void StartUp();
-  void HandlePmidAccountResponses(const std::vector<std::set<nfs_vault::DataName>>& responses,
-                                  int failures);
 
  private:
   template<typename ServiceHandlerType, typename MessageType>
@@ -181,14 +179,11 @@ class PmidNodeService {
   //  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
   void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
                           const std::vector<DataNameVariant>& to_be_retrieved);
-  void CheckPmidAccountResponsesStatus(const std::vector<DataNameVariant>& expected_chunks);
 
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);
-  void HandleAccountResponses(
-      const std::vector<GetPmidAccountResponseFromPmidManagerToPmidNode>& responses);
   template <typename Data>
-  void HandlePut(const Data& data, nfs::MessageId message_id);
+  void HandlePut(const Data& data, const uint64_t size, nfs::MessageId message_id);
   template <typename Data>
   void HandleGet(const typename Data::Name& data_name, const NodeId& data_manager_node_id,
                  nfs::MessageId message_id);
@@ -197,23 +192,11 @@ class PmidNodeService {
                             const NonEmptyString& random_string, const NodeId& sender,
                             nfs::MessageId message_id);
 
-  void HandleHealthRequest(const NodeId& pmid_manager_node_id, nfs::MessageId message_id);
-
   // ================================ Sender Validation =========================================
   template <typename T>
   bool ValidateSender(const T& /*message*/, const typename T::Sender& /*sender*/) const {
     return true;
   }
-
-  // ===================================Cache=====================================================
-  template <typename T>
-  bool DoGetFromCache(const T& message, const typename T::Sender& sender,
-                      const typename T::Receiver& receiver);
-
-  template <typename T>
-  void SendCachedData(const T& message, const typename T::Sender& sender,
-                      const typename T::Receiver& receiver,
-                      const std::shared_ptr<NonEmptyString> content);
 
   routing::Routing& routing_;
   std::mutex accumulator_mutex_;
@@ -259,18 +242,6 @@ void PmidNodeService::HandleMessage(
     const typename DeleteRequestFromPmidManagerToPmidNode::Sender& sender,
     const typename DeleteRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
-template <>
-void PmidNodeService::HandleMessage(
-    const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-    const typename GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <>
-void PmidNodeService::HandleMessage(
-    const PmidHealthRequestFromPmidManagerToPmidNode& message,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-    const typename PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
-
 // ============================== Get implementation =============================================
 template <typename Data>
 void PmidNodeService::HandleGet(const typename Data::Name& data_name,
@@ -312,16 +283,18 @@ void PmidNodeService::HandleGet(const typename Data::Name& data_name,
 
 // ============================== Put implementation =============================================
 template <typename Data>
-void PmidNodeService::HandlePut(const Data& data, nfs::MessageId message_id) {
+void PmidNodeService::HandlePut(const Data& data, const uint64_t size, nfs::MessageId message_id) {
   try {
     LOG(kVerbose) << "PmidNodeService::HandlePut put " << HexSubstr(data.name().value)
                   << " with message_id " << message_id.data;
     handler_.Put(data);
   } catch (const maidsafe_error& error) {
     LOG(kWarning) << "PmidNodeService::HandlePut send put failure " << HexSubstr(data.name().value)
+                  << " of size " << size
                   << " with AvailableSpace " << handler_.AvailableSpace()
                   << " and error " << boost::diagnostic_information(error);
-    dispatcher_.SendPutFailure<Data>(data.name(), handler_.AvailableSpace(), error, message_id);
+    dispatcher_.SendPutFailure<Data>(data.name(), size,
+                                     handler_.AvailableSpace(), error, message_id);
   } catch (const std::exception& e) {
     LOG(kError) << "Failed to put data : " << HexSubstr(data.name().value) << " , "
                 << boost::diagnostic_information(e);

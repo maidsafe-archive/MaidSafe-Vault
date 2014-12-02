@@ -17,39 +17,57 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/data_manager/action_put.h"
-#include "maidsafe/vault/data_manager/action_put.pb.h"
 
-#include "maidsafe/vault/pmid_manager/value.h"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/data_types/data_name_variant.h"
+
+#include "maidsafe/vault/data_manager/action_put.pb.h"
+#include "maidsafe/vault/data_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-ActionDataManagerPut::ActionDataManagerPut() {}
+ActionDataManagerPut::ActionDataManagerPut(uint64_t size, nfs::MessageId message_id)
+    : kSize(size), kMessageId(message_id) {}
 
-ActionDataManagerPut::ActionDataManagerPut(const std::string& /*serialised_action*/) {}
+ActionDataManagerPut::ActionDataManagerPut(const std::string& serialised_action)
+    : kSize([&serialised_action]()->uint64_t {
+        protobuf::ActionDataManagerPut action_put_proto;
+        if (!action_put_proto.ParseFromString(serialised_action))
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+        return action_put_proto.size();
+      }()),
+      kMessageId([&serialised_action]()->nfs::MessageId {
+        protobuf::ActionDataManagerPut action_put_proto;
+        if (!action_put_proto.ParseFromString(serialised_action))
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+        return nfs::MessageId(action_put_proto.message_id());
+      }()) {}
 
-ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& /*other*/) {}
+ActionDataManagerPut::ActionDataManagerPut(const ActionDataManagerPut& other)
+    : kSize(other.kSize), kMessageId(other.kMessageId) {}
 
-ActionDataManagerPut::ActionDataManagerPut(ActionDataManagerPut&& /*other*/) {}
+ActionDataManagerPut::ActionDataManagerPut(ActionDataManagerPut&& other)
+    : kSize(std::move(other.kSize)), kMessageId(std::move(other.kMessageId)) {}
 
 std::string ActionDataManagerPut::Serialise() const {
   protobuf::ActionDataManagerPut action_put_proto;
+  action_put_proto.set_size(kSize);
+  action_put_proto.set_message_id(kMessageId);
   return action_put_proto.SerializeAsString();
 }
 
 detail::DbAction ActionDataManagerPut::operator()(std::unique_ptr<DataManagerValue>& value) {
-  if (value) {
-    LOG(kVerbose) << "ActionDataManagerPut::operator() value->IncrementSubscribers()";
-    value->IncrementSubscribers();
-    return detail::DbAction::kPut;
-  }
-  LOG(kWarning) << "ActionDataManagerPut::operator() no_such_element";
-  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  if (!value)
+    value.reset(new DataManagerValue(kSize));
+  else
+    assert(value->chunk_size() == kSize);
+  return detail::DbAction::kPut;
 }
 
-bool operator==(const ActionDataManagerPut& /*lhs*/, const ActionDataManagerPut& /*rhs*/) {
-  return true;
+bool operator==(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs) {
+  return lhs.kSize == rhs.kSize && lhs.kMessageId == rhs.kMessageId;
 }
 
 bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs) {

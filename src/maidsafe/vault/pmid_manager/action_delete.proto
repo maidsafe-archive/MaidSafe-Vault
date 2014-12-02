@@ -21,6 +21,7 @@ option optimize_for = LITE_RUNTIME;
 package maidsafe.vault.protobuf;
 
 message ActionPmidManagerDelete {
-  required bool pmid_node_available = 1;
-  required bool data_failure = 2;
+  required uint64 size = 1;
+  required bool pmid_node_available = 2;
+  required bool data_failure = 3;
 }

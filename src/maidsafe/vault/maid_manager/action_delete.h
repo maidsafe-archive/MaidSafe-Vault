@@ -30,7 +30,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
 class MaidManagerValue;
 
 struct ActionMaidManagerDelete {
@@ -40,8 +39,8 @@ struct ActionMaidManagerDelete {
   ActionMaidManagerDelete(ActionMaidManagerDelete&& other);
 
   std::string Serialise() const;
-  detail::DbAction operator()(MaidManagerMetadata& metadata,
-                              std::unique_ptr<MaidManagerValue>& value) const;
+  void operator()(MaidManagerValue& value) const;
+
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
   const nfs::MessageId kMessageId;
 };
