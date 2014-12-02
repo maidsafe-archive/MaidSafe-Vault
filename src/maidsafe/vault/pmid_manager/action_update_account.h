@@ -34,7 +34,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionPmidManagerUpdateAccount {
-  ActionPmidManagerUpdateAccount(int32_t size);
+  ActionPmidManagerUpdateAccount(int64_t size);
   explicit ActionPmidManagerUpdateAccount(const std::string& serialised_action);
   ActionPmidManagerUpdateAccount(const ActionPmidManagerUpdateAccount& other);
   ActionPmidManagerUpdateAccount(ActionPmidManagerUpdateAccount&& other);
@@ -44,7 +44,7 @@ struct ActionPmidManagerUpdateAccount {
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kUpdateAccount;
-  const int32_t kDiffSize;
+  const int64_t kDiffSize;
 
  private:
   ActionPmidManagerUpdateAccount();

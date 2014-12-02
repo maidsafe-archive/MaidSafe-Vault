@@ -210,17 +210,22 @@ DataManager::TransferInfo DataManagerDataBase::GetTransferInfo(
 }
 
 void DataManagerDataBase::HandleTransfer(const std::vector<DataManager::KvPair>& contents) {
+  LOG(kVerbose) << "DataManager AcoccountTransfer DataManagerDataBase::HandleTransfer";
   for (const auto& kv_pair : contents) {
     try {
       Get(kv_pair.first);
     }
     catch (const maidsafe_error& error) {
-      LOG(kInfo) << error.what();
+      LOG(kInfo) << "DataManager AcoccountTransfer DataManagerDataBase::HandleTransfer "
+                 << error.what();
       if ((error.code() != make_error_code(CommonErrors::no_such_element)) &&
-          (error.code() != make_error_code(VaultErrors::no_such_account)))
+          (error.code() != make_error_code(VaultErrors::no_such_account))) {
         throw;  // For db errors
-      else
+      } else {
+        LOG(kInfo) << "DataManager AcoccountTransfer DataManagerDataBase::HandleTransfer "
+                   << "inserting account " << HexSubstr(kv_pair.first.name.string());
         Put(kv_pair.first, kv_pair.second);
+      }
     }
   }
 }
