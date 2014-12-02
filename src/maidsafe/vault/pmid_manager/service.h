@@ -139,7 +139,7 @@ class PmidManagerService {
   void HandleAccountTransferEntry(const std::string& serialised_account,
                                   const routing::SingleSource& sender);
   void HandleAccountQuery(const PmidManager::Key& key, const NodeId& sender);
-  void HandleUpdateAccount(const PmidName& pmid_node, int32_t diff_size);
+  void HandleUpdateAccount(const PmidName& pmid_node, int64_t diff_size);
 
   routing::Routing& routing_;
   std::map<PmidManager::Key, PmidManager::Value> accounts_;

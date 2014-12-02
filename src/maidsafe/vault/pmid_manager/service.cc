@@ -459,7 +459,7 @@ void PmidManagerService::HandleAccountQuery(const PmidManager::Key& key, const N
   }
 }
 
-void PmidManagerService::HandleUpdateAccount(const PmidName& pmid_node, int32_t diff_size) {
+void PmidManagerService::HandleUpdateAccount(const PmidName& pmid_node, int64_t diff_size) {
   DoSync(PmidManager::UnresolvedUpdateAccount(PmidManager::SyncGroupKey(pmid_node),
       ActionPmidManagerUpdateAccount(diff_size), routing_.kNodeId()));
 }
