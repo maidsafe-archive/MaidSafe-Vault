@@ -70,7 +70,7 @@ void MaidManagerDispatcher::SendCreateAccountResponse(const MaidName& account_na
   RoutingMessage message(nfs_message.Serialise(),
       GroupOrKeyHelper::GroupSender(routing_, account_name),
       NfsMessage::Receiver(routing::SingleId(NodeId(account_name.value.string()))));
-  LOG(kVerbose) << "SendCreateAccountResponse: " << message_id << " result: " << result.code();
+  LOG(kVerbose) << "SendCreateAccountResponse: " << message_id << " result: " << result.what();
   routing_.Send(message);
 }
 
