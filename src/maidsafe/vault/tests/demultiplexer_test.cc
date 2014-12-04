@@ -133,8 +133,8 @@
 //                         static_cast<nfs::Persona>(RandomUint32() % 4),
 //                         static_cast<nfs::Persona>(RandomUint32() % 4),
 //                         RandomUint32(),
-//                         NodeId(NodeId::IdType::kRandomId),
-//                         NodeId(NodeId::IdType::kRandomId),
+//                         NodeId(RandomString(NodeId::kSize)),
+//                         NodeId(RandomString(NodeId::kSize)),
 //                         RandomAlphaNumericString(10),
 //                         RandomAlphaNumericString(10));
 //    return message;
@@ -147,8 +147,8 @@
 //                         dest_type,
 //                         static_cast<nfs::Persona>(RandomUint32() % 4),
 //                         RandomUint32(),
-//                         NodeId(NodeId::IdType::kRandomId),
-//                         NodeId(NodeId::IdType::kRandomId),
+//                         NodeId(RandomString(NodeId::kSize)),
+//                         NodeId(RandomString(NodeId::kSize)),
 //                         RandomAlphaNumericString(10),
 //                         RandomAlphaNumericString(10));
 //    return message;

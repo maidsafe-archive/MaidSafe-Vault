@@ -131,7 +131,7 @@ std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
   for (auto index(0U); index < routing::Parameters::group_size; ++index) {
     group_source.push_back(routing::GroupSource(
-        routing::GroupId(group_id), routing::SingleId(NodeId(NodeId::IdType::kRandomId))));
+        routing::GroupId(group_id), routing::SingleId(NodeId(RandomString(NodeId::kSize)))));
   }
   return group_source;
 }
