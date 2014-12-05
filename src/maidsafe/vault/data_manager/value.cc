@@ -46,10 +46,6 @@ DataManagerValue::DataManagerValue(const std::string &serialised_value)
     size_ = value_proto.size();
     for (auto& i : value_proto.pmid_names())
       pmids_.push_back(PmidName(Identity(i)));
-    if (pmids_.empty()) {
-      LOG(kError) << "Invalid pmids";
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
-    }
   }
 }
 
@@ -119,7 +115,6 @@ std::string DataManagerValue::Serialise() const {
     LOG(kError) << "DataManagerValue::Serialise Cannot serialise if not a complete db value";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
   }
-  assert(!pmids_.empty());
   protobuf::DataManagerValue value_proto;
   value_proto.set_size(size_);
   for (const auto& i : pmids_)

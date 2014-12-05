@@ -52,8 +52,9 @@ std::string ActionDataManagerAddPmid::Serialise() const {
 }
 
 detail::DbAction ActionDataManagerAddPmid::operator()(std::unique_ptr<DataManagerValue>& value) {
-  if (value)
-    value->AddPmid(kPmidName);
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+  value->AddPmid(kPmidName);
   return detail::DbAction::kPut;
 }
 

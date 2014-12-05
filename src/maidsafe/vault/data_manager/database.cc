@@ -69,7 +69,7 @@ std::unique_ptr<DataManager::Value> DataManagerDataBase::Commit(const DataManage
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "DataManagerDataBase::Commit unknown db error "
                   << boost::diagnostic_information(error);
-      throw error;  // For db errors
+      throw;  // For db errors
     }
   }
   if (detail::DbAction::kPut == functor(value)) {

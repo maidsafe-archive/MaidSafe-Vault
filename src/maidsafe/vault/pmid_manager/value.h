@@ -47,7 +47,7 @@ struct PmidManagerValue {
   void HandleLostData(uint64_t size);
   void HandleFailure(uint64_t size);
   void SetAvailableSize(const int64_t& available_size);
-  void UpdateAccount(int32_t diff_size);
+  void UpdateAccount(int64_t diff_size);
   std::string Serialise() const;
   detail::GroupDbMetaDataStatus GroupStatus();
   std::string Print() const;
