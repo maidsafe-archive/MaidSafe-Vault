@@ -382,8 +382,11 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(account_name));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (it == std::end(accounts_)) {
+      // BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+      LOG(kWarning) << "Should not have received the request";
+      return;
+    }
     value = it->second;
   }
   if (value.AllowPut(data) == MaidManagerValue::Status::kNoSpace) {
