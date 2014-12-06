@@ -383,8 +383,8 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(account_name));
     if (it == std::end(accounts_)) {
-      // BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-      LOG(kWarning) << "Should not have received the request";
+      std::cout << "Should not have received the request\n";
+      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
       return;
     }
     value = it->second;
