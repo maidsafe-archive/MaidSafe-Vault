@@ -205,8 +205,9 @@ template <typename Key, typename Value>
 Value Db<Key, Value>::Get(const Key& key) {
   std::string value_string;
   sqlitedb_->Get(key.ToFixedWidthString().string(), value_string);
-  if (value_string.empty())
+  if (value_string.empty()) {
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+  }
   return Value(value_string);
 }
 
