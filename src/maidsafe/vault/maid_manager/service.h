@@ -382,8 +382,10 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(account_name));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (it == std::end(accounts_)) {
+      LOG(kInfo) << "Account has not updated on node yet\n";
+      // BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    }
     value = it->second;
   }
   if (value.AllowPut(data) == MaidManagerValue::Status::kNoSpace) {
@@ -490,9 +492,9 @@ void MaidManagerService::HandleAccountRequest(const DataName& name, const NodeId
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(Key(name.value)));
-    if (it == std::end(accounts_))
+    if (it == std::end(accounts_)) {
       BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-
+    }
     protobuf::MaidManagerKeyValuePair kv_pair;
     vault::Key key(it->first.value, MaidManager::Key::data_type::Tag::kValue);
     kv_pair.set_key(key.Serialise());

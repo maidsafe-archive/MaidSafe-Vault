@@ -206,8 +206,9 @@ void MaidManagerService::HandleSyncedPutResponse(
     std::unique_ptr<MaidManager::UnresolvedPut>&& synced_action_put) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(accounts_.find(synced_action_put->key.group_name()));
-  if (it == std::end(accounts_))
+  if (it == std::end(accounts_)) {
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+  }
   synced_action_put->action(it->second);
 }
 
