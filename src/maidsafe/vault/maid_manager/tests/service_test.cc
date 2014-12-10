@@ -241,7 +241,7 @@ TEST_F(MaidManagerServiceTest, BEH_PutResponseFromDataManagerToMaidManager) {
 
 TEST_F(MaidManagerServiceTest, BEH_PutFailureFromDataManagerToMaidManager) {
   auto content(CreateContent<PutFailureFromDataManagerToMaidManager::Contents>());
-  NodeId data_name_id(content.name.raw_name.string()), maid_node_id(NodeId::IdType::kRandomId);
+  NodeId data_name_id(content.name.raw_name.string()), maid_node_id(RandomString(NodeId::kSize));
   auto put_failure(CreateMessage<PutFailureFromDataManagerToMaidManager>(content));
   auto group_source(CreateGroupSource(data_name_id));
   EXPECT_NO_THROW(GroupSendToGroup(&maid_manager_service_, put_failure, group_source,
