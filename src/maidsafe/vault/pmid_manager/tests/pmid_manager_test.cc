@@ -27,22 +27,17 @@ namespace vault {
 
 namespace test {
 
-class PmidManagerTest : public testing::Test {
- public:
-  PmidManagerTest() : env_(VaultEnvironment::g_environment()) {}
+//class PmidManagerTest : public testing::Test {
+// public:
+//  PmidManagerTest() : env_(VaultEnvironment::g_environment()) {}
 
-  std::vector<VaultNetwork::ClientPtr>& GetClients() { return env_->clients_; }
+//  std::vector<VaultNetwork::ClientPtr>& GetClients() { return env_->clients_; }
 
-  std::vector<passport::PublicPmid>& GetPublicPmids() { return env_->public_pmids_; }
+//  std::vector<passport::PublicPmid>& GetPublicPmids() { return env_->public_pmids_; }
 
- protected:
-  std::shared_ptr<VaultNetwork> env_;
-};
-
-TEST_F(PmidManagerTest, FUNC_GetPmidHealth) {
-  auto get_pmid_health_future(GetClients().back()->GetPmidHealth(GetPublicPmids().back().name()));
-  EXPECT_NO_THROW(get_pmid_health_future.get());
-}
+// protected:
+//  std::shared_ptr<VaultNetwork> env_;
+//};
 
 }  // namespace test
 

@@ -45,6 +45,7 @@ class PmidNodeDispatcher {
 
   template <typename Data>
   void SendPutFailure(const typename Data::Name& name,
+                      uint64_t size,
                       int64_t available_space,
                       const maidsafe_error& error,
                       nfs::MessageId message_id);
@@ -54,8 +55,6 @@ class PmidNodeDispatcher {
                                   const NodeId& receiver,
                                   const maidsafe_error& error,
                                   nfs::MessageId message_id);
-  void SendHealthResponse(const DiskUsage& available_size, const NodeId& pmid_manager_node_id,
-                          nfs::MessageId message_id);
 
  private:
   PmidNodeDispatcher();
@@ -71,6 +70,7 @@ class PmidNodeDispatcher {
 
 template <typename Data>
 void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
+                                        uint64_t size,
                                         int64_t available_space,
                                         const maidsafe_error& error,
                                         nfs::MessageId message_id) {
@@ -78,8 +78,8 @@ void PmidNodeDispatcher::SendPutFailure(const typename Data::Name& name,
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   VaultMessage vault_message(
-      message_id, nfs_client::DataNameAndSpaceAndReturnCode(name, available_space,
-                                                            nfs_client::ReturnCode(error)));
+      message_id, nfs_client::DataNameAndSizeAndSpaceAndReturnCode(name, size, available_space,
+                                                                   nfs_client::ReturnCode(error)));
   RoutingMessage routing_message(vault_message.Serialise(),
                                  VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                                  VaultMessage::Receiver(routing::GroupId(routing_.kNodeId())));

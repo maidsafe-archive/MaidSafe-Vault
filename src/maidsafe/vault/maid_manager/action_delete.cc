@@ -21,7 +21,6 @@
 #include "maidsafe/common/visualiser_log.h"
 
 #include "maidsafe/vault/maid_manager/action_delete.pb.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
 namespace maidsafe {
@@ -51,19 +50,19 @@ std::string ActionMaidManagerDelete::Serialise() const {
   return action_delete_proto.SerializeAsString();
 }
 
-detail::DbAction ActionMaidManagerDelete::operator()(
-    MaidManagerMetadata& metadata, std::unique_ptr<MaidManagerValue>& value) const {
-  if (!value)
+void ActionMaidManagerDelete::operator()(MaidManagerValue& /*value*/) const {
+  /*if (!value)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 
-  metadata.DeleteData(value->Delete());
+  value.DeleteData(value->Delete());
   VLOG(nfs::Persona::kMaidManager, VisualiserAction::kDecreaseCount, value->count());
   assert(value->count() >= 0);
   if (value->count() == 0)
     return detail::DbAction::kDelete;
   else
-    return detail::DbAction::kPut;
+    return detail::DbAction::kPut;*/
 }
+
 
 bool operator==(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs) {
   return (lhs.kMessageId == rhs.kMessageId);

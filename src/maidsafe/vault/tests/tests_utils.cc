@@ -16,6 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include <limits>
 
 #include "maidsafe/vault/tests/tests_utils.h"
 
@@ -39,11 +40,19 @@ nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>() {
 }
 
 template <>
-nfs_client::DataNameAndSpaceAndReturnCode
-CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>() {
+nfs_client::DataNameAndSizeAndSpaceAndReturnCode
+CreateContent<nfs_client::DataNameAndSizeAndSpaceAndReturnCode>() {
   ImmutableData data(NonEmptyString(RandomString(128)));
   nfs_client::ReturnCode return_code(VaultErrors::not_enough_space);
-  return nfs_client::DataNameAndSpaceAndReturnCode(data.name(), 100, return_code);
+  return nfs_client::DataNameAndSizeAndSpaceAndReturnCode(data.name(), 100, 1024, return_code);
+}
+
+template <>
+nfs_client::DataNameAndSizeAndReturnCode
+    CreateContent<nfs_client::DataNameAndSizeAndReturnCode>() {
+  ImmutableData data(NonEmptyString(RandomString(128)));
+  nfs_client::ReturnCode return_code(VaultErrors::not_enough_space);
+  return nfs_client::DataNameAndSizeAndReturnCode(data.name(), 1024, return_code);
 }
 
 template <>
@@ -60,13 +69,6 @@ nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>() {
 template <>
 nfs_vault::Empty CreateContent<nfs_vault::Empty>() {
   return nfs_vault::Empty();
-}
-
-template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>() {
-  ImmutableData data(NonEmptyString(RandomString(128)));
-  return nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.data(),
-                                    Identity(RandomString(64)));
 }
 
 template <>
@@ -142,6 +144,16 @@ protobuf::Sync CreateProtoSync(nfs::MessageAction action_type,
   proto_sync.set_action_type(static_cast<int>(action_type));
   proto_sync.set_serialised_unresolved_action(serialised_action);
   return proto_sync;
+}
+
+template <>
+MaidManager::Value CreateValue<MaidManager>() {
+  return MaidManager::Value(RandomUint32(), std::numeric_limits<uint64_t>().max());
+}
+
+template <>
+PmidManager::Value CreateValue<PmidManager>() {
+  return PmidManager::Value(RandomUint32() % 1000, RandomUint32() % 1000, RandomUint32() % 1000);
 }
 
 }  // namespace test

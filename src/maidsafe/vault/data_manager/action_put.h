@@ -19,31 +19,36 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_
 
+#include <cstdint>
 #include <string>
 
-#include "maidsafe/common/error.h"
-#include "maidsafe/common/log.h"
+#include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/data_manager/data_manager.h"
-#include "maidsafe/vault/config.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/config.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 
 namespace maidsafe {
+
 namespace vault {
 
+class DataManagerValue;
+
 struct ActionDataManagerPut {
-  ActionDataManagerPut();
+  ActionDataManagerPut(uint64_t size, nfs::MessageId message_id);
   explicit ActionDataManagerPut(const std::string& serialised_action);
   ActionDataManagerPut(const ActionDataManagerPut& other);
   ActionDataManagerPut(ActionDataManagerPut&& other);
+  std::string Serialise() const;
 
   detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
 
-  std::string Serialise() const;
-
   static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
+  const uint64_t kSize;
+  const nfs::MessageId kMessageId;
 
  private:
+  ActionDataManagerPut();
   ActionDataManagerPut& operator=(ActionDataManagerPut other);
 };
 
@@ -51,6 +56,7 @@ bool operator==(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs
 bool operator!=(const ActionDataManagerPut& lhs, const ActionDataManagerPut& rhs);
 
 }  // namespace vault
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_ACTION_PUT_H_

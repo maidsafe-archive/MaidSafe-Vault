@@ -47,24 +47,13 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation RegisterPmidRequestFromMaidNodeToMaidManager";
-  service->HandlePmidRegistration(nfs_vault::PmidRegistration(message.contents->Serialise()),
-                                  message.id);
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
                  const nfs::PutRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   LOG(kVerbose) << "DoOperation PutRequestFromMaidNodeToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
-  MaidManagerPutVisitor<MaidManagerService> put_visitor(service, message.contents->data.content,
-                                                        sender.data, message.contents->pmid_hint,
-                                                        message.id);
+  MaidManagerPutVisitor<MaidManagerService> put_visitor(service, message.contents->content,
+                                                        sender.data, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -104,30 +93,6 @@ void DoOperation(MaidManagerService* service,
   boost::apply_visitor(delete_visitor, data_name);
 }
 
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "nfs::PmidHealthRequestFromMaidNodeToMaidManager";
-  service->HandlePmidHealthRequest(MaidName(Identity(sender.data.string())),
-                                   PmidName(message.contents->raw_name), message.id);
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const PmidHealthResponseFromPmidManagerToMaidManager& message,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& /*sender*/,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidManagerToMaidManager "
-                << "message.contents->pmid_health.serialised_pmid_health "
-                << HexSubstr(message.contents->pmid_health.serialised_pmid_health);
-  service->HandlePmidHealthResponse(MaidName(Identity(receiver.data.string())),
-                                    message.contents->pmid_health.serialised_pmid_health,
-                                    message.contents->return_code.value, message.id);
-}
-
 template <>
 void DoOperation(MaidManagerService* service,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
@@ -161,49 +126,6 @@ void DoOperation(MaidManagerService* /* service*/,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Sender& /*sender*/,
                  const nfs::RemoveAccountRequestFromMaidNodeToMaidManager::Receiver& /*receiver*/) {
   //  service->HandleRemoveAccount(MaidName(Identity(sender.data.string())));
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver&) {
-  service->HandlePmidUnregistration(MaidName(Identity(sender.data.string())),
-                                    PmidName(message.contents->raw_name));
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver&) {
-  try {
-    for (const auto& data_name : message.contents->data_names_)
-      GetNameVariant(data_name);
-  }
-  catch (const maidsafe_error& error) {
-    LOG(kError) << "Failed to cast to accepted type " << boost::diagnostic_information(error);
-    return;
-  }
-  service->HandleIncrementReferenceCounts(MaidName(Identity(sender.data.string())),
-                                          *message.contents);
-}
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver&) {
-  try {
-    for (const auto& data_name : message.contents->data_names_)
-      GetNameVariant(data_name);
-  }
-  catch (const maidsafe_error& error) {
-    LOG(kError) << "Failed to cast to accepted type " << boost::diagnostic_information(error);
-    return;
-  }
-  service->HandleDecrementReferenceCounts(MaidName(Identity(sender.data.string())),
-                                          *message.contents);
 }
 
 template <>
@@ -244,6 +166,16 @@ void DoOperation(
                                            message.contents->value, message.id);
 }
 
+template <>
+void DoOperation(MaidManagerService* service,
+                 const AccountQueryFromMaidManagerToMaidManager& message,
+                 const AccountQueryFromMaidManagerToMaidManager::Sender& sender,
+                 const AccountQueryFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  MaidManagerAccountRequestVisitor<MaidManagerService> account_request_visitor(service, sender);
+  boost::apply_visitor(account_request_visitor, data_name);
+}
+
 //=============================== To DataManager ===================================================
 
 template <>
@@ -252,9 +184,9 @@ void DoOperation(DataManagerService* service, const PutRequestFromMaidManagerToD
                  const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
   LOG(kVerbose) << "DoOperation PutRequestFromMaidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
-  DataManagerPutVisitor<DataManagerService> put_visitor(service, message.contents->data.content,
+  DataManagerPutVisitor<DataManagerService> put_visitor(service, message.contents->content,
                                                         Identity(sender.group_id.data.string()),
-                                                        message.contents->pmid_hint, message.id);
+                                                        message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
@@ -268,8 +200,7 @@ void DoOperation(DataManagerService* service,
                 << HexSubstr(sender.group_id.data.string()) << " msg id: " << message.id;
   auto data_name(GetNameVariant(*message.contents));
   DataManagerPutResponseVisitor<DataManagerService> put_response_visitor(
-      service, PmidName(Identity(sender.group_id.data.string())), message.contents->size,
-      message.id);
+      service, PmidName(Identity(sender.group_id.data.string())), message.id);
   boost::apply_visitor(put_response_visitor, data_name);
 }
 
@@ -342,47 +273,19 @@ void DoOperation(DataManagerService* service, const PutFailureFromPmidManagerToD
   LOG(kVerbose) << "DoOperation PutFailureFromPmidManagerToDataManager";
   auto data_name(GetNameVariant(*message.contents));
   PutResponseFailureVisitor<DataManagerService> put_visitor(
-      service, Identity(sender.sender_id.data.string()), message.contents->return_code.value,
-      message.id);
+      service, message.contents->size, Identity(sender.sender_id.data.string()),
+      message.contents->return_code.value, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const GetCachedResponseFromCacheHandlerToDataManager& message,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Sender& /*sender*/,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Receiver& /*receiver*/) {
-  if (!message.contents->content)
-    return;
+                 const AccountQueryFromDataManagerToDataManager& message,
+                 const AccountQueryFromDataManagerToDataManager::Sender& sender,
+                 const AccountQueryFromDataManagerToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(*message.contents));
-  CheckDataNameVisitor check_data_name_visitor(NonEmptyString(message.contents->content->data));
-  if (boost::apply_visitor(check_data_name_visitor, data_name)) {
-    service->HandleGetCachedResponse(message.id, *message.contents);
-  }
-}
-
-template <>
-void DoOperation(DataManagerService* service,
-                 const SetPmidOnlineFromPmidManagerToDataManager& message,
-                 const SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-                 const SetPmidOnlineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation SetPmidOnlineFromPmidManagerToDataManager";
-  auto data_name(GetNameVariant(*message.contents));
-  DataManagerSetPmidOnlineVisitor<DataManagerService> set_pmid_online_visitor(
-      service, PmidName(Identity(sender.group_id.data.string())), message.id);
-  boost::apply_visitor(set_pmid_online_visitor, data_name);
-}
-
-template <>
-void DoOperation(DataManagerService* service,
-                 const SetPmidOfflineFromPmidManagerToDataManager& message,
-                 const SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-                 const SetPmidOfflineFromPmidManagerToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation SetPmidOfflineFromPmidManagerToDataManager";
-  auto data_name(GetNameVariant(*message.contents));
-  DataManagerSetPmidOfflineVisitor<DataManagerService> set_pmid_offline_visitor(
-      service, PmidName(Identity(sender.group_id.data.string())), message.id);
-  boost::apply_visitor(set_pmid_offline_visitor, data_name);
+  DataManagerAccountQueryVisitor<DataManagerService> account_request_visitor(service, sender);
+  boost::apply_visitor(account_request_visitor, data_name);
 }
 
 //=============================== To PmidManager ===================================================
@@ -406,8 +309,8 @@ void DoOperation(PmidManagerService* service, const PutFailureFromPmidNodeToPmid
   LOG(kVerbose) << "DoOperation PutFailureFromPmidNodeToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerPutResponseFailureVisitor<PmidManagerService> put_failure_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.contents->available_space,
-      message.contents->return_code.value, message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size,
+      message.contents->available_space, message.contents->return_code.value, message.id);
   boost::apply_visitor(put_failure_visitor, data_name);
 }
 
@@ -419,39 +322,8 @@ void DoOperation(PmidManagerService* service,
   LOG(kVerbose) << "DoOperation DeleteRequestFromDataManagerToPmidManager";
   auto data_name(GetNameVariant(*message.contents));
   PmidManagerDeleteVisitor<PmidManagerService> delete_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size, message.id);
   boost::apply_visitor(delete_visitor, data_name);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation GetPmidAccountRequestFromPmidNodeToPmidManager";
-  service->HandleSendPmidAccount(PmidName(Identity(sender.data.string())),
-                                 message.contents->available_size);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const PmidHealthRequestFromMaidManagerToPmidManager& message,
-                 const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PmidHealthRequestFromMaidManagerToPmidManager";
-  service->HandleHealthRequest(PmidName(Identity(receiver.data.string())),
-                               MaidName(Identity(sender.group_id.data.string())), message.id);
-}
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const PmidHealthResponseFromPmidNodeToPmidManager& message,
-                 const PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
-                 const PmidHealthResponseFromPmidNodeToPmidManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation PmidHealthResponseFromPmidNodeToPmidManager "
-                << "available_size : " << message.contents->available_size;
-  service->HandleHealthResponse(PmidName(Identity(sender.data.string())),
-                                message.contents->available_size, message.id);
 }
 
 template <>
@@ -467,16 +339,27 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
+                 const UpdateAccountFromDataManagerToPmidManager& message,
+                 const UpdateAccountFromDataManagerToPmidManager::Sender& /*sender*/,
+                 const UpdateAccountFromDataManagerToPmidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation UpdateAccountFromDataManagerToPmidManager";
+  service->HandleUpdateAccount(PmidName(Identity(receiver.data.string())),
+                               message.contents->diff_size);
+}
+
+template <>
+void DoOperation(PmidManagerService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidManager& message,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidManager from "
                 << HexSubstr(sender.sender_id.data.string()) << " for chunk "
-                << HexSubstr(message.contents->raw_name.string()) << " on pmid_node "
+                << HexSubstr(message.contents->name.raw_name.string()) << " on pmid_node "
                 << HexSubstr(receiver.data.string());
-  auto data_name(GetNameVariant(*message.contents));
+  auto data_name(GetNameVariant(message.contents->name));
+  // TODO(TEAM): shall FalseNotification be fired after failing of IntegrityCheck ?
   PmidManagerFalseNotificationVisitor<PmidManagerService> false_notification_visitor(
-      service, PmidName(Identity(receiver.data.string())), message.id);
+      service, PmidName(Identity(receiver.data.string())), message.contents->size, message.id);
   boost::apply_visitor(false_notification_visitor, data_name);
 }
 
@@ -528,15 +411,6 @@ void DoOperation(PmidNodeService* service,
   PmidNodeIntegrityCheckVisitor<PmidNodeService> integrity_check_visitor(
       service, message.contents->random_string, sender, message.id);
   boost::apply_visitor(integrity_check_visitor, data_name);
-}
-
-template <>
-void DoOperation(PmidNodeService* service,
-                 const PmidHealthRequestFromPmidManagerToPmidNode& message,
-                 const PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-                 const PmidHealthRequestFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation IntegrityCheckRequestFromDataManagerToPmidNode";
-  service->HandleHealthRequest(sender.data, message.id);
 }
 
 //====================================== To VersionHandler =========================================
@@ -641,38 +515,6 @@ void DoOperation(
 
 template <>
 template <>
-void OperationHandler<
-    typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
-    Accumulator<PmidNodeServiceMessages>,
-    typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor, PmidNodeService>::
-operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-           const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-           const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& /*receiver*/) {
-  if (!validate_sender(message, sender))
-    return;
-  {
-    std::lock_guard<std::mutex> lock(mutex);
-    auto result(accumulator.AddPendingRequest(message, sender, checker));
-    if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess) {
-      int failures(0);
-      auto responses(accumulator.Get(message, sender));
-      std::vector<std::set<nfs_vault::DataName>> response_vec;
-      for (const auto& response : responses) {
-        auto typed_response(boost::get<GetPmidAccountResponseFromPmidManagerToPmidNode>(response));
-        if (typed_response.contents->return_code.value.code() == CommonErrors::success)
-          response_vec.push_back(typed_response.contents->names);
-        else
-          failures++;
-      }
-      service->HandlePmidAccountResponses(response_vec, failures);
-    } else if (result == Accumulator<PmidNodeServiceMessages>::AddResult::kFailure) {
-      service->StartUp();
-    }
-  }
-}
-
-template <>
-template <>
 void OperationHandler<typename ValidateSenderType<PutRequestFromDataManagerToPmidManager>::type,
                       Accumulator<PmidManagerServiceMessages>,
                       typename Accumulator<PmidManagerServiceMessages>::AddCheckerFunctor,
@@ -704,18 +546,6 @@ void OperationHandler<
 operator()(const IntegrityCheckRequestFromDataManagerToPmidNode& message,
            const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
            const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver) {
-  DoOperation(service, message, sender, receiver);
-}
-
-template <>
-template <>
-void OperationHandler<
-    typename ValidateSenderType<GetCachedResponseFromCacheHandlerToDataManager>::type,
-    Accumulator<DataManagerServiceMessages>,
-    typename Accumulator<DataManagerServiceMessages>::AddCheckerFunctor, DataManagerService>::
-operator()(const GetCachedResponseFromCacheHandlerToDataManager& message,
-           const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-           const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver) {
   DoOperation(service, message, sender, receiver);
 }
 

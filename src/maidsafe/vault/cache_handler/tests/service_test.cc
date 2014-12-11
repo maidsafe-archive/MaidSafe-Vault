@@ -121,20 +121,6 @@ TEST_F(CacheHandlerServiceTest, BEH_GetCachedResponseFromCacheHandlerToMaidNode)
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
 }
 
-TEST_F(CacheHandlerServiceTest, BEH_PutRequestFromDataManagerToCacheHandler) {
-  routing::SingleId maid_node((NodeId(RandomString(NodeId::kSize))));
-  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  nfs_client::DataNameAndContentOrReturnCode content(data);
-  auto cache_put(
-      CreateMessage<PutRequestFromDataManagerToCacheHandler>(nfs_vault::DataNameAndContent(
-          content.name.type, content.name.raw_name, NonEmptyString(content.content->data))));
-  routing::SingleSource source((NodeId(RandomString(NodeId::kSize))));
-  EXPECT_TRUE(cache_handler_service_.HandleMessage(cache_put, source,
-                                                   routing::SingleId(routing_.kNodeId())));
-  EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
-}
-
-
 TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromMaidNodeToDataManager) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   routing::SingleSource source_node((NodeId(RandomString(NodeId::kSize))));
@@ -152,17 +138,6 @@ TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromDataGetterToDataManager) {
   routing::GroupId group_id(NodeId(data.name()->string()));
   nfs_vault::DataName content(data.name());
   auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
-  EXPECT_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-  Store(data);
-  EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
-}
-
-TEST_F(CacheHandlerServiceTest, BEH_GetRequestFromDataManagerToCacheHandler) {
-  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  routing::SingleSource source_node((NodeId(RandomString(NodeId::kSize))));
-  routing::GroupId group_id(NodeId(data.name()->string()));
-  nfs_vault::DataName content(data.name());
-  auto get_request(CreateMessage<GetRequestFromDataManagerToCacheHandler>(content));
   EXPECT_FALSE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));
   Store(data);
   EXPECT_TRUE(cache_handler_service_.HandleMessage(get_request, source_node, group_id));

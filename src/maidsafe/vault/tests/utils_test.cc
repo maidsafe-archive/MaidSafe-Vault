@@ -18,6 +18,7 @@
 
 #include <functional>
 #include <memory>
+#include <algorithm>
 
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
@@ -66,6 +67,42 @@ TEST(UtilsTest, BEH_FixedWidthStringSize2) { CheckToAndFromFixedWidthString<2>()
 TEST(UtilsTest, BEH_FixedWidthStringSize3) { CheckToAndFromFixedWidthString<3>(); }
 
 TEST(UtilsTest, BEH_FixedWidthStringSize4) { CheckToAndFromFixedWidthString<4>(); }
+
+TEST(UtilsTest, BEH_MedianOfNoValues) {
+  std::vector<size_t> values;
+  EXPECT_THROW(Median(values), std::exception);
+}
+
+TEST(UtilsTest, BEH_MedianOfOneValue) {
+  std::vector<size_t> values;
+  size_t value(RandomUint32());
+  values.push_back(value);
+  EXPECT_EQ(value, Median(values));
+}
+
+TEST(UtilsTest, BEH_MedianOfTwoValues) {
+  std::vector<size_t> values;
+  size_t value1(RandomUint32()), value2(RandomUint32());
+  values.push_back(value1);
+  values.push_back(value2);
+  EXPECT_EQ((value1 / 2) + (value2 / 2) + (value1 & value2 & 1), Median(values));
+}
+
+TEST(UtilsTest, BEH_MedianOfOddNumberOfValues) {
+  std::vector<size_t> values;
+  for (size_t i = 0; i != 21; ++i)
+    values.push_back(i);
+  std::random_shuffle(values.begin(), values.end());
+  EXPECT_EQ(10, Median(values));
+}
+
+TEST(UtilsTest, BEH_MedianOfEvenNumberOfValues) {
+  std::vector<size_t> values;
+  for (size_t i = 0; i != 20; ++i)
+    values.push_back(i);
+  std::random_shuffle(values.begin(), values.end());
+  EXPECT_EQ(9, Median(values));
+}
 
 }  // namespace test
 

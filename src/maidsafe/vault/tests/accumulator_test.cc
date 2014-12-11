@@ -46,9 +46,9 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
     return message.contents->random_string.string();
   }
 
-  std::string operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message) const {
-    return message.contents->return_code.Serialise();
-  }
+//  std::string operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message) const {
+//    return message.contents->return_code.Serialise();
+//  }
 };
 
 // bool errors_eq(maidsafe_error l_e, maidsafe_error r_e) {
@@ -77,35 +77,35 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 
 }  // unnamed namespace
 
-TEST(AccumulatorTest, BEH_AddSingleResult) {
-  Accumulator<PmidNodeServiceMessages> accumulator;
-  GetPmidAccountResponseFromPmidManagerToPmidNode message;
-  GetPmidAccountResponseFromPmidManagerToPmidNode::Sender sender;
-  routing::GroupSource group_source(sender.group_id, sender.sender_id);
+//TEST(AccumulatorTest, BEH_AddSingleResult) {
+//  Accumulator<PmidNodeServiceMessages> accumulator;
+//  GetPmidAccountResponseFromPmidManagerToPmidNode message;
+//  GetPmidAccountResponseFromPmidManagerToPmidNode::Sender sender;
+//  routing::GroupSource group_source(sender.group_id, sender.sender_id);
 
-  auto add_request_predicate([&](const std::vector<PmidNodeServiceMessages>&) {
-    return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-  });
-  //   auto add_request_predicate(
-  //       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-  //         if (requests_in.size() < 2)
-  //           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-  //         for (auto& request : requests_in) {
-  //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
-  //           maidsafe::nfs_client::ReturnCode return_code(content_string);
-  //        maidsafe_error
-  // expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
-  //           if (errors_eq(expected_error, return_code.value))
-  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-  //           else
-  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-  //        }
-  //         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-  //       });
-  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
-            accumulator.AddPendingRequest(message, group_source, add_request_predicate));
-  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
-}
+//  auto add_request_predicate([&](const std::vector<PmidNodeServiceMessages>&) {
+//    return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+//  });
+//  //   auto add_request_predicate(
+//  //       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
+//  //         if (requests_in.size() < 2)
+//  //           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//  //         for (auto& request : requests_in) {
+//  //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
+//  //           maidsafe::nfs_client::ReturnCode return_code(content_string);
+//  //        maidsafe_error
+//  // expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
+//  //           if (errors_eq(expected_error, return_code.value))
+//  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
+//  //           else
+//  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+//  //        }
+//  //         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//  //       });
+//  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
+//            accumulator.AddPendingRequest(message, group_source, add_request_predicate));
+//  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
+//}
 
 
 // TEST(AccumulatorTest, BEH_PushSingleResult) {
