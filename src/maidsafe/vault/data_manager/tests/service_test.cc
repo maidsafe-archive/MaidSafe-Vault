@@ -144,9 +144,9 @@ DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedRemovePmid>(
 TEST_F(DataManagerServiceTest, BEH_Various) {
   //  PutRequestFromMaidManagerToDataManager
   {
-    NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
+    NodeId maid_node_id(RandomString(NodeId::kSize)), data_name_id;
     auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.name.raw_name.string());
+    data_name_id = NodeId(content.data.name.raw_name.string());
     auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
     auto group_source(CreateGroupSource(maid_node_id));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
@@ -154,13 +154,13 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   }
   //  BEH_PutResponseFromPmidManagerToDataManager
   {
-    NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
+    NodeId data_name_id, pmid_node_id(RandomString(NodeId::kSize));
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name().value, ImmutableData::Tag::kValue);
     Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     data_name_id = NodeId(key.name.string());
     auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
-    content.raw_name = data.name().value;
+    data_name_id = NodeId(content.name.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
     auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
@@ -169,7 +169,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   }
   //  PutFailureFromPmidManagerToDataManager
   {
-    NodeId data_name_id, pmid_node_id(NodeId::IdType::kRandomId);
+    NodeId data_name_id, pmid_node_id(RandomString(NodeId::kSize));
     auto content(CreateContent<PutFailureFromPmidManagerToDataManager::Contents>());
     data_name_id = NodeId(content.name.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
@@ -180,7 +180,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   }
   //  GetRequestFromMaidNodeToDataManager
   {
-    NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
+    NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
     auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
     data_name_id = NodeId(content.raw_name.string());
     auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
@@ -190,7 +190,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   }
   //  GetRequestFromDataGetterToDataManager
   {
-    NodeId data_name_id, maid_node_id(NodeId::IdType::kRandomId);
+    NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
     auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
     data_name_id = NodeId(content.raw_name.string());
     auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
@@ -200,7 +200,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   }
   //  GetResponseFromPmidNodeToDataManager
   {
-    NodeId pmid_node_id(NodeId::IdType::kRandomId);
+    NodeId pmid_node_id(RandomString(NodeId::kSize));
     auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
     auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
     auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
@@ -215,7 +215,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
 }
 
 TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
-  NodeId maid_node_id(NodeId::IdType::kRandomId);
+  NodeId maid_node_id(RandomString(NodeId::kSize));
   auto content(CreateContent<DeleteRequestFromMaidManagerToDataManager::Contents>());
   auto delete_request(CreateMessage<DeleteRequestFromMaidManagerToDataManager>(content));
   auto group_source(CreateGroupSource(maid_node_id));
@@ -226,7 +226,7 @@ TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
 
 TEST_F(DataManagerServiceTest, BEH_FirstPut) {
   auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-  NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
+  NodeId maid_node_id(RandomString(NodeId::kSize)), data_name_id;
   data_name_id = NodeId(content.name.raw_name.string());
   auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
   auto group_source(CreateGroupSource(maid_node_id));
@@ -237,13 +237,13 @@ TEST_F(DataManagerServiceTest, BEH_FirstPut) {
   EXPECT_ANY_THROW(Get(key));
 }
 
-TEST_F(DataManagerServiceTest, BEH_PutAgain) {
+TEST_F(DataManagerServiceTest, BEH_Put) {
   auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
   PmidName pmid_name(Identity(RandomString(64)));
   DataManager::Key key(content.name.raw_name, content.name.type);
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   Commit(key, ActionDataManagerAddPmid(pmid_name));
-  NodeId maid_node_id(NodeId::IdType::kRandomId), data_name_id;
+  NodeId maid_node_id(RandomString(NodeId::kSize), data_name_id;
   data_name_id = NodeId(content.name.raw_name.string());
   auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
   auto group_source(CreateGroupSource(maid_node_id));

@@ -130,7 +130,7 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
     auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
     auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
     EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
-                                       routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
+                                       routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
                                        routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
     auto value(GetValue(PmidName(pmid_.name())));
@@ -141,7 +141,7 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
   {
     auto content(CreateContent<DeleteRequestFromDataManagerToPmidManager::Contents>());
     auto delete_request(CreateMessage<DeleteRequestFromDataManagerToPmidManager>(content));
-    auto group_source(CreateGroupSource(NodeId(content.name.raw_name.string())));
+    auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
     EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, delete_request, group_source,
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
