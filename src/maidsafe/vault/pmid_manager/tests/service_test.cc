@@ -141,7 +141,7 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
   {
     auto content(CreateContent<DeleteRequestFromDataManagerToPmidManager::Contents>());
     auto delete_request(CreateMessage<DeleteRequestFromDataManagerToPmidManager>(content));
-    auto group_source(CreateGroupSource(NodeId(content.raw_name.string())));
+    auto group_source(CreateGroupSource(NodeId(content.name.raw_name.string())));
     EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, delete_request, group_source,
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);

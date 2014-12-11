@@ -146,7 +146,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
   {
     NodeId maid_node_id(RandomString(NodeId::kSize)), data_name_id;
     auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.data.name.raw_name.string());
+    data_name_id = NodeId(content.name.raw_name.string());
     auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
     auto group_source(CreateGroupSource(maid_node_id));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
@@ -160,7 +160,7 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
     Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     data_name_id = NodeId(key.name.string());
     auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.name.raw_name.string());
+    data_name_id = NodeId(content.raw_name.string());
     auto group_source(CreateGroupSource(pmid_node_id));
     auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
     EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
@@ -243,8 +243,8 @@ TEST_F(DataManagerServiceTest, BEH_Put) {
   DataManager::Key key(content.name.raw_name, content.name.type);
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   Commit(key, ActionDataManagerAddPmid(pmid_name));
-  NodeId maid_node_id(RandomString(NodeId::kSize), data_name_id;
-  data_name_id = NodeId(content.name.raw_name.string());
+  NodeId maid_node_id(RandomString(NodeId::kSize)),
+         data_name_id { NodeId(content.name.raw_name.string()) };
   auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
   auto group_source(CreateGroupSource(maid_node_id));
   EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,

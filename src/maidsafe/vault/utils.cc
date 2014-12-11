@@ -48,7 +48,7 @@ boost::optional<PmidName> GetRandomCloseNode(routing::Routing& routing,
   PmidName pmid_name;
   do {
     node_id = routing.RandomConnectedNode();
-    if (node_id.IsZero())
+    if (!node_id.IsValid())
       return boost::optional<PmidName>();
     pmid_name = PmidName{ Identity{ node_id.string() }};
   } while (std::find(std::begin(exclude), std::end(exclude), pmid_name) != std::end(exclude));

@@ -67,7 +67,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_MultipleEntries) {
   this->account_transfer_analyser_.RandomReplicate(100);
   for (const auto& entry : this->account_transfer_analyser_.GetKeyValuePairs()) {
     auto add_result(this->account_transfer_handler_.Add(entry.first, entry.second,
-                                                        NodeId(NodeId::IdType::kRandomId)));
+                                                        NodeId(RandomString(NodeId::kSize))));
     auto iter(results_map.find(entry.first));
     if (iter  == std::end(results_map)) {
       results_map.insert(std::make_pair(entry.first, add_result));
@@ -91,7 +91,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_Prune) {
     for (unsigned int index(0); index < this->account_transfer_analyser_.kAcceptSize() - 1;
          ++index) {
       auto add_result(this->account_transfer_handler_.Add(entry.first, entry.second,
-                                                          NodeId(NodeId::IdType::kRandomId)));
+                                                          NodeId(RandomString(NodeId::kSize))));
       EXPECT_EQ(add_result.result, AddResult::kWaiting);
     }
   }
@@ -120,7 +120,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
                            for (const auto& entry : vector_ref) {
                              auto add_result(
                                  this->account_transfer_handler_.Add(
-                                     entry.first, entry.second, NodeId(NodeId::IdType::kRandomId)));
+                                     entry.first, entry.second, NodeId(RandomString(NodeId::kSize))));
                              {
                                std::lock_guard<std::mutex> lock(this->mutex_);
                                auto iter(results_map.find(entry.first));
