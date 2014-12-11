@@ -385,6 +385,7 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
     if (it == std::end(accounts_)) {
       LOG(kInfo) << "Account has not updated on node yet\n";
       // BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+      return;
     }
     value = it->second;
   }
