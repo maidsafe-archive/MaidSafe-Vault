@@ -207,7 +207,9 @@ void MaidManagerService::HandleSyncedPutResponse(
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(accounts_.find(synced_action_put->key.group_name()));
   if (it == std::end(accounts_)) {
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    //BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    LOG(kWarning) << "Request to a non-updated Manager";
+    return;
   }
   synced_action_put->action(it->second);
 }
