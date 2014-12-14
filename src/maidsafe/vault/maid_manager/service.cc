@@ -93,10 +93,10 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
   {
     std::lock_guard<std::mutex> lock(pending_account_mutex_);
     MaidAccountCreationStatus account_creation_status(key, public_anmaid.name(),
-              maid_message_id, anmaid_message_id);
+                                                      maid_message_id, anmaid_message_id);
     pending_account_map_.insert(std::make_pair(message_id, account_creation_status));
-    reverse_pending_account_message_id_.insert(maid_message_id, message_id);
-    reverse_pending_account_message_id_.insert(anmaid_message_id, message_id);
+    reverse_pending_account_message_id_.insert(std::make_pair(maid_message_id, message_id));
+    reverse_pending_account_message_id_.insert(std::make_pair(anmaid_message_id, message_id));
   }
 
   dispatcher_.SendPutRequest(key, public_maid, maid_message_id);
