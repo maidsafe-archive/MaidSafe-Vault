@@ -203,14 +203,20 @@ class MaidManagerService {
 
   struct MaidAccountCreationStatus {
     MaidAccountCreationStatus(passport::PublicMaid::Name maid_name_in,
-                              passport::PublicAnmaid::Name anmaid_name_in)
+                              passport::PublicAnmaid::Name anmaid_name_in,
+                              nfs::MessageId maid_message_id_in,
+                              nfs::MessageId anmaid_message_id_in)
         : maid_name(std::move(maid_name_in)),
           anmaid_name(std::move(anmaid_name_in)),
+          maid_message_id(std::move(maid_message_id_in)),
+          anmaid_message_id(std::move(anmaid_message_id_in)),
           maid_stored(false),
           anmaid_stored(false) {}
 
     passport::PublicMaid::Name maid_name;
     passport::PublicAnmaid::Name anmaid_name;
+    nfs::MessageId maid_message_id;
+    nfs::MessageId anmaid_message_id;
     bool maid_stored, anmaid_stored;
   };
 
@@ -245,6 +251,7 @@ class MaidManagerService {
   AccountTransferHandler<MaidManager> account_transfer_;
   std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MaidAccountCreationStatus> pending_account_map_;
+  std::map<nfs::MessageId, nfs::MessageId> reverse_pending_account_message_id_;
 };
 
 template <typename MessageType>
@@ -349,12 +356,12 @@ void MaidManagerService::HandleMessage(
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int64_t size,
-    nfs::MessageId message_id);
+    nfs::MessageId maid_message_id);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
     const typename passport::PublicAnmaid::Name& data_name, int64_t size,
-    nfs::MessageId message_id);
+    nfs::MessageId anmaid_message_id);
 
 // ==================== Implementation =============================================================
 namespace detail {
