@@ -66,16 +66,19 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_deletes_(NodeId(pmid.name()->string())),
       account_transfer_(),
       pending_account_mutex_(),
-      pending_account_map_(),
-      reverse_pending_account_message_id_() {}
+      pending_account_map_() {}
 
 // =============== Maid Account Creation ===========================================================
 
 void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& public_maid,
     const passport::PublicAnmaid& public_anmaid, nfs::MessageId message_id) {
   Key key(public_maid.name());
-  nfs::MessageId maid_message_id(vault::HashStringToMessageId(public_maid.name()->string()));
-  nfs::MessageId anmaid_message_id(vault::HashStringToMessageId(public_anmaid.name()->string()));
+  
+  nfs::MessageId maid_hash_message_id(vault::HashStringToMessageId(public_maid.name()->string()));
+  nfs::MessageId anmaid_hash_message_id(vault::HashStringToMessageId(
+                                                                 public_anmaid.name()->string()));
+  nfs::MessageId maid_message_id(maid_hash_message_id ^ message_id);
+  nfs::MessageId anmaid_message_id(anmaid_hash_message_id ^ message_id);
   bool exists(false);
   {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -92,11 +95,8 @@ void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& pub
 
   {
     std::lock_guard<std::mutex> lock(pending_account_mutex_);
-    MaidAccountCreationStatus account_creation_status(key, public_anmaid.name(),
-                                                      maid_message_id, anmaid_message_id);
+    MaidAccountCreationStatus account_creation_status(key, public_anmaid.name());
     pending_account_map_.insert(std::make_pair(message_id, account_creation_status));
-    reverse_pending_account_message_id_.insert(std::make_pair(maid_message_id, message_id));
-    reverse_pending_account_message_id_.insert(std::make_pair(anmaid_message_id, message_id));
   }
 
   dispatcher_.SendPutRequest(key, public_maid, maid_message_id);
@@ -108,14 +108,9 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
     const typename passport::PublicMaid::Name& data_name, int64_t /*size*/,
     nfs::MessageId maid_message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
-  auto reverse_message_id_itr(reverse_pending_account_message_id_.find(maid_message_id));
-  if (reverse_message_id_itr == reverse_pending_account_message_id_.end()) {
-    LOG(kInfo) << "MessageId " << maid_message_id << " not found in reverse message dictionary "
-      << "for PublicMaid put response";
-    return;
-  }
-  nfs::MessageId message_id(reverse_message_id_itr->second);
-  auto pending_account_itr(pending_account_map_.find(message_id));
+  nfs::MessageId maid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(maid_message_id ^ maid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     LOG(kInfo) << "Unexpected PublicMaid put response";
     return;
@@ -124,15 +119,15 @@ void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName&
   if (data_name != maid_name)
     return;
   assert(pending_account_itr->second.maid_name == data_name);
-  assert(pending_account_itr->second.maid_message_id == maid_message_id);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.maid_name->string())
+         == maid_hash_message_id);
   static_cast<void>(data_name);
   pending_account_itr->second.maid_stored = true;
-  reverse_pending_account_message_id_.erase(reverse_message_id_itr);
 
   if (pending_account_itr->second.anmaid_stored) {
     LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
     DoSync(MaidManager::UnresolvedCreateAccount(MaidManager::MetadataKey(maid_name),
-        ActionCreateAccount(message_id), routing_.kNodeId()));
+        ActionCreateAccount(original_message_id), routing_.kNodeId()));
     pending_account_map_.erase(pending_account_itr);
   }
 }
@@ -142,27 +137,22 @@ void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidNam
     const typename passport::PublicAnmaid::Name& data_name, int64_t /*size*/,
     nfs::MessageId anmaid_message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
-  auto reverse_message_id_itr(reverse_pending_account_message_id_.find(anmaid_message_id));
-  if (reverse_message_id_itr == reverse_pending_account_message_id_.end()) {
-    LOG(kInfo) << "MessageId " << anmaid_message_id << " not found in reverse message dictionary "
-      << "for PublicAnMaid put response";
-    return;
-  }
-  nfs::MessageId message_id(reverse_message_id_itr->second);
-  auto pending_account_itr(pending_account_map_.find(message_id));
+  nfs::MessageId anmaid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(anmaid_message_id ^ anmaid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     return;
   }
   assert(pending_account_itr->second.anmaid_name == data_name);
-  assert(pending_account_itr->second.anmaid_message_id == anmaid_message_id);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.anmaid_name->string())
+         == anmaid_hash_message_id);
   static_cast<void>(data_name);
   pending_account_itr->second.anmaid_stored = true;
-  reverse_pending_account_message_id_.erase(reverse_message_id_itr);
 
   if (pending_account_itr->second.maid_stored) {
     LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(maid_name->string());
     DoSync(MaidManager::UnresolvedCreateAccount(MaidManager::MetadataKey(maid_name),
-        ActionCreateAccount(message_id), routing_.kNodeId()));
+        ActionCreateAccount(original_message_id), routing_.kNodeId()));
     pending_account_map_.erase(pending_account_itr);
   }
 }
@@ -172,22 +162,19 @@ void MaidManagerService::HandlePutFailure<passport::PublicMaid>(
     const MaidName& maid_name, const passport::PublicMaid::Name& data_name,
     const maidsafe_error& error, nfs::MessageId message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
-  auto reverse_message_id_itr(reverse_pending_account_message_id_.find(message_id));
-  if (reverse_message_id_itr == reverse_pending_account_message_id_.end()) {
-    return;
-  }
-  nfs::MessageId original_message_id(reverse_message_id_itr->second);
+  nfs::MessageId maid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(message_id ^ maid_hash_message_id);
   auto pending_account_itr(pending_account_map_.find(original_message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     return;
   }
   assert(data_name == maid_name);
   assert(pending_account_itr->second.maid_name == data_name);
-  assert(pending_account_itr->second.maid_message_id == message_id);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.maid_name->string())
+         == message_id);
   static_cast<void>(data_name);
   // TODO(Team): Consider deleting anmaid key if stored
   pending_account_map_.erase(pending_account_itr);
-  reverse_pending_account_message_id_.erase(reverse_message_id_itr);
 
   dispatcher_.SendCreateAccountResponse(maid_name, error, original_message_id);
 }
@@ -197,21 +184,18 @@ void MaidManagerService::HandlePutFailure<passport::PublicAnmaid>(
     const MaidName& maid_name, const passport::PublicAnmaid::Name& data_name,
     const maidsafe_error& error, nfs::MessageId message_id) {
   std::lock_guard<std::mutex> lock(pending_account_mutex_);
-  auto reverse_message_id_itr(reverse_pending_account_message_id_.find(message_id));
-  if (reverse_message_id_itr == reverse_pending_account_message_id_.end()) {
-    return;
-  }
-  nfs::MessageId original_message_id(reverse_message_id_itr->second);
+  nfs::MessageId anmaid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(message_id ^ anmaid_hash_message_id);
   auto pending_account_itr(pending_account_map_.find(original_message_id));
   if (pending_account_itr == pending_account_map_.end()) {
     return;
   }
   assert(pending_account_itr->second.anmaid_name == data_name);
-  assert(pending_account_itr->second.anmaid_message_id == message_id);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.anmaid_name->string())
+         == message_id);
   static_cast<void>(data_name);
   // TODO(Team): Consider deleting maid key if stored
   pending_account_map_.erase(pending_account_itr);
-  reverse_pending_account_message_id_.erase(reverse_message_id_itr);
 
   dispatcher_.SendCreateAccountResponse(maid_name, error, original_message_id);
 }
