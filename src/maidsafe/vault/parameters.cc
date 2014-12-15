@@ -38,7 +38,8 @@ int Parameters::integrity_check_string_size(64);
 const std::chrono::milliseconds Parameters::kDefaultTimeout(10000);
 unsigned int Parameters::account_transfer_cleanup_factor(100);
 std::chrono::seconds Parameters::account_transfer_life(60);
-MemoryUsage Parameters::temp_store_size(100);
+size_t Parameters::temp_store_size(50);
+std::chrono::steady_clock::duration temp_store_time_to_live(std::chrono::seconds(600));
 unsigned int Parameters::max_replication_factor(routing::Parameters::closest_nodes_size / 2);
 unsigned int Parameters::min_replication_factor(routing::Parameters::group_size);
 
