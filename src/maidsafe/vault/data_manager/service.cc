@@ -69,7 +69,8 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
       account_transfer_(),
-      lru_cache_(detail::Parameters::temp_store_size) {}
+      lru_cache_(detail::Parameters::temporary_store_size,
+                 detail::Parameters::temporary_store_time_to_live) {}
 
 // ==================== Put implementation =========================================================
 template <>
