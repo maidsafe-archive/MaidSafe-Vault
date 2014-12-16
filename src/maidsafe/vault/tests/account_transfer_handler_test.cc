@@ -47,11 +47,12 @@ class AccountTransferHandlerTest : public testing::Test {
                                   typename AccountTransferHandler<Persona>::AddResult>;
   using AddResult = typename AccountTransferHandler<Persona>::AddResult;
 
-  AccountTransferHandlerTest() : mutex_(), account_transfer_handler_(),
+  AccountTransferHandlerTest() : mutex_(), cond_var_(), account_transfer_handler_(),
                                  account_transfer_analyser_() {}
 
  protected:
   std::mutex mutex_;
+  std::condition_variable cond_var_;
   AccountTransferHandler<Persona> account_transfer_handler_;
   AccountTransferAnalyser<Persona> account_transfer_analyser_;
 };
@@ -98,6 +99,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_Prune) {
 }
 
 TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
+  std::condition_variable test_cond_var;
   std::map<typename AccountTransferHandler<TypeParam>::Key,
            typename AccountTransferHandler<TypeParam>::Result> results_map;
   using TypedHandlerTest = AccountTransferHandlerTest<TypeParam>;
@@ -116,7 +118,8 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
   for (unsigned int index(0); index < kParallelismFactor; ++index) {
     auto& vector_ref(parallel_inputs.at(index));
     futures.emplace_back(std::async(std::launch::async,
-                         [vector_ref, index, &results_map, this]() {
+                         [vector_ref, index, kParallelismFactor,
+                          &results_map, &test_cond_var, this]() {
                            for (const auto& entry : vector_ref) {
                              auto add_result(
                                  this->account_transfer_handler_.Add(
@@ -133,11 +136,27 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
                                }
                              }
                            }
+                           std::unique_lock<std::mutex> lock{ this->mutex_ };
+                           this->cond_var_.notify_one();
+                           test_cond_var.wait(lock, [] { return true; });
                          }));
   }
+
+  unsigned int notified_times(0);
+  {
+    std::unique_lock<std::mutex> lock{ this->mutex_ };
+    this->cond_var_.wait(lock, [&notified_times, kParallelismFactor] {
+                             ++notified_times;
+                             if (notified_times <= kParallelismFactor)
+                               return false;
+                             else
+                               return true;});
+    EXPECT_TRUE(this->account_transfer_analyser_.CheckResults(results_map));
+  }
+
+  test_cond_var.notify_all();
   for (unsigned int index(0); index < kParallelismFactor; ++index)
     futures.at(index).get();
-  EXPECT_TRUE(this->account_transfer_analyser_.CheckResults(results_map));
 }
 
 REGISTER_TYPED_TEST_CASE_P(AccountTransferHandlerTest, BEH_MultipleEntries, BEH_Prune,
