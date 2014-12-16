@@ -48,7 +48,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
       data_manager_service_(std::move(std::unique_ptr<DataManagerService>(new DataManagerService(
           vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
       pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(
-          new PmidManagerService(vault_config.pmid, *routing_, vault_config.vault_dir)))),
+          new PmidManagerService(vault_config.pmid, *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
                               vault_config.max_disk_usage)))),

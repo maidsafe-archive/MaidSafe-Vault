@@ -35,7 +35,7 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/utils.h"
 
@@ -54,29 +54,20 @@ class PmidManagerDispatcher {
   void SendDeleteRequest(const PmidName& pmid_node, const typename Data::Name& data_name,
                          nfs::MessageId message_id);
   template <typename Data>
-  void SendPutResponse(const typename Data::Name& data_name, int32_t size,
-                       const PmidName& pmid_node, nfs::MessageId message_id);
+  void SendPutResponse(const typename Data::Name& data_name, const PmidName& pmid_node,
+                       nfs::MessageId message_id);
 
   template <typename Data>
-  void SendPutFailure(const typename Data::Name& name, const PmidName& pmid_node,
+  void SendPutFailure(const typename Data::Name& name, uint64_t size, const PmidName& pmid_node,
                       const maidsafe_error& error_code, nfs::MessageId message_id);
-
-  void SendSetPmidOnline(const nfs_vault::DataName& data_name, const PmidName& pmid_node);
-  void SendSetPmidOffline(const nfs_vault::DataName& data_name, const PmidName& pmid_node);
 
   //  void SendStateChange(const PmidName& pmid_node, const typename Data::Name& data_name);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
-  void SendAccountTransfer(const NodeId& destination_peer, const PmidName& account_name,
-                           nfs::MessageId message_id, const std::string& serialised_account);
-  void SendPmidAccount(const PmidName& pmid_node,
-                       const std::vector<nfs_vault::DataName>& data_names,
-                       const nfs_client::ReturnCode& return_code);
-
-  void SendHealthResponse(const MaidName& maid_node, const PmidName& pmid_node,
-                          const PmidManagerMetadata& pmid_health, nfs::MessageId message_id,
-                          const maidsafe_error& error);
-  void SendHealthRequest(const PmidName& pmid_node, nfs::MessageId message_id);
+  void SendAccountTransfer(const NodeId& destination_peer, const std::string& serialised_account);
+  void SendAccountQuery(const PmidManager::Key& key);
+  void SendAccountQueryResponse(const std::string& serialised_account,
+                                const routing::GroupId& group_id, const NodeId& sender);
 
  private:
   PmidManagerDispatcher();
@@ -128,12 +119,11 @@ void PmidManagerDispatcher::SendDeleteRequest(const PmidName& pmid_node,
 
 template<typename Data>
 void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& data_name,
-                                            int32_t data_size,
                                             const PmidName& pmid_node,
                                             nfs::MessageId message_id) {
   typedef PutResponseFromPmidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndSize(data_name, data_size));
+  VaultMessage vault_message(message_id, nfs_vault::DataName(data_name));
   CheckSourcePersonaType<VaultMessage>();
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
@@ -143,7 +133,7 @@ void PmidManagerDispatcher::SendPutResponse(const typename Data::Name& data_name
 }
 
 template <typename Data>
-void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
+void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name, uint64_t size,
                                            const PmidName& pmid_node,
                                            const maidsafe_error& error_code,
                                            nfs::MessageId message_id) {
@@ -152,8 +142,8 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
   CheckSourcePersonaType<VaultMessage>();
   VaultMessage vault_message(
       message_id,
-      nfs_client::DataNameAndReturnCode(nfs_vault::DataName(name),
-                                        nfs_client::ReturnCode(error_code)));
+      nfs_client::DataNameAndSizeAndReturnCode(nfs_vault::DataName(name), size,
+                                               nfs_client::ReturnCode(error_code)));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(pmid_node.value.string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -161,13 +151,13 @@ void PmidManagerDispatcher::SendPutFailure(const typename Data::Name& name,
   routing_.Send(message);
 }
 
-
 template <typename KeyType>
 void PmidManagerDispatcher::SendSync(const KeyType& key, const std::string& serialised_sync) {
   typedef SynchroniseFromPmidManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   SendSyncMessage<VaultMessage> sync_sender;
-  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))),
+              PmidName(key.group_name()));
 }
 
 // ==================== General implementation =====================================================

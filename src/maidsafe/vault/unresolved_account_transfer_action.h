@@ -75,19 +75,13 @@ struct UnresolvedAccountTransferAction {
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
     const Key& key_in, const nfs::MessageId& id_in, const std::vector<Action>& actions_in)
-    : key(key_in),
-      id(id_in),
-      actions(actions_in),
-      entries(),
+    : key(key_in), id(id_in), actions(actions_in), entries(),
       time_tag(boost::posix_time::microsec_clock::universal_time()) {}
 
 template <typename Key, typename Action>
 UnresolvedAccountTransferAction<Key, Action>::UnresolvedAccountTransferAction(
     const std::string& serialised_copy)
-    : key(),
-      id(),
-      actions(),
-      entries(),
+    : key(), id(), actions(), entries(),
       time_tag(boost::posix_time::microsec_clock::universal_time()) {
   protobuf::UnresolvedAccountTransferAction proto_unresolved_action;
   proto_unresolved_action.ParseFromString(serialised_copy);

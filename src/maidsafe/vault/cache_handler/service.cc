@@ -128,34 +128,6 @@ CacheHandlerService::HandleMessage(
                    })(message, sender, receiver);
 }
 
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const PutRequestFromDataManagerToCacheHandler &message,
-    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver) {
-  typedef PutRequestFromDataManagerToCacheHandler MessageType;
-  LOG(kVerbose) << message;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const GetRequestFromDataManagerToCacheHandler& message,
-    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver) {
-  typedef GetRequestFromDataManagerToCacheHandler MessageType;
-  LOG(kVerbose) << message;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
 }  // namespace vault
 
 }  // namespace maidsafe

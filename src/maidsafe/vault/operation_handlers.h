@@ -105,16 +105,6 @@ void OperationHandler<ValidateSender, AccumulatorType, Checker, ServiceHandlerTy
 
 template <>
 template <>
-void OperationHandler<
-    typename ValidateSenderType<GetPmidAccountResponseFromPmidManagerToPmidNode>::type,
-    Accumulator<PmidNodeServiceMessages>,
-    typename Accumulator<PmidNodeServiceMessages>::AddCheckerFunctor, PmidNodeService>::
-    operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message,
-               const GetPmidAccountResponseFromPmidManagerToPmidNode::Sender& sender,
-               const GetPmidAccountResponseFromPmidManagerToPmidNode::Receiver& receiver);
-
-template <>
-template <>
 void OperationHandler<typename ValidateSenderType<PutRequestFromDataManagerToPmidManager>::type,
                       Accumulator<PmidManagerServiceMessages>,
                       typename Accumulator<PmidManagerServiceMessages>::AddCheckerFunctor,
@@ -143,16 +133,6 @@ void OperationHandler<
                const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
                const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
 
-template <>
-template <>
-void OperationHandler<
-    typename ValidateSenderType<GetCachedResponseFromCacheHandlerToDataManager>::type,
-    Accumulator<DataManagerServiceMessages>,
-    typename Accumulator<DataManagerServiceMessages>::AddCheckerFunctor, DataManagerService>::
-    operator()(const GetCachedResponseFromCacheHandlerToDataManager& message,
-               const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-               const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
-
 template <typename ServiceHandlerType, typename MessageType>
 void DoOperation(ServiceHandlerType* /*service*/, const MessageType& /*message*/,
                  const typename MessageType::Sender& /*sender*/,
@@ -168,12 +148,6 @@ void DoOperation(MaidManagerService* service,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager& message,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::CreateAccountRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::RegisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
 
 template <>
 void DoOperation(MaidManagerService* service,
@@ -200,18 +174,6 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager& message,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::PmidHealthRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const PmidHealthResponseFromPmidManagerToMaidManager& message,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Sender& sender,
-                 const PmidHealthResponseFromPmidManagerToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager& message,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager::Sender& sender,
                  const nfs::PutVersionRequestFromMaidNodeToMaidManager::Receiver& receiver);
@@ -231,24 +193,6 @@ void DoOperation(MaidManagerService* service,
 
 template <>
 void DoOperation(MaidManagerService* service,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager& message,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::UnregisterPmidRequestFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::IncrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager& message,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Sender& sender,
-                 const nfs::DecrementReferenceCountsFromMaidNodeToMaidManager::Receiver& receiver);
-
-template <>
-void DoOperation(MaidManagerService* service,
                  const PutVersionResponseFromVersionHandlerToMaidManager& message,
                  const PutVersionResponseFromVersionHandlerToMaidManager::Sender& sender,
                  const PutVersionResponseFromVersionHandlerToMaidManager::Receiver& receiver);
@@ -264,6 +208,12 @@ void DoOperation(MaidManagerService* service,
                  const CreateVersionTreeResponseFromVersionHandlerToMaidManager& message,
                  const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Sender& sender,
                  const CreateVersionTreeResponseFromVersionHandlerToMaidManager::Receiver&);
+
+template <>
+void DoOperation(MaidManagerService* service,
+                 const AccountQueryFromMaidManagerToMaidManager& message,
+                 const AccountQueryFromMaidManagerToMaidManager::Sender& sender,
+                 const AccountQueryFromMaidManagerToMaidManager::Receiver& receiver);
 
 //=============================== To DataManager ===================================================
 template <>
@@ -313,21 +263,9 @@ void DoOperation(DataManagerService* service, const PutFailureFromPmidManagerToD
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const GetCachedResponseFromCacheHandlerToDataManager& message,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Sender& sender,
-                 const GetCachedResponseFromCacheHandlerToDataManager::Receiver& receiver);
-
-template <>
-void DoOperation(DataManagerService* service,
-                 const SetPmidOnlineFromPmidManagerToDataManager& message,
-                 const SetPmidOnlineFromPmidManagerToDataManager::Sender& sender,
-                 const SetPmidOnlineFromPmidManagerToDataManager::Receiver& receiver);
-
-template <>
-void DoOperation(DataManagerService* service,
-                 const SetPmidOfflineFromPmidManagerToDataManager& message,
-                 const SetPmidOfflineFromPmidManagerToDataManager::Sender& sender,
-                 const SetPmidOfflineFromPmidManagerToDataManager::Receiver& receiver);
+                 const AccountQueryFromDataManagerToDataManager& message,
+                 const AccountQueryFromDataManagerToDataManager::Sender& sender,
+                 const AccountQueryFromDataManagerToDataManager::Receiver& receiver);
 
 //=============================== To PmidManager ===================================================
 template <>
@@ -348,24 +286,6 @@ void DoOperation(PmidManagerService* service,
 
 template <>
 void DoOperation(PmidManagerService* service,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager& message,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Sender& sender,
-                 const GetPmidAccountRequestFromPmidNodeToPmidManager::Receiver& receiver);
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const PmidHealthRequestFromMaidManagerToPmidManager& message,
-                 const PmidHealthRequestFromMaidManagerToPmidManager::Sender& sender,
-                 const PmidHealthRequestFromMaidManagerToPmidManager::Receiver& receiver);
-
-template <>
-void DoOperation(PmidManagerService* service,
-                 const PmidHealthResponseFromPmidNodeToPmidManager& message,
-                 const PmidHealthResponseFromPmidNodeToPmidManager::Sender& sender,
-                 const PmidHealthResponseFromPmidNodeToPmidManager::Receiver& receiver);
-
-template <>
-void DoOperation(PmidManagerService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidManager& message,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Sender& sender,
                  const IntegrityCheckRequestFromDataManagerToPmidManager::Receiver& receiver);
@@ -375,6 +295,12 @@ void DoOperation(PmidManagerService* service,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager& message,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Sender& sender,
                  const CreatePmidAccountRequestFromMaidManagerToPmidManager::Receiver& receiver);
+
+template <>
+void DoOperation(PmidManagerService* service,
+                 const UpdateAccountFromDataManagerToPmidManager& message,
+                 const UpdateAccountFromDataManagerToPmidManager::Sender& sender,
+                 const UpdateAccountFromDataManagerToPmidManager::Receiver& receiver);
 
 //=============================== To PmidNode ======================================================
 template <>
@@ -396,12 +322,6 @@ void DoOperation(PmidNodeService* service,
                  const IntegrityCheckRequestFromDataManagerToPmidNode& message,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Sender& sender,
                  const IntegrityCheckRequestFromDataManagerToPmidNode::Receiver& receiver);
-
-template <>
-void DoOperation(PmidNodeService* service,
-                 const PmidHealthRequestFromPmidManagerToPmidNode& message,
-                 const PmidHealthRequestFromPmidManagerToPmidNode::Sender& sender,
-                 const PmidHealthRequestFromPmidManagerToPmidNode::Receiver& receiver);
 
 //====================================== To VersionHandler =========================================
 
@@ -471,6 +391,7 @@ struct OperationHandlerWrapper {
 
   void operator()(const MessageType& message, const typename MessageType::Sender& sender,
                   const typename MessageType::Receiver& receiver) {
+    LOG(kVerbose) << message;
     typed_operation_handler(message, sender, receiver);
   }
 

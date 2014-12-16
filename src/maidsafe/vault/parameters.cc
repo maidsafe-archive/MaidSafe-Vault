@@ -23,6 +23,8 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
+#include "maidsafe/routing/parameters.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -34,6 +36,11 @@ size_t Parameters::max_recent_data_list_size(1000);
 int Parameters::max_file_element_count(10000);
 int Parameters::integrity_check_string_size(64);
 const std::chrono::milliseconds Parameters::kDefaultTimeout(10000);
+unsigned int Parameters::account_transfer_cleanup_factor(100);
+std::chrono::seconds Parameters::account_transfer_life(60);
+MemoryUsage Parameters::temp_store_size(100);
+unsigned int Parameters::max_replication_factor(routing::Parameters::closest_nodes_size / 2);
+unsigned int Parameters::min_replication_factor(routing::Parameters::group_size);
 
 }  // namespace detail
 

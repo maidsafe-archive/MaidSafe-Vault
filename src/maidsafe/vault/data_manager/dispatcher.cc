@@ -63,16 +63,40 @@ void DataManagerDispatcher::SendSync(const DataManager::Key& key,
 }
 
 void DataManagerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
-                                                nfs::MessageId message_id,
                                                 const std::string& serialised_account) {
   typedef AccountTransferFromDataManagerToDataManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, nfs_vault::Content(serialised_account));
+  VaultMessage vault_message((nfs_vault::Content(serialised_account)));
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(destination_peer),
-                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Sender(routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(routing::SingleId(destination_peer)));
+  routing_.Send(message);
+}
+
+void DataManagerDispatcher::SendAccountRequest(const Key& key) {
+  typedef AccountQueryFromDataManagerToDataManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(VaultMessage::Contents(key.type, key.name));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(key.name.string()))));
+  routing_.Send(message);
+}
+
+void DataManagerDispatcher::SendAccountResponse(const std::string& serialised_account,
+                                                const routing::GroupId& group_id,
+                                                const NodeId& sender) {
+  typedef AccountQueryResponseFromDataManagerToDataManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage::Contents content((serialised_account));
+  VaultMessage vault_message(content);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(group_id),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(sender));
   routing_.Send(message);
 }
 
