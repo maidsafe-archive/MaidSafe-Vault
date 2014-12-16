@@ -200,7 +200,7 @@ void PmidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-template<>
+template <>
 void PmidManagerService::HandleMessage(
     const UpdateAccountFromDataManagerToPmidManager& message,
     const typename UpdateAccountFromDataManagerToPmidManager::Sender& sender,

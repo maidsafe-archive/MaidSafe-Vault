@@ -525,7 +525,8 @@ template <typename Data, typename RequestorIdType>
 void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value);
+  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
+                << message_id.data;
   try {
     dispatcher_.SendGetResponseSuccess(
         requestor,

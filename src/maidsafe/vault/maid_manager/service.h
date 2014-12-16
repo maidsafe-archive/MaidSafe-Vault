@@ -382,8 +382,11 @@ void MaidManagerService::HandlePut(const MaidName& account_name, const Data& dat
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(account_name));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (it == std::end(accounts_)) {
+      LOG(kInfo) << "Account has not updated on node yet\n";
+      // BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+      return;
+    }
     value = it->second;
   }
   if (value.AllowPut(data) == MaidManagerValue::Status::kNoSpace) {
@@ -425,8 +428,10 @@ void MaidManagerService::HandleCreateVersionTreeRequest(
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(maid_name));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (it == std::end(accounts_)) {
+      LOG(kWarning) << "node is not updated or is not responsible for the request";
+      return;
+    }
   }
   dispatcher_.SendCreateVersionTreeRequest(maid_name, data_name, version, max_versions,
                                            max_branches, message_id);
@@ -440,8 +445,10 @@ void MaidManagerService::HandlePutVersionRequest(
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(maid_name));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+    if (it == std::end(accounts_)) {
+      LOG(kWarning) << "node is not updated or is not responsible for the request";
+      return;
+    }
   }
   LOG(kVerbose) << "MaidManagerService::HandlePutVersionRequest put new version "
                 << DebugId(new_version.id) << " after old version "
@@ -490,9 +497,10 @@ void MaidManagerService::HandleAccountRequest(const DataName& name, const NodeId
   {
     std::lock_guard<std::mutex> lock(mutex_);
     auto it(accounts_.find(Key(name.value)));
-    if (it == std::end(accounts_))
-      BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-
+    if (it == std::end(accounts_)) {
+      LOG(kWarning) << "node is not updated or is not responsible for the request";
+      return;
+    }
     protobuf::MaidManagerKeyValuePair kv_pair;
     vault::Key key(it->first.value, MaidManager::Key::data_type::Tag::kValue);
     kv_pair.set_key(key.Serialise());

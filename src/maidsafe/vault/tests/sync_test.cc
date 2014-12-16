@@ -34,12 +34,14 @@
 #include "maidsafe/routing/parameters.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/data_manager/action_put.h"
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/version_handler/value.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
@@ -49,16 +51,16 @@ namespace vault {
 
 namespace test {
 
-// template <typename UnresolvedActionType>
-// struct PersonaNode {
-//  PersonaNode() : node_id(NodeId::IdType::kRandomId), sync(node_id), resolved_count(0) {}
-//
+//template <typename UnresolvedActionType>
+//struct PersonaNode {
+//  PersonaNode() : node_id(RandomString(NodeId::kSize)), sync(node_id), resolved_count(0) {}
+
 //  UnresolvedActionType CreateUnresolvedAction(
 //      const typename UnresolvedActionType::KeyType& key) const {
 //    typename UnresolvedActionType::ActionType action(100);
 //    return UnresolvedActionType(key, action, node_id);
 //  }
-//
+
 //  std::unique_ptr<UnresolvedActionType> ReceiveUnresolvedAction(
 //      const UnresolvedActionType& unresolved_action) {
 //    auto received_unresolved_action = UnresolvedActionType(
@@ -68,19 +70,19 @@ namespace test {
 //      ++resolved_count;
 //    return std::move(resolved);
 //  }
-//
+
 //  NodeId node_id;
 //  Sync<UnresolvedActionType> sync;
 //  std::atomic<int> resolved_count;
-//
+
 // private:
 //  PersonaNode(PersonaNode&&);
 //  PersonaNode(const PersonaNode&);
 //  PersonaNode& operator=(PersonaNode other);
-// };
-//
-//
-// std::vector<MaidManager::Key> CreateKeys(int count, int group_count = 20) {
+//};
+
+
+//std::vector<MaidManager::Key> CreateKeys(int count, int group_count = 20) {
 //  std::vector<passport::PublicMaid::Name> group_vector;
 //  for (auto i(0); i < group_count; ++i) {
 //    auto maid(passport::CreateMaidAndSigner().first);
@@ -90,36 +92,38 @@ namespace test {
 //  std::vector<MaidManager::Key> keys;
 //  for (auto i(0); i < count; ++i) {
 //    MaidManager::Key key(group_vector[i % group_count],
-//                         Identity(NodeId(NodeId::IdType::kRandomId).string()),
+//                         Identity(NodeId(RandomString(NodeId::kSize)).string()),
 //                         DataTagValue::kMaidValue);
 //    keys.push_back(key);
 //  }
 //  return keys;
-// }
-//
-//
-// TEST(SyncTest, BEH_Constructor) {
-//  Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
+//}
+
+
+//TEST(SyncTest, BEH_Constructor) {
+//  Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts((NodeId(RandomString(NodeId::kSize))));
 //  Sync<MaidManager::UnresolvedCreateAccount> maid_manager_sync_create_account(
-//      (NodeId(NodeId::IdType::kRandomId)));
-//  Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
-//  Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(NodeId::IdType::kRandomId)));
-// }
-//
-// TEST(SyncTest, BEH_SingleAction) {
+//      (NodeId(RandomString(NodeId::kSize))));
+//  Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(RandomString(NodeId::kSize))));
+//  Sync<PmidManager::UnresolvedSetPmidHealth> pmid_manager_sync_set_pmid_health(
+//      (NodeId(RandomString(NodeId::kSize))));
+//  Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(RandomString(NodeId::kSize))));
+//}
+
+//TEST(SyncTest, BEH_SingleAction) {
 //  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
 //  auto maid(passport::CreateMaidAndSigner().first);
 //  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
 //  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
 //  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
 //                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
-//
-//  MaidManager::Key key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
+
+//  MaidManager::Key key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
 //                       DataTagValue::kMaidValue);
 //  std::vector<MaidManager::UnresolvedPut> unresolved_actions;
 //  for (const auto& persona_node : persona_nodes)
 //    unresolved_actions.push_back(persona_node->CreateUnresolvedAction(key));
-//
+
 //  for (auto i(0U); i != routing::Parameters::group_size; ++i) {
 //    int resolved_count(0);
 //    for (auto j(0U); j != routing::Parameters::group_size; ++j) {
@@ -137,17 +141,17 @@ namespace test {
 //    EXPECT_TRUE(resolved_count == 1);
 //    EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());
 //  }
-// }
-//
-// TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
+//}
+
+//TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
 //  auto maid(passport::CreateMaidAndSigner().first);
 //  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
 //  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
 //  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
 //  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
 //                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
-//
-//  MaidManager::Key key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
+
+//  MaidManager::Key key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
 //                       DataTagValue::kMaidValue);
 //  std::vector<MaidManager::UnresolvedPut> unresolved_actions;
 //  for (const auto& persona_node : persona_nodes)
@@ -175,24 +179,24 @@ namespace test {
 //    EXPECT_TRUE(resolved_count == 1);
 //    EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());
 //  }
-// }
-//
-// TEST(SyncTest, BEH_TwoActionSameKey) {
+//}
+
+//TEST(SyncTest, BEH_TwoActionSameKey) {
 //  auto maid(passport::CreateMaidAndSigner().first);
 //  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
 //  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
 //  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
 //  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
 //                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
-//
-//  MaidManager::Key key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
+
+//  MaidManager::Key key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
 //                       DataTagValue::kMaidValue);
 //  std::vector<MaidManager::UnresolvedPut> unresolved_actions_1, unresolved_actions_2;
 //  for (const auto& persona_node : persona_nodes) {
 //    unresolved_actions_1.push_back(persona_node->CreateUnresolvedAction(key));
 //    unresolved_actions_2.push_back(persona_node->CreateUnresolvedAction(key));
 //  }
-//
+
 //  for (auto i(0U); i != routing::Parameters::group_size; ++i) {
 //    std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> resolved_vector;
 //    for (auto j(0U); j != routing::Parameters::group_size; ++j) {
@@ -208,18 +212,18 @@ namespace test {
 //    EXPECT_TRUE(resolved_vector.size() == 2)
 //        << "resolved_vector.size(): " << resolved_vector.size();
 //  }
-// }
-//
-// TEST(SyncTest, BEH_MultipleSequentialAction) {
+//}
+
+//TEST(SyncTest, BEH_MultipleSequentialAction) {
 //  auto maid(passport::CreateMaidAndSigner().first);
 //  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
 //  typedef std::unique_ptr<PersonaNode<MaidManager::UnresolvedPut>> PersonaNodePtr;
 //  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
 //  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
 //                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
-//
+
 //  for (auto count(0U); count != 100; ++count) {
-//    MaidManager::Key key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
+//    MaidManager::Key key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
 //                         DataTagValue::kMaidValue);
 //    std::vector<MaidManager::UnresolvedPut> unresolved_actions;
 //    for (const auto& persona_node : persona_nodes)
@@ -242,9 +246,9 @@ namespace test {
 //      EXPECT_TRUE(persona_nodes[i]->sync.GetUnresolvedActions().empty());
 //    }
 //  }
-// }
-//
-// TEST(SyncTest, BEH_MultipleRandomAction) {
+//}
+
+//TEST(SyncTest, BEH_MultipleRandomAction) {
 //  const int kActionCount(500);
 //  auto maid(passport::CreateMaidAndSigner().first);
 //  passport::PublicMaid::Name maid_name(MaidName(maid.name()));
@@ -252,11 +256,12 @@ namespace test {
 //  std::vector<PersonaNodePtr> persona_nodes(routing::Parameters::group_size);
 //  std::generate(std::begin(persona_nodes), std::end(persona_nodes),
 //                [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
-//
+
 //  std::vector<MaidManager::Key> keys;
 //  std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> unresolved_actions;
 //  for (auto count(0); count != kActionCount; ++count) {  // FIXME add random DataTagValue types
-//    keys.push_back(MaidManager::Key(maid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
+//    keys.push_back(MaidManager::Key(maid_name,
+//                                    Identity(NodeId(RandomString(NodeId::kSize)).string()),
 //                                    DataTagValue::kMaidValue));
 //    for (const auto& persona_node : persona_nodes) {
 //      std::unique_ptr<MaidManager::UnresolvedPut> action(
@@ -264,9 +269,9 @@ namespace test {
 //      unresolved_actions.push_back(std::move(action));
 //    }
 //  }
-//
+
 //  std::random_shuffle(unresolved_actions.begin(), unresolved_actions.end());
-//
+
 //  std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> resolved_vector;
 //  for (const auto& unresolved_action : unresolved_actions) {
 //    for (auto& persona_node : persona_nodes) {
@@ -292,21 +297,21 @@ namespace test {
 //  for (auto& persona_node : persona_nodes) {
 //    EXPECT_TRUE(persona_node->resolved_count == kActionCount);
 //  }
-// }
-//
-//
+//}
+
+
 //// different group
 //// repeated keys
 //// mixed keys
-// template <typename Persona, typename KeyType>
-// void ApplySyncToPersona(Persona& persona_node, std::vector<KeyType> keys) {
+//template <typename Persona, typename KeyType>
+//void ApplySyncToPersona(Persona& persona_node, std::vector<KeyType> keys) {
 //  for (auto& key : keys) {
 //    auto unresolved_action = persona_node.CreateUnresolvedAction(key);
 //    persona_node.ReceiveUnresolvedAction(unresolved_action);
 //  }
-// }
-//
-// TEST(SyncTest, FUNC_MultipleParallelRandomAction) {
+//}
+
+//TEST(SyncTest, FUNC_MultipleParallelRandomAction) {
 //  const int kActionCount(1000);
 //  auto keys = CreateKeys(kActionCount);
 //  //  auto itr = std::begin(keys);
@@ -319,7 +324,7 @@ namespace test {
 //  //  std::vector<MaidManager::Key> keys_thread_4(itr, itr + (kActionCount / 4));
 //  PersonaNode<MaidManager::UnresolvedPut> persona_node;
 //  ApplySyncToPersona(persona_node, keys);
-// }
+//}
 
 }  // namespace test
 

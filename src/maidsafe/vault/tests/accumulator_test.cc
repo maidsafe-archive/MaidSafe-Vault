@@ -63,7 +63,7 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 //  nfs::PersonaId source;
 //  // matches Persona enum in types.h
 //  source.persona = static_cast<nfs::Persona>(RandomUint32() % 7);
-//  source.node_id = NodeId(NodeId::IdType::kRandomId);
+//  source.node_id = NodeId(RandomString(NodeId::kSize));
 //  return source;
 // }
 // nfs::Message MakeMessage() {
