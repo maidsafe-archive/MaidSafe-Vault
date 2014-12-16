@@ -320,7 +320,8 @@ void PmidManagerService::HandleChurnEvent(
     const auto transfer_info(
         detail::GetTransferInfo<PmidManager::Key, PmidManager::Value, PmidManager::TransferInfo>(
             close_nodes_change, accounts_));
-    LOG(kVerbose) << "PmidManager HandleChurnEvent transferring " << transfer_info.size() << " accounts";
+    LOG(kVerbose) << "PmidManager HandleChurnEvent transferring " << transfer_info.size()
+                  << " accounts";
     for (auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
     LOG(kVerbose) << "PmidManager HandleChurnEvent completed";

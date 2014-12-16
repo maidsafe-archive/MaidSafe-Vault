@@ -261,7 +261,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
 
   std::shared_ptr<routing::CloseNodesChange> close_node_change_ptr(new
       routing::CloseNodesChange(vault_id, old_close_nodes_pass_down, new_close_nodes_pass_down));
-  LOG(kVerbose) << " db.GetTransferInfo " ;
+  LOG(kVerbose) << " db.GetTransferInfo ";
   DataManager::TransferInfo result(db.GetTransferInfo(close_node_change_ptr));
   size_t expected_entries(0);
   for (auto& pmid_node : data_entries) {
@@ -318,7 +318,7 @@ TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
   PmidName pmid_name(pmid_nodes[3]);
   { // Handle Transfer
     std::vector<DataManager::KvPair> transferred;
-    transferred.push_back(std::make_pair<>(key, value));
+    transferred.push_back(std::make_pair(key, value));
     db.HandleTransfer(transferred);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 1);
@@ -329,7 +329,7 @@ TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
   { // Handle Duplicated Transfer
     DataManager::Value duplicated_value(value);
     std::vector<DataManager::KvPair> transferred;
-    transferred.push_back(std::make_pair<>(key, duplicated_value));
+    transferred.push_back(std::make_pair(key, duplicated_value));
     db.HandleTransfer(transferred);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 1);
@@ -341,7 +341,7 @@ TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
     std::vector<DataManager::KvPair> transferred;
-    transferred.push_back(std::make_pair<>(key, value));
+    transferred.push_back(std::make_pair(key, value));
     db.HandleTransfer(transferred);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 2);
