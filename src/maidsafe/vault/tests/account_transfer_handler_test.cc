@@ -144,7 +144,7 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
   unsigned int notified_times(0);
   {
     std::unique_lock<std::mutex> lock{ this->mutex_ };
-    this->cond_var_.wait(lock, [&notified_times] {
+    this->cond_var_.wait(lock, [&notified_times, kParallelismFactor] {
                              ++notified_times;
                              if (notified_times <= kParallelismFactor)
                                return false;
