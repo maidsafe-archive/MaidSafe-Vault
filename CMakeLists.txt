@@ -67,7 +67,7 @@ ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests"
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 set(TestsFunctionalMain ${VaultSourcesDir}/tests/tests_func_main.cc)
 
-set(VaultTests         ${VaultTestsAllFiles} 
+set(VaultTests         ${VaultTestsAllFiles}
                        ${PmidNodeTestsAllFiles}
                        ${PmidManagerTestsAllFiles}
                        ${DataManagerTestsAllFiles}
@@ -109,7 +109,7 @@ set(AllProtos
     ${PmidManagerProtos}
     ${PmidNodeProtos}
     ${VersionHandlerProtos})
-if(MSVC OR CMAKE_GENERATOR STREQUAL Xcode)
+if(MSVC OR CMAKE_GENERATOR STREQUAL "Xcode")
   add_custom_target(vault_protobuf_files_generator DEPENDS ${AllProtos} SOURCES ${AllProtos}
                     COMMENT "Generated all vault protocol buffer files.")
 else()
@@ -129,13 +129,13 @@ set(VaultPersonaLibs
     maidsafe_vault_version_handler)
 foreach(VaultLib maidsafe_vault ${VaultPersonaLibs})
   target_include_directories(${VaultLib}
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PUBLIC ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   target_compile_options(${VaultLib} PRIVATE $<$<BOOL:${MSVC}>:/bigobj>)
   if(VaultLib STREQUAL "maidsafe_vault")
     target_link_libraries(${VaultLib} maidsafe_vault_manager maidsafe_nfs_vault)
   else()
-    target_link_libraries(${VaultLib} maidsafe_vault maidsafe_nfs_vault)
+    target_link_libraries(${VaultLib} maidsafe_vault maidsafe_nfs_vault protobuf_lite)
   endif()
   add_dependencies(${VaultLib} vault_protobuf_files_generator)
 endforeach()
@@ -149,7 +149,7 @@ target_include_directories(vault PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BIN
 target_link_libraries(maidsafe_vault ${VaultPersonaLibs})
 target_link_libraries(vault maidsafe_vault)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_static_library(maidsafe_vault_mal ${VaultAllFiles}
                                            ${CacheHandlerAllFiles}
                                            ${DataManagerAllFiles}
@@ -160,11 +160,11 @@ if(MaidsafeTesting)
                                            ${VersionHandlerAllFiles}
                                            ${OutputFile} ${InputFile} ${MetaFiles})
   target_include_directories(maidsafe_vault_mal
-    PUBLIC ${PROJECT_SOURCE_DIR}/include
+    PUBLIC ${PROJECT_SOURCE_DIR}/include ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
     PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_BINARY_DIR}/generated_message_types)
   # TODO - Investigate why boost variant requires this warning to be disabled.
   target_compile_options(maidsafe_vault_mal PUBLIC $<$<AND:$<BOOL:${MSVC}>,$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>>>:/wd4702>)
-  target_link_libraries(maidsafe_vault_mal maidsafe_vault_manager maidsafe_nfs_vault)
+  target_link_libraries(maidsafe_vault_mal maidsafe_vault_manager maidsafe_nfs_vault protobuf_lite)
   target_compile_definitions(maidsafe_vault_mal PRIVATE USE_MAL_BEHAVIOUR)
 
   ms_add_executable(vault_mal "Tools/Vault" ${VaultSourcesDir}/vault_main.cc)
@@ -192,7 +192,7 @@ ms_rename_outdated_built_exes()
 #==================================================================================================#
 include(standard_flags)
 
-if(MSVC AND MaidsafeTesting)
+if(MSVC AND INCLUDE_TESTS)
   set_property(TARGET maidsafe_vault test_vault network_test_vault maidsafe_vault_mal APPEND PROPERTY COMPILE_FLAGS "/bigobj")
 endif()
 if(MSVC)
@@ -203,7 +203,7 @@ endif()
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_vault)
   ms_add_network_gtests(network_test_vault)
@@ -220,7 +220,7 @@ endif()
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
 install(TARGETS vault COMPONENT Apps CONFIGURATIONS Release RUNTIME DESTINATION bin)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   install(TARGETS test_vault network_test_vault COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
   install(TARGETS test_vault network_test_vault COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
