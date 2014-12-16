@@ -356,7 +356,6 @@ void DataManagerDispatcher::SendPmidUpdateAccount(const typename Data::Name& dat
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(NodeId(pmid_node.value.string())));
   routing_.Send(message);
-
 }
 
 }  // namespace vault

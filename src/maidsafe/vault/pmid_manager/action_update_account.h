@@ -34,7 +34,7 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionPmidManagerUpdateAccount {
-  ActionPmidManagerUpdateAccount(int64_t size);
+  explicit ActionPmidManagerUpdateAccount(int64_t size);
   explicit ActionPmidManagerUpdateAccount(const std::string& serialised_action);
   ActionPmidManagerUpdateAccount(const ActionPmidManagerUpdateAccount& other);
   ActionPmidManagerUpdateAccount(ActionPmidManagerUpdateAccount&& other);

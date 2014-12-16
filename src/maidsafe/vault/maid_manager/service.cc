@@ -231,7 +231,6 @@ void MaidManagerService::HandleSyncedPutResponse(
   std::lock_guard<std::mutex> lock(mutex_);
   auto it(accounts_.find(synced_action_put->key.group_name()));
   if (it == std::end(accounts_)) {
-    //BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
     LOG(kWarning) << "Request to a non-updated Manager";
     return;
   }
@@ -275,10 +274,12 @@ void MaidManagerService::HandleChurnEvent(
     if (stopped_)
       return;
     //    VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
-    LOG(kVerbose) << "MaidManager HandleChurnEvent processing accounts_ holding " << accounts_.size() << " accounts";
+    LOG(kVerbose) << "MaidManager HandleChurnEvent processing accounts_ holding "
+                  << accounts_.size() << " accounts";
      TransferInfo transfer_info(detail::GetTransferInfo<Key, Value, TransferInfo>(
         close_nodes_change, accounts_));
-    LOG(kVerbose) << "MaidManager HandleChurnEvent transferring " << transfer_info.size() << " accounts";
+    LOG(kVerbose) << "MaidManager HandleChurnEvent transferring " << transfer_info.size()
+                  << " accounts";
      for (const auto& transfer : transfer_info)
       TransferAccount(transfer.first, transfer.second);
   }
