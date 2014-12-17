@@ -42,23 +42,10 @@ class MessageIdRequestVisitor : public boost::static_visitor<nfs::MessageId> {
  public:
   template <typename T>
   nfs::MessageId operator()(const T& message) const {
-    //    static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
+    // static_assert(HasMessageId<T>::value, "Input parameter must have message_id");
     return message.id;
   }
 };
-
-/*
-class ContentEraseVisitor : public boost::static_visitor<> {
- public:
-  template <typename ContentType>
-  void operator()(ContentType& content) {}
-};
-
-template <>
-void ContentEraseVisitor::operator()(nfs_vault::DataNameAndContent& name_and_content) {
-  name_and_content.content = NonEmptyString(std::string("NA"));
-}
-*/
 
 }  // namespace detail
 
@@ -72,7 +59,8 @@ class Accumulator {
     kFailure,
     kHandled
   };
-  typedef std::function<AddResult(const std::vector<T>&)> AddCheckerFunctor;
+  using Duration = std::chrono::steady_clock::duration;
+  typedef std::function<AddResult(const size_t&)> AddCheckerFunctor;
   class AddRequestChecker {
    public:
     explicit AddRequestChecker(size_t required_requests) : required_requests_(required_requests) {
@@ -80,20 +68,48 @@ class Accumulator {
              "Invalid number of requests");
     }
 
-    AddResult operator()(const std::vector<T>& requests);
+    AddResult operator()(const size_t& number_of_requests);
 
    private:
     size_t required_requests_;
   };
 
-  struct PendingRequest {
-    PendingRequest(const T& request_in, const routing::GroupSource& source_in)
-        : request(request_in), source(source_in) {}
-    T request;
-    routing::GroupSource source;
+  class PendingRequest {
+   public:
+    PendingRequest(const T& request, const routing::GroupSource& source, const Duration& lifetime)
+        : request_(request), sources_(), lifetime_(lifetime),
+          time_(std::chrono::system_clock::now()) {
+      sources_.push_back(source);
+    }
+
+    bool HasSource(const routing::GroupSource& source) const {
+      auto result(std::find(std::begin(sources_), std::end(sources_), source));
+      return (result != sources_.end());
+    }
+
+    void AddSource(const routing::GroupSource& source) {
+      sources_.push_back(source);
+    }
+
+    size_t NumberOfRequests() const { return sources_.size(); }
+
+    bool SameGroupId(const routing::GroupSource& source) const {
+      if (sources_.empty())
+        return false;
+      return (sources_.begin()->group_id == source.group_id);
+    }
+
+    const T& Request() const { return request_; }
+    bool HasExpired() const { return (lifetime_ < std::chrono::system_clock::now() - time_); }
+
+   private:
+    T request_;
+    std::vector<routing::GroupSource> sources_;
+    Duration lifetime_;
+    std::chrono::steady_clock::time_point time_;
   };
 
-  Accumulator();
+  explicit Accumulator(const Duration& lifetime = std::chrono::minutes(15));
 
   AddResult AddPendingRequest(const T& request, const routing::GroupSource& source,
                               AddCheckerFunctor checker);
@@ -102,7 +118,7 @@ class Accumulator {
   AddResult AddPendingRequest(const T& request, const routing::SingleRelaySource& source,
                               AddCheckerFunctor checker);
 
-  std::vector<T> Get(const T& request, const routing::GroupSource& source);
+  size_t Get(const T& request, const routing::GroupSource& source);
 
  private:
   Accumulator(const Accumulator&);
@@ -110,19 +126,15 @@ class Accumulator {
   Accumulator(Accumulator&&);
   Accumulator& operator=(Accumulator&&);
 
-  bool RequestExists(const T& request, const routing::GroupSource& source);
+  bool AddRequest(const T& request, const routing::GroupSource& source);
 
   std::deque<PendingRequest> pending_requests_;
-  std::deque<T> handled_requests_;
-  const size_t kMaxPendingRequestsCount_, kMaxHandledRequestsCount_;
+  Duration lifetime_;
 };
 
 template <typename T>
-Accumulator<T>::Accumulator()
-    : pending_requests_(),
-      handled_requests_(),
-      kMaxPendingRequestsCount_(300),
-      kMaxHandledRequestsCount_(1000) {}
+Accumulator<T>::Accumulator(const Duration& lifetime)
+    : pending_requests_(), lifetime_(lifetime) {}
 
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
@@ -130,14 +142,8 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
   LOG(kVerbose) << "Accumulator::AddPendingRequest for GroupSource "
                 << HexSubstr(source.group_id.data.string()) << " sent from "
                 << HexSubstr(source.sender_id->string());
-  if (!RequestExists(request, source)) {
-    pending_requests_.push_back(PendingRequest(request, source));
-    LOG(kVerbose) << "Accumulator::AddPendingRequest has " << pending_requests_.size()
-                  << " pending requests, allowing " << kMaxPendingRequestsCount_ << " requests";
-    if (pending_requests_.size() > kMaxPendingRequestsCount_)
-      pending_requests_.pop_front();
-  } else {
-    LOG(kInfo) << "Accumulator::AddPendingRequest request already existed";
+  if (!AddRequest(request, source)) {
+    LOG(kInfo) << "Accumulator::AddPendingRequest request already exists";
     return AddResult::kWaiting;
   }
   return checker(Get(request, source));
@@ -158,100 +164,82 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
   return AddResult::kSuccess;
 }
 
-// template<typename T>
-// void Accumulator<T>::SetHandled(const T& request, const routing::GroupSource& source) {
-//    assert(!CheckHandled(request) && "Request has already been set as handled");
-//    nfs::MessageId message_id;
-//    auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
-//    boost::apply_visitor(detail::ContentEraseVisitor(), request);
-//    for (auto itr(std::begin(pending_requests_)); itr != std::end(pending_requests_);) {
-//        if (itr->request.which() == request.which()) {
-//            message_id = boost::apply_visitor(detail::MessageIdRequestVisitor(), itr->request);
-//            if ((message_id == request_message_id) && (source.group_id == itr->source.group_id))
-//                pending_requests_.erase(itr);
-//            else
-//                ++itr;
-//        } else {
-//            ++itr;
-//        }
-//    }
-//    boost::apply_visitor(detail::ContentEraseVisitor(), request);
-//    handled_requests_.push_back(request);
-//    if (handled_requests_.size() > kMaxHandledRequestsCount_)
-//        handled_requests_.pop_front();
-// }
-
 template <typename T>
-std::vector<T> Accumulator<T>::Get(const T& request, const routing::GroupSource& source) {
-  std::vector<T> requests;
-  nfs::MessageId message_id;
-  auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
-  for (auto pending_request : pending_requests_) {
-    if (pending_request.request.which() == request.which()) {
-      message_id = boost::apply_visitor(detail::MessageIdRequestVisitor(), pending_request.request);
-      if (((message_id == request_message_id)) &&
-          (source.group_id == pending_request.source.group_id))
-        requests.push_back(pending_request.request);
+size_t Accumulator<T>::Get(const T& request, const routing::GroupSource& source) {
+  size_t number_of_requests(0);
+  bool request_found(false);
+  auto it(pending_requests_.begin());
+
+  while (it != pending_requests_.end()) {
+    if (it->HasExpired()) {
+      it = pending_requests_.erase(it);
+      continue;
     }
+    if (!request_found) {
+      if (it->Request() == request && it->SameGroupId(source)) {
+        number_of_requests = it->NumberOfRequests();
+        request_found = true;
+      }
+    }
+    ++it;
   }
-  LOG(kVerbose) << requests.size() << " requests are found for the request bearing message id "
-                << request_message_id.data;
-  return requests;
+
+  LOG(kVerbose) << number_of_requests << " requests were found for the request with message id "
+                << boost::apply_visitor(detail::MessageIdRequestVisitor(), request).data;
+  return number_of_requests;
 }
 
 template <typename T>
-bool Accumulator<T>::RequestExists(const T& request, const routing::GroupSource& source) {
-  auto request_message_id(boost::apply_visitor(detail::MessageIdRequestVisitor(), request));
-  for (auto pending_request : pending_requests_)
-    if (request_message_id ==
-            boost::apply_visitor(detail::MessageIdRequestVisitor(), pending_request.request) &&
-        source == pending_request.source && pending_request.request == request) {
-      LOG(kWarning) << "Accumulator<T>::RequestExists,  reguest with message id "
-                    << request_message_id.data << " from sender "
-                    << HexSubstr(source.sender_id->string()) << " with group_id "
-                    << HexSubstr(source.group_id->string())
+bool Accumulator<T>::AddRequest(const T& request, const routing::GroupSource& source) {
+  for (auto& pending_request : pending_requests_) {
+    bool identical_requests(pending_request.Request() == request);
+    if (pending_request.HasSource(source) && identical_requests) {
+      LOG(kWarning) << "Accumulator<T>::AddRequest, request with message id "
+                    << boost::apply_visitor(detail::MessageIdRequestVisitor(), request).data
+                    << " from sender " << HexSubstr(source.sender_id->string())
+                    << " with group_id " << HexSubstr(source.group_id->string())
                     << " already exists in the pending requests list";
+      return false;
+    } else if (identical_requests) {
+      if (!pending_request.SameGroupId(source))
+        break;
+
+      pending_request.AddSource(source);
+      LOG(kInfo) << "Accumulator<T>::AddRequest, request with message id "
+                 << boost::apply_visitor(detail::MessageIdRequestVisitor(), request).data
+                 << " from sender " << HexSubstr(source.sender_id->string()) << " with group_id "
+                 << HexSubstr(source.group_id->string())
+                 << " has source added to an existing pending request.";
       return true;
     }
-  LOG(kInfo) << "Accumulator<T>::RequestExists,  reguest with message id "
-             << request_message_id.data << " from sender " << HexSubstr(source.sender_id->string())
-             << " with group_id " << HexSubstr(source.group_id->string())
-             << " doesn't exists in the pending requests list";
-  return false;
+  }
+
+  pending_requests_.push_back(PendingRequest(request, source, lifetime_));
+  LOG(kInfo) << "Accumulator<T>::AddRequest, request with message id "
+             << boost::apply_visitor(detail::MessageIdRequestVisitor(), request).data
+             << " from sender " << HexSubstr(source.sender_id->string()) << " with group_id "
+             << HexSubstr(source.group_id->string())
+             << " has been added to the pending requests list";
+  return true;
 }
 
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddRequestChecker::operator()(
-    const std::vector<T>& requests) {
-  LOG(kVerbose) << "Accumulator<T>::AddRequestChecker operator(),  required_requests_ : "
-                << required_requests_ << " , checking against " << requests.size() << " requests";
-  // BEFORE_RELEASE the following commented out code shall be reviewed
-  //   if (requests.size() > routing::Parameters::group_size) {
-  //     LOG(kError) << "Invalid number of requests, already have " << requests.size()
-  //                 << " requests with a group size of " << routing::Parameters::group_size;
-  //     return AddResult::kFailure;
-  //   }
-  if (requests.size() < required_requests_) {
-    LOG(kInfo) << "Accumulator<T>::AddRequestChecke::operator() not enough pending requests";
+    const size_t& number_of_requests) {
+  LOG(kVerbose) << "Accumulator<T>::AddRequestChecker operator(), required requests : "
+                << required_requests_ << " , checking against " << number_of_requests
+                << " actual requests";
+
+  if (number_of_requests < required_requests_) {
+    LOG(kInfo) << "Accumulator<T>::AddRequestChecker::operator() request still pending";
     return AddResult::kWaiting;
+  } else if (number_of_requests > required_requests_) {
+    LOG(kInfo) << "Accumulator<T>::AddRequestChecker::operator() request already handled";
+    return AddResult::kHandled;
   } else {
-    auto index(0);
-    while ((requests.size() - index) >= required_requests_) {
-      if (std::count_if(std::begin(requests), std::end(requests), [&](const T& request) {
-            if (requests.at(index) == request) {
-//               LOG(kVerbose) << "requests match each other";
-              return true;
-            } else {
-              LOG(kVerbose) << "requests don't match each other";
-              return false;
-            }
-          }) == static_cast<int>(required_requests_))
-        return AddResult::kSuccess;
-      ++index;
-    }
+    LOG(kInfo) << "Accumulator<T>::AddRequestChecker::operator() request successful";
+    return AddResult::kSuccess;
   }
-  LOG(kInfo) << "Accumulator<T>::AddRequestChecke::operator() the reqeust is still waiting";
-  return AddResult::kWaiting;
 }
 
 }  // namespace vault
