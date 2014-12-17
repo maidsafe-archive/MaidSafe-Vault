@@ -31,6 +31,7 @@
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/vault/handled_request.pb.h"
 #include "maidsafe/vault/types.h"
+#include "maidsafe/vault/parameters.h"
 
 namespace maidsafe {
 
@@ -59,7 +60,6 @@ class Accumulator {
     kFailure,
     kHandled
   };
-  using Duration = std::chrono::steady_clock::duration;
   typedef std::function<AddResult(const size_t&)> AddCheckerFunctor;
   class AddRequestChecker {
    public:
@@ -76,9 +76,8 @@ class Accumulator {
 
   class PendingRequest {
    public:
-    PendingRequest(const T& request, const routing::GroupSource& source, const Duration& lifetime)
-        : request_(request), sources_(), lifetime_(lifetime),
-          time_(std::chrono::system_clock::now()) {
+    PendingRequest(const T& request, const routing::GroupSource& source)
+        : request_(request), sources_(), time_(std::chrono::system_clock::now()) {
       sources_.push_back(source);
     }
 
@@ -100,16 +99,20 @@ class Accumulator {
     }
 
     const T& Request() const { return request_; }
-    bool HasExpired() const { return (lifetime_ < std::chrono::system_clock::now() - time_); }
+    bool HasExpired() const {
+      std::chrono::seconds lifetime(
+        std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::system_clock::now() - time_).count());
+      return detail::Parameters::kDefaultLifetime < lifetime;
+    }
 
    private:
     T request_;
     std::vector<routing::GroupSource> sources_;
-    Duration lifetime_;
     std::chrono::steady_clock::time_point time_;
   };
 
-  explicit Accumulator(const Duration& lifetime = std::chrono::minutes(15));
+  explicit Accumulator();
 
   AddResult AddPendingRequest(const T& request, const routing::GroupSource& source,
                               AddCheckerFunctor checker);
@@ -129,12 +132,10 @@ class Accumulator {
   bool AddRequest(const T& request, const routing::GroupSource& source);
 
   std::deque<PendingRequest> pending_requests_;
-  Duration lifetime_;
 };
 
 template <typename T>
-Accumulator<T>::Accumulator(const Duration& lifetime)
-    : pending_requests_(), lifetime_(lifetime) {}
+Accumulator<T>::Accumulator() : pending_requests_() {}
 
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
@@ -214,7 +215,7 @@ bool Accumulator<T>::AddRequest(const T& request, const routing::GroupSource& so
     }
   }
 
-  pending_requests_.push_back(PendingRequest(request, source, lifetime_));
+  pending_requests_.push_back(PendingRequest(request, source));
   LOG(kInfo) << "Accumulator<T>::AddRequest, request with message id "
              << boost::apply_visitor(detail::MessageIdRequestVisitor(), request).data
              << " from sender " << HexSubstr(source.sender_id->string()) << " with group_id "
