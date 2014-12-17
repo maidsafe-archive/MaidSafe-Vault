@@ -43,7 +43,7 @@ struct Parameters {
   // Default network timeout
   static const std::chrono::milliseconds kDefaultTimeout;
   // Default accumulator request lifetime
-  static const std::chrono::seconds kDefaultLifetime;
+  static std::chrono::seconds default_lifetime;
   // Prune account transfer when the size is divisible by below factor
   static unsigned int account_transfer_cleanup_factor;
   // Removes entries which have been longer than below factor

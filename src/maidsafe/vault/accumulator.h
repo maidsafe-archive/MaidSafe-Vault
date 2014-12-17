@@ -77,7 +77,7 @@ class Accumulator {
   class PendingRequest {
    public:
     PendingRequest(const T& request, const routing::GroupSource& source)
-        : request_(request), sources_(), time_(std::chrono::system_clock::now()) {
+        : request_(request), sources_(), time_(std::chrono::steady_clock::now()) {
       sources_.push_back(source);
     }
 
@@ -100,10 +100,10 @@ class Accumulator {
 
     const T& Request() const { return request_; }
     bool HasExpired() const {
+      std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
       std::chrono::seconds lifetime(
-        std::chrono::duration_cast<std::chrono::seconds>(
-          std::chrono::system_clock::now() - time_).count());
-      return detail::Parameters::kDefaultLifetime < lifetime;
+        std::chrono::duration_cast<std::chrono::seconds>(now - time_).count());
+      return detail::Parameters::default_lifetime < lifetime;
     }
 
    private:

@@ -36,7 +36,7 @@ size_t Parameters::max_recent_data_list_size(1000);
 int Parameters::max_file_element_count(10000);
 int Parameters::integrity_check_string_size(64);
 const std::chrono::milliseconds Parameters::kDefaultTimeout(10000);
-const std::chrono::seconds Parameters::kDefaultLifetime(300);
+std::chrono::seconds Parameters::default_lifetime(300);
 unsigned int Parameters::account_transfer_cleanup_factor(100);
 std::chrono::seconds Parameters::account_transfer_life(60);
 MemoryUsage Parameters::temp_store_size(100);

@@ -130,7 +130,8 @@ TEST(AccumulatorTest, BEH_HandledGroupRequest) {
 }
 
 TEST(AccumulatorTest, BEH_WaitingRequestAfterEviction) {
-  Accumulator<PmidNodeServiceMessages> accumulator(std::chrono::seconds(3));
+  detail::Parameters::default_lifetime = std::chrono::seconds(3);
+  Accumulator<PmidNodeServiceMessages> accumulator;
   Accumulator<PmidNodeServiceMessages>::AddRequestChecker
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
