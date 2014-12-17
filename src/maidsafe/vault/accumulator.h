@@ -103,7 +103,7 @@ class Accumulator {
       std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
       std::chrono::seconds lifetime(
         std::chrono::duration_cast<std::chrono::seconds>(now - time_).count());
-      return detail::Parameters::default_lifetime < lifetime;
+      return detail::Parameters::default_lifetime <= lifetime;
     }
 
    private:
