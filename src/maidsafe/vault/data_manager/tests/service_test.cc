@@ -274,7 +274,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   DataManager::Key key(data.name());
   auto group_source(CreateGroupSource(data.name()));
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
-  {// Add first Pmid
+  {  // Add first Pmid
     PmidName pmid_name(Identity(RandomString(64)));
     ActionDataManagerAddPmid action_add_pmid(pmid_name);
     auto group_unresolved_action(CreateGroupUnresolvedAction<
@@ -284,7 +284,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmid) {
     EXPECT_EQ(value.AllPmids().size(), 1);
     EXPECT_EQ(value.chunk_size(), kTestChunkSize);
   }
-  {// Add second Pmid
+  {  // Add second Pmid
     PmidName pmid_name(Identity(RandomString(64)));
     ActionDataManagerAddPmid action_add_pmid(pmid_name);
     auto group_unresolved_action(CreateGroupUnresolvedAction<

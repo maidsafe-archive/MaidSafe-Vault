@@ -19,7 +19,9 @@
 #ifndef MAIDSAFE_VAULT_OPERATION_VISITORS_H_
 #define MAIDSAFE_VAULT_OPERATION_VISITORS_H_
 
+#include <set>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/node_id.h"

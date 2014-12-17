@@ -192,7 +192,6 @@ TEST(AccumulatorTest, BEH_WaitingRequestAfterEviction) {
 //  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
 // }
 
-
 // TEST(AccumulatorTest, BEH_PushSingleResult) {
 //  nfs::Message message = MakeMessage();
 //  nfs::Reply reply(CommonErrors::success);

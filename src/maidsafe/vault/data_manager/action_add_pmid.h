@@ -35,7 +35,7 @@ namespace vault {
 class DataManagerValue;
 
 struct ActionDataManagerAddPmid {
-  ActionDataManagerAddPmid(const PmidName& pmid_name);
+  explicit ActionDataManagerAddPmid(const PmidName& pmid_name);
   explicit ActionDataManagerAddPmid(const std::string& serialised_action);
   ActionDataManagerAddPmid(const ActionDataManagerAddPmid& other);
   ActionDataManagerAddPmid(ActionDataManagerAddPmid&& other);
