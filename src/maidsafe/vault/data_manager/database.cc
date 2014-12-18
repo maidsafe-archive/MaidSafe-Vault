@@ -41,7 +41,8 @@ DataManagerDataBase::DataManagerDataBase(const boost::filesystem::path& db_path)
                                         sqlite::Mode::kReadWriteCreate));
   std::string query(
       "CREATE TABLE IF NOT EXISTS DataManagerAccounts ("
-      "Chunk_Name TEXT  PRIMARY KEY NOT NULL, Chunk_Size TEXT NOT NULL, Storage_Nodes TEXT NOT NULL);");
+      "Chunk_Name TEXT  PRIMARY KEY NOT NULL, Chunk_Size TEXT NOT NULL,"
+      "Storage_Nodes TEXT NOT NULL);");
   sqlite::Transaction transaction{*data_base_};
   sqlite::Statement statement{*data_base_, query};
   statement.Step();
@@ -93,12 +94,14 @@ void DataManagerDataBase::Put(const DataManager::Key& key, const DataManager::Va
 
   sqlite::Transaction transaction{*data_base_};
   std::string query(
-      "INSERT OR REPLACE INTO DataManagerAccounts (Chunk_Name, Chunk_size, Storage_Nodes) VALUES (?, ?, ?)");
+      "INSERT OR REPLACE INTO DataManagerAccounts (Chunk_Name, Chunk_size,"
+      " Storage_Nodes) VALUES (?, ?, ?)");
   sqlite::Statement statement{*data_base_, query};
 
   std::string storage_nodes;
   for (auto& storage_node : value.AllPmids())
-    storage_nodes += NodeId(storage_node->string()).ToStringEncoded(NodeId::EncodingType::kHex) + ";";
+    storage_nodes += NodeId(storage_node->string()).ToStringEncoded(NodeId::EncodingType::kHex) +
+                         ";";
 //  LOG(kVerbose) << "inserting pmids as " << storage_nodes;
   statement.BindText(3, storage_nodes);
 

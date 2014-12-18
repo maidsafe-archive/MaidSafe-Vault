@@ -344,12 +344,12 @@ void MaidManagerService::HandleMessage(
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicMaid>(const MaidName& maid_name,
     const typename passport::PublicMaid::Name& data_name, int64_t size,
-    nfs::MessageId message_id);
+    nfs::MessageId maid_message_id);
 
 template <>
 void MaidManagerService::HandlePutResponse<passport::PublicAnmaid>(const MaidName& maid_name,
     const typename passport::PublicAnmaid::Name& data_name, int64_t size,
-    nfs::MessageId message_id);
+    nfs::MessageId anmaid_message_id);
 
 // ==================== Implementation =============================================================
 namespace detail {

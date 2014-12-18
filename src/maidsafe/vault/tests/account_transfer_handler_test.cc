@@ -120,7 +120,8 @@ TYPED_TEST_P(AccountTransferHandlerTest, BEH_ParallelMultipleEntries) {
                            for (const auto& entry : vector_ref) {
                              auto add_result(
                                  this->account_transfer_handler_.Add(
-                                     entry.first, entry.second, NodeId(RandomString(NodeId::kSize))));
+                                     entry.first, entry.second,
+                                     NodeId(RandomString(NodeId::kSize))));
                              {
                                std::lock_guard<std::mutex> lock(this->mutex_);
                                auto iter(results_map.find(entry.first));

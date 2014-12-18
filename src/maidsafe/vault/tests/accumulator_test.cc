@@ -77,7 +77,7 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 
 }  // unnamed namespace
 
-//TEST(AccumulatorTest, BEH_AddSingleResult) {
+//  TEST(AccumulatorTest, BEH_AddSingleResult) {
 //  Accumulator<PmidNodeServiceMessages> accumulator;
 //  GetPmidAccountResponseFromPmidManagerToPmidNode message;
 //  GetPmidAccountResponseFromPmidManagerToPmidNode::Sender sender;
@@ -105,7 +105,7 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 //  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
 //            accumulator.AddPendingRequest(message, group_source, add_request_predicate));
 //  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
-//}
+//  }
 
 
 // TEST(AccumulatorTest, BEH_PushSingleResult) {

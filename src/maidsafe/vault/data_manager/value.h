@@ -43,7 +43,7 @@ class DataManagerValue {
   DataManagerValue();
   explicit DataManagerValue(const std::string& serialised_value);
   DataManagerValue(DataManagerValue&& other) MAIDSAFE_NOEXCEPT;
-  DataManagerValue(uint64_t size);
+  explicit DataManagerValue(uint64_t size);
   std::string Serialise() const;
 
   DataManagerValue& operator=(const DataManagerValue& other);
