@@ -129,8 +129,8 @@ TEST(AccumulatorTest, BEH_HandledGroupRequest) {
             accumulator.AddPendingRequest(message, group_source4, checker));
 }
 
-TEST(AccumulatorTest, BEH_WaitingRequestAfterEviction) {
-  detail::Parameters::default_lifetime = std::chrono::seconds(3);
+TEST(AccumulatorTest, BEH_WaitingGroupRequestAfterEviction) {
+  detail::Parameters::default_lifetime = std::chrono::seconds(1);
   Accumulator<PmidNodeServiceMessages> accumulator;
   Accumulator<PmidNodeServiceMessages>::AddRequestChecker
       checker(routing::Parameters::group_size - 1);
@@ -155,11 +155,49 @@ TEST(AccumulatorTest, BEH_WaitingRequestAfterEviction) {
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
             accumulator.AddPendingRequest(message, group_source11, checker));
 
-  Sleep(std::chrono::seconds(3));
+  Sleep(std::chrono::seconds(1));
 
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
             accumulator.AddPendingRequest(message, group_source20, checker));
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source12, checker));
+  detail::Parameters::default_lifetime = std::chrono::seconds(300);
+}
+
+TEST(AccumulatorTest, BEH_TwoSuccessfulGroupRequestsDifferingByGroupId) {
+  Accumulator<PmidNodeServiceMessages> accumulator;
+  Accumulator<PmidNodeServiceMessages>::AddRequestChecker
+      checker(routing::Parameters::group_size - 1);
+  PutRequestFromPmidManagerToPmidNode message;
+
+  routing::GroupId group_id1(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::SingleId sender_id10(NodeId(crypto::SHA512Hash(RandomString(64)))),
+                    sender_id11(NodeId(crypto::SHA512Hash(RandomString(64)))),
+                    sender_id12(NodeId(crypto::SHA512Hash(RandomString(64))));
+
+  routing::GroupId group_id2(NodeId(crypto::SHA512Hash(RandomString(64))));
+
+  routing::GroupSource group_source10(group_id1, sender_id10),
+                       group_source11(group_id1, sender_id11),
+                       group_source12(group_id1, sender_id12);
+
+  routing::GroupSource group_source20(group_id2, sender_id10),
+                       group_source21(group_id2, sender_id11),
+                       group_source22(group_id2, sender_id12);
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source10, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source11, checker));
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source20, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source21, checker));
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
+            accumulator.AddPendingRequest(message, group_source22, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
             accumulator.AddPendingRequest(message, group_source12, checker));
 }
 
