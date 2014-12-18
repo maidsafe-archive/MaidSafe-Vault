@@ -73,7 +73,7 @@ MaidManagerService::MaidManagerService(const passport::Pmid& pmid, routing::Rout
 void MaidManagerService::HandleCreateMaidAccount(const passport::PublicMaid& public_maid,
     const passport::PublicAnmaid& public_anmaid, nfs::MessageId message_id) {
   Key key(public_maid.name());
-  
+
   nfs::MessageId maid_hash_message_id(vault::HashStringToMessageId(public_maid.name()->string()));
   nfs::MessageId anmaid_hash_message_id(vault::HashStringToMessageId(
                                                                  public_anmaid.name()->string()));

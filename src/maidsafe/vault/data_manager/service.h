@@ -75,7 +75,7 @@ class DataManagerService {
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
   using AccountType = std::pair<Key, DataManagerValue>;
-  using LruCacheGetResult = boost::expected<NonEmptyString, CommonErrors>;
+  using LruCacheGetResult = boost::expected<NonEmptyString, maidsafe_error>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,

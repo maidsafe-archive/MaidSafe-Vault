@@ -161,7 +161,7 @@ CacheHandlerService::HandleMessage(
 template <typename Data>
 boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,
                                                     IsShortTermCacheable) {
-  using LruCacheGetResult = boost::expected<NonEmptyString, CommonErrors>;
+  using LruCacheGetResult = boost::expected<NonEmptyString, maidsafe_error>;
   LruCacheGetResult get_result;
   {
     std::lock_guard<decltype(memory_cache_mutex_)> lock(memory_cache_mutex_);

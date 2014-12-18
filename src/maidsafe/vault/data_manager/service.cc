@@ -290,7 +290,7 @@ uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::Message
     detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
        this, *pmid_name, get_result.value(), message_id);
     boost::apply_visitor(send_put_request_visitor, data_name);
-  } else if (get_result.error() == CommonErrors::no_such_element) {
+  } else if (get_result.error().code() == make_error_code(CommonErrors::no_such_element)) {
       LOG(kError) << HexSubstr(key.name.string()) << " not in temp storage ";
       detail::DataManagerGetForReplicationVisitor<DataManagerService>
           get_for_replication(this, storing_pmid_nodes);
