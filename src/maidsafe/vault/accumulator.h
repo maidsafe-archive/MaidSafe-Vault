@@ -171,7 +171,7 @@ template <typename T>
 bool Accumulator<T>::AddRequest(const T& request, const routing::GroupSource& source) {
   for (auto& pending_request : pending_requests_) {
     bool identical_requests(pending_request.Request() == request);
-    if (pending_request.HasSource(source) && identical_requests) {
+    if (identical_requests && pending_request.HasSource(source)) {
       LOG(kWarning) << "Accumulator<T>::AddRequest, request with message id "
                     << boost::apply_visitor(detail::MessageIdRequestVisitor(), request).data
                     << " from sender " << HexSubstr(source.sender_id->string())
@@ -246,8 +246,6 @@ bool Accumulator<T>::PendingRequest::HasSource(const routing::GroupSource& sourc
 
 template <typename T>
 bool Accumulator<T>::PendingRequest::SameGroupId(const routing::GroupSource& source) const {
-  if (sources_.empty())
-    return false;
   return (sources_.begin()->group_id == source.group_id);
 }
 
@@ -260,8 +258,8 @@ size_t Accumulator<T>::PendingRequest::NumberOfRequests() const { return sources
 template <typename T>
 bool Accumulator<T>::PendingRequest::HasExpired() const {
   std::chrono::steady_clock::time_point now(std::chrono::steady_clock::now());
-  std::chrono::seconds lifetime(
-    std::chrono::duration_cast<std::chrono::seconds>(now - time_).count());
+  std::chrono::seconds
+      lifetime(std::chrono::duration_cast<std::chrono::seconds>(now - time_).count());
   return detail::Parameters::default_lifetime <= lifetime;
 }
 
