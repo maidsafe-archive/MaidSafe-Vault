@@ -85,10 +85,10 @@ TEST(AccumulatorTest, BEH_SuccessfulGroupRequest) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id(NodeId(crypto::SHA512Hash(RandomString(64))));
-  routing::SingleId sender_id1(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id2(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id3(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::GroupId group_id(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id1(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id2(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id3(NodeId{RandomString(NodeId::kSize)});
 
   routing::GroupSource group_source1(group_id, sender_id1),
                        group_source2(group_id, sender_id2),
@@ -108,11 +108,11 @@ TEST(AccumulatorTest, BEH_HandledGroupRequest) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id(NodeId(crypto::SHA512Hash(RandomString(64))));
-  routing::SingleId sender_id1(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id2(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id3(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id4(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::GroupId group_id(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id1(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id2(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id3(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id4(NodeId{RandomString(NodeId::kSize)});
 
   routing::GroupSource group_source1(group_id, sender_id1),
                        group_source2(group_id, sender_id2),
@@ -130,19 +130,19 @@ TEST(AccumulatorTest, BEH_HandledGroupRequest) {
 }
 
 TEST(AccumulatorTest, BEH_WaitingGroupRequestAfterEviction) {
-  detail::Parameters::default_lifetime = std::chrono::seconds(1);
-  Accumulator<PmidNodeServiceMessages> accumulator;
+  std::chrono::steady_clock::duration duration(std::chrono::seconds(1));
+  Accumulator<PmidNodeServiceMessages> accumulator(duration);
   Accumulator<PmidNodeServiceMessages>::AddRequestChecker
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id1(NodeId(crypto::SHA512Hash(RandomString(64))));
-  routing::SingleId sender_id10(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id11(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id12(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::GroupId group_id1(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id10(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id11(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id12(NodeId{RandomString(NodeId::kSize)});
 
-  routing::GroupId group_id2(NodeId(crypto::SHA512Hash(RandomString(64))));
-  routing::SingleId sender_id20(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::GroupId group_id2(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id20(NodeId{RandomString(NodeId::kSize)});
 
   routing::GroupSource group_source10(group_id1, sender_id10),
                        group_source11(group_id1, sender_id11),
@@ -155,13 +155,12 @@ TEST(AccumulatorTest, BEH_WaitingGroupRequestAfterEviction) {
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
             accumulator.AddPendingRequest(message, group_source11, checker));
 
-  Sleep(std::chrono::seconds(1));
+  Sleep(duration);
 
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
             accumulator.AddPendingRequest(message, group_source20, checker));
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
             accumulator.AddPendingRequest(message, group_source12, checker));
-  detail::Parameters::default_lifetime = std::chrono::seconds(300);
 }
 
 TEST(AccumulatorTest, BEH_TwoSuccessfulGroupRequestsDifferingByGroupId) {
@@ -170,12 +169,12 @@ TEST(AccumulatorTest, BEH_TwoSuccessfulGroupRequestsDifferingByGroupId) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id1(NodeId(crypto::SHA512Hash(RandomString(64))));
-  routing::SingleId sender_id10(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id11(NodeId(crypto::SHA512Hash(RandomString(64)))),
-                    sender_id12(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::GroupId group_id1(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id10(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id11(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id12(NodeId{RandomString(NodeId::kSize)});
 
-  routing::GroupId group_id2(NodeId(crypto::SHA512Hash(RandomString(64))));
+  routing::GroupId group_id2(NodeId{RandomString(NodeId::kSize)});
 
   routing::GroupSource group_source10(group_id1, sender_id10),
                        group_source11(group_id1, sender_id11),
