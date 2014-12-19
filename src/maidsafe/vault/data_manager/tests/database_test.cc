@@ -175,6 +175,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target being the first
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     std::vector<PmidName> local_pmid_nodes;
     std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
     local_pmid_nodes[0] = pmid_name;
@@ -188,6 +189,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target in the middle
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     std::vector<PmidName> local_pmid_nodes;
     std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
     local_pmid_nodes[3] = pmid_name;
@@ -201,6 +203,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target being the only pmid_node
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     ActionDataManagerAddPmid action_add_pmid(pmid_name);
     db.Commit(key, action_add_pmid);
     auto result(db.GetRelatedAccounts(pmid_name));
