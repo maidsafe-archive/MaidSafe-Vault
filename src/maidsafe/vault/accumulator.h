@@ -102,15 +102,13 @@ class Accumulator {
   AddResult AddPendingRequest(const T& request, const routing::SingleRelaySource& source,
                               AddCheckerFunctor checker);
 
-  size_t Check(const T& request, const routing::GroupSource& source);
-
  private:
   Accumulator(const Accumulator&);
   Accumulator& operator=(const Accumulator&);
   Accumulator(Accumulator&&);
   Accumulator& operator=(Accumulator&&);
 
-  bool AddRequest(const T& request, const routing::GroupSource& source);
+  size_t AddRequest(const T& request, const routing::GroupSource& source);
 
   std::deque<PendingRequest> pending_requests_;
   std::chrono::steady_clock::duration time_to_live_;
@@ -123,9 +121,7 @@ Accumulator<T>::Accumulator(const std::chrono::steady_clock::duration& time_to_l
 template <typename T>
 typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
     const T& request, const routing::GroupSource& source, AddCheckerFunctor checker) {
-  if (!AddRequest(request, source))
-    return AddResult::kWaiting;
-  return checker(Check(request, source));
+  return checker(AddRequest(request, source));
 }
 
 template <typename T>
@@ -142,16 +138,23 @@ typename Accumulator<T>::AddResult Accumulator<T>::AddPendingRequest(
 }
 
 template <typename T>
-size_t Accumulator<T>::Check(const T& request, const routing::GroupSource& source) {
+size_t Accumulator<T>::AddRequest(const T& request, const routing::GroupSource& source) {
   size_t number_of_requests(0);
   bool request_found(false);
   auto it(pending_requests_.begin());
 
   while (it != pending_requests_.end()) {
     if (!request_found) {
-      if (it->Request() == request && it->SameGroupId(source)) {
+      bool identical_requests(it->Request() == request);
+      if (identical_requests && it->HasSource(source)) {
         number_of_requests = it->NumberOfRequests();
         request_found = true;
+      } else if (identical_requests) {
+        if (it->SameGroupId(source)) {
+          it->AddSource(source);
+          number_of_requests = it->NumberOfRequests();
+          request_found = true;
+        }
       }
     }
     if (it->HasExpired())
@@ -160,25 +163,11 @@ size_t Accumulator<T>::Check(const T& request, const routing::GroupSource& sourc
       ++it;
   }
 
-  return number_of_requests;
-}
-
-template <typename T>
-bool Accumulator<T>::AddRequest(const T& request, const routing::GroupSource& source) {
-  for (auto& pending_request : pending_requests_) {
-    bool identical_requests(pending_request.Request() == request);
-    if (identical_requests && pending_request.HasSource(source)) {
-      return false;
-    } else if (identical_requests) {
-      if (!pending_request.SameGroupId(source))
-        continue;
-      pending_request.AddSource(source);
-      return true;
-    }
+  if (!request_found) {
+    pending_requests_.push_back(PendingRequest(request, source, time_to_live_));
+    number_of_requests = 1;
   }
-
-  pending_requests_.push_back(PendingRequest(request, source, time_to_live_));
-  return true;
+  return number_of_requests;
 }
 
 template <typename T>
