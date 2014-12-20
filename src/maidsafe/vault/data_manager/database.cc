@@ -35,23 +35,23 @@ namespace maidsafe {
 
 namespace vault {
 
-DataManagerDataBase::DataManagerDataBase(const boost::filesystem::path& db_path)
-  : data_base_(), kDbPath_(db_path), write_operations_(0) {
-  data_base_.reset(new sqlite::Database(db_path,
+DataManagerDatabase::DataManagerDatabase(const boost::filesystem::path& db_path)
+  : database_(), kDbPath_(db_path), write_operations_(0) {
+  database_.reset(new sqlite::Database(db_path,
                                         sqlite::Mode::kReadWriteCreate));
   std::string query(
       "CREATE TABLE IF NOT EXISTS DataManagerAccounts ("
       "Chunk_Name TEXT  PRIMARY KEY NOT NULL, Chunk_Size TEXT NOT NULL,"
       "Storage_Nodes TEXT NOT NULL);");
-  sqlite::Transaction transaction{*data_base_};
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Transaction transaction{*database_};
+  sqlite::Statement statement{*database_, query};
   statement.Step();
   transaction.Commit();
 }
 
-DataManagerDataBase::~DataManagerDataBase() {
+DataManagerDatabase::~DataManagerDatabase() {
   try {
-    data_base_.reset();
+    database_.reset();
     boost::filesystem::remove_all(kDbPath_);
   }
   catch (const std::exception& e) {
@@ -59,7 +59,7 @@ DataManagerDataBase::~DataManagerDataBase() {
   }
 }
 
-std::unique_ptr<DataManager::Value> DataManagerDataBase::Commit(const DataManager::Key& key,
+std::unique_ptr<DataManager::Value> DataManagerDatabase::Commit(const DataManager::Key& key,
     std::function<detail::DbAction(std::unique_ptr<DataManager::Value>& value)> functor) {
   assert(functor);
   std::unique_ptr<DataManager::Value> value;
@@ -68,17 +68,17 @@ std::unique_ptr<DataManager::Value> DataManagerDataBase::Commit(const DataManage
   }
   catch (const maidsafe_error& error) {
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
-      LOG(kError) << "DataManagerDataBase::Commit unknown db error "
+      LOG(kError) << "DataManagerDatabase::Commit unknown db error "
                   << boost::diagnostic_information(error);
       throw;  // For db errors
     }
   }
   if (detail::DbAction::kPut == functor(value)) {
     assert(value);
-    LOG(kInfo) << "DataManagerDataBase::Commit putting entry";
+    LOG(kInfo) << "DataManagerDatabase::Commit putting entry";
     Put(key, std::move(*value));
   } else {
-    LOG(kInfo) << "DataManagerDataBase::Commit deleting entry";
+    LOG(kInfo) << "DataManagerDatabase::Commit deleting entry";
     if (!value)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::null_pointer));
     Delete(key);
@@ -87,16 +87,16 @@ std::unique_ptr<DataManager::Value> DataManagerDataBase::Commit(const DataManage
   return nullptr;
 }
 
-void DataManagerDataBase::Put(const DataManager::Key& key, const DataManager::Value& value) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+void DataManagerDatabase::Put(const DataManager::Key& key, const DataManager::Value& value) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
-  sqlite::Transaction transaction{*data_base_};
+  sqlite::Transaction transaction{*database_};
   std::string query(
       "INSERT OR REPLACE INTO DataManagerAccounts (Chunk_Name, Chunk_size,"
       " Storage_Nodes) VALUES (?, ?, ?)");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
 
   std::string storage_nodes;
   for (auto& storage_node : value.AllPmids())
@@ -117,13 +117,13 @@ void DataManagerDataBase::Put(const DataManager::Key& key, const DataManager::Va
   transaction.Commit();
 }
 
-DataManager::Value DataManagerDataBase::Get(const DataManager::Key& key) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+DataManager::Value DataManagerDatabase::Get(const DataManager::Key& key) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   DataManager::Value value;
   std::string query(
       "SELECT Chunk_Size, Storage_Nodes FROM DataManagerAccounts WHERE Chunk_Name=?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   auto chunk_name(EncodeKey(key));
   LOG(kVerbose) << "looking for chunk " << chunk_name;
   statement.BindText(1, chunk_name);
@@ -136,29 +136,29 @@ DataManager::Value DataManagerDataBase::Get(const DataManager::Key& key) {
   return value;
 }
 
-void DataManagerDataBase::Delete(const DataManager::Key& key) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+void DataManagerDatabase::Delete(const DataManager::Key& key) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
-  sqlite::Transaction transaction{*data_base_};
+  sqlite::Transaction transaction{*database_};
   std::string query("DELETE FROM DataManagerAccounts WHERE Chunk_Name=?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   auto key_string(EncodeKey(key));
   statement.BindText(1, key_string);
   statement.Step();
   transaction.Commit();
 }
 
-std::map<DataManager::Key, DataManager::Value> DataManagerDataBase::GetRelatedAccounts(
+std::map<DataManager::Key, DataManager::Value> DataManagerDatabase::GetRelatedAccounts(
     const PmidName& pmid_name) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   std::map<DataManager::Key, DataManager::Value> result;
   std::string query(
       "SELECT * FROM DataManagerAccounts WHERE Storage_Nodes LIKE ?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   std::string target('%' + NodeId(pmid_name->string()).ToStringEncoded(
                         NodeId::EncodingType::kHex) + '%');
   statement.BindText(1, target);
@@ -170,16 +170,16 @@ std::map<DataManager::Key, DataManager::Value> DataManagerDataBase::GetRelatedAc
   return std::move(result);
 }
 
-DataManager::TransferInfo DataManagerDataBase::GetTransferInfo(
+DataManager::TransferInfo DataManagerDatabase::GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   std::vector<DataManager::Key> prune_vector;
   DataManager::TransferInfo transfer_info;
 
   std::string query("SELECT * from DataManagerAccounts");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   while (statement.Step() == sqlite::StepResult::kSqliteRow) {
     DataManager::Key key(ComposeKey(statement.ColumnText(0)));
     DataManager::Value value(ComposeValue(statement.ColumnText(1), statement.ColumnText(2)));
@@ -212,20 +212,20 @@ DataManager::TransferInfo DataManagerDataBase::GetTransferInfo(
   return transfer_info;
 }
 
-void DataManagerDataBase::HandleTransfer(const std::vector<DataManager::KvPair>& contents) {
-  LOG(kVerbose) << "DataManager AcoccountTransfer DataManagerDataBase::HandleTransfer";
+void DataManagerDatabase::HandleTransfer(const std::vector<DataManager::KvPair>& contents) {
+  LOG(kVerbose) << "DataManager AcoccountTransfer DataManagerDatabase::HandleTransfer";
   for (const auto& kv_pair : contents) {
     try {
       Get(kv_pair.first);
     }
     catch (const maidsafe_error& error) {
-      LOG(kInfo) << "DataManager AcoccountTransfer DataManagerDataBase::HandleTransfer "
+      LOG(kInfo) << "DataManager AcoccountTransfer DataManagerDatabase::HandleTransfer "
                  << error.what();
       if ((error.code() != make_error_code(CommonErrors::no_such_element)) &&
           (error.code() != make_error_code(VaultErrors::no_such_account))) {
         throw;  // For db errors
       } else {
-        LOG(kInfo) << "DataManager AcoccountTransfer DataManagerDataBase::HandleTransfer "
+        LOG(kInfo) << "DataManager AcoccountTransfer DataManagerDatabase::HandleTransfer "
                    << "inserting account " << HexSubstr(kv_pair.first.name.string());
         Put(kv_pair.first, kv_pair.second);
       }
@@ -233,7 +233,7 @@ void DataManagerDataBase::HandleTransfer(const std::vector<DataManager::KvPair>&
   }
 }
 
-DataManager::Value DataManagerDataBase::ComposeValue(const std::string& chunk_size,
+DataManager::Value DataManagerDatabase::ComposeValue(const std::string& chunk_size,
                                                      const std::string& pmids) const {
   DataManager::Value value;
 //  LOG(kVerbose) << "chunk_size is " << chunk_size;
@@ -249,9 +249,9 @@ DataManager::Value DataManagerDataBase::ComposeValue(const std::string& chunk_si
   return value;
 }
 
-void DataManagerDataBase::CheckPoint() {
+void DataManagerDatabase::CheckPoint() {
   if (++write_operations_ > 1000) {
-    data_base_->CheckPoint();
+    database_->CheckPoint();
     write_operations_ = 0;
   }
 }
