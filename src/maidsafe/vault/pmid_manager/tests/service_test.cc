@@ -152,7 +152,8 @@ TEST_F(PmidManagerServiceTest, BEH_PutThenDelete) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(NodeId(pmid_.name()->string())));
   PmidManager::Key key(pmid_.name());
-  AddGroup(PmidName(pmid_.name()), PmidManagerValue());
+  // PmidManager needs to handle the situation that put request to non-registered
+//  AddGroup(PmidName(pmid_.name()), PmidManagerValue());
 
   {  // Put
     ActionPmidManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
@@ -162,7 +163,7 @@ TEST_F(PmidManagerServiceTest, BEH_PutThenDelete) {
             action_put, group_source));
     SendSync<PmidManager::UnresolvedPut>(group_unresolved_action, group_source);
     auto value(GetValue(key));
-    EXPECT_TRUE(value.stored_total_size == kTestChunkSize);
+    EXPECT_EQ(kTestChunkSize, value.stored_total_size);
   }
   {  //  Delete
     ActionPmidManagerDelete action_delete(kTestChunkSize, false, false);
