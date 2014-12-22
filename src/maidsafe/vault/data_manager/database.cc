@@ -204,6 +204,8 @@ DataManager::TransferInfo DataManagerDatabase::GetTransferInfo(
       }
     } else {
 //      VLOG(VisualiserAction::kRemoveAccount, key.name);
+      LOG(kInfo) << "Db::GetTransferInfo current node is not in the closest of account "
+                 << HexSubstr(key.name.string());
       prune_vector.push_back(key);
     }
   }
