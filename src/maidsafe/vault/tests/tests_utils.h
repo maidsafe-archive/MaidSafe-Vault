@@ -97,6 +97,9 @@ template <>
 nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>();
 
 template <>
+nfs_vault::DiffSize CreateContent<nfs_vault::DiffSize>();
+
+template <>
 nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>();
 
 template <typename MessageType>

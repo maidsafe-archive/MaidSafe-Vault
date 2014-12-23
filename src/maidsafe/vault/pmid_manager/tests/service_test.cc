@@ -113,9 +113,20 @@ PmidManagerServiceTest::GetUnresolvedActions<PmidManager::UnresolvedDelete>() {
   return pmid_manager_service_.sync_deletes_.GetUnresolvedActions();
 }
 
+template <>
+std::vector<std::unique_ptr<PmidManager::UnresolvedCreateAccount>>
+PmidManagerServiceTest::GetUnresolvedActions<PmidManager::UnresolvedCreateAccount>() {
+ return pmid_manager_service_.sync_create_account_.GetUnresolvedActions();
+}
+
+template <>
+std::vector<std::unique_ptr<PmidManager::UnresolvedUpdateAccount>>
+PmidManagerServiceTest::GetUnresolvedActions<PmidManager::UnresolvedUpdateAccount>() {
+return pmid_manager_service_.sync_update_account_.GetUnresolvedActions();
+}
+
 TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
-  //  PutRequestFromDataManagerToPmidManager
-  {
+  { //  PutRequestFromDataManagerToPmidManager
     auto content(CreateContent<PutRequestFromDataManagerToPmidManager::Contents>());
     auto put_request(CreateMessage<PutRequestFromDataManagerToPmidManager>(content));
     auto group_source(CreateGroupSource(NodeId(put_request.contents->name.raw_name.string())));
@@ -123,28 +134,43 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
                                      routing::GroupId(this->routing_.kNodeId())));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedPut>().size() == 0);
   }
-
-  //  BEH_PutFailureFromPmidNodeToPmidManager)
-  {
+  { //  PutFailureFromPmidNodeToPmidManager
     AddGroup(PmidName(pmid_.name()), PmidManagerValue());
     auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
     auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
     EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
                                        routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
                                        routing::GroupId(NodeId(pmid_.name()->string()))));
-    EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
+    EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedPut>().size() == 0);
     auto value(GetValue(PmidName(pmid_.name())));
     EXPECT_TRUE(value.offered_space == 0);
   }
-
-  //  BEH_DeleteRequestFromDataManagerToPmidManager)
-  {
+  { // DeleteRequestFromDataManagerToPmidManager
     auto content(CreateContent<DeleteRequestFromDataManagerToPmidManager::Contents>());
     auto delete_request(CreateMessage<DeleteRequestFromDataManagerToPmidManager>(content));
     auto group_source(CreateGroupSource(NodeId(content.name.raw_name.string())));
     EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, delete_request, group_source,
                                      routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
+  }
+  { // CreatePmidAccountRequestFromMaidManagerToPmidManager
+    auto content(CreateContent<CreatePmidAccountRequestFromMaidManagerToPmidManager::Contents>());
+    auto create_account_request(
+            CreateMessage<CreatePmidAccountRequestFromMaidManagerToPmidManager>(content));
+    passport::Anmaid anmaid;
+    passport::Maid maid(anmaid);
+    auto group_source(CreateGroupSource(NodeId(maid.name()->string())));
+    EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, create_account_request, group_source,
+                                    routing::GroupId(NodeId(pmid_.name()->string()))));
+    EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedCreateAccount>().size() == 0);
+  }
+  { // UpdateAccountFromDataManagerToPmidManager
+    auto content(CreateContent<UpdateAccountFromDataManagerToPmidManager::Contents>());
+    auto create_account_request(CreateMessage<UpdateAccountFromDataManagerToPmidManager>(content));
+    auto group_source(CreateGroupSource(NodeId(RandomString(64))));
+    EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, create_account_request, group_source,
+                                    routing::GroupId(NodeId(pmid_.name()->string()))));
+    EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedUpdateAccount>().size() == 0);
   }
 }
 
