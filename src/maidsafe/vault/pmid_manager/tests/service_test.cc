@@ -95,6 +95,26 @@ void PmidManagerServiceTest::SendSync<PmidManager::UnresolvedDelete>(
       group_source);
 }
 
+template <>
+void PmidManagerServiceTest::SendSync<PmidManager::UnresolvedCreateAccount>(
+    const std::vector<PmidManager::UnresolvedCreateAccount>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<PmidManagerService, PmidManager::UnresolvedCreateAccount,
+                                    SynchroniseFromPmidManagerToPmidManager>(
+      &pmid_manager_service_, pmid_manager_service_.sync_create_account_, unresolved_actions,
+      group_source);
+}
+
+template <>
+void PmidManagerServiceTest::SendSync<PmidManager::UnresolvedUpdateAccount>(
+    const std::vector<PmidManager::UnresolvedUpdateAccount>& unresolved_actions,
+    const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<PmidManagerService, PmidManager::UnresolvedUpdateAccount,
+                                    SynchroniseFromPmidManagerToPmidManager>(
+      &pmid_manager_service_, pmid_manager_service_.sync_update_account_, unresolved_actions,
+      group_source);
+}
+
 template <typename UnresolvedActionType>
 std::vector<std::unique_ptr<UnresolvedActionType>> PmidManagerServiceTest::GetUnresolvedActions() {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
@@ -171,6 +191,42 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
     EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, create_account_request, group_source,
                                     routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedUpdateAccount>().size() == 0);
+  }
+}
+
+TEST_F(PmidManagerServiceTest, BEH_Create_Update_PmidAccount) {
+  passport::Anmaid anmaid;
+  passport::Maid maid(anmaid);
+  auto group_source(CreateGroupSource(NodeId(maid.name()->string())));
+  PmidManager::SyncGroupKey key(PmidManager::Key(pmid_.name()));
+  EXPECT_ANY_THROW(GetValue(PmidManager::Key(key.group_name())));
+  {  // CreatePmidAccount
+    ActionCreatePmidAccount action_create_account;
+    auto group_unresolved_action(
+        CreateGroupUnresolvedAction<PmidManager::UnresolvedCreateAccount>(
+            key, action_create_account, group_source));
+    SendSync<PmidManager::UnresolvedCreateAccount>(group_unresolved_action, group_source);
+    try {
+      auto value(GetValue(PmidManager::Key(key.group_name())));
+      EXPECT_EQ(0, value.stored_total_size);
+    } catch (std::exception& e) {
+      EXPECT_TRUE(false) << boost::diagnostic_information(e);
+    }
+  }
+  {  // UpdatePmidAccount
+    auto size_diff(RandomInt32() % kMaxChunkSize - RandomInt32() % kMaxChunkSize);
+    ActionPmidManagerUpdateAccount action_update_account(size_diff);
+    auto group_unresolved_action(
+        CreateGroupUnresolvedAction<PmidManager::UnresolvedUpdateAccount>(
+            key, action_update_account, group_source));
+    SendSync<PmidManager::UnresolvedUpdateAccount>(group_unresolved_action, group_source);
+    try {
+      auto value(GetValue(PmidManager::Key(key.group_name())));
+      EXPECT_EQ(0, value.stored_total_size);
+      EXPECT_EQ(size_diff, value.lost_total_size);
+    } catch (std::exception& e) {
+      EXPECT_TRUE(false) << boost::diagnostic_information(e);
+    }
   }
 }
 
