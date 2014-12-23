@@ -198,6 +198,18 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
                                        routing::SingleSource(maid_node_id),
                                        routing::GroupId(data_name_id)));
   }
+  //  GetRequestFromMaidNodePartialToDataManager
+  {
+    NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
+    auto content(CreateContent<nfs::GetRequestFromMaidNodePartialToDataManager::Contents>());
+    data_name_id = NodeId(content.raw_name.string());
+    auto get_request(CreateMessage<nfs::GetRequestFromMaidNodePartialToDataManager>(content));
+    EXPECT_NO_THROW(SingleRelaySendsToGroup(
+        &data_manager_service_, get_request,
+        routing::SingleRelaySource(routing::SingleSource(maid_node_id), maid_node_id,
+                                   routing::SingleSource(maid_node_id)),
+        routing::GroupId(data_name_id)));
+  }
   //  GetResponseFromPmidNodeToDataManager
   {
     NodeId pmid_node_id(RandomString(NodeId::kSize));

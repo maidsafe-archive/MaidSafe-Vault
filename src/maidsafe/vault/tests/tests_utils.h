@@ -135,6 +135,13 @@ void SingleSendsToGroup(ServiceType* service, const MessageType& message,
   service->HandleMessage(message, single_source, group_id);
 }
 
+template <typename ServiceType, typename MessageType>
+void SingleRelaySendsToGroup(ServiceType* service, const MessageType& message,
+                        const routing::SingleRelaySource& single_source,
+                        const routing::GroupId& group_id) {
+  service->HandleMessage(message, single_source, group_id);
+}
+
 template <typename DataNameType>
 std::vector<routing::GroupSource> CreateGroupSource(const DataNameType& data_name) {
   return CreateGroupSource(NodeId(data_name.value.string()));
