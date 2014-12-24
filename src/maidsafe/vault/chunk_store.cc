@@ -78,8 +78,7 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
       std::vector<std::future<UsedSpace>> futures;
       for (uint32_t i = 0; i < 16 && !dirs_to_do.empty(); ++i) {
         auto temp_copy(dirs_to_do.back());
-        auto future = std::async(std::launch::async,
-                                 [=] { return GetUsedSpace(temp_copy); });
+        auto future = std::async(&GetUsedSpace, temp_copy);
         dirs_to_do.pop_back();
         futures.push_back(std::move(future));
       }
