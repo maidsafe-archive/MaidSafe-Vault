@@ -69,15 +69,17 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group, do a signature check and then perform action() which sends the message to MpidManagers(B) and remove the message.
 6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
 7. When Mpid(A) decided to remove the MpidMessage from the OutBox, when the message hasn't got retrived by Mpid(B). The MpidManagers(A) group needs not only remove the correspondent MpidMessage from their OutBox of Mpid(A), but also send a notification to the group of MpidManagers(B) so they can remove the correspodent MpidAlert from their InBox of Mpid(B).
+8. When Mpid(B) send a request to fetch message head only, it will directly goes to MpidManagers(A) and get response. This will not trigger the removal of such message in MpidManagers(A).
 
 MPID Messaging Client
 --------------
 The messaging client, as described as Mpid(X) in the above section, can be named as nfs_mpid_client. It shall provide following key functionalities :
+```
 1. Send Message (Put from sender)
 2. Retrieve Full Message (Get from receiver)
-4. Retrieve Message Head only (Get from receiver)
-3. Remove sent Message (Delete from sender)
-4. Accept Message Alert (when ```PUSH``` model used) and/or Retrive Message Alert (when ```PULL``` model used)
+3. Retrieve Message Head only (Get from receiver)
+4. Remove sent Message (Delete from sender)
+5. Accept Message Alert (when ```PUSH``` model used) and/or Retrive Message Alert (when ```PULL``` model used)
 
 When ```PUSH``` model is used, nfs_mpid_client is expected to have it's own routing object (not sharing with maid_nfs). So it can connect to network directly allowing the MpidManagers around it to tell the connection status directly.
 
