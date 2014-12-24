@@ -80,7 +80,7 @@ The messaging client, as described as Mpid(X) in the above section, can be named
 3. Retrieve Message Head only (Get from receiver)
 4. Remove sent Message (Delete from sender)
 5. Accept Message Alert (when ```PUSH``` model used) and/or Retrive Message Alert (when ```PULL``` model used)
-
+```
 When ```PUSH``` model is used, nfs_mpid_client is expected to have it's own routing object (not sharing with maid_nfs). So it can connect to network directly allowing the MpidManagers around it to tell the connection status directly.
 
 Such seperate routing object is not required when ```PULL``` model is used. It may also have the benefit of saving the battery life on mobile device as the client app doesn't need to keeps nfs_mpid_client running all the time.
