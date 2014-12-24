@@ -6,7 +6,7 @@ Design document 1.0
 Introduction
 ============
 
-In MaidSafe the ability for secured messaging is obvious and may take many forms, mail like, IM like etc. This document outlines the system componenets and design for general communications infrastructure and security. The assumption is that all personal communications are only handled by a Structured Data Version ([SDV](https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)) type container. This is described in Future Work section. 
+In MaidSafe the ability for secured messaging is obvious and may take many forms, mail like, IM like etc. This document outlines the system componenets and design for general communications infrastructure and security. 
 
 Motivation
 ==========
@@ -32,12 +32,14 @@ This is a simple data structure for now and will be a ```std::map``` ordered by 
 ```c++
 struct MpidMessage {
   PublicMpid::Name sender;
-  std::vector<PublicMpid::Name> recipients;
+  PublicMpid::Name recipient;
   std::string message, body;
   Identity id, parent_id;
 };
 
 ```
+
+It needs to be highlighted that each above MpidMessage only targets one recipient. When a sender sending a message to multiple recipients, multiple MpidMessages will be created in the ```OutBox``` . This is to ensure spammers will run out of limited resource quickly, so the network doesn't have to suffer from abused usage.
 
 Network Inbox
 -------------
@@ -66,8 +68,9 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 4. Mpid(B) then sends a ```Signed(retrieve_message)``` to the MpidManager(B) group who send this on to the MpidManagers(A). This message is of the form ```retrieve_message(MpidAlert, MpidPacket)[signed by Mpid(B)]``` 
 5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group, do a signature check and then perform action() which sends the message to MpidManagers(B) and remove the message.
 6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
+7. When Mpid(A) decided to remove the MpidMessage from the OutBox, when the message hasn't got retrived by Mpid(B). The MpidManagers(A) group needs not only remove the correspondent MpidMessage from their OutBox of Mpid(A), but also send a notification to the group of MpidManagers(B) so they can remove the correspodent MpidAlert from their InBox of Mpid(B).
 
 Future Works
 ============
 
-This proposal implements a container as a std::map, it is assumed this will fall over to become an SDV when/if SDV is able to insert/delete single elements in a branch (possibly doubly linked list type). This is considered premature optimisation at this stage of development and requires measuring of the performance/size hit on adding two pointers per node. 
+This proposal implements a container as a std::map, it is assumed this will fall over to become a Structured Data Version ([SDV](https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)) when/if SDV is able to insert/delete single elements in a branch (possibly doubly linked list type). This is considered premature optimisation at this stage of development and requires measuring of the performance/size hit on adding two pointers per node. 
