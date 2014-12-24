@@ -33,7 +33,7 @@ This is a simple data structure for now and will be a ```std::map``` ordered by 
 struct MpidMessage {
   PublicMpid::Name sender;
   PublicMpid::Name recipient;
-  std::string message, body;
+  std::string message_head, message_body;
   Identity id, parent_id;
 };
 
@@ -48,7 +48,7 @@ The network inbox is an even simpler structure and will be again named with the 
 
 ```c++
 struct MpidAlert {
-  Identity message_id,
+  Identity message_id;
   PublicMpid::Name sender;
 };
 ```
@@ -73,13 +73,15 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 MPID Messaging Client
 --------------
 The messaging client, as described as Mpid(X) in the above section, can be named as nfs_mpid_client. It shall provide following key functionalities :
-1. Send Message (Put)
-2. Retrieve Message (Get)
-3. Remove sent Message (Delete)
+1. Send Message (Put from sender)
+2. Retrieve Full Message (Get from receiver)
+4. Retrieve Message Head only (Get from receiver)
+3. Remove sent Message (Delete from sender)
 4. Accept Message Alert (when ```PUSH``` model used) and/or Retrive Message Alert (when ```PULL``` model used)
 
-When ```PUSH``` model is used, nfs_mpid_client is expected to have it's own routing object. So it can connect to network directly allowing the MpidManagers around it to tell its connection status directly.
-Such specific routing object is not required when ```PULL``` model is used. And may also have the benefit of saving the battery life on mobile device as the client app doesn't need to keeps nfs_mpid_client running all the time.
+When ```PUSH``` model is used, nfs_mpid_client is expected to have it's own routing object (not sharing with maid_nfs). So it can connect to network directly allowing the MpidManagers around it to tell the connection status directly.
+
+Such seperate routing object is not required when ```PULL``` model is used. It may also have the benefit of saving the battery life on mobile device as the client app doesn't need to keeps nfs_mpid_client running all the time.
 
 Future Works
 ============
