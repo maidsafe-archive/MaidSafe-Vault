@@ -177,11 +177,6 @@ class MaidManagerService {
   // Only Maid and Anmaid can create account; for all others this is a no-op.
   typedef std::true_type AllowedAccountCreationType;
   typedef std::false_type DisallowedAccountCreationType;
-  template <typename Data>
-  void CreateAccount(const MaidName& account_name, AllowedAccountCreationType);
-  template <typename Data>
-  void CreateAccount(const MaidName& /*account_name*/, DisallowedAccountCreationType) {}
-
   void HandleRemoveAccount(const MaidName& maid_name, nfs::MessageId mesage_id);
 
   // =========================== Sync / AccountTransfer ============================================
