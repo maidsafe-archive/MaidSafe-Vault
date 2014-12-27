@@ -38,7 +38,9 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
       network_health_(-1),
       asio_service_(2),
       routing_(new routing::Routing(vault_config.pmid)),
+#ifdef TESTING
       pmids_from_file_(vault_config.test_config.public_pmid_list),
+#endif
       data_getter_(asio_service_, *routing_),
       public_pmid_helper_(),
       maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(

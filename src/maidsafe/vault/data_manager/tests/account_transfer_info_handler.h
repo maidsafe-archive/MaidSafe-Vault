@@ -82,7 +82,8 @@ class AccountTransferInfoHandler<DataManagerPersona> {
       return resolution;
 
     if (pairs.size() == kAcceptSize_) {
-      if (std::count(std::begin(pairs), std::end(pairs), pairs.front()) == kAcceptSize_)
+      if (std::count(std::begin(pairs), std::end(pairs), pairs.front()) ==
+          static_cast<int>(kAcceptSize_))
         return std::make_pair(AddResult::kSuccess, boost::optional<Value>(pairs.front().second));
       else
        return wait_resolution;
@@ -95,7 +96,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
     assert(resolution_values.size() == kResolutionSize_);
     while (resolution_values.size() >= kAcceptSize_) {
       if (std::count(std::begin(resolution_values), std::end(resolution_values),
-                     resolution_values.back()) >= kAcceptSize_)
+                     resolution_values.back()) >= static_cast<int>(kAcceptSize_))
         return std::make_pair(AddResult::kSuccess,
                               boost::optional<Value>(resolution_values.back()));
       else

@@ -57,6 +57,7 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       data_getter_(data_getter),
       accumulator_mutex_(),
       close_nodes_change_mutex_(),
+      lru_cache_mutex_(),
       stopped_(false),
       accumulator_(),
       close_nodes_change_(),
@@ -68,7 +69,8 @@ DataManagerService::DataManagerService(const passport::Pmid& pmid, routing::Rout
       sync_add_pmids_(NodeId(pmid.name()->string())),
       sync_remove_pmids_(NodeId(pmid.name()->string())),
       account_transfer_(),
-      temp_store_(detail::Parameters::temp_store_size) {}
+      lru_cache_(detail::Parameters::temporary_store_size,
+                 detail::Parameters::temporary_store_time_to_live) {}
 
 // ==================== Put implementation =========================================================
 template <>
@@ -266,15 +268,9 @@ uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::Message
     throw;
   }
   if (storing_pmid_nodes.size() >= detail::Parameters::min_replication_factor) {
-    try {
-      temp_store_.Delete(data_name);
-    }
-    catch (const maidsafe_error& error) {
-      if (error.code() == make_error_code(CommonErrors::no_such_element)) {
-        LOG(kVerbose) << "chunk not available";
-      } else {
-        throw;
-      }
+    {
+      std::lock_guard<decltype(lru_cache_mutex_)> lock(lru_cache_mutex_);
+      lru_cache_.Delete(key);
     }
     return chunk_size;
   }
@@ -284,19 +280,21 @@ uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::Message
     LOG(kError) << "Failed to find a valid close pmid node";
     return chunk_size;
   }
-  try {
-    auto serialises_value(temp_store_.Get(data_name));
-    detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
-       this, *pmid_name, serialises_value, message_id);
-    boost::apply_visitor(send_put_request_visitor, data_name);
+
+  LruCacheGetResult get_result;
+  {
+    std::lock_guard<decltype(lru_cache_mutex_)> lock(lru_cache_mutex_);
+    get_result = lru_cache_.Get(key);
   }
-  catch (const maidsafe_error& error) {
-    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+  if (get_result.valid()) {
+    detail::DataManagerSendPutRequestVisitor<DataManagerService> send_put_request_visitor(
+       this, *pmid_name, get_result.value(), message_id);
+    boost::apply_visitor(send_put_request_visitor, data_name);
+  } else if (get_result.error().code() == make_error_code(CommonErrors::no_such_element)) {
       LOG(kError) << HexSubstr(key.name.string()) << " not in temp storage ";
       detail::DataManagerGetForReplicationVisitor<DataManagerService>
           get_for_replication(this, storing_pmid_nodes);
       boost::apply_visitor(get_for_replication, data_name);
-    }
   }
   return chunk_size;
 }
