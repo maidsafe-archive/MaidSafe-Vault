@@ -230,6 +230,43 @@ TEST_F(PmidManagerServiceTest, BEH_Create_Update_PmidAccount) {
   }
 }
 
+TEST_F(PmidManagerServiceTest, BEH_Update_PmidAccount) {
+  passport::Anmaid anmaid;
+  passport::Maid maid(anmaid);
+  auto group_source(CreateGroupSource(NodeId(maid.name()->string())));
+  PmidManager::SyncGroupKey key(PmidManager::Key(pmid_.name()));
+  auto size_diff(RandomInt32() % kMaxChunkSize - RandomInt32() % kMaxChunkSize);
+  ActionPmidManagerUpdateAccount action_update_account(size_diff);
+  auto unresolved_update_action(
+      CreateGroupUnresolvedAction<PmidManager::UnresolvedUpdateAccount>(
+          key, action_update_account, group_source));
+  {  // Update non-exists account
+    SendSync<PmidManager::UnresolvedUpdateAccount>(unresolved_update_action, group_source);
+    EXPECT_ANY_THROW(GetValue(PmidManager::Key(key.group_name())));
+  }
+  {  // Lost After Put
+    ActionPmidManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    auto unresolved_put_action(CreateGroupUnresolvedAction<PmidManager::UnresolvedPut>(
+        PmidManager::SyncKey(PmidManager::Key(key.group_name()),
+                             data.name(), ImmutableData::Tag::kValue),
+        action_put, group_source));
+    SendSync<PmidManager::UnresolvedPut>(unresolved_put_action, group_source);
+    auto value(GetValue(PmidManager::Key(key.group_name())));
+    EXPECT_EQ(kTestChunkSize, value.stored_total_size);
+    auto unresolved_update_action(CreateGroupUnresolvedAction<
+             PmidManager::UnresolvedUpdateAccount>(key, action_update_account, group_source));
+    SendSync<PmidManager::UnresolvedUpdateAccount>(unresolved_update_action, group_source);
+    try {
+      auto value(GetValue(PmidManager::Key(key.group_name())));
+      EXPECT_EQ(kTestChunkSize - size_diff, value.stored_total_size);
+      EXPECT_EQ(size_diff, value.lost_total_size);
+    } catch (std::exception& e) {
+      EXPECT_TRUE(false) << boost::diagnostic_information(e);
+    }
+  }
+}
+
 TEST_F(PmidManagerServiceTest, BEH_PutThenDelete) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   auto group_source(CreateGroupSource(NodeId(pmid_.name()->string())));
