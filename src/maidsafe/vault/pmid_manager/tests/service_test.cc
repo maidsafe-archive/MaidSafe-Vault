@@ -235,7 +235,8 @@ TEST_F(PmidManagerServiceTest, BEH_Update_PmidAccount) {
   passport::Maid maid(anmaid);
   auto group_source(CreateGroupSource(NodeId(maid.name()->string())));
   PmidManager::SyncGroupKey key(PmidManager::Key(pmid_.name()));
-  auto size_diff(RandomInt32() % kMaxChunkSize - RandomInt32() % kMaxChunkSize);
+  int64_t size_diff(RandomInt32() % kMaxChunkSize);
+  size_diff -= RandomInt32() % kMaxChunkSize;
   ActionPmidManagerUpdateAccount action_update_account(size_diff);
   auto unresolved_update_action(
       CreateGroupUnresolvedAction<PmidManager::UnresolvedUpdateAccount>(
