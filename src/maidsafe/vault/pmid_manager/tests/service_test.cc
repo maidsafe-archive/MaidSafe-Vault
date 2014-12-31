@@ -192,6 +192,16 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
                                     routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedUpdateAccount>().size() == 0);
   }
+  { //  IntegrityCheckRequestFromDataManagerToPmidManager
+    auto content(CreateContent<IntegrityCheckRequestFromDataManagerToPmidManager::Contents>());
+    auto integrity_check_request(
+            CreateMessage<IntegrityCheckRequestFromDataManagerToPmidManager>(content));
+    auto group_source(CreateGroupSource(
+                          NodeId(integrity_check_request.contents->name.raw_name.string())));
+    EXPECT_NO_THROW(GroupSendToGroup(&pmid_manager_service_, integrity_check_request,
+                                     group_source, routing::GroupId(this->routing_.kNodeId())));
+    EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedDelete>().size() == 0);
+  }
 }
 
 TEST_F(PmidManagerServiceTest, BEH_Create_Update_PmidAccount) {
