@@ -18,8 +18,12 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/asio_service.h"
+
 #include "maidsafe/passport/passport.h"
+
 #include "maidsafe/routing/routing_api.h"
+#include "maidsafe/routing/parameters.h"
+
 #include "maidsafe/nfs/client/data_getter.h"
 
 #include "maidsafe/vault/data_manager/service.h"
@@ -49,6 +53,25 @@ class DataManagerServiceTest : public testing::Test {
     data_manager_service_.get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, required,
                                              task_id);
   }
+  
+  void CancelGetTimerTask(int task_id) {
+    data_manager_service_.get_timer_.CancelTask(task_id);
+  }
+  
+  void DeleteFromLruCache(const DataManager::Key& key) {
+    data_manager_service_.lru_cache_.Delete(key);
+  }
+  
+  template <typename Data>
+  void GetForReplication(const PmidName& pmid_name, const typename Data::Name& data_name) {
+    data_manager_service_.GetForReplication<Data>(pmid_name, data_name);
+  }
+  
+  void AddToCloseNodesChange(const PmidName& pmid_name) {
+    data_manager_service_.close_nodes_change_  =
+        routing::CloseNodesChange(routing_.kNodeId(), std::vector<NodeId>(),
+                                  std::vector<NodeId> { NodeId(pmid_name->string()) });
+  }
 
   template <typename ActionType>
   void Commit(const DataManager::Key& key, const ActionType& action) {
@@ -56,6 +79,10 @@ class DataManagerServiceTest : public testing::Test {
   }
 
   DataManager::Value Get(const DataManager::Key& key) { return data_manager_service_.db_.Get(key); }
+  uint64_t Replicate(const DataManager::Key& key, nfs::MessageId message_id,
+                     const PmidName& tried_pmid_node = PmidName()) {
+    return data_manager_service_.Replicate(key, message_id, tried_pmid_node);
+  }
 
   template <typename UnresolvedActionType>
   std::vector<std::unique_ptr<UnresolvedActionType>> GetUnresolvedActions();
@@ -85,6 +112,16 @@ void DataManagerServiceTest::SendSync(
     const std::vector<UnresolvedActionType>& /*unresolved_actions*/,
     const std::vector<routing::GroupSource>& /*group_source*/) {
   UnresolvedActionType::No_genereic_handler_is_available__Specialisation_is_required;
+}
+
+template <>
+void DataManagerServiceTest::SendSync<DataManager::UnresolvedPut>(
+     const std::vector<DataManager::UnresolvedPut>& unresolved_actions,
+     const std::vector<routing::GroupSource>& group_source) {
+  AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedPut,
+                                    SynchroniseFromDataManagerToDataManager>(
+     &data_manager_service_, data_manager_service_.sync_puts_, unresolved_actions,
+     group_source);
 }
 
 template <>
@@ -210,6 +247,18 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
                                    routing::SingleSource(maid_node_id)),
         routing::GroupId(data_name_id)));
   }
+    //  GetRequestFromDataGetterPartialToDataManager
+    {
+        NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
+        auto content(CreateContent<nfs::GetRequestFromDataGetterPartialToDataManager::Contents>());
+        data_name_id = NodeId(content.raw_name.string());
+        auto get_request(CreateMessage<nfs::GetRequestFromDataGetterPartialToDataManager>(content));
+        EXPECT_NO_THROW(SingleRelaySendsToGroup(
+            &data_manager_service_, get_request,
+            routing::SingleRelaySource(routing::SingleSource(maid_node_id), maid_node_id,
+                                       routing::SingleSource(maid_node_id)),
+            routing::GroupId(data_name_id)));
+    }
   //  GetResponseFromPmidNodeToDataManager
   {
     NodeId pmid_node_id(RandomString(NodeId::kSize));
@@ -264,6 +313,36 @@ TEST_F(DataManagerServiceTest, BEH_Put) {
   EXPECT_EQ(Get(key).chunk_size(), kTestChunkSize);
 }
 
+TEST_F(DataManagerServiceTest, BEH_Get) {
+  auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
+  PmidName pmid_name(Identity(RandomString(64)));
+  DataManager::Key key(content.raw_name, content.type);
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
+  this->DeleteFromLruCache(key);
+  this->AddToCloseNodesChange(pmid_name);
+  NodeId maid_node_id(RandomString(NodeId::kSize)),
+  data_name_id { NodeId(content.raw_name.string()) };
+  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
+  EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
+                                     routing::SingleSource(maid_node_id),
+                                     routing::GroupId(data_name_id)));
+  EXPECT_EQ(Get(key).chunk_size(), kTestChunkSize);
+  data_manager_service_.Stop();
+}
+
+
+TEST_F(DataManagerServiceTest, BEH_SyncPut) {
+    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+    DataManager::Key key(data.name());
+    auto group_source(CreateGroupSource(data.name()));
+    ActionDataManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
+    auto group_unresolved_action(
+        CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
+    SendSync<DataManager::UnresolvedPut>(group_unresolved_action, group_source);
+    EXPECT_NO_THROW(Get(key));
+}
+
 TEST_F(DataManagerServiceTest, BEH_Delete) {
   PmidName pmid_name(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
@@ -280,6 +359,21 @@ TEST_F(DataManagerServiceTest, BEH_Delete) {
   SendSync<DataManager::UnresolvedDelete>(group_unresolved_action, group_source);
   EXPECT_ANY_THROW(Get(key));
 }
+
+TEST_F(DataManagerServiceTest, BEH_AddPmidNoAccount) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
+  {
+    PmidName pmid_name(Identity(RandomString(64)));
+    ActionDataManagerAddPmid action_add_pmid(pmid_name);
+    auto group_unresolved_action(CreateGroupUnresolvedAction<
+                                 DataManager::UnresolvedAddPmid>(key, action_add_pmid,
+                                                                 group_source));
+    EXPECT_NO_THROW(SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action,
+                                                             group_source));
+  }
+} 
 
 TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
@@ -328,6 +422,99 @@ TEST_F(DataManagerServiceTest, BEH_RemovePmid) {
       key, action_remove_pmid, group_source));
   SendSync<DataManager::UnresolvedRemovePmid>(group_unresolved_action, group_source);
   EXPECT_TRUE(Get(key).AllPmids().size() == 1);
+}
+
+TEST_F(DataManagerServiceTest, BEH_ReplicateWithNoEntry) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  EXPECT_EQ(Replicate(vault::Key(data.name()), nfs::MessageId(RandomUint32())), 0);
+}
+
+TEST_F(DataManagerServiceTest, BEH_ReplicateNoPmid) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
+  EXPECT_EQ(Replicate(vault::Key(data.name()), nfs::MessageId(RandomUint32())), 0);
+}
+
+TEST_F(DataManagerServiceTest, BEH_AccountTransferFromDataManagerToDataManager) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  DataManagerValue value(kTestChunkSize);
+  protobuf::AccountTransfer account_transfer_proto;
+  protobuf::DataManagerKeyValuePair kv_msg;
+  kv_msg.set_key(key.Serialise());
+  kv_msg.set_value(value.Serialise());
+  account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+  auto content(AccountTransferFromDataManagerToDataManager::Contents(
+                   account_transfer_proto.SerializeAsString()));
+  auto account_transfer(CreateMessage<AccountTransferFromDataManagerToDataManager>(content));
+  for (unsigned int index(0); index < routing::Parameters::group_size - 1; ++index) {
+    EXPECT_NO_THROW(SingleSendsToSingle(
+        &data_manager_service_, account_transfer,
+        routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+        routing::SingleId(routing_.kNodeId())));
+  }
+  EXPECT_NO_THROW(Get(key));
+}
+
+TEST_F(DataManagerServiceTest, BEH_AccountQueryResponseFromDataManagerToDataManager) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  DataManagerValue value(kTestChunkSize);
+  protobuf::AccountTransfer account_transfer_proto;
+  protobuf::DataManagerKeyValuePair kv_msg;
+  auto group_source(CreateGroupSource(NodeId(data.name()->string())));
+  kv_msg.set_key(key.Serialise());
+  kv_msg.set_value(value.Serialise());
+  account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+  auto content(AccountQueryResponseFromDataManagerToDataManager::Contents(
+                   account_transfer_proto.SerializeAsString()));
+  auto account_transfer(CreateMessage<AccountQueryResponseFromDataManagerToDataManager>(content));
+  EXPECT_NO_THROW(GroupSendToSingle(&data_manager_service_, account_transfer, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+  EXPECT_NO_THROW(Get(key));
+}
+
+TEST_F(DataManagerServiceTest, BEH_GetForReplication) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  PmidName pmid_name(Identity(RandomString(64)));
+  DataManager::Key key(data.name());
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
+  this->DeleteFromLruCache(key);
+  this->AddToCloseNodesChange(pmid_name);
+  NodeId maid_node_id(RandomString(NodeId::kSize)),
+  data_name_id { NodeId(data.name()->string()) };
+  this->GetForReplication<ImmutableData>(PmidName(Identity(RandomString(64))), data.name());
+  EXPECT_EQ(Get(key).chunk_size(), kTestChunkSize);
+  data_manager_service_.Stop();
+}
+
+TEST_F(DataManagerServiceTest, BEH_DoHandleGetResponse) {
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  auto data_name(data.name());
+  PmidName pmid_name(Identity(RandomString(64)));
+  DataManager::Key key(data_name);
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
+  Commit(key, ActionDataManagerAddPmid(pmid_name));
+  this->DeleteFromLruCache(key);
+  this->AddToCloseNodesChange(pmid_name);
+  NodeId maid_node_id(RandomString(NodeId::kSize)),
+  data_name_id { NodeId(data_name->string()) };
+  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(
+                       nfs_vault::DataName(data_name)));
+  EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
+                                     routing::SingleSource(maid_node_id),
+                                     routing::GroupId(data_name_id)));
+  nfs_vault::DataNameAndContentOrCheckResult response(data_name, data.Serialise());
+  auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(response));
+  get_response.id = get_request.id;
+  Sleep(std::chrono::seconds(1));
+  EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
+                                      routing::SingleSource(NodeId(pmid_name->string())),
+                                      routing::SingleId(data_name_id)));
+  EXPECT_EQ(Get(key).chunk_size(), kTestChunkSize);
+  data_manager_service_.Stop();
 }
 
 }  //  namespace test

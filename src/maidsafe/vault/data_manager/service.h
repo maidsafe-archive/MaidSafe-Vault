@@ -573,6 +573,12 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
     LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
                   << " task called from timer to DoHandleGetResponse";
+    {
+      std::lock_guard<decltype(close_nodes_change_mutex_)> lock(this->close_nodes_change_mutex_);
+      if (stopped_)
+        return;
+    }
+    
     this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
                                                      pmid_node_and_contents.second,
                                                      get_response_op);
@@ -606,20 +612,14 @@ void DataManagerService::GetForReplication(const PmidName& pmid_name,
 template <typename Data>
 void DataManagerService::DoGetForReplication(const typename Data::Name& data_name,
                                              const std::set<PmidName>& online_pmids) {
-  LOG(kVerbose) << "DataManagerService::GetForNodeDown chunk " << HexSubstr(data_name.value);
   // Just get, don't do integrity check
   auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
-    LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
-                  << " task called from timer to DoGetForNodeDownResponse";
     this->DoGetResponseForReplication<Data>(pmid_node_and_contents.first, data_name,
                                             pmid_node_and_contents.second);
   });
   nfs::MessageId message_id(get_timer_.NewTaskId());
   get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1, message_id);
   for (auto& pmid_node : online_pmids) {
-    LOG(kVerbose) << "DataManagerService::GetForNodeDown " << HexSubstr(data_name.value)
-                  << " SendGetRequest with message_id " << message_id.data
-                  << " to picked up pmid_node " << HexSubstr(pmid_node->string());
     dispatcher_.SendGetRequest<Data>(pmid_node, data_name, message_id);
   }
 }
@@ -728,8 +728,8 @@ void DataManagerService::DoGetResponseForReplication(const PmidName& pmid_node,
   LOG(kVerbose) << "DataManagerService::DoGetForReplicationResponse "
                 << HexSubstr(data_name->string());
   {
-    std::lock_guard<std::mutex> lock(this->close_nodes_change_mutex_);
-    if (this->stopped_)
+    std::lock_guard<decltype(close_nodes_change_mutex_)> lock(close_nodes_change_mutex_);
+    if (stopped_)
       return;
   }
 
