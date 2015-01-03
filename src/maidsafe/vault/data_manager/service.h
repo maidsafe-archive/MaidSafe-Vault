@@ -578,7 +578,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
       if (stopped_)
         return;
     }
-    
+
     this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
                                                      pmid_node_and_contents.second,
                                                      get_response_op);

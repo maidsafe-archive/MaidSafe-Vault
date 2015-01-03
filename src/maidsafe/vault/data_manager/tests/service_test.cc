@@ -53,20 +53,20 @@ class DataManagerServiceTest : public testing::Test {
     data_manager_service_.get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, required,
                                              task_id);
   }
-  
+
   void CancelGetTimerTask(int task_id) {
     data_manager_service_.get_timer_.CancelTask(task_id);
   }
-  
+
   void DeleteFromLruCache(const DataManager::Key& key) {
     data_manager_service_.lru_cache_.Delete(key);
   }
-  
+
   template <typename Data>
   void GetForReplication(const PmidName& pmid_name, const typename Data::Name& data_name) {
     data_manager_service_.GetForReplication<Data>(pmid_name, data_name);
   }
-  
+
   void AddToCloseNodesChange(const PmidName& pmid_name) {
     data_manager_service_.close_nodes_change_  =
         routing::CloseNodesChange(routing_.kNodeId(), std::vector<NodeId>(),
@@ -373,7 +373,7 @@ TEST_F(DataManagerServiceTest, BEH_AddPmidNoAccount) {
     EXPECT_NO_THROW(SendSync<DataManager::UnresolvedAddPmid>(group_unresolved_action,
                                                              group_source));
   }
-} 
+}
 
 TEST_F(DataManagerServiceTest, BEH_AddPmid) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
@@ -509,10 +509,10 @@ TEST_F(DataManagerServiceTest, BEH_DoHandleGetResponse) {
   nfs_vault::DataNameAndContentOrCheckResult response(data_name, data.Serialise());
   auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(response));
   get_response.id = get_request.id;
-  Sleep(std::chrono::seconds(1));
   EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
                                       routing::SingleSource(NodeId(pmid_name->string())),
                                       routing::SingleId(data_name_id)));
+  Sleep(std::chrono::seconds(1));
   EXPECT_EQ(Get(key).chunk_size(), kTestChunkSize);
   data_manager_service_.Stop();
 }
