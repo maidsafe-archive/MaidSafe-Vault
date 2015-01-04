@@ -331,7 +331,6 @@ TEST_F(DataManagerServiceTest, BEH_Get) {
   data_manager_service_.Stop();
 }
 
-
 TEST_F(DataManagerServiceTest, BEH_SyncPut) {
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
