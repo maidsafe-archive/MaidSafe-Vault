@@ -20,9 +20,11 @@
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/account_transfer.pb.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/unresolved_action.pb.h"
 #include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.pb.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -307,6 +309,28 @@ TEST_F(PmidManagerServiceTest, BEH_PutThenDelete) {
         << " Added one pmid and deleted it so account should be removed";
   }
 }
+
+TEST_F(PmidManagerServiceTest, BEH_AccountTransferFromPmidManagerToPmidManager) {
+  PmidManager::Key pmid_name(passport::CreatePmidAndSigner().first.name());
+  MetadataKey<PmidName> key(pmid_name);
+  PmidManagerValue value(kTestChunkSize, 0 , kTestChunkSize);
+  protobuf::AccountTransfer account_transfer_proto;
+  protobuf::PmidManagerKeyValuePair kv_msg;
+  kv_msg.set_key(key.Serialise());
+  kv_msg.set_value(value.Serialise());
+  account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+  auto content(AccountTransferFromPmidManagerToPmidManager::Contents(
+  account_transfer_proto.SerializeAsString()));
+  auto account_transfer(CreateMessage<AccountTransferFromPmidManagerToPmidManager>(content));
+  for (unsigned int index(0); index < routing::Parameters::group_size - 1; ++index) {
+    EXPECT_NO_THROW(SingleSendsToSingle(&pmid_manager_service_, account_transfer,
+                       routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                       routing::SingleId(routing_.kNodeId())));
+  }
+  auto result(GetValue(pmid_name));
+  EXPECT_EQ(value, result);
+}
+
 
 }  //  namespace test
 
