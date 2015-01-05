@@ -19,6 +19,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/nfs/types.h"
+#include "maidsafe/routing/close_nodes_change.h"
 
 #include "maidsafe/vault/account_transfer.pb.h"
 #include "maidsafe/vault/unresolved_action.h"
@@ -363,6 +364,22 @@ TEST_F(PmidManagerServiceTest, BEH_AccountQueryResponseFromPmidManagerToPmidMana
                                     routing::SingleId(routing_.kNodeId())));
   auto result(GetValue(pmid_name));
   EXPECT_EQ(value, result);
+}
+
+TEST_F(PmidManagerServiceTest, BEH_HandleChurn) {
+  std::vector<NodeId> old_close_nodes, new_close_nodes;
+  PmidName new_pmid_name(passport::CreatePmidAndSigner().first.name());
+  NodeId new_node(new_pmid_name->string());
+  new_close_nodes.push_back(new_node);
+  NodeId vault_id(pmid_.name()->string());
+  std::shared_ptr<routing::CloseNodesChange> close_node_change_ptr(new
+      routing::CloseNodesChange(vault_id, old_close_nodes, new_close_nodes));
+  EXPECT_NO_THROW(pmid_manager_service_.HandleChurnEvent(close_node_change_ptr));
+  AddGroup(new_pmid_name, PmidManagerValue());
+  EXPECT_NO_THROW(pmid_manager_service_.HandleChurnEvent(close_node_change_ptr));
+  PmidName new_account(passport::CreatePmidAndSigner().first.name());
+  AddGroup(new_account, PmidManagerValue());
+  EXPECT_NO_THROW(pmid_manager_service_.HandleChurnEvent(close_node_change_ptr));
 }
 
 }  //  namespace test
