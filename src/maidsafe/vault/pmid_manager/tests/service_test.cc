@@ -320,7 +320,7 @@ TEST_F(PmidManagerServiceTest, BEH_AccountTransferFromPmidManagerToPmidManager) 
   kv_msg.set_value(value.Serialise());
   account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
   auto content(AccountTransferFromPmidManagerToPmidManager::Contents(
-  account_transfer_proto.SerializeAsString()));
+                  account_transfer_proto.SerializeAsString()));
   auto account_transfer(CreateMessage<AccountTransferFromPmidManagerToPmidManager>(content));
   for (unsigned int index(0); index < routing::Parameters::group_size - 1; ++index) {
     EXPECT_NO_THROW(SingleSendsToSingle(&pmid_manager_service_, account_transfer,
@@ -331,6 +331,24 @@ TEST_F(PmidManagerServiceTest, BEH_AccountTransferFromPmidManagerToPmidManager) 
   EXPECT_EQ(value, result);
 }
 
+TEST_F(PmidManagerServiceTest, BEH_AccountQueryResponseFromPmidManagerToPmidManager) {
+  PmidManager::Key pmid_name(passport::CreatePmidAndSigner().first.name());
+  MetadataKey<PmidName> key(pmid_name);
+  PmidManagerValue value(kTestChunkSize, 0 , kTestChunkSize);
+  protobuf::AccountTransfer account_transfer_proto;
+  protobuf::PmidManagerKeyValuePair kv_msg;
+  auto group_source(CreateGroupSource(NodeId(pmid_name->string())));
+  kv_msg.set_key(key.Serialise());
+  kv_msg.set_value(value.Serialise());
+  account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+  auto content(AccountQueryResponseFromPmidManagerToPmidManager::Contents(
+                  account_transfer_proto.SerializeAsString()));
+  auto account_transfer(CreateMessage<AccountQueryResponseFromPmidManagerToPmidManager>(content));
+  EXPECT_NO_THROW(GroupSendToSingle(&pmid_manager_service_, account_transfer, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+  auto result(GetValue(pmid_name));
+  EXPECT_EQ(value, result);
+}
 
 }  //  namespace test
 
