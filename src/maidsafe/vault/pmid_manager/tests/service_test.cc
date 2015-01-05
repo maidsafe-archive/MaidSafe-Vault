@@ -331,6 +331,21 @@ TEST_F(PmidManagerServiceTest, BEH_AccountTransferFromPmidManagerToPmidManager) 
   EXPECT_EQ(value, result);
 }
 
+TEST_F(PmidManagerServiceTest, BEH_AccountQueryFromPmidManagerToPmidManager) {
+  PmidManager::Key pmid_name(passport::CreatePmidAndSigner().first.name());
+  auto content(CreateContent<AccountQueryFromPmidManagerToPmidManager::Contents>());
+  auto account_query(CreateMessage<AccountQueryFromPmidManagerToPmidManager>(content));
+  // query a non-existed account
+  EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, account_query,
+                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::GroupId(NodeId(pmid_name->string()))));
+  // query an existing account
+  AddGroup(pmid_name, PmidManagerValue());
+  EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, account_query,
+                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::GroupId(NodeId(pmid_name->string()))));
+}
+
 TEST_F(PmidManagerServiceTest, BEH_AccountQueryResponseFromPmidManagerToPmidManager) {
   PmidManager::Key pmid_name(passport::CreatePmidAndSigner().first.name());
   MetadataKey<PmidName> key(pmid_name);
