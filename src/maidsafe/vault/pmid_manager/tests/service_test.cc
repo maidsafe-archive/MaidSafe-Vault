@@ -139,7 +139,7 @@ PmidManagerServiceTest::GetUnresolvedActions<PmidManager::UnresolvedDelete>() {
 template <>
 std::vector<std::unique_ptr<PmidManager::UnresolvedCreateAccount>>
 PmidManagerServiceTest::GetUnresolvedActions<PmidManager::UnresolvedCreateAccount>() {
- return pmid_manager_service_.sync_create_account_.GetUnresolvedActions();
+  return pmid_manager_service_.sync_create_account_.GetUnresolvedActions();
 }
 
 template <>
