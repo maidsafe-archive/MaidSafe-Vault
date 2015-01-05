@@ -16,547 +16,171 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-// #include "maidsafe/vault/demultiplexer.h"
-
-// #include "maidsafe/common/log.h"
-// #include "maidsafe/common/utils.h"
-// #include "maidsafe/common/test.h"
-// #include "maidsafe/nfs/message.h"
-
-// #include "maidsafe/vault/maid_manager/service.h"
-// #include "maidsafe/vault/data_manager/service.h"
-// #include "maidsafe/vault/pmid_manager/service.h"
-// #include "maidsafe/vault/pmid_node/service.h"
-
-//// TODO(Qi) - redesign tests to not use Mocks for personas
-
-// namespace maidsafe {
-
-// /*
-// namespace nfs {
-
-// bool operator==(const nfs::Message& lhs, const nfs::Message& rhs) {
-//  if (lhs.action() != rhs.action() ||
-//      lhs.destination_persona() != rhs.destination_persona() ||
-//      lhs.source_persona() != rhs.source_persona() ||
-//      lhs.data_type() != rhs.data_type() ||
-//      lhs.destination() != rhs.destination() ||
-//      lhs.source() != rhs.source() ||
-//      lhs.content() != rhs.content() ||
-//      lhs.signature() != rhs.signature())
-//    return false;
-//  return true;
-// }
-
-// }  // namespace nfs
-// */
-
-// namespace vault {
-
-// /*
-//// TODO(Qi) - move mocks to separate file?
-// class MockMaidManager : public MaidManager {
-// public:
-//  MockMaidManager();
-//  virtual ~MockMaidManager();
-
-//  MOCK_METHOD1(HandleMessage, void(nfs::Message message));
-
-// private:
-//  MockMaidManager &operator=(const MockMaidManager&);
-//  MockMaidManager(const MockMaidManager&);
-// };
-
-// class MockDataManager : public DataManagerService {
-// public:
-//  MockDataManager();
-//  virtual ~MockDataManager();
-
-//  MOCK_METHOD1(HandleMessage, void(nfs::Message message));
-
-// private:
-//  MockDataManager &operator=(const MockDataManager&);
-//  MockDataManager(const MockDataManager&);
-// };
-
-// class MockPmidManager : public PmidManager {
-// public:
-//  MockPmidManager();
-//  virtual ~MockPmidManager();
-
-//  MOCK_METHOD1(HandleMessage, void(nfs::Message message));
-
-// private:
-//  MockPmidManager &operator=(const MockPmidManager&);
-//  MockPmidManager(const MockPmidManager&);
-// };
-
-// class MockDataHolder : public DataHolderService {
-// public:
-//  MockDataHolder();
-//  virtual ~MockDataHolder();
-
-//  MOCK_METHOD1(HandleMessage, void(nfs::Message message));
-
-// private:
-//  MockDataHolder &operator=(const MockDataHolder&);
-//  MockDataHolder(const MockDataHolder&);
-// };
-// */
-
-// namespace test {
-
-// /*
-// class DemultiplexerTest : public testing::Test {
-// public:
-//  DemultiplexerTest()
-//      : maid_manager_(),
-//        data_manager_service_(),
-//        pmid_manager_(),
-//        pmid_node_(),
-//        demultiplexer_(maid_manager_,
-//                       data_manager_service_,
-//                       pmid_manager_,
-//                       pmid_node_) {}
-
-//  bool VerifyAndClearAllExpectations() {
-//    return testing::Mock::VerifyAndClearExpectations(&maid_manager_) &&
-//           testing::Mock::VerifyAndClearExpectations(&data_manager_service_) &&
-//           testing::Mock::VerifyAndClearExpectations(&pmid_manager_) &&
-//           testing::Mock::VerifyAndClearExpectations(&pmid_node_);
-//  }
-
-//  nfs::Message GenerateValidMessage() {
-//    // TODO(Alison) - % 4 to match Action enum - improve?
-//    // TODO(Alison) - % 4 to match Persona enum - improve?
-//    nfs::Message message(static_cast<nfs::Action>(RandomUint32() % 4),
-//                         static_cast<nfs::Persona>(RandomUint32() % 4),
-//                         static_cast<nfs::Persona>(RandomUint32() % 4),
-//                         RandomUint32(),
-//                         NodeId(RandomString(NodeId::kSize)),
-//                         NodeId(RandomString(NodeId::kSize)),
-//                         RandomAlphaNumericString(10),
-//                         RandomAlphaNumericString(10));
-//    return message;
-//  }
-
-//  nfs::Message GenerateValidMessage(const nfs::Persona& dest_type) {
-//    // TODO(Alison) - % 4 to match Action enum - improve?
-//    // TODO(Alison) - % 4 to match Persona enum - improve?
-//    nfs::Message message(static_cast<nfs::Action>(RandomUint32() % 4),
-//                         dest_type,
-//                         static_cast<nfs::Persona>(RandomUint32() % 4),
-//                         RandomUint32(),
-//                         NodeId(RandomString(NodeId::kSize)),
-//                         NodeId(RandomString(NodeId::kSize)),
-//                         RandomAlphaNumericString(10),
-//                         RandomAlphaNumericString(10));
-//    return message;
-//  }
-
-//  nfs::Message GenerateValidMessage(uint16_t& expect_mah,
-//                                    uint16_t& expect_mdm,
-//                                    uint16_t& expect_pah,
-//                                    uint16_t& expect_dh) {
-//    // TODO(Alison) - % 4 to match Persona enum - improve?
-//    nfs::Persona dest_type(static_cast<nfs::Persona>(RandomUint32() % 4));
-//    switch (dest_type) {
-//      case nfs::Persona::kMaidManager:
-//        ++expect_mah;
-//        break;
-//      case nfs::Persona::kDataManager:
-//        ++expect_mdm;
-//        break;
-//      case nfs::Persona::kPmidManager:
-//        ++expect_pah;
-//        break;
-//      case nfs::Persona::kDataHolder:
-//        ++expect_dh;
-//        break;
-//      default:
-//        LOG(kError) << "This type of message shouldn't occur here!";
-//        assert(false);
-//        break;
-//    }
-//    return GenerateValidMessage(dest_type);
-//  }
-
-//  std::vector<nfs::Message> GenerateValidMessages(uint16_t num_messages,
-//                                                  uint16_t& expect_mah,
-//                                                  uint16_t& expect_mdm,
-//                                                  uint16_t& expect_pah,
-//                                                  uint16_t& expect_dh) {
-//    std::vector<nfs::Message> messages;
-//    if (num_messages == 0) {
-//      LOG(kError) << "Generated 0 messages.";
-//      return messages;
-//    }
-//    for (uint16_t i(0); i < num_messages; ++i) {
-//      messages.push_back(GenerateValidMessage(expect_mah, expect_mdm, expect_pah, expect_dh));
-//    }
-//    return messages;
-//  }
-
-// protected:
-//  virtual void SetUp();
-
-//  virtual void TearDown() {
-//    EXPECT_TRUE(VerifyAndClearAllExpectations());
-//  }
-
-// public:
-//  MockMaidManager maid_manager_;
-//  MockDataManager data_manager_service_;
-//  MockPmidManager pmid_manager_;
-//  MockDataHolder pmid_node_;
-//  Demultiplexer demultiplexer_;
-// };
-
-// TEST_F(DemultiplexerTest, FUNC_MaidManager) {
-//  nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidManager));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(message)).Times(1);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  demultiplexer_.HandleMessage(SerialiseAsString(message));
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_MaidManagerRepeat) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(100);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  for (uint16_t i(0); i < 100; ++i) {
-//    nfs::Message message(GenerateValidMessage(nfs::Persona::kMaidManager));
-//    demultiplexer_.HandleMessage(SerialiseAsString(message));
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_DataManager) {
-//  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataManager));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(message)).Times(1);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  demultiplexer_.HandleMessage(SerialiseAsString(message));
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_DataManagerRepeat) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(100);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  for (uint16_t i(0); i < 100; ++i) {
-//    nfs::Message message(GenerateValidMessage(nfs::Persona::kDataManager));
-//    demultiplexer_.HandleMessage(SerialiseAsString(message));
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_PmidManager) {
-//  nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidManager));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(message)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(1);
-
-//  demultiplexer_.HandleMessage(SerialiseAsString(message));
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_PmidManagerRepeat) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(100);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  for (uint16_t i(0); i < 100; ++i) {
-//    nfs::Message message(GenerateValidMessage(nfs::Persona::kPmidManager));
-//    demultiplexer_.HandleMessage(SerialiseAsString(message));
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_DataHolder) {
-//  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(message)).Times(1);
-
-//  demultiplexer_.HandleMessage(SerialiseAsString(message));
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_DataHolderRepeat) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(100);
-
-//  for (uint16_t i(0); i < 100; ++i) {
-//    nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
-//    demultiplexer_.HandleMessage(SerialiseAsString(message));
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_Scrambled) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  demultiplexer_.HandleMessage(RandomAlphaNumericString(1 + (RandomUint32() % 100)));
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_ScrambledRepeat) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  for (uint16_t i(0); i < 100; ++i) {
-//    std::string scrambled_message(RandomAlphaNumericString(1 + (RandomUint32() % 100)));
-//    demultiplexer_.HandleMessage(scrambled_message);
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_EmptyMessage) {
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//  std::string empty_message;
-//  demultiplexer_.HandleMessage(empty_message);
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_ValidMessages) {
-//  std::vector<nfs::Message> messages;
-//  messages.push_back(GenerateValidMessage(nfs::Persona::kMaidManager));
-//  messages.push_back(GenerateValidMessage(nfs::Persona::kDataManager));
-//  messages.push_back(GenerateValidMessage(nfs::Persona::kPmidManager));
-//  messages.push_back(GenerateValidMessage(nfs::Persona::kDataHolder));
-
-//  while (messages.size() > 0) {
-//    uint16_t index(0);
-//    if (messages.size() > 1)
-//      index = RandomUint32() % messages.size();
-
-//    if (messages.at(index).destination_persona() == nfs::Persona::kMaidManager)
-//      EXPECT_CALL(maid_manager_, HandleMessage(messages.at(index))).Times(1);
-//    else
-//      EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(0);
-
-//    if (messages.at(index).destination_persona() == nfs::Persona::kDataManager)
-//      EXPECT_CALL(data_manager_service_, HandleMessage(messages.at(index))).Times(1);
-//    else
-//      EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(0);
-
-//    if (messages.at(index).destination_persona() == nfs::Persona::kPmidManager)
-//      EXPECT_CALL(pmid_manager_, HandleMessage(messages.at(index))).Times(1);
-//    else
-//      EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(0);
-
-//    if (messages.at(index).destination_persona() == nfs::Persona::kDataHolder)
-//      EXPECT_CALL(pmid_node_, HandleMessage(messages.at(index))).Times(1);
-//    else
-//      EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(0);
-
-//    demultiplexer_.HandleMessage(SerialiseAsString(messages.at(index)));
-//    EXPECT_TRUE(VerifyAndClearAllExpectations());
-//    messages.erase(messages.begin() + index);
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_ValidMessagesRepeat) {
-//  uint16_t expect_mah(0),
-//           expect_mdm(0),
-//           expect_pah(0),
-//           expect_dh(0);
-//  std::vector<nfs::Message> messages(GenerateValidMessages(100,
-//                                                           expect_mah,
-//                                                           expect_mdm,
-//                                                           expect_pah,
-//                                                           expect_dh));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
-
-//  for (auto message : messages)
-//    demultiplexer_.HandleMessage(SerialiseAsString(message));
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_ValidMessagesParallel) {
-//  uint16_t num_messages = 4 + (RandomUint32() % 7);
-//  uint16_t expect_mah(0),
-//           expect_mdm(0),
-//           expect_pah(0),
-//           expect_dh(0);
-
-//  std::vector<nfs::Message> messages(GenerateValidMessages(num_messages,
-//                                                           expect_mah,
-//                                                           expect_mdm,
-//                                                           expect_pah,
-//                                                           expect_dh));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
-
-//  std::vector<boost::thread> threads(num_messages);
-//  for (uint16_t i(0); i < num_messages; ++i) {
-//    threads[i] = boost::thread([&] {
-//                               demultiplexer_.HandleMessage(SerialiseAsString(messages[i]));
-//                 });
-//  }
-//  for (boost::thread& thread : threads)
-//    thread.join();
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_MixedMessagesRepeat) {
-//  uint16_t num_messages(100);
-//  uint16_t expect_mah(0),
-//           expect_mdm(0),
-//           expect_pah(0),
-//           expect_dh(0);
-
-//  std::vector<nfs::Message> messages(GenerateValidMessages(num_messages,
-//                                                           expect_mah,
-//                                                           expect_mdm,
-//                                                           expect_pah,
-//                                                           expect_dh));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
-
-//  for (uint16_t i(0); i < num_messages; ++i) {
-//    if (i % 13 == 0 || i % 19 == 0) {
-//      std::string bad_message(RandomAlphaNumericString(1 + RandomUint32() % 50));
-//      demultiplexer_.HandleMessage(bad_message);
-//    }
-//    demultiplexer_.HandleMessage(SerialiseAsString(messages.at(i)));
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_MixedMessagesParallel) {
-//  uint16_t num_messages = 4 + (RandomUint32() % 7);
-//  uint16_t expect_mah(0),
-//           expect_mdm(0),
-//           expect_pah(0),
-//           expect_dh(0);
-
-//  std::vector<nfs::Message> messages(GenerateValidMessages(num_messages,
-//                                                           expect_mah,
-//                                                           expect_mdm,
-//                                                           expect_pah,
-//                                                           expect_dh));
-
-//  EXPECT_CALL(maid_manager_, HandleMessage(testing::_)).Times(expect_mah);
-//  EXPECT_CALL(data_manager_service_, HandleMessage(testing::_)).Times(expect_mdm);
-//  EXPECT_CALL(pmid_manager_, HandleMessage(testing::_)).Times(expect_pah);
-//  EXPECT_CALL(pmid_node_, HandleMessage(testing::_)).Times(expect_dh);
-
-//  std::vector<boost::thread> threads(num_messages);
-//  std::vector<boost::thread> bad_threads;
-//  for (uint16_t i(0); i < num_messages; ++i) {
-//    if (i % 13 == 0 || 1 % 19 == 0) {
-//      std::string bad_message(RandomAlphaNumericString(1 + RandomUint32() % 50));
-//      bad_threads.push_back(boost::thread([&] {
-//                              demultiplexer_.HandleMessage(bad_message);
-//                            }));
-//    }
-//    threads[i] = boost::thread([&] {
-//                               demultiplexer_.HandleMessage(nfs::SerialiseAsString(messages[i]));
-//                 });
-//  }
-//  for (boost::thread& thread : bad_threads)
-//    thread.join();
-//  for (boost::thread& thread : threads)
-//    thread.join();
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_BadMessageHaveCache) {
-//  std::string bad_message(RandomAlphaNumericString(1 + RandomUint32() % 50));
-//  std::string bad_message_passed(bad_message);
-//  EXPECT_FALSE(demultiplexer_.HaveCache(bad_message_passed));
-//  EXPECT_EQ(bad_message, bad_message_passed);
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_ValidMessageHaveCache) {
-//  nfs::Message message(GenerateValidMessage());
-//  std::string string(SerialiseAsString(message));
-//  std::string passed_string(string);
-//  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
-//  EXPECT_EQ(string, passed_string);
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_StoreCacheHaveCache) {
-//  for (uint16_t i(0); i < 20; ++i) {
-//    nfs::Message message(GenerateValidMessage());
-//    std::string string(SerialiseAsString(message));
-//    demultiplexer_.StoreCache(string);
-//    std::string passed_string(string);
-//    if (message.destination_persona() == nfs::Persona::kDataHolder) {
-//      EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
-//      // TODO(Alison) - relationship between string and passed string?
-//    } else {
-//      EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
-//      EXPECT_EQ(string, passed_string);
-//    }
-//  }
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_RepeatStoreCache) {
-//  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
-//  std::string string(SerialiseAsString(message));
-//  std::string passed_string(string);
-
-//  demultiplexer_.StoreCache(string);
-//  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
-//  // TODO(Alison) - relationship between string and passed string?
-
-//  passed_string = string;
-//  demultiplexer_.StoreCache(string);
-//  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
-//  // TODO(Alison) - relationship between string and passed string?
-// }
-
-// TEST_F(DemultiplexerTest, FUNC_RetrieveOldCache) {
-//  int buffer_size(10);  // TODO(Alison) - get real buffer size
-//  nfs::Message message(GenerateValidMessage(nfs::Persona::kDataHolder));
-//  std::string string(SerialiseAsString(message));
-//  std::string passed_string(string);
-//  demultiplexer_.StoreCache(string);
-//  EXPECT_TRUE(demultiplexer_.HaveCache(passed_string));
-//  // TODO(Alison) - relationship between string and passed string?
-
-//  for (uint16_t i(0); i < buffer_size; ++i) {
-//    std::string temp_string(SerialiseAsString(GenerateValidMessage(nfs::Persona::kDataHolder)));
-//    demultiplexer_.StoreCache(temp_string);
-//    std::string temp_passed_string(temp_string);
-//    EXPECT_TRUE(demultiplexer_.HaveCache(temp_passed_string));
-//    // TODO(Alison) - relationship between string and passed string?
-//  }
-
-//  // expect original message to be pushed out of buffer
-//  passed_string = string;
-//  EXPECT_FALSE(demultiplexer_.HaveCache(passed_string));
-//  EXPECT_EQ(string, passed_string);
-// }
-// */
-
-// }  // namespace test
-
-// }  // namespace vault
-
-// }  // namespace maidsafe
+#include "maidsafe/vault/demultiplexer.h"
+
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/utils.h"
+#include "maidsafe/common/test.h"
+
+#include "maidsafe/passport/passport.h"
+
+#include "maidsafe/vault/maid_manager/service.h"
+#include "maidsafe/vault/data_manager/service.h"
+#include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/pmid_node/service.h"
+#include "maidsafe/vault/tests/tests_utils.h"
+
+namespace maidsafe {
+
+namespace vault {
+
+namespace test {
+
+class DemultiplexerTest : public testing::Test {
+ public:
+  DemultiplexerTest() :
+      kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault" +
+                                                RandomAlphaNumericString(8))),
+      vault_dir_(*kTestRoot_),
+      pmid_(passport::CreatePmidAndSigner().first),
+      asio_service_(2),
+      routing_(new routing::Routing(pmid_)),
+      data_getter_(asio_service_, *routing_),
+      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(
+          pmid_, *routing_, data_getter_, vault_dir_)))),
+      version_handler_service_(std::move(std::unique_ptr<VersionHandlerService>(
+          new VersionHandlerService(pmid_, *routing_, vault_dir_)))),
+      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(new DataManagerService(
+          pmid_, *routing_, data_getter_, vault_dir_)))),
+      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(
+          new PmidManagerService(pmid_, *routing_)))),
+      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
+          new PmidNodeService(pmid_, *routing_, data_getter_, vault_dir_, DiskUsage(100))))),
+      demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
+             pmid_manager_service_, pmid_node_service_, data_getter_) {}
+
+ protected:
+  const maidsafe::test::TestPath kTestRoot_;
+  boost::filesystem::path vault_dir_;
+  passport::Pmid pmid_;
+  AsioService asio_service_;
+  std::unique_ptr<routing::Routing> routing_;
+  nfs_client::DataGetter data_getter_;
+  nfs::Service<MaidManagerService> maid_manager_service_;
+  nfs::Service<VersionHandlerService> version_handler_service_;
+  nfs::Service<DataManagerService> data_manager_service_;
+  nfs::Service<PmidManagerService> pmid_manager_service_;
+  nfs::Service<PmidNodeService> pmid_node_service_;
+  Demultiplexer demux_;
+};
+
+TEST_F(DemultiplexerTest, BEH_HandleMaidManagerMessage) {
+  using NfsMessage = nfs::PutRequestFromMaidNodeToMaidManager;
+  using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
+      routing::SingleSource(maid_node_id), routing::GroupId(maid_node_id));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandleDataGetterMessage) {
+  using NfsMessage = nfs::GetResponseFromDataManagerToDataGetter;
+  using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
+  auto data_id(NodeId(RandomString(NodeId::kSize))),
+       data_manager_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
+      routing::GroupSource(routing::GroupId(data_id),
+                           routing::SingleId(data_manager_id)),
+      routing::SingleId(routing_->kNodeId()));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandleMaidNodeMessage) {
+  using NfsMessage = nfs::GetResponseFromDataManagerToMaidNode;
+  using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
+  auto data_id(NodeId(RandomString(NodeId::kSize))),
+       data_manager_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
+      routing::GroupSource(routing::GroupId(data_id),
+                           routing::SingleId(data_manager_id)),
+      routing::SingleId(routing_->kNodeId()));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandleDataManagerMessage) {
+  using VaultMessage = PutRequestFromMaidManagerToDataManager;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize))),
+       maid_manager_id(NodeId(RandomString(NodeId::kSize))),
+       data_manager_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
+      routing::GroupSource(routing::GroupId(maid_node_id),
+                           routing::SingleId(maid_manager_id)),
+      routing::GroupId(data_manager_id));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandlePmidManagerMessage) {
+  using VaultMessage = PutRequestFromDataManagerToPmidManager;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto data_id(NodeId(RandomString(NodeId::kSize))),
+       data_manager_id(NodeId(RandomString(NodeId::kSize))),
+       pmid_manager_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
+      routing::GroupSource(routing::GroupId(data_id),
+                           routing::SingleId(data_manager_id)),
+      routing::GroupId(pmid_manager_id));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandlePmidNodeMessage) {
+  using VaultMessage = PutRequestFromPmidManagerToPmidNode;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto pmid_manager_id(NodeId(RandomString(NodeId::kSize))),
+       pmid_node_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
+      routing::GroupSource(routing::GroupId(pmid_node_id),
+                           routing::SingleId(pmid_manager_id)),
+      routing::SingleId(pmid_node_id));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandleVersionHandlerMessage) {
+  using VaultMessage = PutVersionRequestFromMaidManagerToVersionHandler;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize))),
+       maid_manager_id(NodeId(RandomString(NodeId::kSize))),
+       version_handler_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
+      routing::GroupSource(routing::GroupId(maid_node_id),
+                           routing::SingleId(maid_manager_id)),
+      routing::GroupId(version_handler_id));
+  demux_.HandleMessage(routing_message);
+}
+
+TEST_F(DemultiplexerTest, BEH_HandleInvalidMessage) {
+  using VaultMessage = PutVersionRequestFromMaidManagerToVersionHandler;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize))),
+       maid_manager_id(NodeId(RandomString(NodeId::kSize))),
+       version_handler_id(NodeId(RandomString(NodeId::kSize)));
+  RoutingMessage routing_message(
+      RandomAlphaNumericString(RandomUint32() % 256),
+      routing::GroupSource(routing::GroupId(maid_node_id),
+                           routing::SingleId(maid_manager_id)),
+      routing::GroupId(version_handler_id));
+  demux_.HandleMessage(routing_message);
+}
+
+}  // namespace test
+
+}  // namespace vault
+
+}  // namespace maidsafe
