@@ -34,6 +34,8 @@
 #include "boost/mpl/end.hpp"
 
 #include "maidsafe/common/data_types/data_name_variant.h"
+#include "maidsafe/common/containers/lru_cache.h"
+
 #include "maidsafe/routing/api_config.h"
 #include "maidsafe/routing/message.h"
 #include "maidsafe/routing/routing_api.h"
@@ -44,7 +46,6 @@
 
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/memory_fifo.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/parameters.h"
@@ -74,6 +75,7 @@ class DataManagerService {
   typedef DataManagerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
   using AccountType = std::pair<Key, DataManagerValue>;
+  using LruCacheGetResult = boost::expected<NonEmptyString, maidsafe_error>;
 
   DataManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -272,7 +274,7 @@ class DataManagerService {
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
-  mutable std::mutex accumulator_mutex_, close_nodes_change_mutex_;
+  mutable std::mutex accumulator_mutex_, close_nodes_change_mutex_, lru_cache_mutex_;
   bool stopped_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
@@ -284,7 +286,7 @@ class DataManagerService {
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
   Sync<DataManager::UnresolvedRemovePmid> sync_remove_pmids_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kDataManager>> account_transfer_;
-  MemoryFIFO temp_store_;
+  LruCache<DataManager::Key, NonEmptyString> lru_cache_;
 
  protected:
   std::mutex lock_guard;
@@ -391,8 +393,10 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
     try {
       LOG(kVerbose) << "Store in temp memeory";
       auto serialised_data(data.Serialise().data);
-      temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
-                               serialised_data);
+      {
+        std::lock_guard<decltype(lru_cache_mutex_)> lock(lru_cache_mutex_);
+        lru_cache_.Add(DataManager::Key(data.name().value, Data::Tag::kValue), serialised_data);
+      }
       DoSync(DataManager::UnresolvedPut(DataManager::Key(data.name()),
                                         ActionDataManagerPut(serialised_data.string().size(),
                                                              message_id),
@@ -527,16 +531,16 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
                                    nfs::MessageId message_id) {
   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
                 << message_id.data;
-  try {
+  LruCacheGetResult get_result;
+  {
+    std::lock_guard<decltype(lru_cache_mutex_)> lock(lru_cache_mutex_);
+    get_result = lru_cache_.Get(DataManager::Key(data_name));
+  }
+  if (get_result.valid()) {
     dispatcher_.SendGetResponseSuccess(
-        requestor,
-        Data(data_name,
-             typename Data::serialised_type(temp_store_.Get(DataNameVariant(data_name)))),
+        requestor, Data(data_name, typename Data::serialised_type(get_result.value())),
         message_id);
     return;
-  }
-  catch (const maidsafe_error& /*error*/) {
-    LOG(kVerbose) << "data not available in temporary store";
   }
 
   // Get all pmid nodes that are online.
@@ -736,8 +740,11 @@ void DataManagerService::DoGetResponseForReplication(const PmidName& pmid_node,
                   << HexSubstr(contents.content->string());
 
   if (contents.content) {
-    temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data_name.value),
-                      typename Data::serialised_type(*contents.content));
+    {
+      std::lock_guard<decltype(lru_cache_mutex_)> lock(lru_cache_mutex_);
+      lru_cache_.Add(DataManager::Key(data_name.value, Data::Tag::kValue),
+                     typename Data::serialised_type(*contents.content));
+    }
     Replicate(DataManager::Key(data_name.value, Data::Tag::kValue), nfs::MessageId(RandomInt32()));
   }
 }
@@ -752,8 +759,11 @@ bool DataManagerService::SendGetResponse(
                << get_response_op->message_id;
     dispatcher_.SendGetResponseSuccess(get_response_op->requestor_id, data,
                                        get_response_op->message_id);
-    temp_store_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
-                      data.Serialise().data);
+    {
+      std::lock_guard<decltype(lru_cache_mutex_)> lock(lru_cache_mutex_);
+      lru_cache_.Add(DataManager::Key(data.name().value, Data::Tag::kValue),
+                     data.Serialise().data);
+    }
     return true;
   } catch(const maidsafe_error& e) {
     error = e;

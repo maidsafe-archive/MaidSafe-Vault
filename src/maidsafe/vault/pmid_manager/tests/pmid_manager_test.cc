@@ -27,18 +27,6 @@ namespace vault {
 
 namespace test {
 
-//class PmidManagerTest : public testing::Test {
-// public:
-//  PmidManagerTest() : env_(VaultEnvironment::g_environment()) {}
-
-//  std::vector<VaultNetwork::ClientPtr>& GetClients() { return env_->clients_; }
-
-//  std::vector<passport::PublicPmid>& GetPublicPmids() { return env_->public_pmids_; }
-
-// protected:
-//  std::shared_ptr<VaultNetwork> env_;
-//};
-
 }  // namespace test
 
 }  // namespace vault

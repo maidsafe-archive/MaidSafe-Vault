@@ -175,6 +175,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target being the first
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     std::vector<PmidName> local_pmid_nodes;
     std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
     local_pmid_nodes[0] = pmid_name;
@@ -188,6 +189,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target in the middle
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     std::vector<PmidName> local_pmid_nodes;
     std::copy(std::begin(pmid_nodes), std::end(pmid_nodes), std::back_inserter(local_pmid_nodes));
     local_pmid_nodes[3] = pmid_name;
@@ -201,6 +203,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
   { // target being the only pmid_node
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
+    db.Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
     ActionDataManagerAddPmid action_add_pmid(pmid_name);
     db.Commit(key, action_add_pmid);
     auto result(db.GetRelatedAccounts(pmid_name));
@@ -212,8 +215,10 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
   DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
   std::map<DataManager::Key, DataManager::Value> key_value_map;
   std::vector<NodeId> pmid_nodes;
-  for (int i(0); i < 10; ++i)
+  for (int i(0); i < 10; ++i) {
     pmid_nodes.push_back(NodeId(RandomString(64)));
+    LOG(kVerbose) << "Generated pmid node " << HexSubstr(pmid_nodes.back().string());
+  }
   // GetTransferInfo from CloseNodeChanges will force a rule that only the vault id is already
   // one of the closest then the transfer will happen, so here we will need to ensure :
   // 1, the db only contains entries that the vault is already in range
@@ -223,15 +228,22 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
   auto vault_id(pmid_nodes.front());
   std::vector<NodeId> data_entries;
   for (auto& pmid_node : pmid_nodes) {
-    std::vector<NodeId> holders(routing::Parameters::group_size);
-    std::partial_sort_copy(std::begin(pmid_nodes), std::end(pmid_nodes),
-                           std::begin(holders), std::end(holders),
-                           [pmid_node](const NodeId& lhs, const NodeId& rhs) {
-      return NodeId::CloserToTarget(lhs, rhs, pmid_node);
-    });
-    auto in_range(std::find(holders.begin(), holders.end(), vault_id));
-    if (in_range != holders.end())
-      data_entries.push_back(pmid_node);
+    // DM shall not hold account bearing the same name to itself
+    if (vault_id != pmid_node) {
+      std::vector<NodeId> candidates(pmid_nodes);
+      candidates.erase(std::find(candidates.begin(), candidates.end(), pmid_node));
+      std::vector<NodeId> holders(routing::Parameters::group_size);
+      std::partial_sort_copy(std::begin(candidates), std::end(candidates),
+                             std::begin(holders), std::end(holders),
+                             [pmid_node](const NodeId& lhs, const NodeId& rhs) {
+        return NodeId::CloserToTarget(lhs, rhs, pmid_node);
+      });
+      auto in_range(std::find(holders.begin(), holders.end(), vault_id));
+      if (in_range != holders.end()) {
+        data_entries.push_back(pmid_node);
+        LOG(kVerbose) << "created data entry : " << HexSubstr(data_entries.back().string());
+      }
+    }
   }
   LOG(kVerbose) << " created data entries : " << data_entries.size();
   for (auto& account : data_entries) {
@@ -253,6 +265,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
                                             old_close_nodes_pass_down.end(),
                                             vault_id));
   NodeId new_node(RandomString(64));
+  LOG(kVerbose) << "new_node : " << HexSubstr(new_node.string());
   new_close_nodes.push_back(new_node);
   std::vector<NodeId> new_close_nodes_pass_down(new_close_nodes);
   new_close_nodes_pass_down.erase(std::find(new_close_nodes_pass_down.begin(),
@@ -261,19 +274,36 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
 
   std::shared_ptr<routing::CloseNodesChange> close_node_change_ptr(new
       routing::CloseNodesChange(vault_id, old_close_nodes_pass_down, new_close_nodes_pass_down));
-  LOG(kVerbose) << " db.GetTransferInfo " ;
+  LOG(kVerbose) << " db.GetTransferInfo ";
   DataManager::TransferInfo result(db.GetTransferInfo(close_node_change_ptr));
+
   size_t expected_entries(0);
+  std::vector<DataManager::Key> pruned;
   for (auto& pmid_node : data_entries) {
+    // DM shall not hold account bearing the same name to itself
+    // but shall take vault_id into calculation
+    std::vector<NodeId> candidates(new_close_nodes);
+    candidates.erase(std::find(candidates.begin(), candidates.end(), pmid_node));
     std::vector<NodeId> new_holders(routing::Parameters::group_size);
-    std::partial_sort_copy(std::begin(new_close_nodes), std::end(new_close_nodes),
+    std::partial_sort_copy(std::begin(candidates), std::end(candidates),
                            std::begin(new_holders), std::end(new_holders),
                            [pmid_node](const NodeId& lhs, const NodeId& rhs) {
       return NodeId::CloserToTarget(lhs, rhs, pmid_node);
     });
-    auto in_range(std::find(new_holders.begin(), new_holders.end(), new_node));
-    if (in_range != new_holders.end())
-      ++expected_entries;
+    // those entry that the current vault is no longer among the closest shall got pruned
+    // and the vault shall not transfer the entry to the new node even it is the new holder
+    auto in_range(std::find(new_holders.begin(), new_holders.end(), vault_id));
+    if (in_range == new_holders.end()) {
+      LOG(kVerbose) << "expected removed account : " << HexSubstr(pmid_node.string());
+      DataManager::Key key(Identity(pmid_node.string()), ImmutableData::Tag::kValue);
+      pruned.push_back(key);
+    } else {
+      auto in_range(std::find(new_holders.begin(), new_holders.end(), new_node));
+      if (in_range != new_holders.end()) {
+        LOG(kVerbose) << "expected having entry of account " << HexSubstr(pmid_node.string());
+        ++expected_entries;
+      }
+    }
   }
   LOG(kVerbose) << " expected_entries : " << expected_entries;
   if (expected_entries > 0) {
@@ -282,22 +312,6 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
     EXPECT_EQ(expected_entries, result.begin()->second.size());
   } else {
     EXPECT_TRUE(result.empty());
-  }
-
-  // those entry that vault is no longe closest shall got pruned
-  std::vector<DataManager::Key> pruned;
-  for (auto& pmid_node : data_entries) {
-    std::vector<NodeId> holders(routing::Parameters::group_size);
-    std::partial_sort_copy(std::begin(new_close_nodes), std::end(new_close_nodes),
-                           std::begin(holders), std::end(holders),
-                           [pmid_node](const NodeId& lhs, const NodeId& rhs) {
-      return NodeId::CloserToTarget(lhs, rhs, pmid_node);
-    });
-    auto in_range(std::find(holders.begin(), holders.end(), vault_id));
-    if (in_range == holders.end()) {
-      DataManager::Key key(Identity(pmid_node.string()), ImmutableData::Tag::kValue);
-      pruned.push_back(key);
-    }
   }
   LOG(kVerbose) << " expected to be pruned : " << pruned.size();
   for (auto& key : pruned)
@@ -318,7 +332,7 @@ TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
   PmidName pmid_name(pmid_nodes[3]);
   { // Handle Transfer
     std::vector<DataManager::KvPair> transferred;
-    transferred.push_back(std::make_pair<>(key, value));
+    transferred.push_back(std::make_pair(key, value));
     db.HandleTransfer(transferred);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 1);
@@ -329,7 +343,7 @@ TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
   { // Handle Duplicated Transfer
     DataManager::Value duplicated_value(value);
     std::vector<DataManager::KvPair> transferred;
-    transferred.push_back(std::make_pair<>(key, duplicated_value));
+    transferred.push_back(std::make_pair(key, duplicated_value));
     db.HandleTransfer(transferred);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 1);
@@ -341,7 +355,7 @@ TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
     ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
     DataManager::Key key(data.name());
     std::vector<DataManager::KvPair> transferred;
-    transferred.push_back(std::make_pair<>(key, value));
+    transferred.push_back(std::make_pair(key, value));
     db.HandleTransfer(transferred);
     auto result(db.GetRelatedAccounts(pmid_name));
     EXPECT_EQ(result.size(), 2);

@@ -173,8 +173,7 @@ void AccountTransferHandler<Persona>::Prune(std::unique_lock<std::mutex>& lock) 
   auto upper(std::upper_bound(
       std::begin(update_time_index), std::end(update_time_index), dummy,
       [this](const Entry& lhs, const Entry& rhs) {
-        return (lhs.update_time - rhs.update_time <
-                    detail::Parameters::account_transfer_life);
+        return (lhs.update_time - rhs.update_time < detail::Parameters::account_transfer_life);
       }));
   if (upper != std::end(update_time_index))
     update_time_index.erase(std::begin(update_time_index), upper);
