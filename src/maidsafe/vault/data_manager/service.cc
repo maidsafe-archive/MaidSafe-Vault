@@ -460,21 +460,15 @@ void DataManagerService::HandleAccountTransfer(const AccountType& account) {
 
 void DataManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info before : ";
-//   close_nodes_change_.Print();
   std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
   if (stopped_)
     return;
-//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change containing following info : ";
-//   close_nodes_change->Print();
   close_nodes_change_ = *close_nodes_change;
 
   Db<DataManager::Key, DataManager::Value>::TransferInfo transfer_info(
       db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
-//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
-//   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
   std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
   for (auto& account : accounts)
