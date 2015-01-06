@@ -82,7 +82,7 @@ TEST(MaidManagerActionsTest, BEH_EqualityInequality) {
     // put
     decltype(ActionMaidManagerPut::kSize) size1(1), size2(2);
     ActionMaidManagerPut action1(size1), action2(size2), action3(size1);
-  
+
     ASSERT_EQ(nfs::MessageAction::kPutRequest, action1.kActionId);
     ASSERT_EQ(size1, action1.kSize);
     ASSERT_EQ(nfs::MessageAction::kPutRequest, action2.kActionId);
@@ -207,8 +207,8 @@ TEST(MaidManagerActionsTest, BEH_PutOperator) {
   ASSERT_EQ(std::numeric_limits<uint64_t>().max(), value.space_available);
 
   decltype(ActionMaidManagerPut::kSize) size(1);
-  ActionMaidManagerPut action_put(size); 
-  
+  ActionMaidManagerPut action_put(size);
+
   ASSERT_NO_THROW(action_put(value));
 
   ASSERT_EQ(size, value.data_stored);

@@ -50,7 +50,7 @@ TEST(MaidManagerValueTest, BEH_Equality) {
   uint64_t data_stored(1), space_available(1);
   MaidManager::Value value1(data_stored, space_available), value2(data_stored, space_available),
                      value3(data_stored, space_available + 1);
-  
+
   ASSERT_TRUE(value1 == value2);
   ASSERT_FALSE(value1 == value3);
 }
@@ -59,7 +59,7 @@ TEST(MaidManagerValueTest, BEH_Swap) {
   uint64_t data1_stored(0), space1_available(100), data2_stored(1), space2_available(99);
   MaidManager::Value value1(data1_stored, space1_available),
                      value2(data2_stored, space2_available);
-  
+
   ASSERT_EQ(data1_stored, value1.data_stored);
   ASSERT_EQ(space1_available, value1.space_available);
   ASSERT_EQ(data2_stored, value2.data_stored);
@@ -146,7 +146,7 @@ TEST(MaidManagerValueTest, BEH_Resolve) {
 
   std::vector<MaidManager::Value> values;
   ASSERT_NO_THROW(values.push_back(value1));
-  
+
   ASSERT_THROW(value.Resolve(values), maidsafe_error);
 
   ASSERT_NO_THROW(values.push_back(value2));
