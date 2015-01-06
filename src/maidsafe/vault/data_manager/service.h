@@ -63,12 +63,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace test {
-
-  class DataManagerServiceTest;
-
-}
-
 class DataManagerService {
  public:
   typedef nfs::DataManagerServiceMessages PublicMessages;
@@ -269,7 +263,6 @@ class DataManagerService {
   friend class detail::PutResponseFailureVisitor<DataManagerService>;
   friend class detail::DataManagerAccountQueryVisitor<DataManagerService>;
   friend class detail::DataManagerGetForReplicationVisitor<DataManagerService>;
-  friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
   AsioService asio_service_;

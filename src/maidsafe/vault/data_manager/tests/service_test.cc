@@ -46,20 +46,20 @@ class DataManagerServiceTest : public testing::Test {
         data_manager_service_(pmid_, routing_, data_getter_, vault_root_dir_),
         asio_service_(2) {}
 
-  typedef std::function<
-      void(const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&)> Functor;
-
-  void AddTask(Functor functor, uint32_t required, uint32_t task_id) {
-    data_manager_service_.get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, required,
-                                             task_id);
+  template <typename Data>
+  void Put(const Data& data) {
+    NodeId maid_node_id(RandomString(NodeId::kSize)), data_name_id;
+    nfs_vault::DataNameAndContent content(data);
+    data_name_id = NodeId(content.name.raw_name.string());
+    auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
+    auto group_source(CreateGroupSource(maid_node_id));
+    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
+                                     routing::GroupId(data_name_id)));
   }
 
-  void CancelGetTimerTask(int task_id) {
-    data_manager_service_.get_timer_.CancelTask(task_id);
-  }
-
-  void DeleteFromLruCache(const DataManager::Key& key) {
-    data_manager_service_.lru_cache_.Delete(key);
+  void DeleteFromLruCache() {
+    Sleep(detail::Parameters::temporary_store_time_to_live);
+    Put(ImmutableData(NonEmptyString(RandomAlphaNumericString(kTestChunkSize))));
   }
 
   template <typename Data>
@@ -264,11 +264,6 @@ TEST_F(DataManagerServiceTest, BEH_Various) {
     NodeId pmid_node_id(RandomString(NodeId::kSize));
     auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
     auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
-    auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
-      LOG(kVerbose) << "functor called";
-    });
-
-    AddTask(functor, 1, get_response.id.data);
     EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
                                         routing::SingleSource(pmid_node_id),
                                         routing::SingleId(routing_.kNodeId())));
