@@ -48,7 +48,6 @@ class VersionHandlerValue {
   void DeleteBranchUntilFork(const StructuredDataVersions::VersionName& branch_tip);
 
   friend void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
-  friend bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
  private:
   typedef std::unique_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
