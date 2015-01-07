@@ -188,7 +188,7 @@ class MaidManagerService {
   template<typename DataName>
   void HandleAccountRequest(const DataName& name, const NodeId& sender);
   void HandleAccountTransferEntry(const std::string& serialised_account,
-                                  const routing::GroupSource& sender);
+                                  const routing::SingleSource& sender);
 
  private:
   typedef Accumulator<nfs::MaidManagerServiceMessages> NfsAccumulator;
