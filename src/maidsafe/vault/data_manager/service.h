@@ -272,7 +272,6 @@ class DataManagerService {
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
-  routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
   DataManagerDataBase db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
@@ -535,86 +534,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
         message_id);
     return;
   }
-
-  // Get all pmid nodes that are online.
-  std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
-  int expected_response_count(static_cast<int>(online_pmids.size()));
-  // if there is no online_pmids in record, means :
-  //   this DM doesn't have the record for the requested data
-  //   or no pmid can given the data (shall not happen)
-  // BEFORE_RELEASE In any case, shall return silently or send back a failure?
-  if (expected_response_count == 0) {
-    dispatcher_.SendGetResponseFailure(requestor, data_name,
-                                       maidsafe_error(CommonErrors::no_such_element), message_id);
-    return;
-  }
-
-  // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
-  auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
-  std::map<PmidName, IntegrityCheckData> integrity_checks;
-  // TODO(Team): IntegrityCheck is temporarily disabled because of the performance concern
-  //             1, May only undertake IntegrityCheck for mutable data
-  //             2, The efficiency of the procedure shall be improved
-//   for (const auto& iter : online_pmids)
-//     integrity_checks.insert(
-//         std::make_pair(iter, IntegrityCheckData(IntegrityCheckData::GetRandomInput())));
-
-  // Create helper struct which holds the collection of responses, and add the task to the timer.
-  auto get_response_op(
-      std::make_shared<detail::GetResponseOp<typename Data::Name, RequestorIdType>>(
-          pmid_node_to_get_from, message_id, integrity_checks, data_name, requestor));
-  auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
-    LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
-                  << " task called from timer to DoHandleGetResponse";
-    {
-      std::lock_guard<decltype(close_nodes_change_mutex_)> lock(this->close_nodes_change_mutex_);
-      if (stopped_)
-        return;
-    }
-
-    this->DoHandleGetResponse<Data, RequestorIdType>(pmid_node_and_contents.first,
-                                                     pmid_node_and_contents.second,
-                                                     get_response_op);
-  });
-  get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1/*expected_response_count*/,
-                     message_id.data);
-  LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
-                << " SendGetRequest with message_id " << message_id.data
-                << " to picked up pmid_node " << HexSubstr(pmid_node_to_get_from->string());
-  // Send requests
-  dispatcher_.SendGetRequest<Data>(pmid_node_to_get_from, data_name, message_id);
-
-//   LOG(kVerbose) << "DataManagerService::HandleGet " << HexSubstr(data_name.value)
-//                 << " has " << integrity_checks.size() << " entries to check integrity";
-
-//   for (const auto& integrity_check : integrity_checks) {
-//     dispatcher_.SendIntegrityCheck<Data>(data_name,
-//                                          NonEmptyString(integrity_check.second.random_input()),
-//                                          integrity_check.first, message_id);
-//   }
-}
-
-template <typename Data>
-void DataManagerService::GetForReplication(const PmidName& pmid_name,
-                                           const typename Data::Name& data_name) {
-  std::set<PmidName> online_pmids(GetOnlinePmids<Data>(data_name));
-  online_pmids.erase(pmid_name);
-  DoGetForReplication<Data>(data_name, online_pmids);
-}
-
-template <typename Data>
-void DataManagerService::DoGetForReplication(const typename Data::Name& data_name,
-                                             const std::set<PmidName>& online_pmids) {
-  // Just get, don't do integrity check
-  auto functor([=](const std::pair<PmidName, GetResponseContents>& pmid_node_and_contents) {
-    this->DoGetResponseForReplication<Data>(pmid_node_and_contents.first, data_name,
-                                            pmid_node_and_contents.second);
-  });
-  nfs::MessageId message_id(get_timer_.NewTaskId());
-  get_timer_.AddTask(detail::Parameters::kDefaultTimeout, functor, 1, message_id);
-  for (auto& pmid_node : online_pmids) {
-    dispatcher_.SendGetRequest<Data>(pmid_node, data_name, message_id);
-  }
+  get_helper_.SendGetRequest(data_name, requestor, message_id);
 }
 
 template <typename DataName>

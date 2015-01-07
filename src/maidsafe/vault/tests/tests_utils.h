@@ -166,7 +166,7 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
 }
 
 template <typename ServiceType, typename UnresolvedActionType, typename PersonaSyncType>
-void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActionType>& /*sync*/,
+void AddLocalActionAndSendGroupActions(ServiceType* service,
                                        const std::vector<UnresolvedActionType>& unresolved_actions,
                                        const std::vector<routing::GroupSource>& group_source) {
   for (uint32_t index(0); index < unresolved_actions.size(); ++index) {

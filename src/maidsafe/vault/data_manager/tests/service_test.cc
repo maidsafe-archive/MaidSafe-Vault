@@ -73,11 +73,6 @@ class DataManagerServiceTest : public testing::Test {
                                   std::vector<NodeId> { NodeId(pmid_name->string()) });
   }
 
-  template <typename ActionType>
-  void Commit(const DataManager::Key& key, const ActionType& action) {
-    data_manager_service_.db_.Commit(key, action);
-  }
-
   DataManager::Value Get(const DataManager::Key& key) { return data_manager_service_.db_.Get(key); }
   uint64_t Replicate(const DataManager::Key& key, nfs::MessageId message_id,
                      const PmidName& tried_pmid_node = PmidName()) {
@@ -120,8 +115,7 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedPut>(
      const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedPut,
                                     SynchroniseFromDataManagerToDataManager>(
-     &data_manager_service_, data_manager_service_.sync_puts_, unresolved_actions,
-     group_source);
+     &data_manager_service_, unresolved_actions, group_source);
 }
 
 template <>
@@ -130,8 +124,7 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedDelete>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedDelete,
                                     SynchroniseFromDataManagerToDataManager>(
-      &data_manager_service_, data_manager_service_.sync_deletes_, unresolved_actions,
-      group_source);
+      &data_manager_service_, unresolved_actions, group_source);
 }
 
 template <>
@@ -140,8 +133,7 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedAddPmid>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedAddPmid,
                                     SynchroniseFromDataManagerToDataManager>(
-      &data_manager_service_, data_manager_service_.sync_add_pmids_, unresolved_actions,
-      group_source);
+      &data_manager_service_, unresolved_actions, group_source);
 }
 
 template <>
@@ -150,8 +142,7 @@ void DataManagerServiceTest::SendSync<DataManager::UnresolvedRemovePmid>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<DataManagerService, DataManager::UnresolvedRemovePmid,
                                     SynchroniseFromDataManagerToDataManager>(
-      &data_manager_service_, data_manager_service_.sync_remove_pmids_, unresolved_actions,
-      group_source);
+      &data_manager_service_, unresolved_actions, group_source);
 }
 
 template <typename UnresolvedActionType>
@@ -160,11 +151,6 @@ std::vector<std::unique_ptr<UnresolvedActionType>> DataManagerServiceTest::GetUn
   return std::vector<std::unique_ptr<UnresolvedActionType>>();
 }
 
-template <>
-std::vector<std::unique_ptr<DataManager::UnresolvedDelete>>
-DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedDelete>() {
-  return data_manager_service_.sync_deletes_.GetUnresolvedActions();
-}
 
 template <>
 std::vector<std::unique_ptr<DataManager::UnresolvedAddPmid>>
@@ -314,7 +300,7 @@ TEST_F(DataManagerServiceTest, BEH_Get) {
   DataManager::Key key(content.raw_name, content.type);
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   Commit(key, ActionDataManagerAddPmid(pmid_name));
-  this->DeleteFromLruCache(key);
+  this->DeleteFromLruCache();
   this->AddToCloseNodesChange(pmid_name);
   NodeId maid_node_id(RandomString(NodeId::kSize)),
   data_name_id { NodeId(content.raw_name.string()) };
@@ -475,7 +461,7 @@ TEST_F(DataManagerServiceTest, BEH_GetForReplication) {
   DataManager::Key key(data.name());
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   Commit(key, ActionDataManagerAddPmid(pmid_name));
-  this->DeleteFromLruCache(key);
+  this->DeleteFromLruCache();
   this->AddToCloseNodesChange(pmid_name);
   NodeId maid_node_id(RandomString(NodeId::kSize)),
   data_name_id { NodeId(data.name()->string()) };
@@ -491,7 +477,7 @@ TEST_F(DataManagerServiceTest, BEH_DoHandleGetResponse) {
   DataManager::Key key(data_name);
   Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomInt32())));
   Commit(key, ActionDataManagerAddPmid(pmid_name));
-  this->DeleteFromLruCache(key);
+  this->DeleteFromLruCache();
   this->AddToCloseNodesChange(pmid_name);
   NodeId maid_node_id(RandomString(NodeId::kSize)),
   data_name_id { NodeId(data_name->string()) };
