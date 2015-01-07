@@ -117,8 +117,7 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedCreateAccount>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedCreateAccount,
                                     SynchroniseFromMaidManagerToMaidManager>(
-      &maid_manager_service_, maid_manager_service_.sync_create_accounts_, unresolved_actions,
-      group_source);
+      &maid_manager_service_, unresolved_actions, group_source);
 }
 
 template <>
@@ -127,8 +126,7 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedRemoveAccount>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedRemoveAccount,
                                     SynchroniseFromMaidManagerToMaidManager>(
-      &maid_manager_service_, maid_manager_service_.sync_remove_accounts_, unresolved_actions,
-      group_source);
+      &maid_manager_service_, unresolved_actions, group_source);
 }
 
 template <>
@@ -137,7 +135,7 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedPut>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedPut,
                                     SynchroniseFromMaidManagerToMaidManager>(
-      &maid_manager_service_, maid_manager_service_.sync_puts_, unresolved_actions, group_source);
+      &maid_manager_service_, unresolved_actions, group_source);
 }
 
 template <>
@@ -146,8 +144,7 @@ void MaidManagerServiceTest::SendSync<MaidManager::UnresolvedDelete>(
     const std::vector<routing::GroupSource>& group_source) {
   AddLocalActionAndSendGroupActions<MaidManagerService, MaidManager::UnresolvedDelete,
                                     SynchroniseFromMaidManagerToMaidManager>(
-      &maid_manager_service_, maid_manager_service_.sync_deletes_, unresolved_actions,
-      group_source);
+      &maid_manager_service_, unresolved_actions, group_source);
 }
 
 TEST_F(MaidManagerServiceTest, BEH_PutRequestFromMaidNodeToMaidManager) {

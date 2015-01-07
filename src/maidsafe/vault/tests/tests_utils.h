@@ -135,6 +135,13 @@ void SingleSendsToGroup(ServiceType* service, const MessageType& message,
   service->HandleMessage(message, single_source, group_id);
 }
 
+template <typename ServiceType, typename MessageType>
+void SingleRelaySendsToGroup(ServiceType* service, const MessageType& message,
+                        const routing::SingleRelaySource& single_source,
+                        const routing::GroupId& group_id) {
+  service->HandleMessage(message, single_source, group_id);
+}
+
 template <typename DataNameType>
 std::vector<routing::GroupSource> CreateGroupSource(const DataNameType& data_name) {
   return CreateGroupSource(NodeId(data_name.value.string()));
@@ -159,7 +166,7 @@ std::vector<UnresolvedActionType> CreateGroupUnresolvedAction(
 }
 
 template <typename ServiceType, typename UnresolvedActionType, typename PersonaSyncType>
-void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActionType>& /*sync*/,
+void AddLocalActionAndSendGroupActions(ServiceType* service,
                                        const std::vector<UnresolvedActionType>& unresolved_actions,
                                        const std::vector<routing::GroupSource>& group_source) {
   for (uint32_t index(0); index < unresolved_actions.size(); ++index) {
