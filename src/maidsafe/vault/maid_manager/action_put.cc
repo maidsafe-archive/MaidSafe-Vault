@@ -53,6 +53,8 @@ void ActionMaidManagerPut::operator()(MaidManagerValue& value) const {
   value.PutData(kSize);
 }
 
+const nfs::MessageAction ActionMaidManagerPut::kActionId;
+
 bool operator==(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {
   return lhs.kSize == rhs.kSize;
 }

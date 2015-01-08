@@ -96,8 +96,12 @@ std::string ActionCreateRemoveAccount<Remove>::Serialise() const {
   return action_proto.SerializeAsString();
 }
 
+template <bool Remove>
+const nfs::MessageAction ActionCreateRemoveAccount<Remove>::kActionId;
+
 typedef ActionCreateRemoveAccount<false> ActionCreateAccount;
 typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
+
 
 }  // namespace vault
 

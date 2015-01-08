@@ -20,7 +20,6 @@
 
 #include "maidsafe/common/test.h"
 
-#include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/action_create_remove_account.h"

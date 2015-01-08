@@ -63,6 +63,7 @@ void ActionMaidManagerDelete::operator()(MaidManagerValue& /*value*/) const {
     return detail::DbAction::kPut;*/
 }
 
+const nfs::MessageAction ActionMaidManagerDelete::kActionId;
 
 bool operator==(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs) {
   return (lhs.kMessageId == rhs.kMessageId);
