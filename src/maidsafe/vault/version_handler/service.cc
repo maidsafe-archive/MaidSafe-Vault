@@ -371,37 +371,91 @@ void VersionHandlerService::HandleMessage(
     const AccountTransferFromVersionHandlerToVersionHandler& message,
     const typename AccountTransferFromVersionHandlerToVersionHandler::Sender& sender,
     const typename AccountTransferFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
-  LOG(kInfo) << "VersionHandler received account from " << DebugId(sender.sender_id);
-  VersionHandler::UnresolvedAccountTransfer unresolved_account_transfer(message.contents->data);
-  auto resolved_action(account_transfer_.AddUnresolvedAction(
-      unresolved_account_transfer, sender,
-      AccountTransfer<VersionHandler::UnresolvedAccountTransfer>::AddRequestChecker(
-          routing::Parameters::group_size / 2)));
-  if (resolved_action) {
-    LOG(kInfo) << "AccountTransferFromVersionHandlerToVersionHandler handle account transfer";
-    this->HandleAccountTransfer(std::move(resolved_action));
+  LOG(kInfo) << "VersionHandler received account from " << sender.data;
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer";
+  }
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+    HandleAccountTransferEntry(serialised_account, sender);
   }
 }
 
-void VersionHandlerService::HandleAccountTransfer(
-    std::unique_ptr<VersionHandler::UnresolvedAccountTransfer>&& resolved_action) {
-  std::vector<std::pair<VersionHandler::Key, VersionHandler::Value>> kv_pairs;
-  for (auto& action : resolved_action->actions) {
-    try {
-      protobuf::VersionHandlerKeyValuePair kv_msg;
-      if (kv_msg.ParseFromString(action)) {
-        VersionHandler::Key key(kv_msg.key());
-        VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kGotAccountTransferred, key.name);
-        VersionHandlerValue value(kv_msg.value());
-        LOG(kVerbose) << "VersionHandlerService got account " << DebugId(key.name)
-                      << " transferred, having vaule " << value.Print();
-        kv_pairs.push_back(std::make_pair(key, std::move(value)));
-      }
-    } catch(...) {
-      LOG(kError) << "HandleAccountTransfer can't parse the action";
-    }
+void VersionHandlerService::HandleAccountTransferEntry(
+    const std::string& serialised_account, const routing::SingleSource& sender) {
+  using Handler = AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kVersionHandler>>;
+  protobuf::VersionHandlerKeyValuePair kv_msg;
+  if (!kv_msg.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse transferred account";
   }
-  db_.HandleTransfer(kv_pairs);
+  auto result(account_transfer_.Add(Key(kv_msg.key()), VersionHandlerValue(kv_msg.value()),
+                                    sender.data));
+  if (result.result ==  Handler::AddResult::kSuccess) {
+    VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kGotAccountTransferred, result.key.name);
+    LOG(kVerbose) << "VersionHandlerService got account " << DebugId(result.key.name)
+                  << " transferred, having vaule " << result.value->Print();
+    AccountType account(std::make_pair(std::move(result.key), std::move(*result.value)));
+    HandleAccountTransfer(account);
+  } else if (result.result ==  Handler::AddResult::kFailure) {
+    LOG(kVerbose) << "VersionHandler AcoccountTransfer SendAccountQuery";
+    dispatcher_.SendAccountQuery(result.key);
+  }
+}
+
+void VersionHandlerService::HandleAccountTransfer(const AccountType& account) {
+  try {
+    db_.HandleTransfer(std::vector<AccountType> { account });
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "VersionHandler AcoccountTransfer Failed to store account " << error.what();
+    throw;
+  }
+}
+
+template<>
+void VersionHandlerService::HandleMessage(
+    const AccountQueryFromVersionHandlerToVersionHandler& /*message*/,
+    const typename AccountQueryFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename AccountQueryFromVersionHandlerToVersionHandler::Receiver& receiver) {
+//  VersionHandler::Key key(MutableData::Name(Identity{ receiver.data.string() }));
+  HandleAccountQuery(VersionHandler::Key{ MutableData::Name{ Identity{ receiver.data.string() }}},
+                     sender.data);
+}
+
+void VersionHandlerService::HandleAccountQuery(const VersionHandler::Key& key,
+                                               const NodeId& sender) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(key.name.string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto value(db_.Get(key));
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::VersionHandlerKeyValuePair kv_msg;
+    kv_msg.set_key(key.Serialise());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountQueryResponse(account_transfer_proto.SerializeAsString(),
+                                         routing::GroupId(NodeId(key.name.string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
+}
+
+template <>
+void VersionHandlerService::HandleMessage(
+    const AccountQueryResponseFromVersionHandlerToVersionHandler& message,
+    const typename AccountQueryResponseFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename AccountQueryResponseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
+  LOG(kInfo) << "VersionHandler received account via response from " << DebugId(sender.sender_id);
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer query response";
+  }
+  assert(account_transfer_proto.serialised_accounts_size() == 1);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0),
+                             routing::SingleSource(sender.sender_id));
 }
 
 void VersionHandlerService::HandleChurnEvent(
@@ -453,29 +507,23 @@ void VersionHandlerService::HandleChurnEvent(
 
 void VersionHandlerService::TransferAccount(const NodeId& dest,
     const std::vector<Db<VersionHandler::Key, VersionHandler::Value>::KvPair>& accounts) {
-  // If account just received, shall not pass it out as may under a startup procedure
-  // i.e. existing DM will be seen as new_node in close_nodes_change
-  if (account_transfer_.CheckHandled(routing::GroupId(routing_.kNodeId()))) {
-    LOG(kWarning) << "VersionHandler account just received";
-    return;
+  assert(!accounts.empty());
+  protobuf::AccountTransfer account_transfer_proto;
+  {
+    for (auto& account : accounts) {
+      VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kAccountTransfer,
+           account.first.name, Identity{ dest.string() });
+      protobuf::VersionHandlerKeyValuePair kv_pair;
+      kv_pair.set_key(account.first.Serialise());
+      kv_pair.set_value(account.second.Serialise());
+      account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
+      LOG(kVerbose) << "account.first send account " << HexSubstr(account.first.name.string())
+                    << " to " << HexSubstr(dest.string())
+                    << " with value " << account.second.Print();
+    }
   }
-  std::vector<std::string> actions;
-  for (auto& account : accounts) {
-    VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kAccountTransfer, account.first.name,
-         Identity{ dest.string() });
-    protobuf::DataManagerKeyValuePair kv_msg;
-    kv_msg.set_key(account.first.Serialise());
-    kv_msg.set_value(account.second.Serialise());
-    actions.push_back(kv_msg.SerializeAsString());
-    LOG(kVerbose) << "VersionHandler sent account " << DebugId(account.first.name)
-                  << " to " << HexSubstr(dest.string())
-                  << " with vaule " << account.second.Print();
-  }
-  nfs::MessageId message_id(HashStringToMessageId(dest.string()));
-  VersionHandler::UnresolvedAccountTransfer account_transfer(
-      passport::PublicPmid::Name(Identity(dest.string())), message_id, actions);
-  LOG(kVerbose) << "VersionHandlerService::TransferAccount send account_transfer";
-  dispatcher_.SendAccountTransfer(dest, message_id, account_transfer.Serialise());
+  LOG(kVerbose) << "account.firstService::TransferAccount sending account transfer";
+  dispatcher_.SendAccountTransfer(dest, account_transfer_proto.SerializeAsString());
 }
 
 // void VersionHandlerService::HandleChurnEvent(const NodeId& /*old_node*/,
