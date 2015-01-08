@@ -75,7 +75,6 @@ void PmidManagerService::HandleSyncedPut(
         itr = result.first;
       else
         BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_error));
-      synced_action->action(itr->second);
     }
     synced_action->action(itr->second);
   } catch (const maidsafe_error& error) {

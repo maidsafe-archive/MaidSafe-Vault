@@ -127,6 +127,11 @@ nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>() {
                                         StructuredDataVersions::VersionName(1, name), 30, 40);
 }
 
+template <>
+nfs_vault::DiffSize CreateContent<nfs_vault::DiffSize>() {
+  return nfs_vault::DiffSize(static_cast<int32_t>(RandomInt32() % kMaxChunkSize) -
+                             static_cast<int32_t>(RandomInt32() % kMaxChunkSize));
+}
 
 template <>
 std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
