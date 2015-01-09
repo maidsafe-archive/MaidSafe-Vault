@@ -178,101 +178,97 @@ DataManagerServiceTest::GetUnresolvedActions<DataManager::UnresolvedRemovePmid>(
   return data_manager_service_.sync_remove_pmids_.GetUnresolvedActions();
 }
 
-TEST_F(DataManagerServiceTest, BEH_Various) {
-  //  PutRequestFromMaidManagerToDataManager
-  {
-    NodeId maid_node_id(RandomString(NodeId::kSize)), data_name_id;
-    auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.name.raw_name.string());
-    auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
-    auto group_source(CreateGroupSource(maid_node_id));
-    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
-                                     routing::GroupId(data_name_id)));
-  }
-  //  BEH_PutResponseFromPmidManagerToDataManager
-  {
-    NodeId data_name_id, pmid_node_id(RandomString(NodeId::kSize));
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name().value, ImmutableData::Tag::kValue);
-    Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
-    data_name_id = NodeId(key.name.string());
-    auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.raw_name.string());
-    auto group_source(CreateGroupSource(pmid_node_id));
-    auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
-    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
-                                     routing::GroupId(data_name_id)));
-    EXPECT_EQ(GetUnresolvedActions<DataManager::UnresolvedAddPmid>().size(), 0);
-  }
-  //  PutFailureFromPmidManagerToDataManager
-  {
-    NodeId data_name_id, pmid_node_id(RandomString(NodeId::kSize));
-    auto content(CreateContent<PutFailureFromPmidManagerToDataManager::Contents>());
-    data_name_id = NodeId(content.name.raw_name.string());
-    auto group_source(CreateGroupSource(pmid_node_id));
-    auto put_failure(CreateMessage<PutFailureFromPmidManagerToDataManager>(content));
-    EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_failure, group_source,
-                                     routing::GroupId(data_name_id)));
-    EXPECT_EQ(GetUnresolvedActions<DataManager::UnresolvedRemovePmid>().size(), 0);
-  }
-  //  GetRequestFromMaidNodeToDataManager
-  {
-    NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
-    auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
-    data_name_id = NodeId(content.raw_name.string());
-    auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
-    EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
-                                       routing::SingleSource(maid_node_id),
-                                       routing::GroupId(data_name_id)));
-  }
-  //  GetRequestFromDataGetterToDataManager
-  {
-    NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
-    auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
-    data_name_id = NodeId(content.raw_name.string());
-    auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
-    EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
-                                       routing::SingleSource(maid_node_id),
-                                       routing::GroupId(data_name_id)));
-  }
-  //  GetRequestFromMaidNodePartialToDataManager
-  {
-    NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
-    auto content(CreateContent<nfs::GetRequestFromMaidNodePartialToDataManager::Contents>());
-    data_name_id = NodeId(content.raw_name.string());
-    auto get_request(CreateMessage<nfs::GetRequestFromMaidNodePartialToDataManager>(content));
-    EXPECT_NO_THROW(SingleRelaySendsToGroup(
-        &data_manager_service_, get_request,
-        routing::SingleRelaySource(routing::SingleSource(maid_node_id), maid_node_id,
-                                   routing::SingleSource(maid_node_id)),
-        routing::GroupId(data_name_id)));
-  }
-    //  GetRequestFromDataGetterPartialToDataManager
-    {
-        NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
-        auto content(CreateContent<nfs::GetRequestFromDataGetterPartialToDataManager::Contents>());
-        data_name_id = NodeId(content.raw_name.string());
-        auto get_request(CreateMessage<nfs::GetRequestFromDataGetterPartialToDataManager>(content));
-        EXPECT_NO_THROW(SingleRelaySendsToGroup(
-            &data_manager_service_, get_request,
-            routing::SingleRelaySource(routing::SingleSource(maid_node_id), maid_node_id,
-                                       routing::SingleSource(maid_node_id)),
-            routing::GroupId(data_name_id)));
-    }
-  //  GetResponseFromPmidNodeToDataManager
-  {
-    NodeId pmid_node_id(RandomString(NodeId::kSize));
-    auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
-    auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
-    auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
-      LOG(kVerbose) << "functor called";
-    });
+TEST_F(DataManagerServiceTest, BEH_PutRequestFromMaidManagerToDataManager) {
+  NodeId maid_node_id(RandomString(NodeId::kSize)), data_name_id;
+  auto content(CreateContent<PutRequestFromMaidManagerToDataManager::Contents>());
+  data_name_id = NodeId(content.name.raw_name.string());
+  auto put_request(CreateMessage<PutRequestFromMaidManagerToDataManager>(content));
+  auto group_source(CreateGroupSource(maid_node_id));
+  EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_request, group_source,
+                                   routing::GroupId(data_name_id)));
+}
 
-    AddTask(functor, 1, get_response.id.data);
-    EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
-                                        routing::SingleSource(pmid_node_id),
-                                        routing::SingleId(routing_.kNodeId())));
-  }
+TEST_F(DataManagerServiceTest, BEH_PutResponseFromPmidManagerToDataManager) {
+  NodeId data_name_id, pmid_node_id(RandomString(NodeId::kSize));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name().value, ImmutableData::Tag::kValue);
+  Commit(key, ActionDataManagerPut(kTestChunkSize, nfs::MessageId(RandomUint32())));
+  data_name_id = NodeId(key.name.string());
+  auto content(CreateContent<PutResponseFromPmidManagerToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto group_source(CreateGroupSource(pmid_node_id));
+  auto put_response(CreateMessage<PutResponseFromPmidManagerToDataManager>(content));
+  EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_response, group_source,
+                                   routing::GroupId(data_name_id)));
+  EXPECT_EQ(GetUnresolvedActions<DataManager::UnresolvedAddPmid>().size(), 0);
+}
+
+TEST_F(DataManagerServiceTest, BEH_PutFailureFromPmidManagerToDataManager) {
+  NodeId data_name_id, pmid_node_id(RandomString(NodeId::kSize));
+  auto content(CreateContent<PutFailureFromPmidManagerToDataManager::Contents>());
+  data_name_id = NodeId(content.name.raw_name.string());
+  auto group_source(CreateGroupSource(pmid_node_id));
+  auto put_failure(CreateMessage<PutFailureFromPmidManagerToDataManager>(content));
+  EXPECT_NO_THROW(GroupSendToGroup(&data_manager_service_, put_failure, group_source,
+                                   routing::GroupId(data_name_id)));
+  EXPECT_EQ(GetUnresolvedActions<DataManager::UnresolvedRemovePmid>().size(), 0);
+}
+
+TEST_F(DataManagerServiceTest, BEH_GetRequestFromMaidNodeToDataManager) {
+  NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
+  auto content(CreateContent<nfs::GetRequestFromMaidNodeToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodeToDataManager>(content));
+  EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
+                                     routing::SingleSource(maid_node_id),
+                                     routing::GroupId(data_name_id)));
+}
+
+TEST_F(DataManagerServiceTest, BEH_GetRequestFromDataGetterToDataManager) {
+  NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
+  auto content(CreateContent<nfs::GetRequestFromDataGetterToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto get_request(CreateMessage<nfs::GetRequestFromDataGetterToDataManager>(content));
+  EXPECT_NO_THROW(SingleSendsToGroup(&data_manager_service_, get_request,
+                                     routing::SingleSource(maid_node_id),
+                                     routing::GroupId(data_name_id)));
+}
+
+TEST_F(DataManagerServiceTest, BEH_GetRequestFromMaidNodePartialToDataManager) {
+  NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
+  auto content(CreateContent<nfs::GetRequestFromMaidNodePartialToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto get_request(CreateMessage<nfs::GetRequestFromMaidNodePartialToDataManager>(content));
+  EXPECT_NO_THROW(SingleRelaySendsToGroup(
+      &data_manager_service_, get_request,
+      routing::SingleRelaySource(routing::SingleSource(maid_node_id), maid_node_id,
+                                 routing::SingleSource(maid_node_id)),
+      routing::GroupId(data_name_id)));
+}
+
+TEST_F(DataManagerServiceTest, BEH_GetRequestFromDataGetterPartialToDataManager) {
+  NodeId data_name_id, maid_node_id(RandomString(NodeId::kSize));
+  auto content(CreateContent<nfs::GetRequestFromDataGetterPartialToDataManager::Contents>());
+  data_name_id = NodeId(content.raw_name.string());
+  auto get_request(CreateMessage<nfs::GetRequestFromDataGetterPartialToDataManager>(content));
+  EXPECT_NO_THROW(SingleRelaySendsToGroup(
+      &data_manager_service_, get_request,
+      routing::SingleRelaySource(routing::SingleSource(maid_node_id), maid_node_id,
+                                 routing::SingleSource(maid_node_id)),
+      routing::GroupId(data_name_id)));
+}
+
+TEST_F(DataManagerServiceTest, BEH_GetResponseFromPmidNodeToDataManager) {
+  NodeId pmid_node_id(RandomString(NodeId::kSize));
+  auto content(CreateContent<GetResponseFromPmidNodeToDataManager::Contents>());
+  auto get_response(CreateMessage<GetResponseFromPmidNodeToDataManager>(content));
+  auto functor([=](const std::pair<PmidName, GetResponseFromPmidNodeToDataManager::Contents>&) {
+    LOG(kVerbose) << "functor called";
+  });
+  AddTask(functor, 1, get_response.id.data);
+  EXPECT_NO_THROW(SingleSendsToSingle(&data_manager_service_, get_response,
+                                      routing::SingleSource(pmid_node_id),
+                                      routing::SingleId(routing_.kNodeId())));
 }
 
 TEST_F(DataManagerServiceTest, BEH_DeleteRequestFromMaidManagerToDataManager) {
