@@ -16,16 +16,14 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/vault.h"
-
-#include <functional>
-#include <memory>
+#ifndef MAIDSAFE_VAULT_TESTS_HYBRID_NETWORK_H_
+#define MAIDSAFE_VAULT_TESTS_HYBRID_NETWORK_H_
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
-#include "maidsafe/passport/passport.h"
 
-#include "maidsafe/vault/tests/hybrid_network.h"
+#include "maidsafe/routing/tests/routing_network.h"
+
+#include "maidsafe/vault/vault.h"
 
 namespace fs = boost::filesystem;
 
@@ -35,21 +33,49 @@ namespace vault {
 
 namespace test {
 
-class VaultTest : public testing::Test {
+class HybridNetwork : public routing::test::GenericNetwork {
  public:
-  VaultTest() : env_(HybridEnvironment::g_environment()) {}
+  typedef std::shared_ptr<Vault> VaultPtr;
+
+  HybridNetwork();
+
+  virtual void SetUp();
+  virtual void TearDown();
+
+  bool AddVault();
 
  protected:
-  std::shared_ptr<HybridNetwork> env_;
+  boost::filesystem::path vault_dir_;
+  std::vector<passport::PublicPmid> public_pmids_;
+  std::vector<VaultPtr> vaults_;
 };
 
+class HybridEnvironment : public testing::Environment {
+ public:
+  HybridEnvironment() {}
 
-TEST_F(VaultTest, FUNC_Constructor) {
-  EXPECT_TRUE(env_->AddVault());
-}
+  void SetUp() override {
+    try {
+      g_env_ = std::make_shared<HybridNetwork>();
+      g_env_->SetUp();
+    }
+    catch (const std::exception& e) {
+      GTEST_FAIL() << e.what();
+    }
+  }
+
+  void TearDown() override { g_env_->TearDown(); }
+
+  static std::shared_ptr<HybridNetwork> g_environment() { return g_env_; }
+
+ public:
+  static std::shared_ptr<HybridNetwork> g_env_;
+};
 
 }  // namespace test
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_TESTS_HYBRID_NETWORK_H_
