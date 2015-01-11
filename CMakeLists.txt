@@ -66,6 +66,7 @@ ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests"
 
 set(TestsMain ${VaultSourcesDir}/tests/tests_main.cc)
 set(TestsFunctionalMain ${VaultSourcesDir}/tests/tests_func_main.cc)
+set(TestsHybridMain ${VaultSourcesDir}/tests/tests_hybrid_main.cc)
 
 set(VaultTests         ${VaultTestsAllFiles}
                        ${PmidNodeTestsAllFiles}
@@ -81,10 +82,15 @@ set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/cache_handler/tests/cache_handler_test.cc
                              ${VaultSourcesDir}/version_handler/tests/version_handler_test.cc)
 
-list(REMOVE_ITEM VaultTests ${VaultFunctionalTestFiles} ${TestsFunctionalMain})
+set(VaultHybridTestFiles ${VaultSourcesDir}/tests/hybrid_network.h
+                         ${VaultSourcesDir}/tests/hybrid_network.cc
+                         ${VaultSourcesDir}/tests/vault_test.cc)
+
+list(REMOVE_ITEM VaultTests ${VaultFunctionalTestFiles} ${TestsFunctionalMain}
+                            ${VaultHybridTestFiles} ${TestsHybridMain})
+
 list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
                                      ${VaultSourcesDir}/tests/tests_utils.cc)
-
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
@@ -181,6 +187,13 @@ if(INCLUDE_TESTS)
                                                         ${PROJECT_BINARY_DIR}/generated_message_types
                                                         ${VaultSourcesDir}/tests)
   target_link_libraries(network_test_vault maidsafe_vault maidsafe_test)
+
+  ms_add_executable(hybrid_test_vault "Tests/Vault" ${VaultHybridTestFiles})
+  target_include_directories(hybrid_test_vault PRIVATE ${PROJECT_SOURCE_DIR}/src
+                                                       ${PROJECT_BINARY_DIR}/generated_message_types
+                                                       ${VaultSourcesDir}/tests)
+  target_link_libraries(hybrid_test_vault maidsafe_vault maidsafe_test  maidsafe_routing_test_helper)
+
 endif()
 
 ms_rename_outdated_built_exes()

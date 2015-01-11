@@ -16,40 +16,13 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/vault.h"
-
-#include <functional>
-#include <memory>
-
 #include "maidsafe/common/test.h"
-#include "maidsafe/common/utils.h"
-#include "maidsafe/passport/passport.h"
 
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/tests/hybrid_network.h"
 
-namespace fs = boost::filesystem;
-
-namespace maidsafe {
-
-namespace vault {
-
-namespace test {
-
-class VaultTest : public testing::Test {
- public:
-  VaultTest() : env_(HybridEnvironment::g_environment()) {}
-
- protected:
-  std::shared_ptr<HybridNetwork> env_;
-};
-
-
-TEST_F(VaultTest, FUNC_Constructor) {
-  EXPECT_TRUE(env_->AddVault());
+int main(int argc, char** argv) {
+  //  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
+  testing::AddGlobalTestEnvironment(new maidsafe::vault::test::HybridEnvironment());
+  return maidsafe::test::ExecuteMain(argc, argv);
 }
-
-}  // namespace test
-
-}  // namespace vault
-
-}  // namespace maidsafe
