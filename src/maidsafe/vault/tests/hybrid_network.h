@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_TESTS_HYBRID_NETWORK_H_
 #define MAIDSAFE_VAULT_TESTS_HYBRID_NETWORK_H_
 
+#include <vector>
+
 #include "maidsafe/common/test.h"
 
 #include "maidsafe/routing/tests/routing_network.h"

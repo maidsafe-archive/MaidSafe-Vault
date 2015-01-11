@@ -60,7 +60,7 @@ TEST_F(VaultTest, BEH_HandleDataManagerMessage) {
                      routing::GroupSource(routing::GroupId(maid_node_id),
                                           routing::SingleId(
                                               env_->nodes_.at(manager_index)->node_id())),
-                     routing::GroupId(NodeId(data.name()->string()))); 
+                     routing::GroupId(NodeId(data.name()->string())));
 }
 
 TEST_F(VaultTest, BEH_HandleInvalidMessage) {
@@ -70,7 +70,7 @@ TEST_F(VaultTest, BEH_HandleInvalidMessage) {
   auto manager_index(env_->ManagerIndex(maid_node_id));
   auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
   RoutingMessage routing_message(
-                     CreateMessage<VaultMessage>(VaultMessage::Contents(data)).Serialise(),
+                     RandomString(128),
                      routing::GroupSource(routing::GroupId(maid_node_id),
                                           routing::SingleId(
                                               env_->nodes_.at(manager_index)->node_id())),
