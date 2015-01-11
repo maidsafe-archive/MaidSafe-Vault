@@ -92,6 +92,9 @@ list(REMOVE_ITEM VaultTests ${VaultFunctionalTestFiles} ${TestsFunctionalMain}
 list(APPEND VaultFunctionalTestFiles ${TestsFunctionalMain} ${VaultSourcesDir}/tests/tests_utils.h
                                      ${VaultSourcesDir}/tests/tests_utils.cc)
 
+list(APPEND VaultHybridTestFiles ${TestsHybridMain} ${VaultSourcesDir}/tests/tests_utils.h
+                                 ${VaultSourcesDir}/tests/tests_utils.cc)
+
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
@@ -218,6 +221,7 @@ endif()
 if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_vault)
+  ms_add_gtests(hybrid_test_vault)
   ms_add_network_gtests(network_test_vault)
   ms_test_summary_output()
 endif()

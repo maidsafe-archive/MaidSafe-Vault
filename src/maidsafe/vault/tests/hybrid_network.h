@@ -33,6 +33,8 @@ namespace vault {
 
 namespace test {
 
+const unsigned int kRoutingNetworkSize = 16;
+
 class HybridNetwork : public routing::test::GenericNetwork {
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
@@ -43,8 +45,13 @@ class HybridNetwork : public routing::test::GenericNetwork {
   virtual void TearDown();
 
   bool AddVault();
+  ImmutableData CreateDataForManager(const PmidName& pmid_name);
+  std::vector<passport::PublicPmid> public_pmids();
+  int ManagerIndex(const NodeId& node_id);
 
  protected:
+  bool IsManager(const PmidName& pmid_name, const NodeId& data_id, std::vector<NodeId>& node_ids);
+
   boost::filesystem::path vault_dir_;
   std::vector<passport::PublicPmid> public_pmids_;
   std::vector<VaultPtr> vaults_;

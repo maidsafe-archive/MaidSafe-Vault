@@ -47,16 +47,62 @@ void HybridNetwork::SetUp() {
   routing::test::GenericNetwork::SetUp();
   public_pmids_.emplace_back(passport::PublicPmid(zero_states_pmids().at(0)));
   public_pmids_.emplace_back(passport::PublicPmid(zero_states_pmids().at(1)));
-  for (int index(0); index < 16; ++index) {
+  for (unsigned int index(2); index < kRoutingNetworkSize; ++index) {
     passport::PmidAndSigner pmid_and_signer(passport::CreatePmidAndSigner());
     AddNode(pmid_and_signer.first);
     public_pmids_.emplace_back(passport::PublicPmid(pmid_and_signer.first));
+  }
+
+  for (auto node : nodes_) {
+    auto functors(node->GetFunctors());
+    functors.message_and_caching.message_received = nullptr;
+    node->SetFunctors(functors);
   }
 }
 
 void HybridNetwork::TearDown() {
   Sleep(std::chrono::microseconds(100));
   routing::test::GenericNetwork::TearDown();
+}
+
+bool HybridNetwork::IsManager(const PmidName& pmid_name, const NodeId& data_id,
+                               std::vector<NodeId>& node_ids) {
+  std::partial_sort(node_ids.begin(), node_ids.begin() + routing::Parameters::group_size,
+                    node_ids.end(), [data_id](const NodeId& lhs, const NodeId& rhs) {
+                      return NodeId::CloserToTarget(lhs, rhs, data_id);
+                    });
+  return std::distance(
+             node_ids.begin(),
+             std::find(node_ids.begin(), node_ids.end(),
+                       NodeId(pmid_name->string()))) < routing::Parameters::group_size;
+}
+
+ImmutableData HybridNetwork::CreateDataForManager(const PmidName& pmid_name) {
+  std::vector<NodeId> nodes_id;
+  for (const auto& public_pmid : public_pmids_)
+    nodes_id.emplace_back(NodeId(public_pmid.name()->string()));
+
+  while(true) {
+    ImmutableData data(NonEmptyString(RandomString(128)));
+    if (IsManager(pmid_name, NodeId(data.name()->string()), nodes_id))
+      return data;
+  }
+}
+
+std::vector<passport::PublicPmid> HybridNetwork::public_pmids() {
+  return public_pmids_;
+}
+
+int HybridNetwork::ManagerIndex(const NodeId& node_id) {
+  std::vector<NodeId> node_ids;
+  for (const auto& node : nodes_)
+    node_ids.emplace_back(node->node_id());
+
+  std::partial_sort(node_ids.begin(), node_ids.begin() + routing::Parameters::group_size,
+                    node_ids.end(), [node_id](const NodeId& lhs, const NodeId& rhs) {
+                      return NodeId::CloserToTarget(lhs, rhs, node_id);
+                    });
+  return this->NodeIndex(*node_ids.begin());
 }
 
 bool HybridNetwork::AddVault() {

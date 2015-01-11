@@ -26,6 +26,7 @@
 #include "maidsafe/passport/passport.h"
 
 #include "maidsafe/vault/tests/hybrid_network.h"
+#include "maidsafe/vault/tests/tests_utils.h"
 
 namespace fs = boost::filesystem;
 
@@ -47,6 +48,35 @@ class VaultTest : public testing::Test {
 TEST_F(VaultTest, FUNC_Constructor) {
   EXPECT_TRUE(env_->AddVault());
 }
+
+TEST_F(VaultTest, BEH_HandleDataManagerMessage) {
+  using VaultMessage = vault::PutRequestFromMaidManagerToDataManager;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto manager_index(env_->ManagerIndex(maid_node_id));
+  auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
+  RoutingMessage routing_message(
+                     CreateMessage<VaultMessage>(VaultMessage::Contents(data)).Serialise(),
+                     routing::GroupSource(routing::GroupId(maid_node_id),
+                                          routing::SingleId(
+                                              env_->nodes_.at(manager_index)->node_id())),
+                     routing::GroupId(NodeId(data.name()->string()))); 
+}
+
+TEST_F(VaultTest, BEH_HandleInvalidMessage) {
+  using VaultMessage = vault::PutRequestFromMaidManagerToDataManager;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto manager_index(env_->ManagerIndex(maid_node_id));
+  auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
+  RoutingMessage routing_message(
+                     CreateMessage<VaultMessage>(VaultMessage::Contents(data)).Serialise(),
+                     routing::GroupSource(routing::GroupId(maid_node_id),
+                                          routing::SingleId(
+                                              env_->nodes_.at(manager_index)->node_id())),
+                     routing::GroupId(NodeId(data.name()->string())));
+}
+
 
 }  // namespace test
 
