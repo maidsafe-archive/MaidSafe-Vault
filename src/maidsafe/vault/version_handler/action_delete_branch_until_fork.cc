@@ -32,7 +32,8 @@ ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntil
             if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             return StructuredDataVersions::VersionName(
-                       action_delete_branch_until_fork_proto.serialised_version());
+                ConvertFromString<StructuredDataVersions::VersionName>(
+                    action_delete_branch_until_fork_proto.serialised_version()));
           }()) {}
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
@@ -49,7 +50,7 @@ ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntil
 
 std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
   protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
-  action_delete_branch_until_fork_proto.set_serialised_version(version_name.Serialise());
+  action_delete_branch_until_fork_proto.set_serialised_version(ConvertToString(version_name));
   return action_delete_branch_until_fork_proto.SerializeAsString();
 }
 
