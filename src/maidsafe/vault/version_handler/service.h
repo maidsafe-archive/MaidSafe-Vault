@@ -23,6 +23,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <utility>
 
 #include "boost/mpl/vector.hpp"
 #include "boost/mpl/insert_range.hpp"
