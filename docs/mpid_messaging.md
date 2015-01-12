@@ -71,7 +71,7 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 7. When Mpid(A) decided to remove the MpidMessage from the OutBox, when the message hasn't got retrived by Mpid(B). The MpidManagers(A) group needs not only remove the correspondent MpidMessage from their OutBox of Mpid(A), but also send a notification to the group of MpidManagers(B) so they can remove the correspodent MpidAlert from their InBox of Mpid(B).
 8. When Mpid(B) send a request to fetch message head only, it will directly goes to MpidManagers(A) and get response. This will not trigger the removal of such message in MpidManagers(A).
 
-_MPid(A)_ =>> |__MPidManager(A)__ (Put.Sync)(Alert.So) *->> | __MPidManager(B)__  (Store(Alert).Sync)(Online(Mpid(B)) ? Alert.So : (WaitForOnlineB)(Alert.So)) *-> | _Mpid(B)_ So.Retreival ->> | __MpidManager(B)__ *-> | __MpidManager(A)__ So.Message *->> | __MpidManager(B)__ Online(Mpid(B)) ? Message.So *-> | _Mpid(B)_ Remove.So ->> | __MpidManager(B)__ {Remove(Alert).Sync, Remove.So} *->> | __MpidManager(A)__ Remove.Sync
+_MPid(A)_ =>> |__MPidManager(A)__ (Put.Sync)(Alert.So) *->> | __MPidManager(B)__  (Store(Alert).Sync)(Online(Mpid(B)) ? Alert.So : (WaitForOnlineB)(Alert.So)) *-> | _Mpid(B)_ So.Retreive ->> | __MpidManager(B)__ *-> | __MpidManager(A)__ So.Message *->> | __MpidManager(B)__ Online(Mpid(B)) ? Message.So *-> | _Mpid(B)_ Remove.So ->> | __MpidManager(B)__ {Remove(Alert).Sync, Remove.So} *->> | __MpidManager(A)__ Remove.Sync
 
 MPID Messaging Client
 --------------
