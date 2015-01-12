@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_TESTS_TESTS_UTILS_H_
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "maidsafe/routing/message.h"
@@ -31,7 +32,9 @@
 
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/sync.pb.h"
-
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/maid_manager/maid_manager.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
 namespace maidsafe {
 
@@ -39,8 +42,8 @@ namespace vault {
 
 namespace test {
 
-static const size_t kTestChunkSize = 1024 * 1024;
-static const size_t kAverageChunksStored = 1000;
+static const uint64_t kTestChunkSize = 1024 * 1024;
+static const uint64_t kAverageChunksStored = 1000;
 
 routing::NodeInfo MakeNodeInfo(const passport::Pmid& pmid);
 
@@ -54,8 +57,12 @@ template <>
 nfs_vault::DataNameAndContent CreateContent<nfs_vault::DataNameAndContent>();
 
 template <>
-nfs_client::DataNameAndSpaceAndReturnCode
-    CreateContent<nfs_client::DataNameAndSpaceAndReturnCode>();
+nfs_client::DataNameAndSizeAndSpaceAndReturnCode
+    CreateContent<nfs_client::DataNameAndSizeAndSpaceAndReturnCode>();
+
+template <>
+nfs_client::DataNameAndSizeAndReturnCode
+    CreateContent<nfs_client::DataNameAndSizeAndReturnCode>();
 
 template <>
 nfs_vault::DataName CreateContent<nfs_vault::DataName>();
@@ -65,9 +72,6 @@ nfs_vault::AvailableSize CreateContent<nfs_vault::AvailableSize>();
 
 template <>
 nfs_vault::Empty CreateContent<nfs_vault::Empty>();
-
-template <>
-nfs_vault::DataAndPmidHint CreateContent<nfs_vault::DataAndPmidHint>();
 
 template <>
 nfs_vault::DataNameAndSize CreateContent<nfs_vault::DataNameAndSize>();
@@ -91,6 +95,9 @@ nfs_vault::DataNameAndVersion CreateContent<nfs_vault::DataNameAndVersion>();
 
 template <>
 nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>();
+
+template <>
+nfs_vault::DiffSize CreateContent<nfs_vault::DiffSize>();
 
 template <>
 nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>();
@@ -131,6 +138,13 @@ void SingleSendsToGroup(ServiceType* service, const MessageType& message,
   service->HandleMessage(message, single_source, group_id);
 }
 
+template <typename ServiceType, typename MessageType>
+void SingleRelaySendsToGroup(ServiceType* service, const MessageType& message,
+                        const routing::SingleRelaySource& single_source,
+                        const routing::GroupId& group_id) {
+  service->HandleMessage(message, single_source, group_id);
+}
+
 template <typename DataNameType>
 std::vector<routing::GroupSource> CreateGroupSource(const DataNameType& data_name) {
   return CreateGroupSource(NodeId(data_name.value.string()));
@@ -166,6 +180,56 @@ void AddLocalActionAndSendGroupActions(ServiceType* service, Sync<UnresolvedActi
     service->HandleMessage(sync_message, group_source[index], group_source[index].group_id);
   }
 }
+
+template <typename Persona>
+typename Persona::Value CreateValue();
+
+template <>
+MaidManager::Value CreateValue<MaidManager>();
+
+template <>
+typename PmidManager::Value CreateValue<PmidManager>();
+
+template <typename Persona, typename AddResult>
+struct ApplyMedian {};
+
+template <typename AddResult>
+struct ApplyMedian<MaidManager, AddResult> {
+  std::pair<AddResult, boost::optional<MaidManager::Value>> operator()(
+      const std::vector<std::pair<MaidManager::Key, MaidManager::Value>>& pairs) {
+    std::vector<uint64_t> data_stored, space_available;
+    for (const auto& pair : pairs) {
+      data_stored.emplace_back(pair.second.data_stored);
+      space_available.emplace_back(pair.second.space_available);
+    }
+
+    MaidManager::Value value;
+    value.data_stored = Median(data_stored);
+    value.space_available = Median(space_available);
+
+    return std::make_pair(AddResult::kSuccess, boost::optional<MaidManager::Value>(value));
+  }
+};
+
+template <typename AddResult>
+struct ApplyMedian<PmidManager, AddResult> {
+  std::pair<AddResult, boost::optional<PmidManager::Value>> operator()(
+      const std::vector<std::pair<PmidManager::Key, PmidManager::Value>>& pairs) {
+    std::vector<int64_t> stored_total_size, lost_total_size, offered_space;
+    for (const auto& value : pairs) {
+      stored_total_size.emplace_back(value.second.stored_total_size);
+      lost_total_size.emplace_back(value.second.lost_total_size);
+      offered_space.emplace_back(value.second.offered_space);
+    }
+
+    PmidManager::Value value;
+    value.stored_total_size = Median(stored_total_size);
+    value.lost_total_size = Median(lost_total_size);
+    value.offered_space = Median(offered_space);
+
+    return std::make_pair(AddResult::kSuccess, boost::optional<PmidManager::Value>(value));
+  }
+};
 
 }  // namespace test
 

@@ -51,16 +51,8 @@ class Demultiplexer {
                 nfs_client::DataGetter& data_getter);
   template <typename T>
   void HandleMessage(const T& routing_message);
-  template <typename T>
-  bool GetFromCache(const T& serialised_message);
-  template <typename T>
-  void StoreInCache(const T& serialised_message);
 
  private:
-  //  template<typename MessageType>
-  //  NonEmptyString HandleGetFromCache(const nfs::Message& message);
-  //  void HandleStoreInCache(const nfs::Message& message);
-
   nfs::Service<MaidManagerService>& maid_manager_service_;
   nfs::Service<VersionHandlerService>& version_handler_service_;
   nfs::Service<DataManagerService>& data_manager_service_;
@@ -71,7 +63,15 @@ class Demultiplexer {
 
 template <typename T>
 void Demultiplexer::HandleMessage(const T& routing_message) {
-  auto wrapper_tuple(nfs::ParseMessageWrapper(routing_message.contents));
+  nfs::TypeErasedMessageWrapper wrapper_tuple;
+  try {
+    wrapper_tuple = nfs::ParseMessageWrapper(routing_message.contents);
+  }
+  catch (const maidsafe_error& error) {
+    if (error.code() == make_error_code(CommonErrors::parsing_error))
+      return;
+    throw;
+  }
   const auto& destination_persona(std::get<2>(wrapper_tuple));
   LOG(kVerbose) << "Demultiplexer::HandleMessage Persona data : " << destination_persona.data;
   static_assert(std::is_same<decltype(destination_persona),

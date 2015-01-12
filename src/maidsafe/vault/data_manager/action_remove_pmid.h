@@ -29,7 +29,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class MaidManagerMetadata;
 class MaidManagerValue;
 class DataManagerValue;
 
@@ -42,7 +41,7 @@ struct ActionDataManagerRemovePmid {
 
   detail::DbAction operator()(std::unique_ptr<DataManagerValue>& value);
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kUnregisterPmidRequest;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kRemovePmid;
   const PmidName kPmidName;
 
  private:

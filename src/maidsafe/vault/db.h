@@ -54,6 +54,7 @@ class Db {
   std::unique_ptr<Value> Commit(
       const Key& key, std::function<detail::DbAction(std::unique_ptr<Value>& value)> functor);
   TransferInfo GetTransferInfo(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+  std::vector<Key> GetTargets(const PmidName& pmid_node);
   void HandleTransfer(const std::vector<KvPair>& contents);
 
  private:
@@ -76,8 +77,8 @@ Db<Key, Value>::Db(const boost::filesystem::path& db_path)
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
-  static_assert(!std::is_copy_constructible<Value>::value,
-                "value should not be copy constructible !");
+//  static_assert(!std::is_copy_constructible<Value>::value,
+//                "value should not be copy constructible !"); MAID-357
   static_assert(std::is_move_constructible<Value>::value, "value should be move constructible !");
 #endif
 }
@@ -106,7 +107,7 @@ std::unique_ptr<Value> Db<Key, Value>::Commit(
     if (error.code() != make_error_code(VaultErrors::no_such_account)) {
       LOG(kError) << "Db<Key, Value>::Commit unknown db error "
                   << boost::diagnostic_information(error);
-      throw error;  // For db errors
+      throw;
     }
   }
   if (detail::DbAction::kPut == functor(value)) {
@@ -166,6 +167,21 @@ typename Db<Key, Value>::TransferInfo Db<Key, Value>::GetTransferInfo(
   return transfer_info;
 }
 
+template <typename Key, typename Value>
+std::vector<Key> Db<Key, Value>::GetTargets(const PmidName& pmid_name) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  std::vector<Key> result;
+  std::pair<std::string, std::string> db_iter;
+  while (sqlitedb_->SeekNext(db_iter)) {
+    Value value(db_iter.second);
+    if (value.HasTarget(pmid_name)) {
+      Key key(typename Key::FixedWidthString(db_iter.first));
+      result.push_back(std::move(key));
+    }
+  }
+  return result;
+}
+
 // Ignores values which are already in db
 template <typename Key, typename Value>
 void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& contents) {
@@ -178,7 +194,7 @@ void Db<Key, Value>::HandleTransfer(const std::vector<std::pair<Key, Value>>& co
       LOG(kInfo) << error.what();
       if ((error.code() != make_error_code(CommonErrors::no_such_element)) &&
           (error.code() != make_error_code(VaultErrors::no_such_account)))
-        throw;  // For db errors
+        throw;
       else
         Put(kv_pair);
     }
@@ -189,8 +205,9 @@ template <typename Key, typename Value>
 Value Db<Key, Value>::Get(const Key& key) {
   std::string value_string;
   sqlitedb_->Get(key.ToFixedWidthString().string(), value_string);
-  if (value_string.empty())
+  if (value_string.empty()) {
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+  }
   return Value(value_string);
 }
 

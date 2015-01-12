@@ -22,6 +22,8 @@
 #include <cstddef>
 #include <chrono>
 
+#include "maidsafe/common/types.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -40,6 +42,18 @@ struct Parameters {
   static int integrity_check_string_size;
   // Default network timeout
   static const std::chrono::milliseconds kDefaultTimeout;
+  // Prune account transfer when the size is divisible by below factor
+  static unsigned int account_transfer_cleanup_factor;
+  // Removes entries which have been longer than below factor
+  static std::chrono::seconds account_transfer_life;
+  // Maximum number of chunks stored in data manager temporary store
+  static size_t temporary_store_size;
+  // the duration of time to hold a value in lru cache
+  static std::chrono::steady_clock::duration temporary_store_time_to_live;
+  // Maximum number of pmids storing a chunk
+  static unsigned int max_replication_factor;
+  // Minimum required number of online pmids for a chunk
+  static unsigned int min_replication_factor;
 
  private:
   Parameters();

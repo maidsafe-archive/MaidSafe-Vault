@@ -161,13 +161,6 @@ std::string GroupDb<Persona>::Print() const {
   return stream.str();
 }
 
-template <>
-GroupDb<PmidManager>::GroupMap::iterator GroupDb<PmidManager>::FindOrCreateGroup(
-    const GroupName& group_name);
-
-template <>
-void GroupDb<PmidManager>::UpdateGroup(typename GroupMap::iterator itr);
-
 template <typename Persona>
 GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
     : kDbPath_(db_path), mutex_(), sqlitedb_(), group_map_() {
@@ -263,7 +256,7 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
     if (error.code() != make_error_code(CommonErrors::no_such_element)) {
       LOG(kInfo) << "GroupDb<Persona>::Commit encountered unknown error : "
                  << boost::diagnostic_information(error);
-      throw error;  // throw only for db errors
+      throw;  // throw only for db errors
     }
   }
 
@@ -290,7 +283,7 @@ std::unique_ptr<typename Persona::Value> GroupDb<Persona>::Commit(
     else
       LOG(kError) << "GroupDb<Persona>::Commit encountered unknown error "
                   << boost::diagnostic_information(error);
-    throw error;
+    throw;
   }
   return nullptr;
 }

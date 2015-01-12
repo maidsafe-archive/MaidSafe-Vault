@@ -20,6 +20,6 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message ActionDataManagerNodeDown {
-  required bytes pmid_name = 1;
+message AccountTransfer {
+  repeated bytes serialised_accounts = 1;
 }

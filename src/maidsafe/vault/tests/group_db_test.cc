@@ -26,9 +26,8 @@
 
 #include "maidsafe/vault/group_key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
-#include "maidsafe/vault/maid_manager/metadata.h"
+#include "maidsafe/vault/maid_manager/value.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
-#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/version_handler/value.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
@@ -37,9 +36,9 @@ namespace maidsafe {
 namespace vault {
 
 namespace test {
-
-PmidManagerMetadata CreatePmidManagerMetadata(const PmidName& pmid_name) {
-  PmidManagerMetadata metadata(pmid_name);
+/*
+PmidManagerValue CreatePmidManagerValue(const PmidName& pmid_name) {
+  PmidManagerValue metadata(pmid_name);
   metadata.SetAvailableSize(0);
   return metadata;
 }
@@ -48,7 +47,7 @@ MaidManagerMetadata CreateMaidManagerMetadata(const passport::Maid& maid) {
   std::vector<PmidTotals> pmid_totals_vector;
   for (auto i(0); i != 1; ++i) {
     auto pmid(passport::CreatePmidAndSigner().first);
-    auto pmid_metadata(CreatePmidManagerMetadata(PmidName(pmid.name())));
+    auto pmid_metadata(CreatePmidManagerValue(PmidName(pmid.name())));
     nfs_vault::PmidRegistration pmid_registration(maid, pmid, false);
     PmidTotals pmid_totals(pmid_registration.Serialise(), pmid_metadata);
     pmid_totals_vector.push_back(pmid_totals);
@@ -104,7 +103,7 @@ struct TestGroupDbActionDeleteValue {
 
 // put value
 struct TestPmidGroupDbActionPutValue {
-  detail::DbAction operator()(PmidManagerMetadata& metadata,
+  detail::DbAction operator()(PmidManagerValue& metadata,
                               std::unique_ptr<PmidManagerValue>& value) {
     if (!value) {
       value.reset(new PmidManagerValue(100));
@@ -120,7 +119,7 @@ struct TestPmidGroupDbActionPutValue {
 
 // delete value
 struct TestPmidGroupDbActionDeleteValue {
-  detail::DbAction operator()(PmidManagerMetadata& metadata,
+  detail::DbAction operator()(PmidManagerValue& metadata,
                               std::unique_ptr<PmidManagerValue>& value) {
     if (!value)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
@@ -236,7 +235,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   passport::PublicPmid::Name pmid_name(PmidName(pmid.name()));
   EXPECT_THROW(pmid_group_db.GetMetadata(pmid_name), maidsafe_error);
   pmid_group_db.DeleteGroup(pmid_name);
-  auto metadata = CreatePmidManagerMetadata(pmid_name);
+  auto metadata = CreatePmidManagerValue(pmid_name);
   GroupKey<PmidName> key(pmid_name, Identity(NodeId(NodeId::IdType::kRandomId).string()),
                          DataTagValue::kPmidValue);
   EXPECT_THROW(pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue()), maidsafe_error);
@@ -261,7 +260,7 @@ void RunPmidManagerGroupDbTest(GroupDb<PmidManager>& pmid_group_db) {
   pmid_group_db.Commit(key, TestPmidGroupDbActionPutValue());
   pmid_group_db.Commit(key, TestPmidGroupDbActionDeleteValue());
   // Put
-  PmidManagerMetadata expected_metadata(metadata);
+  PmidManagerValue expected_metadata(metadata);
   expected_metadata.PutData(100);
   PmidManagerValue expected_value(100);
   pmid_group_db.Commit(key, TestPmidGroupDbActionPutValue());
@@ -338,7 +337,7 @@ TEST(GroupDbTest, BEH_TransferInfo) {
   std::shared_ptr<routing::CloseNodesChange> close_nodes_change;
   maid_group_db.GetTransferInfo(close_nodes_change);
   pmid_group_db.GetTransferInfo(close_nodes_change);
-}
+}*/
 
 }  // namespace test
 

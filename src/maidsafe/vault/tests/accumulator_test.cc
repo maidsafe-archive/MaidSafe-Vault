@@ -46,9 +46,9 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
     return message.contents->random_string.string();
   }
 
-  std::string operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message) const {
-    return message.contents->return_code.Serialise();
-  }
+//  std::string operator()(const GetPmidAccountResponseFromPmidManagerToPmidNode& message) const {
+//    return message.contents->return_code.Serialise();
+//  }
 };
 
 // bool errors_eq(maidsafe_error l_e, maidsafe_error r_e) {
@@ -59,13 +59,15 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 //  return static_cast<nfs::MessageAction>(RandomUint32() % 3);
 // }
 //
+
 // nfs::PersonaId GenerateSource() {
 //  nfs::PersonaId source;
 //  // matches Persona enum in types.h
 //  source.persona = static_cast<nfs::Persona>(RandomUint32() % 7);
-//  source.node_id = NodeId(NodeId::IdType::kRandomId);
+//  source.node_id = NodeId(RandomString(NodeId::kSize));
 //  return source;
 // }
+//
 // nfs::Message MakeMessage() {
 //  nfs::Message::Data data(static_cast<DataTagValue>(RandomUint32() % 13),
 //                              Identity(RandomString(NodeId::kSize)),
@@ -77,36 +79,156 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 
 }  // unnamed namespace
 
-TEST(AccumulatorTest, BEH_AddSingleResult) {
+TEST(AccumulatorTest, BEH_SuccessfulGroupRequest) {
   Accumulator<PmidNodeServiceMessages> accumulator;
-  GetPmidAccountResponseFromPmidManagerToPmidNode message;
-  GetPmidAccountResponseFromPmidManagerToPmidNode::Sender sender;
-  routing::GroupSource group_source(sender.group_id, sender.sender_id);
+  Accumulator<PmidNodeServiceMessages>::AddRequestChecker
+      checker(routing::Parameters::group_size - 1);
+  PutRequestFromPmidManagerToPmidNode message;
 
-  auto add_request_predicate([&](const std::vector<PmidNodeServiceMessages>&) {
-    return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-  });
-  //   auto add_request_predicate(
-  //       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
-  //         if (requests_in.size() < 2)
-  //           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-  //         for (auto& request : requests_in) {
-  //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
-  //           maidsafe::nfs_client::ReturnCode return_code(content_string);
-  //        maidsafe_error
-  // expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
-  //           if (errors_eq(expected_error, return_code.value))
-  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
-  //           else
-  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
-  //        }
-  //         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
-  //       });
+  routing::GroupId group_id(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id1(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id2(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id3(NodeId{RandomString(NodeId::kSize)});
+
+  routing::GroupSource group_source1(group_id, sender_id1),
+                       group_source2(group_id, sender_id2),
+                       group_source3(group_id, sender_id3);
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source1, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source2, checker));
   EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
-            accumulator.AddPendingRequest(message, group_source, add_request_predicate));
-  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
+            accumulator.AddPendingRequest(message, group_source3, checker));
 }
 
+TEST(AccumulatorTest, BEH_HandledGroupRequest) {
+  Accumulator<PmidNodeServiceMessages> accumulator;
+  Accumulator<PmidNodeServiceMessages>::AddRequestChecker
+      checker(routing::Parameters::group_size - 1);
+  PutRequestFromPmidManagerToPmidNode message;
+
+  routing::GroupId group_id(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id1(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id2(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id3(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id4(NodeId{RandomString(NodeId::kSize)});
+
+  routing::GroupSource group_source1(group_id, sender_id1),
+                       group_source2(group_id, sender_id2),
+                       group_source3(group_id, sender_id3),
+                       group_source4(group_id, sender_id4);
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source1, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source2, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
+            accumulator.AddPendingRequest(message, group_source3, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kHandled,
+            accumulator.AddPendingRequest(message, group_source4, checker));
+}
+
+TEST(AccumulatorTest, BEH_WaitingGroupRequestAfterEviction) {
+  std::chrono::steady_clock::duration duration(std::chrono::seconds(1));
+  Accumulator<PmidNodeServiceMessages> accumulator(duration);
+  Accumulator<PmidNodeServiceMessages>::AddRequestChecker
+      checker(routing::Parameters::group_size - 1);
+  PutRequestFromPmidManagerToPmidNode message;
+
+  routing::GroupId group_id1(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id10(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id11(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id12(NodeId{RandomString(NodeId::kSize)});
+
+  routing::GroupId group_id2(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id20(NodeId{RandomString(NodeId::kSize)});
+
+  routing::GroupSource group_source10(group_id1, sender_id10),
+                       group_source11(group_id1, sender_id11),
+                       group_source12(group_id1, sender_id12);
+
+  routing::GroupSource group_source20(group_id2, sender_id20);
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source10, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source11, checker));
+
+  Sleep(duration);
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source20, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source12, checker));
+}
+
+TEST(AccumulatorTest, BEH_TwoSuccessfulGroupRequestsDifferingByGroupId) {
+  Accumulator<PmidNodeServiceMessages> accumulator;
+  Accumulator<PmidNodeServiceMessages>::AddRequestChecker
+      checker(routing::Parameters::group_size - 1);
+  PutRequestFromPmidManagerToPmidNode message;
+
+  routing::GroupId group_id1(NodeId{RandomString(NodeId::kSize)});
+  routing::SingleId sender_id10(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id11(NodeId{RandomString(NodeId::kSize)}),
+                    sender_id12(NodeId{RandomString(NodeId::kSize)});
+
+  routing::GroupId group_id2(NodeId{RandomString(NodeId::kSize)});
+
+  routing::GroupSource group_source10(group_id1, sender_id10),
+                       group_source11(group_id1, sender_id11),
+                       group_source12(group_id1, sender_id12);
+
+  routing::GroupSource group_source20(group_id2, sender_id10),
+                       group_source21(group_id2, sender_id11),
+                       group_source22(group_id2, sender_id12);
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source10, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source11, checker));
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source20, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting,
+            accumulator.AddPendingRequest(message, group_source21, checker));
+
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
+            accumulator.AddPendingRequest(message, group_source22, checker));
+  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
+            accumulator.AddPendingRequest(message, group_source12, checker));
+}
+
+// TEST(AccumulatorTest, BEH_AddSingleResult) {
+//  Accumulator<PmidNodeServiceMessages> accumulator;
+//  GetPmidAccountResponseFromPmidManagerToPmidNode message;
+//  GetPmidAccountResponseFromPmidManagerToPmidNode::Sender sender;
+//  routing::GroupSource group_source(sender.group_id, sender.sender_id);
+
+//  auto add_request_predicate([&](const std::vector<PmidNodeServiceMessages>&) {
+//    return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+//  });
+//  //   auto add_request_predicate(
+//  //       [&](const std::vector<PmidNodeServiceMessages>& requests_in) {
+//  //         if (requests_in.size() < 2)
+//  //           return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//  //         for (auto& request : requests_in) {
+//  //           std::string content_string(boost::apply_visitor(ContentStringVisitor(), request));
+//  //           maidsafe::nfs_client::ReturnCode return_code(content_string);
+//  //        maidsafe_error
+//  // expected_error(MakeError(maidsafe::VaultErrors::failed_to_handle_request));
+//  //           if (errors_eq(expected_error, return_code.value))
+//  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kFailure;
+//  //           else
+//  //             return Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess;
+//  //        }
+//  //         return Accumulator<PmidNodeServiceMessages>::AddResult::kWaiting;
+//  //       });
+//  EXPECT_EQ(Accumulator<PmidNodeServiceMessages>::AddResult::kSuccess,
+//            accumulator.AddPendingRequest(message, group_source, add_request_predicate));
+//  //   EXPECT_EQ(accumulator.pending_requests_.size(), 1);
+// }
 
 // TEST(AccumulatorTest, BEH_PushSingleResult) {
 //  nfs::Message message = MakeMessage();

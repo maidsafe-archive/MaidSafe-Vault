@@ -59,6 +59,7 @@ struct Key {
 
   template <typename Key, typename Value>
   friend class Db;
+  friend class DataManagerDataBase;
 
  private:
   typedef maidsafe::detail::BoundedString<NodeId::kSize + detail::PaddedWidth::value,

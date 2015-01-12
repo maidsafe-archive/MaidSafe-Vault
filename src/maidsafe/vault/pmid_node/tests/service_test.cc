@@ -89,7 +89,7 @@ TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManagerToPmidNode) 
   auto integrity_check_request(
       CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
   EXPECT_NO_THROW(SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
-                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
+                                      routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
                                       routing::SingleId(routing_.kNodeId())));
 }
 
@@ -102,27 +102,6 @@ TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManagerToPmidNode) {
   EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, delete_request, group_source,
                                     routing::SingleId(routing_.kNodeId())));
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
-}
-
-TEST_F(PmidNodeServiceTest, BEH_GetPmidAccountResponseFromPmidManagerToPmidNode) {
-  nfs_client::ReturnCode return_code(CommonErrors::success);
-  nfs_client::DataNamesAndReturnCode content(return_code);
-  // ADD DATA BEFORE TEST TO PERMANENT DATA STORES
-  // ADD DATA NAME TO CONTENTS
-  auto pmid_account_response(
-      CreateMessage<GetPmidAccountResponseFromPmidManagerToPmidNode>(content));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, pmid_account_response, group_source,
-                                    routing::SingleId(routing_.kNodeId())));
-}
-
-TEST_F(PmidNodeServiceTest, BEH_PmidHealthRequestFromPmidManagerToPmidNode) {
-  auto health_request(
-      CreateMessage<PmidHealthRequestFromPmidManagerToPmidNode>(nfs_vault::Empty()));
-  auto group_source(CreateGroupSource(routing_.kNodeId()));
-  EXPECT_NO_THROW(SingleSendsToSingle(&pmid_node_service_, health_request,
-                                      routing::SingleSource(NodeId(NodeId::IdType::kRandomId)),
-                                      routing::SingleId(routing_.kNodeId())));
 }
 
 }  //  namespace test

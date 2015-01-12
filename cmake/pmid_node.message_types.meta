@@ -1,6 +1,4 @@
 Action:PutRequest                  Source:PmidManager:Group      Destination:PmidNode:Single        Contents:struct:maidsafe::nfs_vault::DataNameAndContent
 Action:DeleteRequest               Source:PmidManager:Group      Destination:PmidNode:Single        Contents:struct:maidsafe::nfs_vault::DataName
 Action:GetRequest                  Source:DataManager:Group      Destination:PmidNode:Single        Contents:struct:maidsafe::nfs_vault::DataName
-Action:GetPmidAccountResponse      Source:PmidManager:Group      Destination:PmidNode:Single        Contents:struct:maidsafe::nfs_client::DataNamesAndReturnCode
 Action:IntegrityCheckRequest       Source:DataManager:Single     Destination:PmidNode:Single        Contents:struct:maidsafe::nfs_vault::DataNameAndRandomString
-Action:PmidHealthRequest           Source:PmidManager:Single     Destination:PmidNode:Single        Contents:struct:maidsafe::nfs_vault::Empty

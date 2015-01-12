@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/cache_handler/service.h"
+#include "maidsafe/vault/parameters.h"
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/cache_handler/operation_visitors.h"
 #include "maidsafe/vault/cache_handler/operation_handlers.h"
@@ -37,10 +38,12 @@ DiskUsage cache_size = DiskUsage(200);
 CacheHandlerService::CacheHandlerService(routing::Routing& routing,
                                          const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
+      memory_cache_mutex_(),
       dispatcher_(routing),
       cache_size_(cache_size),
       cache_data_store_(vault_root_dir / "cache" / "cache", DiskUsage(cache_usage)),
-      mem_only_cache_(mem_only_cache_usage) {
+      mem_only_cache_(detail::Parameters::temporary_store_size,
+                      detail::Parameters::temporary_store_time_to_live) {
   routing_.kNodeId();
 }
 
@@ -121,34 +124,6 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
-  LOG(kVerbose) << message;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const PutRequestFromDataManagerToCacheHandler &message,
-    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver) {
-  typedef PutRequestFromDataManagerToCacheHandler MessageType;
-  LOG(kVerbose) << message;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const GetRequestFromDataManagerToCacheHandler& message,
-    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver) {
-  typedef GetRequestFromDataManagerToCacheHandler MessageType;
   LOG(kVerbose) << message;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {

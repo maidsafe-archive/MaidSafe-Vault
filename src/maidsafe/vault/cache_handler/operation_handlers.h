@@ -109,20 +109,6 @@ bool DoCacheOperation(
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
-    const PutRequestFromDataManagerToCacheHandler& message,
-    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver);
-
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
-    const GetRequestFromDataManagerToCacheHandler& message,
-    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver);
-
 }  // namespace detail
 
 template <typename MessageType>

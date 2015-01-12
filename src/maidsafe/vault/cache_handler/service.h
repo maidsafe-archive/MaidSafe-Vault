@@ -21,15 +21,16 @@
 
 #include <type_traits>
 
-#include "maidsafe/vault/chunk_store.h"
-#include "maidsafe/vault/memory_fifo.h"
+#include "maidsafe/common/containers/lru_cache.h"
 
 #include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/nfs/message_wrapper.h"
-#include "maidsafe/vault/message_types.h"
 #include "maidsafe/nfs/message_types.h"
 
 #include "maidsafe/vault/cache_handler/dispatcher.h"
+#include "maidsafe/vault/chunk_store.h"
+#include "maidsafe/vault/message_types.h"
 
 
 namespace maidsafe {
@@ -53,7 +54,7 @@ namespace test {
 class CacheHandlerService {
  public:
   typedef nfs::CacheableMessages PublicMessages;
-  typedef CacheableMessages VaultMessages;
+  typedef void VaultMessages;
   typedef bool HandleMessageReturnType;
 
   CacheHandlerService(routing::Routing& routing, const boost::filesystem::path& vault_root_dir);
@@ -91,10 +92,11 @@ class CacheHandlerService {
   bool ValidateSender(const MessageType& message, const typename MessageType::Sender& sender) const;
 
   routing::Routing& routing_;
+  std::mutex memory_cache_mutex_;
   CacheHandlerDispatcher dispatcher_;
   DiskUsage cache_size_;
   ChunkStore cache_data_store_;
-  MemoryFIFO mem_only_cache_;
+  LruCache<vault::Key, NonEmptyString> mem_only_cache_;
 };
 
 template <typename MessageType>
@@ -156,32 +158,19 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
 
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const PutRequestFromDataManagerToCacheHandler& message,
-    const typename PutRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename PutRequestFromDataManagerToCacheHandler::Receiver& receiver);
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const GetRequestFromDataManagerToCacheHandler& message,
-    const typename GetRequestFromDataManagerToCacheHandler::Sender& sender,
-    const typename GetRequestFromDataManagerToCacheHandler::Receiver& receiver);
-
 template <typename Data>
 boost::optional<Data> CacheHandlerService::CacheGet(const typename Data::Name& data_name,
                                                     IsShortTermCacheable) {
-  try {
-    return boost::optional<Data>(
-               Data(data_name,
-                    typename Data::serialised_type(mem_only_cache_.Get(
-                        GetDataNameVariant(Data::Tag::kValue, data_name.value)))));
+  using LruCacheGetResult = boost::expected<NonEmptyString, maidsafe_error>;
+  LruCacheGetResult get_result;
+  {
+    std::lock_guard<decltype(memory_cache_mutex_)> lock(memory_cache_mutex_);
+    get_result = mem_only_cache_.Get(Key(data_name.value, Data::Tag::kValue));
   }
-  catch (const std::exception&) {
-    return boost::optional<Data>();
-  }
+  if (get_result)
+    return boost::optional<Data>(Data(data_name,
+                                 typename Data::serialised_type(get_result.value())));
+  return boost::optional<Data>();
 }
 
 template <typename Data>
@@ -220,13 +209,10 @@ void CacheHandlerService::CacheStore(const Data& data, IsLongTermCacheable) {
 
 template <typename Data>
 void CacheHandlerService::CacheStore(const Data& data, IsShortTermCacheable) {
-  try {
-    LOG(kVerbose) << "CacheHandlerService::CacheStore: mem_only_cache";
-    mem_only_cache_.Store(GetDataNameVariant(Data::Tag::kValue, data.name().value),
-                          data.Serialise().data);
-  }
-  catch (const std::exception&) {
-    LOG(kError) << "Failed to store data in to the cache";
+  LOG(kVerbose) << "CacheHandlerService::CacheStore: mem_only_cache";
+  {
+    std::lock_guard<decltype(memory_cache_mutex_)> lock(memory_cache_mutex_);
+    mem_only_cache_.Add(Key(data.name().value, Data::Tag::kValue), data.Serialise().data);
   }
 }
 

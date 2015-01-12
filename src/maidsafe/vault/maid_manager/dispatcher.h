@@ -34,14 +34,10 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/pmid_manager/metadata.h"
+#include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
-
-class OwnerDirectory;
-class GroupDirectory;
-class WorldDirectory;
 
 namespace vault {
 
@@ -53,8 +49,7 @@ class MaidManagerDispatcher {
   void SendGetVersionRequest(const MaidName& account_name, const typename Data::Name& data_name);
 
   template <typename Data>
-  void SendPutRequest(const MaidName& account_name, const Data& data,
-                      const PmidName& pmid_node_hint, nfs::MessageId message_id);
+  void SendPutRequest(const MaidName& account_name, const Data& data, nfs::MessageId message_id);
 
   void SendPutResponse(const MaidName& account_name, const maidsafe_error& result,
                        nfs::MessageId message_id);
@@ -83,23 +78,17 @@ class MaidManagerDispatcher {
   void SendRemoveAccountResponse(const MaidName& account_name, const maidsafe_error& result,
                                  nfs::MessageId message_id);
 
-  void SendUnregisterPmidResponse(const MaidName& account_name, const PmidName& pmid_name,
-                                  const maidsafe_error& result, nfs::MessageId message_id);
   template <typename KeyType>
   void SendSync(const KeyType& key, const std::string& serialised_sync);
 
-  void SendAccountTransfer(const NodeId& destination_peer, const MaidName& account_name,
-                           nfs::MessageId message_id, const std::string& serialised_account);
+  void SendAccountRequest(const MaidManager::Key& key);
+  void SendAccountTransfer(const NodeId& destination_peer, const std::string& serialised_account);
+  void SendAccountResponse(const std::string& serialised_account, const routing::GroupId& group_id,
+                           const NodeId& sender);
 
   template <typename Data>
   void SendPutFailure(const MaidName& maid_node, const typename Data::Name& data_name,
                       const maidsafe_error& error,  nfs::MessageId message_id);
-
-  void SendPmidHealthRequest(const MaidName& maid_name, const PmidName& pmid_node,
-                             nfs::MessageId message_id);
-
-  void SendPmidHealthResponse(const MaidName& maid_name, int64_t available_size,
-                              const maidsafe_error& return_code, nfs::MessageId message_id);
 
   void SendCreatePmidAccountRequest(const passport::PublicMaid& account_name,
                                     const passport::PublicPmid& pmid_name);
@@ -111,9 +100,6 @@ class MaidManagerDispatcher {
 
   void SendCreateVersionTreeResponse(const MaidName& maid_name, const maidsafe_error& error,
                                      nfs::MessageId message_id);
-
-  void SendRegisterPmidResponse(const MaidName& maid_name, const maidsafe_error& error,
-                                nfs::MessageId message_id);
 
  private:
   MaidManagerDispatcher();
@@ -135,20 +121,14 @@ class MaidManagerDispatcher {
 
 template <typename Data>
 void MaidManagerDispatcher::SendPutRequest(const MaidName& account_name, const Data& data,
-                                           const PmidName& pmid_node_hint,
                                            nfs::MessageId message_id) {
-  LOG(kVerbose) << "MaidManagerDispatcher SendPutRequest to pmid_node_hint -- "
-                << HexSubstr(pmid_node_hint.value.string())
-                << " , with message_id -- " << message_id.data
+  LOG(kVerbose) << "MaidManagerDispatcher SendPutRequest, with message_id -- " << message_id.data
                 << " of account " << HexSubstr(account_name.value.string());
   typedef PutRequestFromMaidManagerToDataManager VaultMessage;
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
   CheckSourcePersonaType<VaultMessage>();
 
-  VaultMessage vault_message(
-      message_id,
-      nfs_vault::DataAndPmidHint(nfs_vault::DataName(data.name()), data.Serialise(),
-                                 pmid_node_hint));
+  VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(vault_message.Serialise(),
                          GroupOrKeyHelper::GroupSender(routing_, account_name),
                          VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
@@ -217,48 +197,6 @@ void MaidManagerDispatcher::SendCreateVersionTreeRequest(const MaidName& maid_na
                          VaultMessage::Receiver(NodeId(data_name->string())));
   routing_.Send(message);
 }
-
-// template<>
-// void MaidManagerDispatcher::SendPutRequest<OwnerDirectory>(const MaidName& /*account_name*/,
-//                                                           const OwnerDirectory& /*data*/,
-//                                                           const PmidName& /*pmid_node_hint*/,
-//                                                           nfs::MessageId /*message_id*/) {
-//  typedef routing::GroupToGroupMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(is_cacheable<OwnerDirectory>::value ?
-//                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
-//  static const DataTagValue kDataEnumValue(OwnerDirectory::Tag::kValue);
-// TODO(Fraser#5#): 2013-08-03 - Handle
-// }
-
-// template<>
-// void MaidManagerDispatcher::SendPutRequest<GroupDirectory>(const MaidName& /*account_name*/,
-//                                                           const GroupDirectory& /*data*/,
-//                                                           const PmidName& /*pmid_node_hint*/,
-//                                                           nfs::MessageId /*message_id*/) {
-//  typedef routing::GroupToGroupMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(is_cacheable<GroupDirectory>::value ?
-//                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
-//  static const DataTagValue kDataEnumValue(GroupDirectory::Tag::kValue);
-// TODO(Fraser#5#): 2013-08-03 - Handle
-// }
-
-// template<>
-// void MaidManagerDispatcher::SendPutRequest<WorldDirectory>(const MaidName& /*account_name*/,
-//                                                           const WorldDirectory& /*data*/,
-//                                                           const PmidName& /*pmid_node_hint*/,
-//                                                           nfs::MessageId /*message_id*/) {
-//  typedef routing::GroupToGroupMessage RoutingMessage;
-//  static const routing::Cacheable cacheable(is_cacheable<WorldDirectory>::value ?
-//                                            routing::Cacheable::kGet : routing::Cacheable::kNone);
-//  static const nfs::MessageAction kAction(nfs::MessageAction::kPutRequest);
-//  static const nfs::Persona kDestinationPersona(nfs::Persona::kVersionHandler);
-//  static const DataTagValue kDataEnumValue(WorldDirectory::Tag::kValue);
-// TODO(Fraser#5#): 2013-08-03 - Handle
-// }
 
 template <typename KeyType>
 void MaidManagerDispatcher::SendSync(const KeyType& key, const std::string& serialised_sync) {
