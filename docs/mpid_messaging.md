@@ -63,7 +63,7 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 
 ```
 1. The user at Mpid(A) sends MpidMessage to MpidManager(A) signed with the recipient included
-2. The MpidManagers(A) sync this message and perform the action() which sends the MpidHeader to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is simply the MpidMessage message_head field.
+2. The MpidManagers(A) sync this message and perform the action() which sends the MpidHeader to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is hash of the MpidMessage.
 3. MpidManager(B) stores the MpidAlert and sends the alert to Mpid(B) as soon as it is found online.
 4. On receving the alert, Mpid(B) sends a ```retrieve_message``` to MpidManagers(B) which is forwarded to MpidManagers(A). This message is of the form ```retrieve_message(MpidAlert, MpidPacket)``` 
 5. MpidManagers(A) sends the message to MpidManagers(B) which is forwarded to MPid(B) if MPid(B) is online.
