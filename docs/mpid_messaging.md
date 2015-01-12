@@ -71,6 +71,8 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 7. When Mpid(A) decided to remove the MpidMessage from the OutBox, when the message hasn't got retrived by Mpid(B). The MpidManagers(A) group needs not only remove the correspondent MpidMessage from their OutBox of Mpid(A), but also send a notification to the group of MpidManagers(B) so they can remove the correspodent MpidAlert from their InBox of Mpid(B).
 8. When Mpid(B) send a request to fetch message head only, it will directly goes to MpidManagers(A) and get response. This will not trigger the removal of such message in MpidManagers(A).
 
+MPid(A) =>> |MPidManager(A) (Put.Sync)(Alert.So) *->> | MPidManager(B) Online(Mpid(B)) ? Alert.So : Store(Alert).Sync *-> |Mpid(B) So.SignedRetreival ->> | MpidManager(A) (AuthRemove.Sync)(So.Message) *->> | MpidManager(B) Online(Mpid(B)) ? (Store(Message).Sync)(Message.So) : Store(Message).Sync *-> | Mpid(B)
+
 MPID Messaging Client
 --------------
 The messaging client, as described as Mpid(X) in the above section, can be named as nfs_mpid_client. It shall provide following key functionalities :
