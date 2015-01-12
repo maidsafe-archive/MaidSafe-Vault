@@ -65,13 +65,13 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 1. The user at Mpid(A) sends MpidMessage to MpidManager(A) signed with the recipient included
 2. The MpidManagers(A) sync this message and perform the action() which sends the MpidAlert to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is simply the hash of the MpidMessage.
 3. MpidManager(B) either store the MpidAlert or send immediately to the Mpid(B) user if they are off-line or on-line respectively.
-4. Mpid(B) then sends a ```Signed(retrieve_message)``` to the MpidManager(B) group who send this on to the MpidManagers(A). This message is of the form ```retrieve_message(MpidAlert, MpidPacket)[signed by Mpid(B)]``` 
-5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group, do a signature check and then perform action() which sends the message to MpidManagers(B) and remove the message.
-6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
+4. Mpid(B) then sends a ```retrieve_message``` to MpidManagers(B) which is forwarded to MpidManagers(A). This message is of the form ```retrieve_message(MpidAlert, MpidPacket)``` 
+5. MpidManagers(A) sends the message to MpidManagers(B) which is forwarded to MPid(B) if MPid(B) is online.
+6. On receiving the message, Mpid(B) sends a signed delete request to MpidManagers(B), by which the message is forwarded to MpidManager(A). MpidManager authenticate the signed delete request and on success deletes the corresponding entry.
 7. When Mpid(A) decided to remove the MpidMessage from the OutBox, when the message hasn't got retrived by Mpid(B). The MpidManagers(A) group needs not only remove the correspondent MpidMessage from their OutBox of Mpid(A), but also send a notification to the group of MpidManagers(B) so they can remove the correspodent MpidAlert from their InBox of Mpid(B).
 8. When Mpid(B) send a request to fetch message head only, it will directly goes to MpidManagers(A) and get response. This will not trigger the removal of such message in MpidManagers(A).
 
-MPid(A) =>> |MPidManager(A) (Put.Sync)(Alert.So) *->> | MPidManager(B) Online(Mpid(B)) ? Alert.So : Store(Alert).Sync *-> |Mpid(B) So.SignedRetreival ->> | MpidManager(A) (AuthRemove.Sync)(So.Message) *->> | MpidManager(B) Online(Mpid(B)) ? (Store(Message).Sync)(Message.So) : Store(Message).Sync *-> | Mpid(B)
+MPid(A) =>> |MPidManager(A) (Put.Sync)(Alert.So) *->> | MPidManager(B) Online(Mpid(B)) ? Alert.So : (Store(Alert).Sync)(WaitForOnlineB)(Alert.So)(Remove(Alert).Sync) *-> | Mpid(B) So.Retreival ->> | MpidManager(B) *-> | MpidManager(A) So.Message *->> | MpidManager(B) Online(Mpid(B)) ? Message.So *-> | Mpid(B) Delete.So ->> | MpidManager(B) Delete.So *->> | MpidManager(A) Delete.Sync
 
 MPID Messaging Client
 --------------
