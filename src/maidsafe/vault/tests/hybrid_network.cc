@@ -82,7 +82,7 @@ ImmutableData HybridNetwork::CreateDataForManager(const PmidName& pmid_name) {
   for (const auto& public_pmid : public_pmids_)
     nodes_id.emplace_back(NodeId(public_pmid.name()->string()));
 
-  while (true) {
+  for (;;) {
     ImmutableData data(NonEmptyString(RandomString(128)));
     if (IsManager(pmid_name, NodeId(data.name()->string()), nodes_id))
       return data;
