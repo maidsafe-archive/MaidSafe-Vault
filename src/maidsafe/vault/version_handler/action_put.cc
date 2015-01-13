@@ -19,6 +19,7 @@
 #include "maidsafe/vault/version_handler/action_put.h"
 
 #include "maidsafe/common/visualiser_log.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/version_handler/action_put.pb.h"
@@ -41,9 +42,9 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(const std::string& serialised_a
   if (!action_put_version_proto.ParseFromString(serialised_action))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     if (action_put_version_proto.has_serialised_old_version())
-      old_version = StructuredDataVersions::VersionName(
+      old_version = ConvertFromString<StructuredDataVersions::VersionName>(
                         action_put_version_proto.serialised_old_version());
-    new_version = StructuredDataVersions::VersionName(
+    new_version = ConvertFromString<StructuredDataVersions::VersionName>(
                       action_put_version_proto.serialised_new_version());
     message_id = nfs::MessageId(action_put_version_proto.message_id());
     originator = Identity(action_put_version_proto.originator());
@@ -62,8 +63,8 @@ ActionVersionHandlerPut::ActionVersionHandlerPut(ActionVersionHandlerPut&& other
 std::string ActionVersionHandlerPut::Serialise() const {
   protobuf::ActionPut action_put_version_proto;
   if (old_version.id->IsInitialised())
-    action_put_version_proto.set_serialised_old_version(old_version.Serialise());
-  action_put_version_proto.set_serialised_new_version(new_version.Serialise());
+    action_put_version_proto.set_serialised_old_version(ConvertToString(old_version));
+  action_put_version_proto.set_serialised_new_version(ConvertToString(new_version));
   action_put_version_proto.set_message_id(message_id.data);
   action_put_version_proto.set_originator(originator.string());
   return action_put_version_proto.SerializeAsString();

@@ -17,8 +17,10 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/version_handler/action_create_version_tree.h"
-#include "maidsafe/vault/version_handler/action_create_version_tree.pb.h"
 
+#include "maidsafe/common/serialisation/serialisation.h"
+
+#include "maidsafe/vault/version_handler/action_create_version_tree.pb.h"
 #include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
@@ -36,7 +38,8 @@ ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
   protobuf::ActionCreateVersionTree action_create_version_proto;
   if (!action_create_version_proto.ParseFromString(serialised_action))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  version = StructuredDataVersions::VersionName(action_create_version_proto.serialised_version());
+  version = ConvertFromString<StructuredDataVersions::VersionName>(
+      action_create_version_proto.serialised_version());
   max_versions = action_create_version_proto.max_versions();
   max_branches = action_create_version_proto.max_branches();
   message_id = nfs::MessageId(action_create_version_proto.message_id());
@@ -57,7 +60,7 @@ ActionVersionHandlerCreateVersionTree::ActionVersionHandlerCreateVersionTree(
 
 std::string ActionVersionHandlerCreateVersionTree::Serialise() const {
   protobuf::ActionCreateVersionTree action_create_version_proto;
-  action_create_version_proto.set_serialised_version(version.Serialise());
+  action_create_version_proto.set_serialised_version(ConvertToString(version));
   action_create_version_proto.set_max_versions(max_versions);
   action_create_version_proto.set_max_branches(max_branches);
   action_create_version_proto.set_message_id(message_id.data);

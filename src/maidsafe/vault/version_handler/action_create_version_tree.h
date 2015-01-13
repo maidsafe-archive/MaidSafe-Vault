@@ -26,7 +26,6 @@
 #include "maidsafe/vault/version_handler/version_handler.h"
 #include "maidsafe/vault/config.h"
 
-
 namespace maidsafe {
 
 namespace vault {
