@@ -134,8 +134,8 @@ void PmidNodeService::StartUp() {
 //  dispatcher_.SendPmidAccountRequest(handler_.AvailableSpace());
 }
 
-//void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-//                                         const std::vector<DataNameVariant>& /*to_be_retrieved*/) {
+// void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+//                                       const std::vector<DataNameVariant>& /*to_be_retrieved*/) {
 //  for (auto file_name : to_be_deleted) {
 //    try {
 //      handler_.Delete(file_name);
@@ -166,7 +166,7 @@ void PmidNodeService::StartUp() {
 //                    << boost::diagnostic_information(error);
 //    }
 //  }
-//}
+// }
 
 }  // namespace vault
 

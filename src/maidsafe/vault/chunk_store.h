@@ -28,6 +28,7 @@
 #include <utility>
 #include <deque>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
