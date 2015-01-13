@@ -53,6 +53,10 @@ void ActionMaidManagerPut::operator()(MaidManagerValue& value) const {
   value.PutData(kSize);
 }
 
+#ifndef WIN32
+const nfs::MessageAction ActionMaidManagerPut::kActionId;
+#endif
+
 bool operator==(const ActionMaidManagerPut& lhs, const ActionMaidManagerPut& rhs) {
   return lhs.kSize == rhs.kSize;
 }

@@ -97,6 +97,9 @@ template <>
 nfs_vault::DataNameOldNewVersion CreateContent<nfs_vault::DataNameOldNewVersion>();
 
 template <>
+nfs_vault::DiffSize CreateContent<nfs_vault::DiffSize>();
+
+template <>
 nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>();
 
 template <typename MessageType>
@@ -131,6 +134,13 @@ void SingleSendsToSingle(ServiceType* service, const MessageType& message,
 template <typename ServiceType, typename MessageType>
 void SingleSendsToGroup(ServiceType* service, const MessageType& message,
                         const routing::SingleSource& single_source,
+                        const routing::GroupId& group_id) {
+  service->HandleMessage(message, single_source, group_id);
+}
+
+template <typename ServiceType, typename MessageType>
+void SingleRelaySendsToGroup(ServiceType* service, const MessageType& message,
+                        const routing::SingleRelaySource& single_source,
                         const routing::GroupId& group_id) {
   service->HandleMessage(message, single_source, group_id);
 }

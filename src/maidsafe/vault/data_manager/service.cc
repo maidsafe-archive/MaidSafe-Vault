@@ -261,7 +261,7 @@ uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::Message
       storing_pmid_nodes.push_back(tried_pmid_node);
   }
   catch (const maidsafe_error& error) {
-    if (error.code() == make_error_code(CommonErrors::no_such_element)) {
+    if (error.code() == make_error_code(VaultErrors::no_such_account)) {
       LOG(kInfo) << "No value in db so far...";
       return chunk_size;
     }
@@ -278,7 +278,7 @@ uint64_t DataManagerService::Replicate(const DataManager::Key& key, nfs::Message
   auto pmid_name(detail::GetRandomCloseNode(routing_, storing_pmid_nodes));
   if (!pmid_name) {
     LOG(kError) << "Failed to find a valid close pmid node";
-    return chunk_size;
+    return 0;
   }
 
   LruCacheGetResult get_result;
@@ -460,21 +460,15 @@ void DataManagerService::HandleAccountTransfer(const AccountType& account) {
 
 void DataManagerService::HandleChurnEvent(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info before : ";
-//   close_nodes_change_.Print();
   std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
   if (stopped_)
     return;
-//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change containing following info : ";
-//   close_nodes_change->Print();
   close_nodes_change_ = *close_nodes_change;
 
   Db<DataManager::Key, DataManager::Value>::TransferInfo transfer_info(
       db_.GetTransferInfo(close_nodes_change));
   for (auto& transfer : transfer_info)
     TransferAccount(transfer.first, transfer.second);
-//   LOG(kVerbose) << "HandleChurnEvent close_nodes_change_ containing following info after : ";
-//   close_nodes_change_.Print();
   PmidName pmid_name(Identity(close_nodes_change->lost_node().string()));
   std::map<DataManager::Key, DataManager::Value> accounts(db_.GetRelatedAccounts(pmid_name));
   for (auto& account : accounts)
@@ -501,8 +495,8 @@ void DataManagerService::TransferAccount(const NodeId& dest,
                   << " to " << HexSubstr(dest.string())
                   << " with vaule " << account.second.Print();
   }
-  LOG(kVerbose) << "DataManagerService::TransferAccount send account_transfer";
-  dispatcher_.SendAccountTransfer(dest, account_transfer_proto.SerializeAsString());
+  if (!accounts.empty())
+    dispatcher_.SendAccountTransfer(dest, account_transfer_proto.SerializeAsString());
 }
 
 template <>

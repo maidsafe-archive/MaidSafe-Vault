@@ -315,7 +315,7 @@ void MaidManagerService::HandleMessage(
   const AccountTransferFromMaidManagerToMaidManager& message,
   const typename AccountTransferFromMaidManagerToMaidManager::Sender& sender,
   const typename AccountTransferFromMaidManagerToMaidManager::Receiver& /*receiver*/) {
-  LOG(kInfo) << "MaidManager received account from " << DebugId(sender.sender_id);
+  LOG(kInfo) << "MaidManager received account from " << DebugId(sender.data);
   protobuf::AccountTransfer account_transfer_proto;
   if (!account_transfer_proto.ParseFromString(message.contents->data)) {
     LOG(kError) << "Failed to parse account transfer ";
@@ -350,18 +350,19 @@ void MaidManagerService::HandleMessage(
     LOG(kError) << "Failed to parse account transfer ";
   }
   assert(account_transfer_proto.serialised_accounts_size() == 1);
-  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0), sender);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0),
+                             routing::SingleSource(sender.sender_id));
 }
 
 void MaidManagerService::HandleAccountTransferEntry(
-  const std::string& serialised_account, const routing::GroupSource& sender) {
+  const std::string& serialised_account, const routing::SingleSource& sender) {
   using Handler = AccountTransferHandler<MaidManager>;
   protobuf::MaidManagerKeyValuePair kv_pair;
   if (!kv_pair.ParseFromString(serialised_account)) {
     LOG(kError) << "Failed to parse action";
   }
   auto result(account_transfer_.Add(Key(Identity(kv_pair.key())),
-    MaidManagerValue(kv_pair.value()), sender.sender_id.data));
+    MaidManagerValue(kv_pair.value()), sender.data));
   if (result.result == Handler::AddResult::kSuccess) {
     LOG(kVerbose) << "MaidManager AcoccountTransfer HandleAccountTransfer";
     HandleAccountTransfer(std::make_pair(result.key, *result.value));

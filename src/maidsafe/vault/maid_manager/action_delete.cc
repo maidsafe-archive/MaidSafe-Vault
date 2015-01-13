@@ -63,6 +63,9 @@ void ActionMaidManagerDelete::operator()(MaidManagerValue& /*value*/) const {
     return detail::DbAction::kPut;*/
 }
 
+#ifndef WIN32
+const nfs::MessageAction ActionMaidManagerDelete::kActionId;
+#endif
 
 bool operator==(const ActionMaidManagerDelete& lhs, const ActionMaidManagerDelete& rhs) {
   return (lhs.kMessageId == rhs.kMessageId);
