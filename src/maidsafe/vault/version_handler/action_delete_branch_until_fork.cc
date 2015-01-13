@@ -17,8 +17,10 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/version_handler/action_delete_branch_until_fork.h"
-#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.pb.h"
 
+#include "maidsafe/common/serialisation/serialisation.h"
+
+#include "maidsafe/vault/version_handler/action_delete_branch_until_fork.pb.h"
 #include "maidsafe/vault/version_handler/value.h"
 
 namespace maidsafe {
@@ -27,17 +29,17 @@ namespace vault {
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const std::string& serialised_action)
-        : version_name([&serialised_action]() {
-            protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
-            if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
-              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-            return StructuredDataVersions::VersionName(
-                       action_delete_branch_until_fork_proto.serialised_version());
-          }()) {}
+    : version_name([&serialised_action]() -> StructuredDataVersions::VersionName {
+        protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
+        if (!action_delete_branch_until_fork_proto.ParseFromString(serialised_action))
+          BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+        return ConvertFromString<StructuredDataVersions::VersionName>(
+            action_delete_branch_until_fork_proto.serialised_version());
+      }()) {}
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const StructuredDataVersions::VersionName& version_name_in)
-        : version_name(version_name_in) {}
+    : version_name(version_name_in) {}
 
 ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntilFork(
     const ActionVersionHandlerDeleteBranchUntilFork& other)
@@ -49,7 +51,7 @@ ActionVersionHandlerDeleteBranchUntilFork::ActionVersionHandlerDeleteBranchUntil
 
 std::string ActionVersionHandlerDeleteBranchUntilFork::Serialise() const {
   protobuf::ActionDeleteBranchUntilFork action_delete_branch_until_fork_proto;
-  action_delete_branch_until_fork_proto.set_serialised_version(version_name.Serialise());
+  action_delete_branch_until_fork_proto.set_serialised_version(ConvertToString(version_name));
   return action_delete_branch_until_fork_proto.SerializeAsString();
 }
 
