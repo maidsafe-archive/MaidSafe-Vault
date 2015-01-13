@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,15 +16,38 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_holder_service.h"
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_DISPATCHER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_DISPATCHER_H_
+
+#include "maidsafe/routing/routing_api.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-MpidAccountHolder::MpidAccountHolder(routing::Routing& /*routing*/,
-                                     const boost::filesystem::path& /*vault_root_dir*/) {}
+class MpidManagerDispatcher {
+ public:
+  explicit MpidManagerDispatcher(routing::Routing& routing);
+  MpidManagerDispatcher() = delete;
+  MpidManagerDispatcher(const MpidManagerDispatcher&) = delete;
+  MpidManagerDispatcher(MpidManagerDispatcher&&) = delete;
+  MpidManagerDispatcher& operator=(MpidManagerDispatcher) = delete;
+
+ private:
+  template <typename Message>
+  void CheckSourcePersonaType() const;
+  routing::Routing& routing_;
+};
+
+template<typename Message>
+void MpidManagerDispatcher::CheckSourcePersonaType() const {
+  static_assert(Message::SourcePersona::value == nfs::Persona::kMpidManager,
+                "The source Persona must be kMpidManager.");
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_DISPATCHER_H_

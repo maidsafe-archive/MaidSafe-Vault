@@ -22,7 +22,10 @@
 #include <utility>
 
 #include "maidsafe/common/types.h"
+
 #include "maidsafe/nfs/types.h"
+
+#include "maidsafe/vault/key.h"
 
 namespace maidsafe {
 
@@ -30,10 +33,10 @@ namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
-  typedef DataNameVariant DbKey;
-  typedef NonEmptyString DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
+  using Key = vault::Key;
+  using Value = NonEmptyString;
+//  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
+//  typedef DbValue UnresolvedEntryValue;
   static const Persona persona = Persona::kMpidManager;
 };
 
@@ -41,7 +44,7 @@ struct PersonaTypes<Persona::kMpidManager> {
 
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidAccountHolder;
+typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
 
 }  // namespace vault
 

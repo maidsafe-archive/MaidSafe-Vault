@@ -1,0 +1,5 @@
+Action:SendMessage                    Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::Content
+Action:Synchronise                    Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::Content
+Action:AccountTransfer                Source:MpidManager:Single        Destination:MpidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
+Action:AccountQuery                   Source:MpidManager:Single        Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
+Action:AccountQueryResponse           Source:MpidManager:Group         Destination:MpidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
