@@ -549,6 +549,17 @@ operator()(const IntegrityCheckRequestFromDataManagerToPmidNode& message,
   DoOperation(service, message, sender, receiver);
 }
 
+//====================================== To MpidManager ===========================================
+
+template <>
+void DoOperation(
+    MpidManagerService* /*service*/,
+    const SendMessageAlertFromMpidManagerToMpidManager& /*message*/,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& /*sender*/,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+}
+
+
 }  // namespace detail
 
 }  // namespace vault

@@ -16,40 +16,50 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
+#include "maidsafe/vault/mpid_manager/value.h"
 
 #include <utility>
+#include <limits>
 
-#include "maidsafe/common/types.h"
-
-#include "maidsafe/nfs/types.h"
-
-#include "maidsafe/vault/key.h"
-#include "maidsafe/vault/types.h"
-#include "maidsafe/vault/mpid_manager/value.h"
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/routing/parameters.h"
+// #include "maidsafe/vault/mpid_manager/mpid_manager.pb.h"
 
 namespace maidsafe {
 
-namespace nfs {
-
-template <>
-struct PersonaTypes<Persona::kMpidManager> {
-  using Key = passport::PublicMpid::Name;
-  using Value = vault::MpidManagerValue;
-//  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-//  typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMpidManager;
-};
-
-}  // namespace nfs
-
 namespace vault {
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
+MpidManagerValue::MpidManagerValue() {}
+
+MpidManagerValue::MpidManagerValue(const MpidManagerValue& /*other*/) {}
+
+MpidManagerValue::MpidManagerValue(MpidManagerValue&& /*other*/) {}
+
+MpidManagerValue& MpidManagerValue::operator=(MpidManagerValue other) {
+  swap(*this, other);
+  return *this;
+}
+
+MpidManagerValue::MpidManagerValue(const std::string& /*serialised_value*/) {}
+
+
+std::string MpidManagerValue::Serialise() const {
+  return std::string();
+}
+
+MpidManagerValue MpidManagerValue::Resolve(const std::vector<MpidManagerValue>& /*values*/) {
+  MpidManagerValue value;
+  return value;
+}
+
+void swap(MpidManagerValue& /*lhs*/, MpidManagerValue& /*rhs*/) {
+  using std::swap;
+}
+
+bool operator==(const MpidManagerValue& /*lhs*/, const MpidManagerValue& /*rhs*/) {
+  return true;
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_

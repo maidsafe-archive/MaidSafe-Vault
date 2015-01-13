@@ -39,6 +39,7 @@ class DataManagerService;
 class PmidManagerService;
 class PmidNodeService;
 class VersionHandlerService;
+class MpidManagerService;
 
 namespace detail {
 
@@ -372,6 +373,15 @@ void DoOperation(
     const CreateVersionTreeRequestFromMaidManagerToVersionHandler& message,
     const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver& receiver);
+
+//====================================== To MpidManager ===========================================
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const SendMessageAlertFromMpidManagerToMpidManager& message,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
 
 }  // namespace detail
 

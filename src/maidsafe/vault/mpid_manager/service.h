@@ -44,9 +44,9 @@ namespace vault {
 
 class MpidManagerService {
  public:
-  MpidManagerService (const passport::Pmid& pmid, routing::Routing& routing,
-                      nfs_client::DataGetter& data_getter,
-                      const boost::filesystem::path& vault_root_dir);
+  MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
+                     nfs_client::DataGetter& data_getter,
+                     const boost::filesystem::path& vault_root_dir);
   ~MpidManagerService();
 
   template <typename MessageType>
@@ -67,9 +67,16 @@ class MpidManagerService {
   typedef boost::make_variant_over<IntermediateType>::type Messages;
 
  private:
+  template <typename MessageType>
+  bool ValidateSender(const MessageType& /*message*/,
+                      const typename MessageType::Sender& /*sender*/) const;
+
+  void HandleMessageAlert();
+
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
+  mutable std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   MpidManagerDispatcher dispatcher_;
@@ -78,9 +85,22 @@ class MpidManagerService {
 };
 
 template <typename MessageType>
+bool MpidManagerService::ValidateSender(const MessageType& /*message*/,
+                                        const typename MessageType::Sender& /*sender*/) const {
+  return true;
+}
+
+
+template <typename MessageType>
 void MpidManagerService::HandleMessage(const MessageType& message,
                                        const typename MessageType::Sender& sender,
                                        const typename MessageType::Receiver& receiver) {}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const SendMessageAlertFromMpidManagerToMpidManager& message,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
 
 }  // namespace vault
 

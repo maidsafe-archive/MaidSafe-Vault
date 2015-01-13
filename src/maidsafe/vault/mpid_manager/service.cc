@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/mpid_manager/service.h"
+#include "maidsafe/vault/operation_handlers.h"
 
 namespace maidsafe {
 
@@ -28,8 +29,23 @@ MpidManagerService::MpidManagerService(const passport::Pmid& /*pmid*/, routing::
     : routing_(routing),
       asio_service_(2),
       data_getter_(data_getter),
+      accumulator_mutex_(),
       dispatcher_(routing),
       db_(vault_root_dir) {}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const SendMessageAlertFromMpidManagerToMpidManager& message,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& receiver) {
+  typedef SendMessageAlertFromMpidManagerToMpidManager MessageType;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
 
 }  // namespace vault
 

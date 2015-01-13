@@ -1,0 +1,83 @@
+/*  Copyright 2012 MaidSafe.net limited
+
+    This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
+    version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
+    licence you accepted on initial access to the Software (the "Licences").
+
+    By contributing code to the MaidSafe Software, or to this project generally, you agree to be
+    bound by the terms of the MaidSafe Contributor Agreement, version 1.0, found in the root
+    directory of this project at LICENSE, COPYING and CONTRIBUTOR respectively and also
+    available at: http://www.maidsafe.net/licenses
+
+    Unless required by applicable law or agreed to in writing, the MaidSafe Software distributed
+    under the GPL Licence is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS
+    OF ANY KIND, either express or implied.
+
+    See the Licences for the specific language governing permissions and limitations relating to
+    use of the MaidSafe Software.                                                                 */
+
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "maidsafe/nfs/vault/messages.h"
+
+#include "maidsafe/vault/types.h"
+
+namespace maidsafe {
+
+namespace vault {
+
+const unsigned int kMaxHeaderSize = 128;
+using  MessageHeaderType = detail::BoundedString<0, kMaxHeaderSize>;
+
+namespace test {
+  class MpidManagerServiceTest;
+}
+
+struct MpidMessage {
+  PmidName receiver;
+  MessageHeaderType signed_message_header;
+  std::string signed_message_body;
+  Identity id, parent_id;
+};
+
+struct MpidMessageAlert {
+  MpidMessageAlert(const PmidName& sender_in, const MessageHeaderType signed_message_header_in,
+                   const Identity& id_in);
+  std::string Serialise();
+
+ private:
+  PmidName sender;
+  MessageHeaderType signed_message_header;
+  Identity id;
+};
+
+class MpidManagerValue {
+ public:
+  MpidManagerValue();
+  MpidManagerValue(const MpidManagerValue& other);
+  MpidManagerValue(MpidManagerValue&& other);
+  MpidManagerValue& operator=(MpidManagerValue other);
+  explicit MpidManagerValue(const std::string& serialised_value);
+
+  std::string Serialise() const;
+
+  static MpidManagerValue Resolve(const std::vector<MpidManagerValue>& values);
+
+  friend void swap(MpidManagerValue& lhs, MpidManagerValue& rhs);
+  friend bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
+
+ private:
+  std::vector<MpidMessage> outbox_;
+  std::vector<MpidMessageAlert> inbox_;
+};
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
