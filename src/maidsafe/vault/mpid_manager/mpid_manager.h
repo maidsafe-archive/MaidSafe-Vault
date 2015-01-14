@@ -25,9 +25,11 @@
 
 #include "maidsafe/nfs/types.h"
 
+#include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/mpid_manager/value.h"
+#include "maidsafe/vault/mpid_manager/action_message_alert.h"
 
 namespace maidsafe {
 
@@ -37,6 +39,10 @@ template <>
 struct PersonaTypes<Persona::kMpidManager> {
   using Key = passport::PublicMpid::Name;
   using Value = vault::MpidManagerValue;
+  using SyncKey = vault::GroupKey<Key>;
+  using SyncGroupKey = vault::MetadataKey<Key>;
+  using UnresolvedMessageAlert = vault::UnresolvedAction<SyncGroupKey,
+                                                         vault::ActionMpidManagerMessageAlert>;
 //  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
 //  typedef DbValue UnresolvedEntryValue;
   static const Persona persona = Persona::kMpidManager;

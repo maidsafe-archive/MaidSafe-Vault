@@ -66,6 +66,10 @@ std::string MpidManagerValue::Serialise() const {
   return std::string();
 }
 
+void MpidManagerValue::AddAlert(const nfs_vault::MpidMessageAlert& alert) {
+  inbox_.emplace_back(alert);
+}
+
 MpidManagerValue MpidManagerValue::Resolve(const std::vector<MpidManagerValue>& /*values*/) {
   MpidManagerValue value;
   return value;

@@ -27,7 +27,7 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/pmid_node/service.h"
-
+#include "maidsafe/vault/mpid_manager/service.h"
 
 namespace maidsafe {
 
@@ -379,9 +379,23 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const SendMessageAlertFromMpidManagerToMpidManager& message,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& sender,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
+    const MessageAlertFromMpidManagerToMpidManager& message,
+    const typename MessageAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetMessageRequestFromMpidManagerToMpidManager& message,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& receiver);
 
 }  // namespace detail
 

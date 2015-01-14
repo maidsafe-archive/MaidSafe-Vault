@@ -44,6 +44,7 @@ class MpidManagerValue {
   MpidManagerValue& operator=(MpidManagerValue other);
   explicit MpidManagerValue(const std::string& serialised_value);
 
+  void AddAlert(const nfs_vault::MpidMessageAlert& alert);
   std::string Serialise() const;
 
   static MpidManagerValue Resolve(const std::vector<MpidManagerValue>& values);

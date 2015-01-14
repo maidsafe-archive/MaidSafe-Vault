@@ -16,6 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include <string>
+
 #include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/operation_handlers.h"
 
@@ -23,7 +25,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MpidManagerService::MpidManagerService(const passport::Pmid& /*pmid*/, routing::Routing& routing,
+MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                                        nfs_client::DataGetter& data_getter,
                                        const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
@@ -31,20 +33,86 @@ MpidManagerService::MpidManagerService(const passport::Pmid& /*pmid*/, routing::
       data_getter_(data_getter),
       accumulator_mutex_(),
       dispatcher_(routing),
-      db_(vault_root_dir) {}
+      db_(vault_root_dir),
+      account_transfer_(),
+      sync_alerts_(NodeId(pmid.name()->string())) {}
 
 template <>
-void MpidManagerService::HandleMessage(
-    const SendMessageAlertFromMpidManagerToMpidManager& message,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& sender,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& receiver) {
-  typedef SendMessageAlertFromMpidManagerToMpidManager MessageType;
+void MpidManagerService::HandleMessage(const MessageAlertFromMpidManagerToMpidManager &message,
+    const typename MessageAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver) {
+  using MessageType = MessageAlertFromMpidManagerToMpidManager;
   OperationHandlerWrapper<MpidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver) {
+  using  MessageType = nfs::GetMessageRequestFromMpidNodeToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const GetMessageRequestFromMpidManagerToMpidManager& message,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& receiver) {
+  using  MessageType = GetMessageRequestFromMpidManagerToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert,
+                                            const MpidName& receiver) {
+  if (!AccountExists(receiver))
+    return;
+
+  DoSync(MpidManager::UnresolvedMessageAlert(
+      MpidManager::SyncGroupKey(receiver),
+      ActionMpidManagerMessageAlert(alert), routing_.kNodeId()));
+  if (IsOnline(receiver))
+    dispatcher_.SendMessageAlert(alert, receiver);
+}
+
+void MpidManagerService::HandleGetMessageRequestFromMpidNode(
+    const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver) {
+  if (!AlertExists(alert, receiver))
+    return;
+
+  dispatcher_.SendGetMessageRequest(alert, receiver);
+}
+
+void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& /*alert*/,
+                                                 const MpidName& /*receiver*/) {
+}
+
+bool MpidManagerService::IsOnline(const MpidName& /*mpid_name*/) {
+  return true;
+}
+
+bool MpidManagerService::AccountExists(const MpidName& /*mpid_name*/) {
+  return true;
+}
+
+bool MpidManagerService::AlertExists(const nfs_vault::MpidMessageAlert& /*alert*/,
+                                     const MpidName& /*receiver*/) {
+  return true;
 }
 
 }  // namespace vault

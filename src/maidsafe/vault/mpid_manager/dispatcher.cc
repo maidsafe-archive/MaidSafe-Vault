@@ -16,14 +16,53 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/vault/message_types.h"
+#include "maidsafe/nfs/message_types.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-MpidManagerDispatcher::MpidManagerDispatcher(routing::Routing& routing) : routing_(routing) {
-  static_cast<void>(routing_);
+MpidManagerDispatcher::MpidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
+
+void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& message_alert,
+                                             const MpidName& sender, const MpidName& receiver) {
+  using  VaultMessage = MessageAlertFromMpidManagerToMpidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  VaultMessage::Contents vault_message(message_alert);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(sender->string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(receiver->string())));
+  routing_.Send(message);
+}
+
+void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
+                                             const MpidName& receiver) {
+  using  NfstMessage = nfs::MessageAlertFromMpidManagerToMpidNode;
+  CheckSourcePersonaType<NfstMessage>();
+  using RoutingMessage = routing::Message<NfstMessage::Sender, NfstMessage::Receiver>;
+  NfstMessage::Contents nfs_message(alert);
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfstMessage::Sender(routing::GroupId(NodeId(receiver->string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         NfstMessage::Receiver(NodeId(receiver->string())));
+  routing_.Send(message);
+}
+
+void MpidManagerDispatcher::SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert,
+                                                  const MpidName& receiver) {
+  using  VaultMessage = GetMessageRequestFromMpidManagerToMpidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  VaultMessage::Contents vault_message(alert);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(receiver->string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(alert.sender->string())));
+  routing_.Send(message);
 }
 
 }  // namespace vault

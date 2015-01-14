@@ -19,7 +19,12 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_DISPATCHER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_DISPATCHER_H_
 
+#include <string>
+
 #include "maidsafe/routing/routing_api.h"
+
+#include "maidsafe/nfs/vault/messages.h"
+
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
@@ -33,6 +38,20 @@ class MpidManagerDispatcher {
   MpidManagerDispatcher(const MpidManagerDispatcher&) = delete;
   MpidManagerDispatcher(MpidManagerDispatcher&&) = delete;
   MpidManagerDispatcher& operator=(MpidManagerDispatcher) = delete;
+
+  void SendMessageAlert(const nfs_vault::MpidMessageAlert& message_alert,
+                        const MpidName& sender, const MpidName& receiver);
+  void SendMessageAlert(const nfs_vault::MpidMessageAlert& message_alert, const MpidName& receiver);
+  void SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+
+  // =========================== Sync / AccountTransfer section ====================================
+  void SendSync(const MpidManager::SyncGroupKey& key, const std::string& serialised_sync);
+
+  void SendAccountTransfer(const NodeId& destination_peer,
+                           const std::string& serialised_account);
+  void SendAccountRequest(const Key& key);
+  void SendAccountResponse(const std::string& serialised_account, const routing::GroupId& group_id,
+                           const NodeId& sender);
 
  private:
   template <typename Message>

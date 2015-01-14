@@ -37,6 +37,8 @@
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/mpid_manager/database.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
+#include "maidsafe/vault/sync.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -55,23 +57,41 @@ class MpidManagerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
+  bool IsOnline(const MpidName& mpid_name);                                                         // TO BE IMPLEMENTED
+  bool AccountExists(const MpidName& mpid_name);                                                    // TO BE IMPLEMENTED
+  bool AlertExists(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);             // TO BE IMPLEMENTED
+
+  template <typename UnresolvedAction>
+  void DoSync(const UnresolvedAction& unresolved_action);
+
+ private:
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
                                    boost::mpl::end<InitialType>::type,
                                    MpidManagerServiceMessages::types>::type IntermediateType;
-//  typedef boost::mpl::insert_range<IntermediateType,
-//                                   boost::mpl::end<IntermediateType>::type,
-//                                   MpidManagerServiceMessages::types>::type FinalType;
+  typedef boost::mpl::insert_range<IntermediateType,
+                                   boost::mpl::end<IntermediateType>::type,
+                                   nfs::MpidManagerServiceMessages::types>::type FinalType;
 
  public:
-  typedef boost::make_variant_over<IntermediateType>::type Messages;
+  typedef boost::make_variant_over<FinalType>::type Messages;
+
+ private:
+  template<typename ServiceHandlerType, typename MessageType>
+  friend void detail::DoOperation(
+      ServiceHandlerType* service, const MessageType& message,
+      const typename MessageType::Sender& sender,
+      const typename MessageType::Receiver& receiver);
 
  private:
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const;
 
-  void HandleMessageAlert();
+  void HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+  void HandleGetMessageRequestFromMpidNode(const nfs_vault::MpidMessageAlert& alert,
+                                           const MpidName& receiver);
+  void HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
 
   routing::Routing& routing_;
   AsioService asio_service_;
@@ -82,6 +102,7 @@ class MpidManagerService {
   MpidManagerDispatcher dispatcher_;
   MpidManagerDataBase db_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
+  Sync<MpidManager::UnresolvedMessageAlert> sync_alerts_;
 };
 
 template <typename MessageType>
@@ -90,6 +111,10 @@ bool MpidManagerService::ValidateSender(const MessageType& /*message*/,
   return true;
 }
 
+template <typename UnresolvedAction>
+void MpidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_alerts_, unresolved_action);
+}
 
 template <typename MessageType>
 void MpidManagerService::HandleMessage(const MessageType&, const typename MessageType::Sender&,
@@ -97,9 +122,21 @@ void MpidManagerService::HandleMessage(const MessageType&, const typename Messag
 
 template <>
 void MpidManagerService::HandleMessage(
-    const SendMessageAlertFromMpidManagerToMpidManager& message,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& sender,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
+    const MessageAlertFromMpidManagerToMpidManager& message,
+    const typename MessageAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const GetMessageRequestFromMpidManagerToMpidManager& message,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& receiver);
 
 }  // namespace vault
 

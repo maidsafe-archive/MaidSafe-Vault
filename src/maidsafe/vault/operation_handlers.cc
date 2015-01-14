@@ -553,12 +553,32 @@ operator()(const IntegrityCheckRequestFromDataManagerToPmidNode& message,
 
 template <>
 void DoOperation(
-    MpidManagerService* /*service*/,
-    const SendMessageAlertFromMpidManagerToMpidManager& /*message*/,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Sender& /*sender*/,
-    const typename SendMessageAlertFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+    MpidManagerService* service,
+    const MessageAlertFromMpidManagerToMpidManager& message,
+    const typename MessageAlertFromMpidManagerToMpidManager::Sender& /*sender*/,
+    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver) {
+  service->HandleMessageAlert(*message.contents, MpidName(Identity(receiver.data.string())));
 }
 
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+  service->HandleGetMessageRequestFromMpidNode(*message.contents,
+                                               MpidName(Identity(sender.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetMessageRequestFromMpidManagerToMpidManager& message,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  service->HandleGetMessageRequest(*message.contents,
+                                    MpidName(Identity(sender.group_id.data.string())));
+}
 
 }  // namespace detail
 
