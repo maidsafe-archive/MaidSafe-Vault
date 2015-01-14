@@ -272,7 +272,7 @@ class DataManagerService {
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
   mutable std::mutex accumulator_mutex_, close_nodes_change_mutex_, lru_cache_mutex_;
   bool stopped_;

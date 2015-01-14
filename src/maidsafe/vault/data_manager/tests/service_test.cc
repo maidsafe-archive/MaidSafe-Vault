@@ -104,7 +104,7 @@ class DataManagerServiceTest : public testing::Test {
   routing::Routing routing_;
   nfs_client::DataGetter data_getter_;
   DataManagerService data_manager_service_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
 };
 
 template <typename UnresolvedActionType>
