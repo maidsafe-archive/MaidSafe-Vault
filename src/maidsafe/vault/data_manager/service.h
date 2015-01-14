@@ -280,7 +280,7 @@ class DataManagerService {
   routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
-  DataManagerDataBase db_;
+  DataManagerDatabase db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;
