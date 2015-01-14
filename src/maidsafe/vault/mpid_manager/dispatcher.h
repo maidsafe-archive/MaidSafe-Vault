@@ -50,4 +50,4 @@ void MpidManagerDispatcher::CheckSourcePersonaType() const {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_DISPATCHER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_DISPATCHER_H_

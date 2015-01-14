@@ -22,7 +22,9 @@ namespace maidsafe {
 
 namespace vault {
 
-MpidManagerDispatcher::MpidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
+MpidManagerDispatcher::MpidManagerDispatcher(routing::Routing& routing) : routing_(routing) {
+  static_cast<void>(routing_);
+}
 
 }  // namespace vault
 

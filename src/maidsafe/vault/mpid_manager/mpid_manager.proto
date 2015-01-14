@@ -20,11 +20,13 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message MpidManagerKeyValuePair {
-  required bytes key = 1;
-  required bytes value = 2;
+message MpidManagerValue {
+  repeated bytes serialised_outbox_entry = 1;
+  repeated bytes serialised_inbox_entry = 2;
 }
 
-message MaidManagerValue {
+message MpidManagerKeyValuePair {
+  required bytes key = 1;
+  required MpidManagerValue value = 2;
 }
 

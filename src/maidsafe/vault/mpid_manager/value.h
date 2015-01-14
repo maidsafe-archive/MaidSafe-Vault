@@ -31,30 +31,10 @@ namespace maidsafe {
 
 namespace vault {
 
-const unsigned int kMaxHeaderSize = 128;
-using  MessageHeaderType = detail::BoundedString<0, kMaxHeaderSize>;
 
 namespace test {
   class MpidManagerServiceTest;
 }
-
-struct MpidMessage {
-  PmidName receiver;
-  MessageHeaderType signed_message_header;
-  std::string signed_message_body;
-  Identity id, parent_id;
-};
-
-struct MpidMessageAlert {
-  MpidMessageAlert(const PmidName& sender_in, const MessageHeaderType signed_message_header_in,
-                   const Identity& id_in);
-  std::string Serialise();
-
- private:
-  PmidName sender;
-  MessageHeaderType signed_message_header;
-  Identity id;
-};
 
 class MpidManagerValue {
  public:
@@ -72,12 +52,12 @@ class MpidManagerValue {
   friend bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
 
  private:
-  std::vector<MpidMessage> outbox_;
-  std::vector<MpidMessageAlert> inbox_;
+  std::vector<nfs_vault::MpidMessage> outbox_;
+  std::vector<nfs_vault::MpidMessageAlert> inbox_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
