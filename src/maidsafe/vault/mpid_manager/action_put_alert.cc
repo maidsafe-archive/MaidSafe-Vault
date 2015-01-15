@@ -49,6 +49,9 @@ std::string ActionMpidManagerPutAlert::Serialise() const {
 }
 
 detail::DbAction ActionMpidManagerPutAlert::operator()(std::unique_ptr<MpidManagerValue>& value) {
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+
   value->AddAlert(kAlert);
   return detail::DbAction::kPut;
 }

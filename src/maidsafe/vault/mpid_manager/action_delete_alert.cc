@@ -50,6 +50,9 @@ std::string ActionMpidManagerDeleteAlert::Serialise() const {
 
 detail::DbAction ActionMpidManagerDeleteAlert::operator()(
     std::unique_ptr<MpidManagerValue>& value) {
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+
   value->RemoveAlert(kAlert);
   return detail::DbAction::kDelete;
 }
