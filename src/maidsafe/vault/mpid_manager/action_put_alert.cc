@@ -48,8 +48,9 @@ std::string ActionMpidManagerPutAlert::Serialise() const {
   return proto.SerializeAsString();
 }
 
-void ActionMpidManagerPutAlert::operator()(MpidManagerValue& value) {
-  value.AddAlert(kAlert);
+detail::DbAction ActionMpidManagerPutAlert::operator()(std::unique_ptr<MpidManagerValue>& value) {
+  value->AddAlert(kAlert);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionMpidManagerPutAlert& lhs, const ActionMpidManagerPutAlert& rhs) {

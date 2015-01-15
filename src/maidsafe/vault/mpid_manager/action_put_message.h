@@ -25,15 +25,15 @@
 #include "maidsafe/common/log.h"
 
 #include "maidsafe/nfs/vault/messages.h"
+#include "maidsafe/nfs/types.h"
 
 #include "maidsafe/vault/config.h"
-#include "maidsafe/vault/pmid_manager/pmid_manager.h"
-
-#include "maidsafe/vault/mpid_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+class MpidManagerValue;
 
 struct ActionMpidManagerPutMessage {
   explicit ActionMpidManagerPutMessage(const nfs_vault::MpidMessage& alert);
@@ -43,8 +43,7 @@ struct ActionMpidManagerPutMessage {
   ActionMpidManagerPutMessage() = delete;
   ActionMpidManagerPutMessage& operator=(ActionMpidManagerPutMessage other) = delete;
 
-
-  void operator()(MpidManagerValue& value);
+  detail::DbAction operator()(std::unique_ptr<MpidManagerValue>& value);
 
   std::string Serialise() const;
 

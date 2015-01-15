@@ -26,7 +26,6 @@
 
 #include "maidsafe/common/sqlite3_wrapper.h"
 
-#include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
@@ -37,6 +36,11 @@ class MpidManagerDataBase {
  public:
   explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
   ~MpidManagerDataBase();
+
+  std::unique_ptr<MpidManager::Value> Commit(const MpidManager::Key& /*key*/,
+      std::function<detail::DbAction(std::unique_ptr<MpidManager::Value>& value)> /*functor*/) {
+    return std::unique_ptr<MpidManager::Value>();
+  }
 
   bool Exists(const nfs_vault::MpidMessageAlert&  /*alert*/, const MpidName& /*receiver*/) {
     return false;  // To be fixed

@@ -43,8 +43,7 @@ struct ActionMpidManagerDeleteAlert {
   ActionMpidManagerDeleteAlert() = delete;
   ActionMpidManagerDeleteAlert& operator=(ActionMpidManagerDeleteAlert other) = delete;
 
-
-  void operator()(MpidManagerValue& value);
+  detail::DbAction operator()(std::unique_ptr<MpidManagerValue>& value);
 
   std::string Serialise() const;
 

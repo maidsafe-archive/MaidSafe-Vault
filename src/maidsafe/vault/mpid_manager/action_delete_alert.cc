@@ -48,8 +48,10 @@ std::string ActionMpidManagerDeleteAlert::Serialise() const {
   return proto.SerializeAsString();
 }
 
-void ActionMpidManagerDeleteAlert::operator()(MpidManagerValue& value) {
-  value.RemoveAlert(kAlert);
+detail::DbAction ActionMpidManagerDeleteAlert::operator()(
+    std::unique_ptr<MpidManagerValue>& value) {
+  value->RemoveAlert(kAlert);
+  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionMpidManagerDeleteAlert& lhs, const ActionMpidManagerDeleteAlert& rhs) {

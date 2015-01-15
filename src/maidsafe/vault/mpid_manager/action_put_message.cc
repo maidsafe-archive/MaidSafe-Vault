@@ -48,8 +48,11 @@ std::string ActionMpidManagerPutMessage::Serialise() const {
   return proto.SerializeAsString();
 }
 
-void ActionMpidManagerPutMessage::operator()(MpidManagerValue& value) {
-  value.AddMessage(kMessage);
+detail::DbAction ActionMpidManagerPutMessage::operator()(
+    std::unique_ptr<MpidManagerValue>& value) {
+  // THROW IF value is nullptr
+  value->AddMessage(kMessage);
+  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs) {
