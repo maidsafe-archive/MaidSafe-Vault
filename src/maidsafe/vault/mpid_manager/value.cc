@@ -63,7 +63,7 @@ std::string MpidManagerValue::Serialise() const {
   for (const auto& inbox_entry : inbox_)
     proto.add_serialised_inbox_entry(inbox_entry.Serialise());
 
-  return std::string();
+  return proto.SerializeAsString();
 }
 
 void MpidManagerValue::AddAlert(const nfs_vault::MpidMessageAlert& alert) {
