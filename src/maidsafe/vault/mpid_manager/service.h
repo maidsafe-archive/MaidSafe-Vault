@@ -168,6 +168,12 @@ void MpidManagerService::HandleMessage(
     const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& receiver);
 
+template <>
+void MpidManagerService::HandleMessage(
+    const SynchroniseFromMpidManagerToMpidManager& message,
+    const typename SynchroniseFromMpidManagerToMpidManager::Sender& sender,
+    const typename SynchroniseFromMpidManagerToMpidManager::Receiver& receiver);
+
 }  // namespace vault
 
 }  // namespace maidsafe
