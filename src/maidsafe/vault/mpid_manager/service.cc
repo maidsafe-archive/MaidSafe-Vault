@@ -118,7 +118,7 @@ bool MpidManagerService::AlertExists(const nfs_vault::MpidMessageAlert& /*alert*
 
 DbMessageQueryResult MpidManagerService::GetMessage(const nfs_vault::MpidMessageAlert& /*alert*/,
                                                     const MpidName& /*receiver*/) {
-  return boost::make_unexpected(make_error_code(CommonErrors::no_such_element));                                     // To be fixed
+  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));                                     // To be fixed
   // return db_.GetMessage(alert, receiver);
 }
 
