@@ -65,6 +65,20 @@ void MpidManagerDispatcher::SendGetMessageRequest(const nfs_vault::MpidMessageAl
   routing_.Send(message);
 }
 
+void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& query_result,
+                                                   const MpidName& sender,
+                                                   const MpidName& receiver) {
+  using  VaultMessage = GetMessageResponseFromMpidManagerToMpidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  VaultMessage::Contents vault_message(query_result);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(sender->string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(receiver->string())));
+  routing_.Send(message);
+}
+  
 }  // namespace vault
 
 }  // namespace maidsafe

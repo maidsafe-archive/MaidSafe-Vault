@@ -21,6 +21,7 @@
 
 #include <vector>
 
+#include "boost/expected/expected.hpp"
 #include "boost/mpl/vector.hpp"
 #include "boost/mpl/insert_range.hpp"
 #include "boost/mpl/end.hpp"
@@ -57,10 +58,6 @@ class MpidManagerService {
 
   void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
-  bool IsOnline(const MpidName& mpid_name);                                                         // TO BE IMPLEMENTED
-  bool AccountExists(const MpidName& mpid_name);                                                    // TO BE IMPLEMENTED
-  bool AlertExists(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);             // TO BE IMPLEMENTED
-
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
 
@@ -88,6 +85,12 @@ class MpidManagerService {
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const;
 
+  bool IsOnline(const MpidName& mpid_name);                                                         // TO BE IMPLEMENTED
+  bool AccountExists(const MpidName& mpid_name);                                                    // TO BE IMPLEMENTED
+  bool AlertExists(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);             // TO BE IMPLEMENTED
+  
+  DbMessageQueryResult GetMessage(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver); // TO BE IMPLEMENTED
+  
   void HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void HandleGetMessageRequestFromMpidNode(const nfs_vault::MpidMessageAlert& alert,
                                            const MpidName& receiver);

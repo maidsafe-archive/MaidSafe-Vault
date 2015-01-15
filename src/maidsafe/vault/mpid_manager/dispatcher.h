@@ -43,6 +43,8 @@ class MpidManagerDispatcher {
                         const MpidName& sender, const MpidName& receiver);
   void SendMessageAlert(const nfs_vault::MpidMessageAlert& message_alert, const MpidName& receiver);
   void SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+  void SendGetMessageResponse(const DbMessageQueryResult& query_result, const MpidName& sender,
+                              const MpidName& receiver);
 
   // =========================== Sync / AccountTransfer section ====================================
   void SendSync(const MpidManager::SyncGroupKey& key, const std::string& serialised_sync);

@@ -98,8 +98,9 @@ void MpidManagerService::HandleGetMessageRequestFromMpidNode(
   dispatcher_.SendGetMessageRequest(alert, receiver);
 }
 
-void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& /*alert*/,
-                                                 const MpidName& /*receiver*/) {
+void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert,
+                                                 const MpidName& receiver) {
+  return dispatcher_.SendGetMessageResponse(GetMessage(alert, receiver), alert.sender, receiver);
 }
 
 bool MpidManagerService::IsOnline(const MpidName& /*mpid_name*/) {
@@ -114,6 +115,13 @@ bool MpidManagerService::AlertExists(const nfs_vault::MpidMessageAlert& /*alert*
                                      const MpidName& /*receiver*/) {
   return true;
 }
+
+DbMessageQueryResult MpidManagerService::GetMessage(const nfs_vault::MpidMessageAlert& /*alert*/,
+                                                    const MpidName& /*receiver*/) {
+  return boost::make_unexpected(make_error_code(CommonErrors::no_such_element));                                     // To be fixed
+  // return db_.GetMessage(alert, receiver);
+}
+
 
 }  // namespace vault
 
