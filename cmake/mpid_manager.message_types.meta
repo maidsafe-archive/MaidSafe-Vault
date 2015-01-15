@@ -1,5 +1,5 @@
 Action:SendMessage                    Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessage
-Action:MessageAlert                   Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
+Action:SendAlert                      Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
 Action:GetRequest                     Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
 Action:DeleteRequest                  Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
 Action:GetResponse                    Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_client::MpidMessageOrReturnCode

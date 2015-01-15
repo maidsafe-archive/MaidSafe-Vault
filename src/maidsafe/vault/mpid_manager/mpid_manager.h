@@ -36,7 +36,6 @@
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_delete_message.h"
 
-
 namespace maidsafe {
 
 namespace nfs {

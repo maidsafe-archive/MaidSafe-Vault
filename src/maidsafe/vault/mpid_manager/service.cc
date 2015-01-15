@@ -41,10 +41,10 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_delete_messages_(NodeId(pmid.name()->string())) {}
 
 template <>
-void MpidManagerService::HandleMessage(const MessageAlertFromMpidManagerToMpidManager &message,
-    const typename MessageAlertFromMpidManagerToMpidManager::Sender& sender,
-    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver) {
-  using MessageType = MessageAlertFromMpidManagerToMpidManager;
+void MpidManagerService::HandleMessage(const SendAlertFromMpidManagerToMpidManager &message,
+    const typename SendAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver) {
+  using MessageType = SendAlertFromMpidManagerToMpidManager;
   OperationHandlerWrapper<MpidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -128,96 +128,82 @@ void MpidManagerService::HandleMessage(
 template <>
 void MpidManagerService::HandleMessage(
     const SynchroniseFromMpidManagerToMpidManager& message,
-    const typename SynchroniseFromMpidManagerToMpidManager::Sender& /*sender*/,
+    const typename SynchroniseFromMpidManagerToMpidManager::Sender& sender,
     const typename SynchroniseFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
   protobuf::Sync proto_sync;
   if (!proto_sync.ParseFromString(message.contents->data))
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-//    case ActionMpidManagerPutMessage::kActionId: {
-//      MpidManager::UnresolvedPutMessage unresolved_action(proto_sync.serialised_unresolved_action(),
-//                                                          sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        db_.Commit(resolved_action->key, resolved_action->action);
-//        dispatcher_.SendMessageAlert(
-//            nfs_vault::MpidMessageAlert(resolved_action->key, resolved_action->action.kMessage.id,
-//                                        resolved_action->action.kMessage.parent_id,
-//                                        resolved_action->action.kMessage.signed_header)
-//            , resolved_action->action.kMessage.receiver);
-//      }
-//      break;
-//    }
-//    case ActionDataManagerDelete::kActionId: {
-//      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete";
-//      DataManager::UnresolvedDelete unresolved_action(proto_sync.serialised_unresolved_action(),
-//                                                      sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_deletes_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
-//                   << "resolved for chunk " << HexSubstr(resolved_action->key.name.string());
-//        auto value(db_.Commit(resolved_action->key, resolved_action->action));
-//        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager ActionDataManagerDelete "
-//                   << "the chunk " << HexSubstr(resolved_action->key.name.string());
-//        if (value) {
-//          // The delete operation will not depend on subscribers anymore.
-//          // Owners' signatures may stored in DM later on to support deletes.
-//          LOG(kInfo) << "SynchroniseFromDataManagerToDataManager send delete request";
-//          std::set<PmidName> all_pmids_set;
-//          auto all_pmids(value->AllPmids());
-//          for (auto pmid : all_pmids)
-//            all_pmids_set.insert(pmid);
-//          SendDeleteRequests(resolved_action->key, all_pmids_set,
-//                             resolved_action->action.MessageId());
-//        }
-//      }
-//      break;
-//    }
-//    case ActionDataManagerAddPmid::kActionId: {
-//      DataManager::UnresolvedAddPmid unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerAddPmid "
-//                    << " for chunk " << HexSubstr(unresolved_action.key.name.string())
-//                    << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
-//      auto resolved_action(sync_add_pmids_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit add pmid to db"
-//                   << " for chunk " << HexSubstr(unresolved_action.key.name.string())
-//                   << " and pmid_node " << HexSubstr(unresolved_action.action.kPmidName->string());
-//        try {
-//          db_.Commit(resolved_action->key, resolved_action->action);
-//        }
-//        catch (const maidsafe_error& error) {
-//          if (error.code() != make_error_code(CommonErrors::no_such_element))
-//            throw;
-//        }
-//      }
-//      break;
-//    }
-//    case ActionDataManagerRemovePmid::kActionId: {
-//      LOG(kVerbose) << "SynchroniseFromDataManagerToDataManager ActionDataManagerRemovePmid";
-//      DataManager::UnresolvedRemovePmid unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_remove_pmids_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        LOG(kInfo) << "SynchroniseFromDataManagerToDataManager commit remove pmid to db";
-//        // The PmidManager pass down the PutFailure from PmidNode immediately after received it
-//        // This may cause the sync_remove_pmid got resolved before the sync_add_pmid
-//        // In that case, the commit will raise an error of no_such_account
-//        // BEFORE_RELEASE double check whether the "mute" solution is enough
-//        //                as the pmid_node will get added eventually and may cause problem for get
-//        try {
-//          db_.Commit(resolved_action->key, resolved_action->action);
-//        } catch(maidsafe_error& error) {
-//          LOG(kWarning) << "having error when trying to commit remove pmid to db : "
-//                        << boost::diagnostic_information(error);
-//        }
-//      }
-//      break;
-//    }
+    case ActionMpidManagerPutMessage::kActionId: {
+      MpidManager::UnresolvedPutMessage unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                          sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+        dispatcher_.SendMessageAlert(
+            nfs_vault::MpidMessageAlert(resolved_action->key.group_name(),
+                                        resolved_action->action.kMessage.id,
+                                        resolved_action->action.kMessage.parent_id,
+                                        resolved_action->action.kMessage.signed_header)
+            , resolved_action->action.kMessage.receiver);
+      }
+      break;
+    }
+    case ActionMpidManagerDeleteMessage::kActionId: {
+      MpidManager::UnresolvedDeleteMessage
+          unresolved_action(proto_sync.serialised_unresolved_action(), sender.sender_id,
+                            routing_.kNodeId());
+      auto resolved_action(sync_delete_messages_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+      }
+      break;
+    }
+    case ActionMpidManagerPutAlert::kActionId: {
+      MpidManager::UnresolvedPutAlert unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_put_alerts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+      }
+      break;
+    }
+    case ActionMpidManagerDeleteAlert::kActionId: {
+      MpidManager::UnresolvedDeleteAlert unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_delete_alerts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+      }
+      break;
+    }
     default: {
-      LOG(kError) << "SynchroniseFromDataManagerToDataManager Unhandled action type";
+      LOG(kError) << "SynchroniseFromMpidManagerToMpidManager Unhandled action type";
       assert(false && "Unhandled action type");
     }
   }

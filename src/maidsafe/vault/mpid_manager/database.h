@@ -37,7 +37,7 @@ class MpidManagerDataBase {
   explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
   ~MpidManagerDataBase();
 
-  std::unique_ptr<MpidManager::Value> Commit(const MpidManager::Key& /*key*/,
+  std::unique_ptr<MpidManager::Value> Commit(const MpidManager::SyncGroupKey& /*key*/,
       std::function<detail::DbAction(std::unique_ptr<MpidManager::Value>& value)> /*functor*/) {
     return std::unique_ptr<MpidManager::Value>();
   }

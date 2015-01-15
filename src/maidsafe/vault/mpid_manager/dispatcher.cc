@@ -28,7 +28,7 @@ MpidManagerDispatcher::MpidManagerDispatcher(routing::Routing& routing) : routin
 
 void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
                                              const MpidName& sender, const MpidName& receiver) {
-  using  VaultMessage = MessageAlertFromMpidManagerToMpidManager;
+  using  VaultMessage = SendAlertFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
   VaultMessage::Contents vault_message(alert);
@@ -41,7 +41,7 @@ void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& 
 
 void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
                                              const MpidName& receiver) {
-  using  NfstMessage = nfs::MessageAlertFromMpidManagerToMpidNode;
+  using  NfstMessage = nfs::SendAlertFromMpidManagerToMpidNode;
   CheckSourcePersonaType<NfstMessage>();
   using RoutingMessage = routing::Message<NfstMessage::Sender, NfstMessage::Receiver>;
   NfstMessage::Contents nfs_message(alert);

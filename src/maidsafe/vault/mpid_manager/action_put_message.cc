@@ -50,7 +50,9 @@ std::string ActionMpidManagerPutMessage::Serialise() const {
 
 detail::DbAction ActionMpidManagerPutMessage::operator()(
     std::unique_ptr<MpidManagerValue>& value) {
-  // THROW IF value is nullptr
+  if (!value)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+
   value->AddMessage(kMessage);
   return detail::DbAction::kPut;
 }

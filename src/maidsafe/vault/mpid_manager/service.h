@@ -134,9 +134,9 @@ void MpidManagerService::HandleMessage(const MessageType&, const typename Messag
                                        const typename MessageType::Receiver&) {}
 template <>
 void MpidManagerService::HandleMessage(
-    const MessageAlertFromMpidManagerToMpidManager& message,
-    const typename MessageAlertFromMpidManagerToMpidManager::Sender& sender,
-    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
+    const SendAlertFromMpidManagerToMpidManager& message,
+    const typename SendAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(

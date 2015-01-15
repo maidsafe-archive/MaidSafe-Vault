@@ -379,9 +379,9 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const MessageAlertFromMpidManagerToMpidManager& message,
-    const typename MessageAlertFromMpidManagerToMpidManager::Sender& sender,
-    const typename MessageAlertFromMpidManagerToMpidManager::Receiver& receiver);
+    const SendAlertFromMpidManagerToMpidManager& message,
+    const typename SendAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver);
 
 template <>
 void DoOperation(

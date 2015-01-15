@@ -47,7 +47,7 @@ struct ActionMpidManagerDeleteAlert {
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteAlert;
   const nfs_vault::MpidMessageAlert kAlert;
 };
 
