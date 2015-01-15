@@ -119,11 +119,11 @@ void VaultNetwork::AddClient() {
 }
 
 void VaultNetwork::AddClient(const passport::Maid& maid) {
-  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid));
+  clients_.emplace_back(nfs_client::MaidClient::MakeShared(maid));
 }
 
 void VaultNetwork::AddClient(const passport::MaidAndSigner& maid_and_signer) {
-  clients_.emplace_back(nfs_client::MaidNodeNfs::MakeShared(maid_and_signer));
+  clients_.emplace_back(nfs_client::MaidClient::MakeShared(maid_and_signer));
 }
 
 }  // namespace test
