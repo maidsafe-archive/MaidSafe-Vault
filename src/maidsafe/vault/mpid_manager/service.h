@@ -85,16 +85,20 @@ class MpidManagerService {
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const;
 
-  bool IsOnline(const MpidName& mpid_name);                                                         // TO BE IMPLEMENTED
-  bool AccountExists(const MpidName& mpid_name);                                                    // TO BE IMPLEMENTED
-  bool AlertExists(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);             // TO BE IMPLEMENTED
-  
-  DbMessageQueryResult GetMessage(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver); // TO BE IMPLEMENTED
-  
+  bool IsOnline(const MpidName& mpid_name);  // TO BE IMPLEMENTED
+
+  void HandleSendMessage(const nfs_vault::MpidMessage& message, const MpidName& sender);
   void HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void HandleGetMessageRequestFromMpidNode(const nfs_vault::MpidMessageAlert& alert,
                                            const MpidName& receiver);
   void HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+  void HandleGetMessageResponse(const nfs_client::MpidMessageOrReturnCode& message,
+                                const MpidName& receiver);
+
+  void HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+
+  void HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver,
+                           const MpidName& sender);
 
   routing::Routing& routing_;
   AsioService asio_service_;
@@ -105,7 +109,10 @@ class MpidManagerService {
   MpidManagerDispatcher dispatcher_;
   MpidManagerDataBase db_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
-  Sync<MpidManager::UnresolvedMessageAlert> sync_alerts_;
+  Sync<MpidManager::UnresolvedPutAlert> sync_put_alerts_;
+  Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;
+  Sync<MpidManager::UnresolvedPutMessage> sync_put_messages_;
+  Sync<MpidManager::UnresolvedDeleteMessage> sync_delete_messages_;
 };
 
 template <typename MessageType>
@@ -116,13 +123,15 @@ bool MpidManagerService::ValidateSender(const MessageType& /*message*/,
 
 template <typename UnresolvedAction>
 void MpidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
-  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_alerts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_alerts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_alerts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_messages_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_messages_, unresolved_action);
 }
 
 template <typename MessageType>
 void MpidManagerService::HandleMessage(const MessageType&, const typename MessageType::Sender&,
                                        const typename MessageType::Receiver&) {}
-
 template <>
 void MpidManagerService::HandleMessage(
     const MessageAlertFromMpidManagerToMpidManager& message,
@@ -131,15 +140,33 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
-    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::GetRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(
-    const GetMessageRequestFromMpidManagerToMpidManager& message,
-    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
-    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& receiver);
+    const GetRequestFromMpidManagerToMpidManager& message,
+    const typename GetRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetRequestFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const GetResponseFromMpidManagerToMpidManager& message,
+    const typename GetResponseFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetResponseFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::DeleteRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::SendMessageFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& receiver);
 
 }  // namespace vault
 

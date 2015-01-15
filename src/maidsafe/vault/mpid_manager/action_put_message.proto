@@ -20,6 +20,6 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message ActionMpidManagerMessageAlert {
-  required bytes serialised_alert = 1;
+message ActionMpidManagerPutMessage {
+  required bytes serialised_message = 1;
 }

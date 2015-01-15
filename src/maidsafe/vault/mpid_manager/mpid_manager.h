@@ -21,6 +21,8 @@
 
 #include <utility>
 
+#include "boost/expected/expected.hpp"
+
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/nfs/types.h"
@@ -29,7 +31,11 @@
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/mpid_manager/value.h"
-#include "maidsafe/vault/mpid_manager/action_message_alert.h"
+#include "maidsafe/vault/mpid_manager/action_put_alert.h"
+#include "maidsafe/vault/mpid_manager/action_delete_alert.h"
+#include "maidsafe/vault/mpid_manager/action_put_message.h"
+#include "maidsafe/vault/mpid_manager/action_delete_message.h"
+
 
 namespace maidsafe {
 
@@ -41,10 +47,14 @@ struct PersonaTypes<Persona::kMpidManager> {
   using Value = vault::MpidManagerValue;
   using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
-  using UnresolvedMessageAlert = vault::UnresolvedAction<SyncGroupKey,
-                                                         vault::ActionMpidManagerMessageAlert>;
-//  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-//  typedef DbValue UnresolvedEntryValue;
+  using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,
+                                                     vault::ActionMpidManagerPutAlert>;
+  using UnresolvedDeleteAlert = vault::UnresolvedAction<SyncGroupKey,
+                                                        vault::ActionMpidManagerDeleteAlert>;
+  using UnresolvedPutMessage = vault::UnresolvedAction<SyncGroupKey,
+                                                        vault::ActionMpidManagerPutMessage>;
+  using UnresolvedDeleteMessage = vault::UnresolvedAction<SyncGroupKey,
+                                                        vault::ActionMpidManagerDeleteMessage>;
   static const Persona persona = Persona::kMpidManager;
 };
 

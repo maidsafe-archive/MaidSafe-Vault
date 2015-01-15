@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,53 +16,47 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_ACTION_PUT_ALERT_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_ACTION_PUT_ALERT_H_
 
-#include <cstdint>
 #include <string>
-#include <vector>
+
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 
 #include "maidsafe/nfs/vault/messages.h"
 
-#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/config.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
+
+#include "maidsafe/vault/mpid_manager/value.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+struct ActionMpidManagerPutAlert {
+  explicit ActionMpidManagerPutAlert(const nfs_vault::MpidMessageAlert& alert);
+  explicit ActionMpidManagerPutAlert(const std::string& serialised_action);
+  ActionMpidManagerPutAlert(const ActionMpidManagerPutAlert& other);
+  ActionMpidManagerPutAlert(ActionMpidManagerPutAlert&& other);
+  ActionMpidManagerPutAlert() = delete;
+  ActionMpidManagerPutAlert& operator=(ActionMpidManagerPutAlert other) = delete;
 
-namespace test {
-  class MpidManagerServiceTest;
-}
 
-class MpidManagerValue {
- public:
-  MpidManagerValue();
-  MpidManagerValue(const MpidManagerValue& other);
-  MpidManagerValue(MpidManagerValue&& other);
-  MpidManagerValue& operator=(MpidManagerValue other);
-  explicit MpidManagerValue(const std::string& serialised_value);
-
-  void AddAlert(const nfs_vault::MpidMessageAlert& alert);
-  void RemoveAlert(const nfs_vault::MpidMessageAlert& alert);
-  void AddMessage(const nfs_vault::MpidMessage& alert);
-  void RemoveMessage(const nfs_vault::MpidMessageAlert& alert);
+  void operator()(MpidManagerValue& value);
 
   std::string Serialise() const;
 
-  static MpidManagerValue Resolve(const std::vector<MpidManagerValue>& values);
-
-  friend void swap(MpidManagerValue& lhs, MpidManagerValue& rhs);
-  friend bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
-
- private:
-  std::vector<nfs_vault::MpidMessage> outbox_;
-  std::vector<nfs_vault::MpidMessageAlert> inbox_;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kPutRequest;
+  const nfs_vault::MpidMessageAlert kAlert;
 };
+
+bool operator==(const ActionMpidManagerPutAlert& lhs, const ActionMpidManagerPutAlert& rhs);
+bool operator!=(const ActionMpidManagerPutAlert& lhs, const ActionMpidManagerPutAlert& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_ACTION_PUT_ALERT_H_

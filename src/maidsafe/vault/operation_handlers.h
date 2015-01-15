@@ -386,16 +386,37 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::GetRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const GetMessageRequestFromMpidManagerToMpidManager& message,
-    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
-    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& receiver);
+    const GetRequestFromMpidManagerToMpidManager& message,
+    const typename GetRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetRequestFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetResponseFromMpidManagerToMpidManager& message,
+    const typename GetResponseFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetResponseFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::DeleteRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::SendMessageFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& receiver);
 
 }  // namespace detail
 

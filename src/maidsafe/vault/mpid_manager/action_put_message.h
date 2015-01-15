@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_ACTION_MESSAGE_ALERT_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_ACTION_MESSAGE_ALERT_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_ACTION_PUT_MESSAGE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_ACTION_PUT_MESSAGE_H_
 
 #include <string>
 
@@ -35,28 +35,28 @@ namespace maidsafe {
 
 namespace vault {
 
-struct ActionMpidManagerMessageAlert {
-  explicit ActionMpidManagerMessageAlert(const nfs_vault::MpidMessageAlert& alert);
-  explicit ActionMpidManagerMessageAlert(const std::string& serialised_action);
-  ActionMpidManagerMessageAlert(const ActionMpidManagerMessageAlert& other);
-  ActionMpidManagerMessageAlert(ActionMpidManagerMessageAlert&& other);
-  ActionMpidManagerMessageAlert() = delete;
-  ActionMpidManagerMessageAlert& operator=(ActionMpidManagerMessageAlert other) = delete;
+struct ActionMpidManagerPutMessage {
+  explicit ActionMpidManagerPutMessage(const nfs_vault::MpidMessage& alert);
+  explicit ActionMpidManagerPutMessage(const std::string& serialised_action);
+  ActionMpidManagerPutMessage(const ActionMpidManagerPutMessage& other);
+  ActionMpidManagerPutMessage(ActionMpidManagerPutMessage&& other);
+  ActionMpidManagerPutMessage() = delete;
+  ActionMpidManagerPutMessage& operator=(ActionMpidManagerPutMessage other) = delete;
 
 
   void operator()(MpidManagerValue& value);
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kMessageAlert;
-  const nfs_vault::MpidMessageAlert kAlert;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kSendMessage;
+  const nfs_vault::MpidMessage kMessage;
 };
 
-bool operator==(const ActionMpidManagerMessageAlert& lhs, const ActionMpidManagerMessageAlert& rhs);
-bool operator!=(const ActionMpidManagerMessageAlert& lhs, const ActionMpidManagerMessageAlert& rhs);
+bool operator==(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs);
+bool operator!=(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs);
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_ACTION_MESSAGE_ALERT_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_ACTION_PUT_MESSAGE_H_

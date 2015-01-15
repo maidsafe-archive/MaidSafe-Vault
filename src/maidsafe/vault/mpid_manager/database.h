@@ -27,6 +27,7 @@
 #include "maidsafe/common/sqlite3_wrapper.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
 
@@ -37,26 +38,19 @@ class MpidManagerDataBase {
   explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
   ~MpidManagerDataBase();
 
-//  std::unique_ptr<MpidManager::Value> Commit(const MpidManager::Key& key,
-//      std::function<detail::DbAction(std::unique_ptr<MpidManager::Value>& value)> functor);
-//  MpidManager::Value Get(const MpidManager::Key& key);
+  bool Exists(const nfs_vault::MpidMessageAlert&  /*alert*/, const MpidName& /*receiver*/) {
+    return false;  // To be fixed
+  }
 
-//  std::map<MpidManager::Key, MpidManager::Value> GetRelatedAccounts(const PmidName& pmid_name);
-//  MpidManager::TransferInfo GetTransferInfo(
-//      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
-//  void HandleTransfer(const std::vector<MpidManager::KvPair>& contents);
+  // checks account exists
+  bool Exists(const MpidName& /*mpid_name*/) {
+    return false;  // To be fixed
+  }
 
-// private:
-//  void Put(const MpidManager::Key& key, const MpidManager::Value& value);
-//  void Delete(const MpidManager::Key& key);
-
-//  MpidManager::Value ComposeValue(const std::string& chunk_size, const std::string& pmids) const;
-//  MpidManager::Key ComposeKey(const std::string& chunk_name) const {
-//    return MpidManager::Key(MpidManager::Key::FixedWidthString(HexDecode(chunk_name)));
-//  }
-//  std::string EncodeKey(const MpidManager::Key& key) const {
-//    return HexEncode(key.ToFixedWidthString().string());
-//  }
+  DbMessageQueryResult GetMessage(const nfs_vault::MpidMessageAlert& /*alert*/,
+                                  const MpidName& /*receiver*/) {
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));  // To be fixed
+  }
 
   void CheckPoint();
 

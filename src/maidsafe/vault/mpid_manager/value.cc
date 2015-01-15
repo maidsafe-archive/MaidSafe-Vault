@@ -70,6 +70,25 @@ void MpidManagerValue::AddAlert(const nfs_vault::MpidMessageAlert& alert) {
   inbox_.emplace_back(alert);
 }
 
+void MpidManagerValue::RemoveAlert(const nfs_vault::MpidMessageAlert& alert) {
+  inbox_.erase(std::remove_if(inbox_.begin(), inbox_.end(),
+                              [&alert](const nfs_vault::MpidMessageAlert& inbox_alert ) {
+                                return alert == inbox_alert;
+                              }), inbox_.end());
+}
+
+void MpidManagerValue::AddMessage(const nfs_vault::MpidMessage& message) {
+  outbox_.emplace_back(message);
+}
+
+void MpidManagerValue::RemoveMessage(const nfs_vault::MpidMessageAlert& alert) {
+  outbox_.erase(std::remove_if(outbox_.begin(), outbox_.end(),
+                               [&alert](const nfs_vault::MpidMessage& message) {
+                                 return message.id == alert.id &&
+                                        message.parent_id == alert.parent_id;
+                               }), outbox_.end());
+}
+
 MpidManagerValue MpidManagerValue::Resolve(const std::vector<MpidManagerValue>& /*values*/) {
   MpidManagerValue value;
   return value;

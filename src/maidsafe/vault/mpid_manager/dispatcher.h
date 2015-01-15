@@ -24,6 +24,7 @@
 #include "maidsafe/routing/routing_api.h"
 
 #include "maidsafe/nfs/vault/messages.h"
+#include "maidsafe/nfs/client/messages.h"
 
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
@@ -39,21 +40,24 @@ class MpidManagerDispatcher {
   MpidManagerDispatcher(MpidManagerDispatcher&&) = delete;
   MpidManagerDispatcher& operator=(MpidManagerDispatcher) = delete;
 
-  void SendMessageAlert(const nfs_vault::MpidMessageAlert& message_alert,
+  void SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
                         const MpidName& sender, const MpidName& receiver);
-  void SendMessageAlert(const nfs_vault::MpidMessageAlert& message_alert, const MpidName& receiver);
+  void SendMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void SendGetMessageResponse(const DbMessageQueryResult& query_result, const MpidName& sender,
                               const MpidName& receiver);
+  void SendGetMessageResponseToMpid(const nfs_client::MpidMessageOrReturnCode& response,
+                                    const MpidName& receiver);
 
   // =========================== Sync / AccountTransfer section ====================================
   void SendSync(const MpidManager::SyncGroupKey& key, const std::string& serialised_sync);
 
-  void SendAccountTransfer(const NodeId& destination_peer,
-                           const std::string& serialised_account);
+  void SendAccountTransfer(const NodeId& destination_peer, const std::string& serialised_account);
   void SendAccountRequest(const Key& key);
   void SendAccountResponse(const std::string& serialised_account, const routing::GroupId& group_id,
                            const NodeId& sender);
+  void SendDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+  void SendMessageResponse(const MpidName& receiver, const maidsafe_error& error);
 
  private:
   template <typename Message>

@@ -563,9 +563,9 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+    const nfs::GetRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
   service->HandleGetMessageRequestFromMpidNode(*message.contents,
                                                MpidName(Identity(sender.data.string())));
 }
@@ -573,11 +573,48 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const GetMessageRequestFromMpidManagerToMpidManager& message,
-    const typename GetMessageRequestFromMpidManagerToMpidManager::Sender& sender,
-    const typename GetMessageRequestFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+    const GetRequestFromMpidManagerToMpidManager& message,
+    const typename GetRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetRequestFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
   service->HandleGetMessageRequest(*message.contents,
                                     MpidName(Identity(sender.group_id.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetResponseFromMpidManagerToMpidManager& message,
+    const typename GetResponseFromMpidManagerToMpidManager::Sender& /*sender*/,
+    const typename GetResponseFromMpidManagerToMpidManager::Receiver& receiver) {
+  service->HandleGetMessageResponse(*message.contents, MpidName(Identity(receiver.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::DeleteRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+  service->HandleDeleteRequest(*message.contents, MpidName(Identity(sender.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver) {
+  service->HandleDeleteRequest(*message.contents, MpidName(Identity(sender.group_id.data.string())),
+                               MpidName(Identity(receiver.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::SendMessageFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+  service->HandleSendMessage(*message.contents, MpidName(Identity(sender.data.string())));
 }
 
 }  // namespace detail

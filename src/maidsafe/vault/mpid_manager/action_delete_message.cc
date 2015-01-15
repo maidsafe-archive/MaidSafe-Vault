@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/mpid_manager/action_message_alert.h"
-#include "maidsafe/vault/mpid_manager/action_message_alert.pb.h"
+#include "maidsafe/vault/mpid_manager/action_delete_message.h"
+#include "maidsafe/vault/mpid_manager/action_delete_message.pb.h"
 
 #include "maidsafe/vault/mpid_manager/value.h"
 
@@ -25,40 +25,40 @@ namespace maidsafe {
 
 namespace vault {
 
-ActionMpidManagerMessageAlert::ActionMpidManagerMessageAlert(
+ActionMpidManagerDeleteMessage::ActionMpidManagerDeleteMessage(
     const nfs_vault::MpidMessageAlert& alert) : kAlert(alert) {}
 
-ActionMpidManagerMessageAlert::ActionMpidManagerMessageAlert(const std::string& serialised_action)
+ActionMpidManagerDeleteMessage::ActionMpidManagerDeleteMessage(const std::string& serialised_action)
   : kAlert([&serialised_action]()->std::string {
-            protobuf::ActionMpidManagerMessageAlert proto;
+            protobuf::ActionMpidManagerDeleteMessage proto;
             if (!proto.ParseFromString(serialised_action))
               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             return proto.serialised_alert ();
           }()) {}
 
-ActionMpidManagerMessageAlert::ActionMpidManagerMessageAlert(
-    const ActionMpidManagerMessageAlert& other) : kAlert(other.kAlert) {}
+ActionMpidManagerDeleteMessage::ActionMpidManagerDeleteMessage(
+    const ActionMpidManagerDeleteMessage& other) : kAlert(other.kAlert) {}
 
-ActionMpidManagerMessageAlert::ActionMpidManagerMessageAlert(ActionMpidManagerMessageAlert&& other)
-    : kAlert(std::move(other.kAlert)) {}
+ActionMpidManagerDeleteMessage::ActionMpidManagerDeleteMessage(
+    ActionMpidManagerDeleteMessage&& other) : kAlert(std::move(other.kAlert)) {}
 
-std::string ActionMpidManagerMessageAlert::Serialise() const {
-  protobuf::ActionMpidManagerMessageAlert proto;
+std::string ActionMpidManagerDeleteMessage::Serialise() const {
+  protobuf::ActionMpidManagerDeleteMessage proto;
   proto.set_serialised_alert(kAlert.Serialise());
   return proto.SerializeAsString();
 }
 
-void ActionMpidManagerMessageAlert::operator()(MpidManagerValue& value) {
-  value.AddAlert(kAlert);
+void ActionMpidManagerDeleteMessage::operator()(MpidManagerValue& value) {
+  value.RemoveMessage(kAlert);
 }
 
-bool operator==(const ActionMpidManagerMessageAlert& lhs,
-                const ActionMpidManagerMessageAlert& rhs) {
+bool operator==(const ActionMpidManagerDeleteMessage& lhs,
+                const ActionMpidManagerDeleteMessage& rhs) {
   return lhs.kAlert == rhs.kAlert;
 }
 
-bool operator!=(const ActionMpidManagerMessageAlert& lhs,
-                const ActionMpidManagerMessageAlert& rhs) {
+bool operator!=(const ActionMpidManagerDeleteMessage& lhs,
+                const ActionMpidManagerDeleteMessage& rhs) {
   return !operator==(lhs, rhs);
 }
 
