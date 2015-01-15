@@ -371,10 +371,10 @@ void VersionHandlerService::HandleMessage(
     const AccountTransferFromVersionHandlerToVersionHandler& message,
     const typename AccountTransferFromVersionHandlerToVersionHandler::Sender& sender,
     const typename AccountTransferFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
-  LOG(kInfo) << "VersionHandler received account from " << sender.data;
   protobuf::AccountTransfer account_transfer_proto;
   if (!account_transfer_proto.ParseFromString(message.contents->data)) {
     LOG(kError) << "Failed to parse account transfer";
+    return;
   }
   for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
     HandleAccountTransferEntry(serialised_account, sender);
@@ -387,17 +387,15 @@ void VersionHandlerService::HandleAccountTransferEntry(
   protobuf::VersionHandlerKeyValuePair kv_msg;
   if (!kv_msg.ParseFromString(serialised_account)) {
     LOG(kError) << "Failed to parse transferred account";
+    return;
   }
   auto result(account_transfer_.Add(Key(kv_msg.key()), VersionHandlerValue(kv_msg.value()),
                                     sender.data));
   if (result.result ==  Handler::AddResult::kSuccess) {
     VLOG(nfs::Persona::kVersionHandler, VisualiserAction::kGotAccountTransferred, result.key.name);
-    LOG(kVerbose) << "VersionHandlerService got account " << DebugId(result.key.name)
-                  << " transferred, having vaule " << result.value->Print();
     AccountType account(std::make_pair(std::move(result.key), std::move(*result.value)));
     HandleAccountTransfer(account);
   } else if (result.result ==  Handler::AddResult::kFailure) {
-    LOG(kVerbose) << "VersionHandler AcoccountTransfer SendAccountQuery";
     dispatcher_.SendAccountQuery(result.key);
   }
 }
@@ -448,7 +446,6 @@ void VersionHandlerService::HandleMessage(
     const AccountQueryResponseFromVersionHandlerToVersionHandler& message,
     const typename AccountQueryResponseFromVersionHandlerToVersionHandler::Sender& sender,
     const typename AccountQueryResponseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/) {
-  LOG(kInfo) << "VersionHandler received account via response from " << DebugId(sender.sender_id);
   protobuf::AccountTransfer account_transfer_proto;
   if (!account_transfer_proto.ParseFromString(message.contents->data)) {
     LOG(kError) << "Failed to parse account transfer query response";
@@ -517,12 +514,8 @@ void VersionHandlerService::TransferAccount(const NodeId& dest,
       kv_pair.set_key(account.first.Serialise());
       kv_pair.set_value(account.second.Serialise());
       account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
-      LOG(kVerbose) << "account.first send account " << HexSubstr(account.first.name.string())
-                    << " to " << HexSubstr(dest.string())
-                    << " with value " << account.second.Print();
     }
   }
-  LOG(kVerbose) << "account.firstService::TransferAccount sending account transfer";
   dispatcher_.SendAccountTransfer(dest, account_transfer_proto.SerializeAsString());
 }
 
