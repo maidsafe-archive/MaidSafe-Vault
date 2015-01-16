@@ -43,7 +43,7 @@ namespace vault {
 class DataManagerDispatcher {
  public:
   DataManagerDispatcher(routing::Routing& routing, const passport::Pmid& signing_fob)
-      : routing_(routing), kSigningFob_(signing_fob) {}
+      : routing_(routing), kSigningFob_(signing_fob), kThisNodeAsSender_(routing_.kNodeId()) {}
 
   // =========================== Put section =======================================================
   // To PmidManager
