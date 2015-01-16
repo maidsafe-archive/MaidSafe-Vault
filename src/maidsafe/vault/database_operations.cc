@@ -29,67 +29,67 @@ namespace maidsafe {
 
 namespace vault {
 
-VaultDataBase::VaultDataBase(const boost::filesystem::path& db_path)
-  : data_base_(), seeking_statement_(), write_operations_(0) {
-  data_base_.reset(new sqlite::Database(db_path,
+VaultDatabase::VaultDatabase(const boost::filesystem::path& db_path)
+  : database_(), seeking_statement_(), write_operations_(0) {
+  database_.reset(new sqlite::Database(db_path,
                                         sqlite::Mode::kReadWriteCreate));
   std::string query(
       "CREATE TABLE IF NOT EXISTS KeyValuePairs ("
       "KEY TEXT  PRIMARY KEY NOT NULL, VALUE TEXT NOT NULL);");
-  sqlite::Transaction transaction{*data_base_};
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Transaction transaction{*database_};
+  sqlite::Statement statement{*database_, query};
   statement.Step();
   transaction.Commit();
 }
 
-void VaultDataBase::Put(const KEY& key, const VALUE& value) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+void VaultDatabase::Put(const KEY& key, const VALUE& value) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
-  sqlite::Transaction transaction{*data_base_};
+  sqlite::Transaction transaction{*database_};
   std::string query(
       "INSERT OR REPLACE INTO KeyValuePairs (KEY, VALUE) VALUES (?, ?)");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   statement.BindText(1, key);
   statement.BindText(2, value);
   statement.Step();
   transaction.Commit();
 }
 
-void VaultDataBase::Get(const KEY& key, VALUE& value) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+void VaultDatabase::Get(const KEY& key, VALUE& value) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   std::string query(
       "SELECT VALUE FROM KeyValuePairs WHERE KEY=?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   statement.BindText(1, key);
   if (statement.Step() == sqlite::StepResult::kSqliteRow)
     value = statement.ColumnText(0);
 }
 
-void VaultDataBase::Delete(const KEY& key) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+void VaultDatabase::Delete(const KEY& key) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
-  sqlite::Transaction transaction{*data_base_};
+  sqlite::Transaction transaction{*database_};
   std::string query(
       "DELETE FROM KeyValuePairs WHERE KEY=?");
-  sqlite::Statement statement{*data_base_, query};
+  sqlite::Statement statement{*database_, query};
   statement.BindText(1, key);
   statement.Step();
   transaction.Commit();
 }
 
-bool VaultDataBase::SeekNext(std::pair<KEY, VALUE>& result) {
-  if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+bool VaultDatabase::SeekNext(std::pair<KEY, VALUE>& result) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   if (!seeking_statement_) {
     std::string query("SELECT * from KeyValuePairs");
-    seeking_statement_.reset(new sqlite::Statement(*data_base_, query));
+    seeking_statement_.reset(new sqlite::Statement(*database_, query));
   }
   if (seeking_statement_->Step() == sqlite::StepResult::kSqliteRow) {
     result = std::make_pair(seeking_statement_->ColumnText(0),
@@ -101,9 +101,9 @@ bool VaultDataBase::SeekNext(std::pair<KEY, VALUE>& result) {
   }
 }
 
-void VaultDataBase::CheckPoint() {
+void VaultDatabase::CheckPoint() {
   if (++write_operations_ > 1000) {
-    data_base_->CheckPoint();
+    database_->CheckPoint();
     write_operations_ = 0;
   }
 }

@@ -32,10 +32,10 @@ namespace maidsafe {
 
 namespace vault {
 
-class DataManagerDataBase {
+class DataManagerDatabase {
  public:
-  explicit DataManagerDataBase(const boost::filesystem::path& db_path);
-  ~DataManagerDataBase();
+  explicit DataManagerDatabase(const boost::filesystem::path& db_path);
+  ~DataManagerDatabase();
 
   std::unique_ptr<DataManager::Value> Commit(const DataManager::Key& key,
       std::function<detail::DbAction(std::unique_ptr<DataManager::Value>& value)> functor);
@@ -60,7 +60,7 @@ class DataManagerDataBase {
 
   void CheckPoint();
 
-  std::unique_ptr<sqlite::Database> data_base_;
+  std::unique_ptr<sqlite::Database> database_;
   const boost::filesystem::path kDbPath_;
   int write_operations_;
 };
