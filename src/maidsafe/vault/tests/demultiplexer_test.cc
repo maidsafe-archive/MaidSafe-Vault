@@ -63,7 +63,7 @@ class DemultiplexerTest : public testing::Test {
   const maidsafe::test::TestPath kTestRoot_;
   boost::filesystem::path vault_dir_;
   passport::Pmid pmid_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
   std::unique_ptr<routing::Routing> routing_;
   nfs_client::DataGetter data_getter_;
   nfs::Service<MaidManagerService> maid_manager_service_;

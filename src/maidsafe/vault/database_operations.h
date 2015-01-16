@@ -28,11 +28,11 @@ namespace maidsafe {
 
 namespace vault {
 
-class VaultDataBase {
+class VaultDatabase {
   typedef std::string VALUE;
  public:
   typedef std::string KEY;
-  explicit VaultDataBase(const boost::filesystem::path& db_path);
+  explicit VaultDatabase(const boost::filesystem::path& db_path);
 
   void Put(const KEY& key, const VALUE& value);
   void Get(const KEY& key, VALUE& value);
@@ -42,7 +42,7 @@ class VaultDataBase {
  private:
   void CheckPoint();
 
-  std::unique_ptr<sqlite::Database> data_base_;
+  std::unique_ptr<sqlite::Database> database_;
   std::unique_ptr<sqlite::Statement> seeking_statement_;
   int write_operations_;
 };
@@ -52,4 +52,3 @@ class VaultDataBase {
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
-

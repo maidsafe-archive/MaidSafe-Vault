@@ -41,14 +41,14 @@ class DataManagerDatabaseTest : public testing::Test {
 };
 
 TEST_F(DataManagerDatabaseTest, BEH_GetFromEmpty) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   EXPECT_ANY_THROW(db.Get(key));
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_AddPmid) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   std::vector<PmidName> pmid_nodes;
   for (int i(0); i < 10; ++i)
     pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
@@ -69,7 +69,7 @@ TEST_F(DataManagerDatabaseTest, BEH_AddPmid) {
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_AddDuplicatedPmid) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   PmidName pmid_name(Identity(RandomString(64)));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
@@ -85,7 +85,7 @@ TEST_F(DataManagerDatabaseTest, BEH_AddDuplicatedPmid) {
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   std::vector<PmidName> pmid_nodes;
   for (int i(0); i < 10; ++i)
     pmid_nodes.push_back(PmidName(Identity(RandomString(64))));
@@ -113,7 +113,7 @@ TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_Delete) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   // Delete from empty
@@ -145,7 +145,7 @@ TEST_F(DataManagerDatabaseTest, BEH_Delete) {
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   PmidName pmid_name(Identity(RandomString(64)));
   { // from empty
     auto result(db.GetRelatedAccounts(pmid_name));
@@ -212,7 +212,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetRelatedAccounts) {
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   std::map<DataManager::Key, DataManager::Value> key_value_map;
   std::vector<NodeId> pmid_nodes;
   for (int i(0); i < 10; ++i) {
@@ -319,7 +319,7 @@ TEST_F(DataManagerDatabaseTest, BEH_GetTransferInfo) {
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_HandleTransfer) {
-  DataManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  DataManagerDatabase db(UniqueDbPath(*kTestRoot_));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   DataManager::Key key(data.name());
   DataManager::Value value;

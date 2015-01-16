@@ -118,15 +118,15 @@ class GroupDb {
   void Put(const KvPair& key_value_pair, const GroupId& group_id);
   void Delete(const Key& key, const GroupId& group_id);
   std::string MakeSqliteDbKey(const GroupId& group_id, const Key& key);
-  Key MakeKey(const GroupName group_name, const VaultDataBase::KEY& sqlite_db_key);
-  uint32_t GetGroupId(const VaultDataBase::KEY& sqlite_db_key) const;
+  Key MakeKey(const GroupName group_name, const VaultDatabase::KEY& sqlite_db_key);
+  uint32_t GetGroupId(const VaultDatabase::KEY& sqlite_db_key) const;
   typename GroupMap::iterator FindGroup(const GroupName& group_name);
   typename GroupMap::iterator FindOrCreateGroup(const GroupName& group_name);
 
   static const int kPrefixWidth_ = 2;
   const boost::filesystem::path kDbPath_;
   std::mutex mutex_;
-  std::unique_ptr<VaultDataBase> sqlitedb_;
+  std::unique_ptr<VaultDatabase> sqlitedb_;
   GroupMap group_map_;
 };
 
@@ -164,7 +164,7 @@ std::string GroupDb<Persona>::Print() const {
 template <typename Persona>
 GroupDb<Persona>::GroupDb(const boost::filesystem::path& db_path)
     : kDbPath_(db_path), mutex_(), sqlitedb_(), group_map_() {
-  sqlitedb_.reset(new VaultDataBase(kDbPath_));
+  sqlitedb_.reset(new VaultDatabase(kDbPath_));
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it
@@ -470,13 +470,13 @@ std::string GroupDb<Persona>::MakeSqliteDbKey(const GroupId& group_id, const Key
 
 template <typename Persona>
 typename Persona::Key GroupDb<Persona>::MakeKey(const GroupName group_name,
-                                                const VaultDataBase::KEY& sqlite_db_key) {
+                                                const VaultDatabase::KEY& sqlite_db_key) {
   return Key(group_name,
              typename Persona::Key::FixedWidthString(sqlite_db_key.substr(kPrefixWidth_)));
 }
 
 template <typename Persona>
-uint32_t GroupDb<Persona>::GetGroupId(const VaultDataBase::KEY& sqlite_db_key) const {
+uint32_t GroupDb<Persona>::GetGroupId(const VaultDatabase::KEY& sqlite_db_key) const {
   return detail::FromFixedWidthString<kPrefixWidth_>(sqlite_db_key.substr(0, kPrefixWidth_));
 }
 
