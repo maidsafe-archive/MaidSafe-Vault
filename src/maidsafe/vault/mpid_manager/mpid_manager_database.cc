@@ -72,7 +72,7 @@ void MpidManagerDataBase::Put(const MpidManager::Key& key,
 
   std::string mpid(EncodeGroupName(group_name));
   statement.BindText(3, mpid);
-  std::string chunk_size(std::to_string(value.chunk_size()));
+  std::string chunk_size(std::to_string(size));
   statement.BindText(2, chunk_size);
   std::string chunk_name(EncodeKey(key));
   statement.BindText(1, chunk_name);
