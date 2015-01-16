@@ -189,6 +189,20 @@ std::pair<uint32_t, uint32_t> MpidManagerDataBase::GetStatistic(
   return std::make_pair(num_of_messages, total_size);
 }
 
+std::vector<MpidManager::Key> MpidManagerDataBase::GetEntriesForMPID(
+    const MpidManager::GroupName& mpid) {
+  if (!data_base_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+  std::vector<MpidManager::Key> entries;
+  std::string query("SELECT Chunk_Name from MpidManagerAccounts WHERE MPID=?");
+  sqlite::Statement statement{*data_base_, query};
+  auto group_name(EncodeGroupName(mpid));
+  statement.BindText(1, group_name);
+  while (statement.Step() == sqlite::StepResult::kSqliteRow)
+    entries.push_back(ComposeKey(statement.ColumnText(0)));
+  return entries;
+}
+
 void MpidManagerDataBase::CheckPoint() {
   if (++write_operations_ > 1000) {
     data_base_->CheckPoint();

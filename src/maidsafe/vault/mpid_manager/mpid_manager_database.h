@@ -43,6 +43,7 @@ class MpidManagerDataBase {
   MpidManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
+  std::vector<MpidManager::Key> GetEntriesForMPID(const MpidManager::GroupName& mpid);
 
  private:
   void DeleteGroup(const std::string& mpid);
