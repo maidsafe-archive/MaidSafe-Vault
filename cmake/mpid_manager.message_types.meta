@@ -1,0 +1,10 @@
+Action:SendMessageRequest             Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessage
+Action:SendAlert                      Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
+Action:GetRequest                     Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
+Action:DeleteRequest                  Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::MpidMessageAlert
+Action:GetResponse                    Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_client::MpidMessageOrReturnCode
+Action:Synchronise                    Source:MpidManager:Group         Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::Content
+Action:AccountTransfer                Source:MpidManager:Single        Destination:MpidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
+Action:AccountQuery                   Source:MpidManager:Single        Destination:MpidManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
+Action:AccountQueryResponse           Source:MpidManager:Group         Destination:MpidManager:Single     Contents:struct:maidsafe::nfs_vault::Content
+

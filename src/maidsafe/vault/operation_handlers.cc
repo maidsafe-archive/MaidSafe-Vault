@@ -549,6 +549,74 @@ operator()(const IntegrityCheckRequestFromDataManagerToPmidNode& message,
   DoOperation(service, message, sender, receiver);
 }
 
+//====================================== To MpidManager ===========================================
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const SendAlertFromMpidManagerToMpidManager& message,
+    const typename SendAlertFromMpidManagerToMpidManager::Sender& /*sender*/,
+    const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver) {
+  service->HandleMessageAlert(*message.contents, MpidName(Identity(receiver.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::GetRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+  service->HandleGetMessageRequestFromMpidNode(*message.contents,
+                                               MpidName(Identity(sender.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetRequestFromMpidManagerToMpidManager& message,
+    const typename GetRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetRequestFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  service->HandleGetMessageRequest(*message.contents,
+                                    MpidName(Identity(sender.group_id.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetResponseFromMpidManagerToMpidManager& message,
+    const typename GetResponseFromMpidManagerToMpidManager::Sender& /*sender*/,
+    const typename GetResponseFromMpidManagerToMpidManager::Receiver& receiver) {
+  service->HandleGetMessageResponse(*message.contents, MpidName(Identity(receiver.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::DeleteRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+  service->HandleDeleteRequest(*message.contents, MpidName(Identity(sender.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver) {
+  service->HandleDeleteRequest(*message.contents, MpidName(Identity(sender.group_id.data.string())),
+                               MpidName(Identity(receiver.data.string())));
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+  service->HandleSendMessage(*message.contents, MpidName(Identity(sender.data.string())));
+}
+
 }  // namespace detail
 
 }  // namespace vault
