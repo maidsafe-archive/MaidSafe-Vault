@@ -111,10 +111,10 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
-    const nfs::SendMessageFromMpidNodeToMpidManager& message,
-    const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& receiver) {
-  using  MessageType = nfs::SendMessageFromMpidNodeToMpidManager;
+    const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver) {
+  using  MessageType = nfs::SendMessageRequestFromMpidNodeToMpidManager;
   OperationHandlerWrapper<MpidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -148,11 +148,8 @@ void MpidManagerService::HandleMessage(
             throw;
         }
         dispatcher_.SendMessageAlert(
-            nfs_vault::MpidMessageAlert(resolved_action->key.group_name(),
-                                        resolved_action->action.kMessage.id,
-                                        resolved_action->action.kMessage.parent_id,
-                                        resolved_action->action.kMessage.signed_header)
-            , resolved_action->action.kMessage.receiver);
+            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.alert),
+            resolved_action->action.kMessage.alert.receiver);
       }
       break;
     }

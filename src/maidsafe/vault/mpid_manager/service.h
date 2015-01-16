@@ -164,9 +164,9 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
-    const nfs::SendMessageFromMpidNodeToMpidManager& message,
-    const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(

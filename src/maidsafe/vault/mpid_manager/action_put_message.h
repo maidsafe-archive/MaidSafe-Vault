@@ -47,7 +47,7 @@ struct ActionMpidManagerPutMessage {
 
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kSendMessage;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kSendMessageRequest;
   const nfs_vault::MpidMessage kMessage;
 };
 

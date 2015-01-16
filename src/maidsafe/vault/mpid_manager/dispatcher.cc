@@ -118,6 +118,19 @@ void MpidManagerDispatcher::SendMessageResponse(const MpidName& receiver,
   routing_.Send(message);
 }
 
+void MpidManagerDispatcher::SendSync(const MpidManager::SyncGroupKey& key,
+                                     const std::string& serialised_sync) {
+  using  VaultMessage = DeleteRequestFromMpidManagerToMpidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  VaultMessage::Contents vault_message(serialised_sync);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(key.group_name()->string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(key.group_name()->string())));
+  routing_.Send(message);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -84,8 +84,7 @@ void MpidManagerValue::AddMessage(const nfs_vault::MpidMessage& message) {
 void MpidManagerValue::RemoveMessage(const nfs_vault::MpidMessageAlert& alert) {
   outbox_.erase(std::remove_if(outbox_.begin(), outbox_.end(),
                                [&alert](const nfs_vault::MpidMessage& message) {
-                                 return message.id == alert.id &&
-                                        message.parent_id == alert.parent_id;
+                                 return message.alert == alert;
                                }), outbox_.end());
 }
 

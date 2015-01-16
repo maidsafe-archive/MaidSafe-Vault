@@ -414,9 +414,9 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const nfs::SendMessageFromMpidNodeToMpidManager& message,
-    const typename nfs::SendMessageFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::SendMessageFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 }  // namespace detail
 
