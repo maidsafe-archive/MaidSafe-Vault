@@ -29,12 +29,7 @@
 
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/unresolved_action.h"
-#include "maidsafe/vault/unresolved_account_transfer_action.h"
-#include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/action_put.h"
-#include "maidsafe/vault/data_manager/action_delete.h"
-#include "maidsafe/vault/data_manager/action_add_pmid.h"
-#include "maidsafe/vault/data_manager/action_remove_pmid.h"
+
 
 namespace maidsafe {
 
