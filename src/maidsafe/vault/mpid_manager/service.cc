@@ -184,6 +184,10 @@ void MpidManagerService::HandleMessage(
           if (error.code() != make_error_code(VaultErrors::no_such_account))
             throw;
         }
+
+        if (IsOnline(resolved_action->key.group_name()))
+          dispatcher_.SendMessageAlert(resolved_action->action.kAlert,
+                                       resolved_action->key.group_name());
       }
       break;
     }
@@ -232,9 +236,6 @@ void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& a
 
   DoSync(MpidManager::UnresolvedPutAlert(
       MpidManager::SyncGroupKey(receiver), ActionMpidManagerPutAlert(alert), routing_.kNodeId()));
-
-  if (IsOnline(receiver))
-    dispatcher_.SendMessageAlert(alert, receiver);
 }
 
 void MpidManagerService::HandleGetMessageRequestFromMpidNode(
