@@ -16,13 +16,13 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
+#ifndef MAIDSAFE_VAULT_ACTION_CREATE_REMOVE_ACCOUNT_H_
+#define MAIDSAFE_VAULT_ACTION_CREATE_REMOVE_ACCOUNT_H_
 
 #include <string>
 
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.pb.h"
+#include "maidsafe/vault/action_create_remove_account.pb.h"
 
 namespace maidsafe {
 
@@ -109,4 +109,4 @@ typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
+#endif  // MAIDSAFE_VAULT_ACTION_CREATE_REMOVE_ACCOUNT_H_
