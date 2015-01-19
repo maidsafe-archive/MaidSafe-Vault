@@ -188,12 +188,25 @@ struct PutResponseMessage {};
 
 template <>
 struct PutResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMaidManager>>> {
-  typedef PutResponseFromDataManagerToMaidManager Type;
+  using  Type = PutResponseFromDataManagerToMaidManager;
 };
 
 template <>
 struct PutResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMpidManager>>> {
-  typedef PutResponseFromDataManagerToMpidManager Type;
+  using  Type = PutResponseFromDataManagerToMpidManager;
+};
+
+template <typename RequestorIdType>
+struct PutFailureMessage {};
+
+template <>
+struct PutFailureMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMaidManager>>> {
+  using  Type = PutFailureFromDataManagerToMaidManager;
+};
+
+template <>
+struct PutFailureMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMpidManager>>> {
+  using  Type = PutFailureFromDataManagerToMpidManager;
 };
 
 routing::SingleIdRelay GetDestination(
@@ -316,38 +329,40 @@ template <typename Data, typename RequestorIdType>
 void DataManagerDispatcher::SendPutResponse(const RequestorIdType& requestor,
                                             const typename Data::Name& data_name,
                                             uint64_t cost, nfs::MessageId message_id) {
-  typedef typename detail::PutResponseMessage<RequestorIdType>::Type VaultMessage;
+  using  VaultMessage = typename detail::PutResponseMessage<RequestorIdType>::Type;
   CheckSourcePersonaType<VaultMessage>();
-  typedef routing::Message<typename VaultMessage::Sender, typename VaultMessage::Receiver>
-              RoutingMessage;
+  using RoutingMessage = routing::Message<typename VaultMessage::Sender,
+                                          typename VaultMessage::Receiver>;
   
-  VaultMessage vault_message(message_id, nfs_vault::DataNameAndCost(data_name,
-                                                                    static_cast<int32_t>(cost)));
+  VaultMessage vault_message(message_id,
+                             typename VaultMessage::Contents(data_name,
+                                                             static_cast<int32_t>(cost)));
   RoutingMessage message(vault_message.Serialise(),
-                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::GroupId(requestor.node_id)));
+                         typename VaultMessage::Sender(
+                                      routing::GroupId(NodeId(data_name.value.string())),
+                                      routing::SingleId(routing_.kNodeId())),
+                         typename VaultMessage::Receiver(requestor.node_id));
   routing_.Send(message);
 }
 
 template <typename Data, typename RequestorIdType>
 void DataManagerDispatcher::SendPutFailure(
-                                           const RequestorIdType& requestor, const typename Data::Name& data_name,
-                                           const maidsafe_error& error, nfs::MessageId message_id) {
-  typedef PutFailureFromDataManagerToMaidManager VaultMessage;
+    const RequestorIdType& requestor, const typename Data::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id) {
+  using  VaultMessage = typename detail::PutFailureMessage<RequestorIdType>::Type;
   CheckSourcePersonaType<VaultMessage>();
-  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  
-  VaultMessage vault_message(message_id, VaultMessage::Contents(data_name,
-                                                                nfs_client::ReturnCode(error)));
-  RoutingMessage message(
-                         vault_message.Serialise(),
-                         routing::GroupSource(routing::GroupId(NodeId(data_name.value.string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::GroupId(requestor.node_id)));
+  using RoutingMessage = routing::Message<typename VaultMessage::Sender,
+                                          typename VaultMessage::Receiver>;
+  VaultMessage vault_message(message_id,
+                             typename VaultMessage::Contents(data_name,
+                                                             nfs_client::ReturnCode(error)));
+  RoutingMessage message(vault_message.Serialise(),
+                         typename VaultMessage::Sender(
+                                      routing::GroupId(NodeId(data_name.value.string())),
+                                      routing::SingleId(routing_.kNodeId())),
+                         typename VaultMessage::Receiver(requestor.node_id));
   routing_.Send(message);
 }
-
 
 // ==================== General implementation =====================================================
 
