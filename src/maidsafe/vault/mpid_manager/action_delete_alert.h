@@ -43,8 +43,6 @@ struct ActionMpidManagerDeleteAlert {
   ActionMpidManagerDeleteAlert() = delete;
   ActionMpidManagerDeleteAlert& operator=(ActionMpidManagerDeleteAlert other) = delete;
 
-  detail::DbAction operator()(std::unique_ptr<MpidManagerValue>& value);
-
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteAlert;

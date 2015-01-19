@@ -48,15 +48,6 @@ std::string ActionMpidManagerDeleteAlert::Serialise() const {
   return proto.SerializeAsString();
 }
 
-detail::DbAction ActionMpidManagerDeleteAlert::operator()(
-    std::unique_ptr<MpidManagerValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-
-  value->RemoveAlert(kAlert);
-  return detail::DbAction::kDelete;
-}
-
 bool operator==(const ActionMpidManagerDeleteAlert& lhs, const ActionMpidManagerDeleteAlert& rhs) {
   return lhs.kAlert == rhs.kAlert;
 }

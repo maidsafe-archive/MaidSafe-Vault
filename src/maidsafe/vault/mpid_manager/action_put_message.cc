@@ -48,15 +48,6 @@ std::string ActionMpidManagerPutMessage::Serialise() const {
   return proto.SerializeAsString();
 }
 
-detail::DbAction ActionMpidManagerPutMessage::operator()(
-    std::unique_ptr<MpidManagerValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-
-  value->AddMessage(kMessage);
-  return detail::DbAction::kPut;
-}
-
 bool operator==(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs) {
   return lhs.kMessage == rhs.kMessage;
 }

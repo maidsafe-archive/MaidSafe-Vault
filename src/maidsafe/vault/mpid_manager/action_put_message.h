@@ -43,8 +43,6 @@ struct ActionMpidManagerPutMessage {
   ActionMpidManagerPutMessage() = delete;
   ActionMpidManagerPutMessage& operator=(ActionMpidManagerPutMessage other) = delete;
 
-  detail::DbAction operator()(std::unique_ptr<MpidManagerValue>& value);
-
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kSendMessageRequest;
