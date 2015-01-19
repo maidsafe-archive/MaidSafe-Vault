@@ -37,13 +37,15 @@ class MpidManagerDataBase {
   explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
   ~MpidManagerDataBase();
 
-  void Put(const MpidManager::Key& key, const uint32_t size, const MpidManager::GroupName& mpid);
-  void Delete(const MpidManager::Key& key);
+  void Put(const MpidManager::MessageKey& key,
+           const uint32_t size,
+           const MpidManager::GroupName& mpid);
+  void Delete(const MpidManager::MessageKey& key);
 
   MpidManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
-  std::vector<MpidManager::Key> GetEntriesForMPID(const MpidManager::GroupName& mpid);
+  std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid);
 
  private:
   void DeleteGroup(const std::string& mpid);
@@ -52,14 +54,14 @@ class MpidManagerDataBase {
                            const std::string& key_string,
                            MpidManager::TransferInfo& transfer_info);
 
-  MpidManager::Key ComposeKey(const std::string& chunk_name) const {
-    return MpidManager::Key(Identity(HexDecode(chunk_name)));
+  MpidManager::MessageKey ComposeKey(const std::string& chunk_name) const {
+    return MpidManager::MessageKey(Identity(HexDecode(chunk_name)));
   }
-  std::string EncodeKey(const MpidManager::Key& key) const {
+  std::string EncodeKey(const MpidManager::MessageKey& key) const {
     return HexEncode(key.string());
   }
   MpidManager::GroupName ComposeGroupName(const std::string& mpid) const {
-    return MpidManager::GroupName(Identity(HexDecode(chunk_name)));
+    return MpidManager::GroupName(Identity(HexDecode(mpid)));
   }
   std::string EncodeGroupName(const MpidManager::GroupName& group_name) const {
     return HexEncode(group_name->string());

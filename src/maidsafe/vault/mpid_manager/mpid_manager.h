@@ -43,11 +43,10 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
 
-//  static const Persona persona = Persona::kMpidManager;
-//  using GroupName = passport::PublicMpid::Name;
-//  using Key = ImmutableData::Name;
-//  using GKPair = std::pair<GroupName, Key>;
-//  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
+  using GroupName = passport::PublicMpid::Name;
+  using MessageKey = ImmutableData::Name;
+  using GKPair = std::pair<GroupName, MessageKey>;
+  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
 
   using Key = passport::PublicMpid::Name;
   using Value = vault::MpidManagerValue;

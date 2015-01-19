@@ -57,7 +57,7 @@ MpidManagerDataBase::~MpidManagerDataBase() {
   }
 }
 
-void MpidManagerDataBase::Put(const MpidManager::Key& key,
+void MpidManagerDataBase::Put(const MpidManager::MessageKey& key,
                               const uint32_t size,
                               const MpidManager::GroupName& group_name) {
   if (!data_base_)
@@ -81,7 +81,7 @@ void MpidManagerDataBase::Put(const MpidManager::Key& key,
   transaction.Commit();
 }
 
-void MpidManagerDataBase::Delete(const MpidManager::Key& key) {
+void MpidManagerDataBase::Delete(const MpidManager::MessageKey& key) {
   if (!data_base_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
   CheckPoint();
@@ -158,7 +158,7 @@ void MpidManagerDataBase::PutIntoTransferInfo(const NodeId& new_holder,
                                               const std::string& key_string,
                                               MpidManager::TransferInfo& transfer_info) {
   MpidManager::GroupName group_name(ComposeGroupName(group_name_string));
-  MpidManager::Key key(ComposeKey(key_string));
+  MpidManager::MessageKey key(ComposeKey(key_string));
   auto found_itr = transfer_info.find(new_holder);
   if (found_itr != transfer_info.end()) {  // append
     LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
@@ -189,11 +189,11 @@ std::pair<uint32_t, uint32_t> MpidManagerDataBase::GetStatistic(
   return std::make_pair(num_of_messages, total_size);
 }
 
-std::vector<MpidManager::Key> MpidManagerDataBase::GetEntriesForMPID(
+std::vector<MpidManager::MessageKey> MpidManagerDataBase::GetEntriesForMPID(
     const MpidManager::GroupName& mpid) {
   if (!data_base_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
-  std::vector<MpidManager::Key> entries;
+  std::vector<MpidManager::MessageKey> entries;
   std::string query("SELECT Chunk_Name from MpidManagerAccounts WHERE MPID=?");
   sqlite::Statement statement{*data_base_, query};
   auto group_name(EncodeGroupName(mpid));
