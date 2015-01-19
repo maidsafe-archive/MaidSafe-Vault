@@ -91,7 +91,7 @@ class Vault {
   std::mutex network_health_mutex_;
   std::condition_variable network_health_condition_variable_;
   int network_health_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
   std::unique_ptr<routing::Routing> routing_;
   std::vector<passport::PublicPmid> pmids_from_file_;
   nfs_client::DataGetter data_getter_;

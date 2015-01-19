@@ -147,7 +147,7 @@ class PmidManagerService {
   bool stopped_;
   Accumulator<Messages> accumulator_;
   PmidManagerDispatcher dispatcher_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
   routing::Timer<PmidManagerValue> get_health_timer_;
   Sync<PmidManager::UnresolvedPut> sync_puts_;
   Sync<PmidManager::UnresolvedDelete> sync_deletes_;

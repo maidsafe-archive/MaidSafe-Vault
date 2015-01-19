@@ -16,39 +16,50 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
-#define MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+#include "maidsafe/vault/mpid_manager/database.h"
 
-#include <string>
 #include <utility>
+#include <cstdint>
+#include <string>
 
+#include "boost/filesystem.hpp"
+#include "boost/algorithm/string.hpp"
+
+#include "maidsafe/common/log.h"
+#include "maidsafe/common/utils.h"
 #include "maidsafe/common/sqlite3_wrapper.h"
+
+#include "maidsafe/vault/data_manager/data_manager.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class VaultDatabase {
-  typedef std::string VALUE;
- public:
-  typedef std::string KEY;
-  explicit VaultDatabase(const boost::filesystem::path& db_path);
+MpidManagerDataBase::MpidManagerDataBase(const boost::filesystem::path& db_path)
+  : data_base_(), kDbPath_(db_path), write_operations_(0) {
+  data_base_.reset(new sqlite::Database(db_path,
+                                        sqlite::Mode::kReadWriteCreate));
+  std::string query(
+      "CREATE TABLE IF NOT EXISTS MpidManagerAccounts ("
+      "Chunk_Name TEXT  PRIMARY KEY NOT NULL, Chunk_Size TEXT NOT NULL,"
+      "Storage_Nodes TEXT NOT NULL);");
+  sqlite::Transaction transaction{*data_base_};
+  sqlite::Statement statement{*data_base_, query};
+  statement.Step();
+  transaction.Commit();
+}
 
-  void Put(const KEY& key, const VALUE& value);
-  void Get(const KEY& key, VALUE& value);
-  void Delete(const KEY& key);
-  bool SeekNext(std::pair<KEY, VALUE>& result);
-
- private:
-  void CheckPoint();
-
-  std::unique_ptr<sqlite::Database> database_;
-  std::unique_ptr<sqlite::Statement> seeking_statement_;
-  int write_operations_;
-};
+MpidManagerDataBase::~MpidManagerDataBase() {
+  try {
+    data_base_.reset();
+    boost::filesystem::remove_all(kDbPath_);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
+  }
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_

@@ -61,7 +61,7 @@ class PmidNodeServiceTest : public testing::Test {
   routing::Routing routing_;
   nfs_client::DataGetter data_getter_;
   PmidNodeService pmid_node_service_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
 };
 
 TEST_F(PmidNodeServiceTest, BEH_PutRequestFromPmidManagerToPmidNode) {

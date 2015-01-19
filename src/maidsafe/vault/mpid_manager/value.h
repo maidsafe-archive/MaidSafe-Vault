@@ -16,39 +16,53 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
-#define MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
 
+#include <cstdint>
 #include <string>
-#include <utility>
+#include <vector>
 
-#include "maidsafe/common/sqlite3_wrapper.h"
+#include "maidsafe/nfs/vault/messages.h"
+
+#include "maidsafe/vault/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class VaultDatabase {
-  typedef std::string VALUE;
- public:
-  typedef std::string KEY;
-  explicit VaultDatabase(const boost::filesystem::path& db_path);
 
-  void Put(const KEY& key, const VALUE& value);
-  void Get(const KEY& key, VALUE& value);
-  void Delete(const KEY& key);
-  bool SeekNext(std::pair<KEY, VALUE>& result);
+namespace test {
+  class MpidManagerServiceTest;
+}
+
+class MpidManagerValue {
+ public:
+  MpidManagerValue();
+  MpidManagerValue(const MpidManagerValue& other);
+  MpidManagerValue(MpidManagerValue&& other);
+  MpidManagerValue& operator=(MpidManagerValue other);
+  explicit MpidManagerValue(const std::string& serialised_value);
+
+  void AddAlert(const nfs_vault::MpidMessageAlert& alert);
+  void RemoveAlert(const nfs_vault::MpidMessageAlert& alert);
+  void AddMessage(const nfs_vault::MpidMessage& alert);
+  void RemoveMessage(const nfs_vault::MpidMessageAlert& alert);
+
+  std::string Serialise() const;
+
+  static MpidManagerValue Resolve(const std::vector<MpidManagerValue>& values);
+
+  friend void swap(MpidManagerValue& lhs, MpidManagerValue& rhs);
+  friend bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
 
  private:
-  void CheckPoint();
-
-  std::unique_ptr<sqlite::Database> database_;
-  std::unique_ptr<sqlite::Statement> seeking_statement_;
-  int write_operations_;
+  std::vector<nfs_vault::MpidMessage> outbox_;
+  std::vector<nfs_vault::MpidMessageAlert> inbox_;
 };
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_

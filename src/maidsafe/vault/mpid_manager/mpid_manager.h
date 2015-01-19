@@ -19,40 +19,56 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
-#include <functional>
-#include <map>
-#include <string>
 #include <utility>
-#include <vector>
+
+#include "boost/expected/expected.hpp"
+
+#include "maidsafe/common/types.h"
 
 #include "maidsafe/nfs/types.h"
 
-#include "maidsafe/vault/key.h"
 #include "maidsafe/vault/unresolved_action.h"
-
+#include "maidsafe/vault/key.h"
+#include "maidsafe/vault/types.h"
+#include "maidsafe/vault/mpid_manager/value.h"
+#include "maidsafe/vault/mpid_manager/action_put_alert.h"
+#include "maidsafe/vault/mpid_manager/action_delete_alert.h"
+#include "maidsafe/vault/mpid_manager/action_put_message.h"
+#include "maidsafe/vault/mpid_manager/action_delete_message.h"
 
 namespace maidsafe {
-
-namespace vault {
-
-}  // namespace vault
 
 namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
+
+//  static const Persona persona = Persona::kMpidManager;
+//  using GroupName = passport::PublicMpid::Name;
+//  using Key = ImmutableData::Name;
+//  using GKPair = std::pair<GroupName, Key>;
+//  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
+
+  using Key = passport::PublicMpid::Name;
+  using Value = vault::MpidManagerValue;
+  using SyncKey = vault::GroupKey<Key>;
+  using SyncGroupKey = vault::MetadataKey<Key>;
+  using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,
+                                                     vault::ActionMpidManagerPutAlert>;
+  using UnresolvedDeleteAlert = vault::UnresolvedAction<SyncGroupKey,
+                                                        vault::ActionMpidManagerDeleteAlert>;
+  using UnresolvedPutMessage = vault::UnresolvedAction<SyncGroupKey,
+                                                        vault::ActionMpidManagerPutMessage>;
+  using UnresolvedDeleteMessage = vault::UnresolvedAction<SyncGroupKey,
+                                                        vault::ActionMpidManagerDeleteMessage>;
   static const Persona persona = Persona::kMpidManager;
-  using GroupName = passport::PublicMpid::Name;
-  using Key = ImmutableData::Name;
-  using GKPair = std::pair<GroupName, Key>;
-//  using Value = passport::PublicMpid::Name;
-//  using KvPair = std::pair<Key, Value>;
-  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
 };
 
 }  // namespace nfs
 
 namespace vault {
+
+using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
 
 typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
 
