@@ -37,6 +37,7 @@
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager_database.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
@@ -49,7 +50,8 @@ class MpidManagerService {
  public:
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
-                     const boost::filesystem::path& vault_root_dir);
+                     const boost::filesystem::path& vault_root_dir,
+                     DiskUsage max_disk_usage);
   ~MpidManagerService();
 
   template <typename MessageType>
@@ -108,6 +110,7 @@ class MpidManagerService {
   routing::CloseNodesChange close_nodes_change_;
   MpidManagerDispatcher dispatcher_;
   MpidManagerDataBase db_;
+  MpidManagerHandler handler_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
   Sync<MpidManager::UnresolvedPutAlert> sync_put_alerts_;
   Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;

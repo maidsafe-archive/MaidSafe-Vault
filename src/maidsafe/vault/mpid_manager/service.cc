@@ -27,13 +27,15 @@ namespace vault {
 
 MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                                        nfs_client::DataGetter& data_getter,
-                                       const boost::filesystem::path& vault_root_dir)
+                                       const boost::filesystem::path& vault_root_dir,
+                                       DiskUsage max_disk_usage)
     : routing_(routing),
       asio_service_(2),
       data_getter_(data_getter),
       accumulator_mutex_(),
       dispatcher_(routing),
       db_(vault_root_dir),
+      handler_(vault_root_dir, max_disk_usage),
       account_transfer_(),
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),
