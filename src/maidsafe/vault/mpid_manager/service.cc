@@ -34,7 +34,6 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       data_getter_(data_getter),
       accumulator_mutex_(),
       dispatcher_(routing),
-      db_(vault_root_dir),
       handler_(vault_root_dir, max_disk_usage),
       account_transfer_(),
       sync_put_alerts_(NodeId(pmid.name()->string())),

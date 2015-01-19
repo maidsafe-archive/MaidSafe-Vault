@@ -24,9 +24,8 @@ namespace vault {
 
 MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                                        DiskUsage max_disk_usage)
-    : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage) {}
-// TODO(Fraser) BEFORE_RELEASE need to decide on propertion of max_disk_usage. As sqlite and cache
-// will be using a share of it
+    : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage * 3 / 4),
+      db_(vault_root_dir) {}
 
 }  // namespace vault
 

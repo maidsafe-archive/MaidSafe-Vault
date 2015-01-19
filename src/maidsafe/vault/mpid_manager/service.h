@@ -36,7 +36,6 @@
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/mpid_manager/mpid_manager_database.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
 #include "maidsafe/vault/sync.h"
@@ -109,7 +108,6 @@ class MpidManagerService {
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   MpidManagerDispatcher dispatcher_;
-  MpidManagerDataBase db_;
   MpidManagerHandler handler_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
   Sync<MpidManager::UnresolvedPutAlert> sync_put_alerts_;

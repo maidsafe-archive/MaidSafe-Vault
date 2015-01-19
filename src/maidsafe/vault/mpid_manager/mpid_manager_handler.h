@@ -30,6 +30,8 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 
+#include "maidsafe/vault/mpid_manager/mpid_manager_database.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -39,6 +41,9 @@ class MpidManagerHandler {
   explicit MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                               DiskUsage max_disk_usage);
 
+
+
+ private:
   template <typename Data>
   Data Get(const typename Data::Name& data_name);
 
@@ -48,8 +53,8 @@ class MpidManagerHandler {
   template <typename DataName>
   void Delete(const DataName& data_name);
 
- private:
   ChunkStore chunk_store_;
+  MpidManagerDataBase db_;
 };
 
 template <typename Data>
