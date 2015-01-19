@@ -33,8 +33,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class MpidManagerValue;
-
 struct ActionMpidManagerPutMessage {
   explicit ActionMpidManagerPutMessage(const nfs_vault::MpidMessage& alert);
   explicit ActionMpidManagerPutMessage(const std::string& serialised_action);

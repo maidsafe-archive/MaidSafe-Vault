@@ -19,8 +19,6 @@
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.pb.h"
 
-#include "maidsafe/vault/mpid_manager/value.h"
-
 namespace maidsafe {
 
 namespace vault {

@@ -29,8 +29,6 @@
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
-#include "maidsafe/vault/mpid_manager/value.h"
-
 namespace maidsafe {
 
 namespace vault {
