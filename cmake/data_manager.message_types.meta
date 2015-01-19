@@ -1,4 +1,5 @@
 Action:PutRequest             Source:MaidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndContent
+Action:PutRequest             Source:MpidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataNameAndContent
 Action:PutResponse            Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_vault::DataName
 Action:PutFailure             Source:PmidManager:Group      Destination:DataManager:Group      Contents:struct:maidsafe::nfs_client::DataNameAndSizeAndReturnCode
 Action:GetResponse            Source:PmidNode:Single        Destination:DataManager:Single     Contents:struct:maidsafe::nfs_vault::DataNameAndContentOrCheckResult

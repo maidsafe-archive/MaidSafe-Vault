@@ -183,10 +183,24 @@ void DoOperation(DataManagerService* service, const PutRequestFromMaidManagerToD
                  const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
                  const typename PutRequestFromMaidManagerToDataManager::Receiver&) {
   LOG(kVerbose) << "DoOperation PutRequestFromMaidManagerToDataManager";
+  using  SourceType = PutRequestFromMaidManagerToDataManager::SourcePersona;
+  Requestor<SourceType> requestor(sender.group_id.data);
   auto data_name(GetNameVariant(*message.contents));
-  DataManagerPutVisitor<DataManagerService> put_visitor(service, message.contents->content,
-                                                        Identity(sender.group_id.data.string()),
-                                                        message.id);
+  DataManagerPutVisitor<DataManagerService, Requestor<SourceType>>
+      put_visitor(service, message.contents->content, requestor, message.id);
+  boost::apply_visitor(put_visitor, data_name);
+}
+
+template <>
+void DoOperation(DataManagerService* service, const PutRequestFromMpidManagerToDataManager& message,
+                 const typename PutRequestFromMpidManagerToDataManager::Sender& sender,
+                 const typename PutRequestFromMpidManagerToDataManager::Receiver&) {
+  LOG(kVerbose) << "DoOperation PutRequestFromMpidManagerToDataManager";
+  using  SourceType = PutRequestFromMpidManagerToDataManager::SourcePersona;
+  Requestor<SourceType> requestor(sender.group_id.data);
+  auto data_name(GetNameVariant(*message.contents));
+  DataManagerPutVisitor<DataManagerService, Requestor<SourceType>>
+  put_visitor(service, message.contents->content, requestor, message.id);
   boost::apply_visitor(put_visitor, data_name);
 }
 
