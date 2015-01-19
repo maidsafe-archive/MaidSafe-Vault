@@ -26,6 +26,8 @@
 
 #include "maidsafe/common/sqlite3_wrapper.h"
 
+#include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
@@ -41,9 +43,12 @@ class MpidManagerDataBase {
            const uint32_t size,
            const MpidManager::GroupName& mpid);
   void Delete(const MpidManager::MessageKey& key);
+  bool Has(const MpidManager::MessageKey& key);
 
   MpidManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+
+  bool HasGroup(const MpidManager::GroupName& mpid);
   std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
   std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid);
 
@@ -58,7 +63,7 @@ class MpidManagerDataBase {
     return MpidManager::MessageKey(Identity(HexDecode(chunk_name)));
   }
   std::string EncodeKey(const MpidManager::MessageKey& key) const {
-    return HexEncode(key.string());
+    return HexEncode(key->string());
   }
   MpidManager::GroupName ComposeGroupName(const std::string& mpid) const {
     return MpidManager::GroupName(Identity(HexDecode(mpid)));

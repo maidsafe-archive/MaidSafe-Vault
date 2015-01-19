@@ -24,8 +24,36 @@ namespace vault {
 
 MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                                        DiskUsage max_disk_usage)
-    : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage * 3 / 4),
+    : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage),
       db_(vault_root_dir) {}
+
+void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
+  PutChunk(data);
+  db_.Put(data.name(), data.data().string().size(), mpid);
+}
+
+void MpidManagerHandler::Delete(const ImmutableData::Name& data_name){
+  DeleteChunk(data_name);
+  db_.Delete(data_name);
+}
+
+bool MpidManagerHandler::Has(const ImmutableData::Name& data_name){
+  return db_.Has(data_name);
+}
+
+bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
+  return db_.HasGroup(mpid);
+}
+
+DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) {
+  try {
+    nfs_vault::MpidMessage mpid_message(GetChunk<ImmutableData>(data_name).data().string());
+    return std::move(mpid_message);
+  }
+  catch (const maidsafe_error& /*error*/) {
+  }
+  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+}
 
 }  // namespace vault
 

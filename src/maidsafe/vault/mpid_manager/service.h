@@ -109,7 +109,7 @@ class MpidManagerService {
   routing::CloseNodesChange close_nodes_change_;
   MpidManagerDispatcher dispatcher_;
   MpidManagerHandler handler_;
-  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
+//  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
   Sync<MpidManager::UnresolvedPutAlert> sync_put_alerts_;
   Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;
   Sync<MpidManager::UnresolvedPutMessage> sync_put_messages_;

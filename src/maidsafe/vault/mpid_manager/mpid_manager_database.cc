@@ -61,7 +61,7 @@ void MpidManagerDataBase::Put(const MpidManager::MessageKey& key,
                               const uint32_t size,
                               const MpidManager::GroupName& group_name) {
   if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
   sqlite::Transaction transaction{*data_base_};
@@ -83,7 +83,7 @@ void MpidManagerDataBase::Put(const MpidManager::MessageKey& key,
 
 void MpidManagerDataBase::Delete(const MpidManager::MessageKey& key) {
   if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
   sqlite::Transaction transaction{*data_base_};
@@ -97,7 +97,7 @@ void MpidManagerDataBase::Delete(const MpidManager::MessageKey& key) {
 
 void MpidManagerDataBase::DeleteGroup(const std::string& mpid) {
   if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   CheckPoint();
 
   sqlite::Transaction transaction{*data_base_};
@@ -111,7 +111,7 @@ void MpidManagerDataBase::DeleteGroup(const std::string& mpid) {
 MpidManager::TransferInfo MpidManagerDataBase::GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   std::vector<std::pair<NodeId, std::string>> groups_to_be_transferred;
   std::vector<std::string> groups_to_be_removed;
@@ -173,10 +173,34 @@ void MpidManagerDataBase::PutIntoTransferInfo(const NodeId& new_holder,
   }
 }
 
+bool MpidManagerDataBase::HasGroup(const MpidManager::GroupName& mpid) {
+  if (!data_base_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
+  std::string query("SELECT DISTINCT MPID from MpidManagerAccounts WHERE MPID=?");
+  sqlite::Statement statement{*data_base_, query};
+  auto group_name(EncodeGroupName(mpid));
+  statement.BindText(1, group_name);
+  while (statement.Step() == sqlite::StepResult::kSqliteRow)
+    return true;
+  return false;
+}
+
+bool MpidManagerDataBase::Has(const MpidManager::MessageKey& key) {
+  if (!data_base_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
+  std::string query("SELECT * FROM MpidManagerAccounts WHERE Chunk_Name=?");
+  sqlite::Statement statement{*data_base_, query};
+  auto key_string(EncodeKey(key));
+  statement.BindText(1, key_string);
+  while (statement.Step() == sqlite::StepResult::kSqliteRow)
+    return true;
+  return false;
+}
+
 std::pair<uint32_t, uint32_t> MpidManagerDataBase::GetStatistic(
     const MpidManager::GroupName& mpid) {
   if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   uint32_t num_of_messages(0), total_size(0);
   std::string query("SELECT Chunk_Size from MpidManagerAccounts WHERE MPID=?");
   sqlite::Statement statement{*data_base_, query};
@@ -192,7 +216,7 @@ std::pair<uint32_t, uint32_t> MpidManagerDataBase::GetStatistic(
 std::vector<MpidManager::MessageKey> MpidManagerDataBase::GetEntriesForMPID(
     const MpidManager::GroupName& mpid) {
   if (!data_base_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_presented));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
   std::vector<MpidManager::MessageKey> entries;
   std::string query("SELECT Chunk_Name from MpidManagerAccounts WHERE MPID=?");
   sqlite::Statement statement{*data_base_, query};

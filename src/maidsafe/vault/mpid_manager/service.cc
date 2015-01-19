@@ -35,7 +35,7 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       accumulator_mutex_(),
       dispatcher_(routing),
       handler_(vault_root_dir, max_disk_usage),
-      account_transfer_(),
+//      account_transfer_(),
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),
       sync_put_messages_(NodeId(pmid.name()->string())),
@@ -141,16 +141,18 @@ void MpidManagerService::HandleMessage(
                                                           sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        ImmutableData data(NonEmptyString(resolved_action->action.kMessage.Serialise()));
         try {
-          db_.Commit(resolved_action->key, resolved_action->action);
+          handler_.Put(data, resolved_action->action.kMessage.base.sender);
         }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(VaultErrors::no_such_account))
-            throw;
+        catch (const maidsafe_error& /*error*/) {
+//          if (error.code() != make_error_code(VaultErrors::no_such_account))
+          throw;
         }
         dispatcher_.SendMessageAlert(
-            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.alert),
-            resolved_action->action.kMessage.alert.receiver);
+            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.base,
+                                        nfs_vault::MessageIdType(data.name().value.string())),
+            resolved_action->action.kMessage.base.receiver);
       }
       break;
     }
@@ -161,10 +163,10 @@ void MpidManagerService::HandleMessage(
       auto resolved_action(sync_delete_messages_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         try {
-          db_.Commit(resolved_action->key, resolved_action->action);
+          handler_.Delete(ImmutableData::Name(resolved_action->action.kAlert.message_id));
         }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(VaultErrors::no_such_account))
+        catch (const maidsafe_error& /*error*/) {
+//          if (error.code() != make_error_code(VaultErrors::no_such_account))
             throw;
         }
       }
@@ -175,11 +177,12 @@ void MpidManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_put_alerts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
+        ImmutableData data(NonEmptyString(resolved_action->action.kAlert.Serialise()));
         try {
-          db_.Commit(resolved_action->key, resolved_action->action);
+          handler_.Put(data, resolved_action->action.kAlert.base.receiver);
         }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(VaultErrors::no_such_account))
+        catch (const maidsafe_error& /*error*/) {
+//          if (error.code() != make_error_code(VaultErrors::no_such_account))
             throw;
         }
 
@@ -195,7 +198,8 @@ void MpidManagerService::HandleMessage(
       auto resolved_action(sync_delete_alerts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         try {
-          db_.Commit(resolved_action->key, resolved_action->action);
+          ImmutableData data(NonEmptyString(resolved_action->action.kAlert.Serialise()));
+          handler_.Delete(data.name());
         }
         catch (const maidsafe_error& error) {
           if (error.code() != make_error_code(VaultErrors::no_such_account))
@@ -216,7 +220,7 @@ void MpidManagerService::HandleMessage(
 
 void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,
                                            const MpidName& sender) {
-  if (!db_.Exists(sender)) {
+  if (!handler_.HasAccount(sender)) {
     dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account));
     return;
   }
@@ -229,7 +233,7 @@ void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message
 
 void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert,
                                             const MpidName& receiver) {
-  if (!db_.Exists(receiver))
+  if (!handler_.HasAccount(receiver))
     return;
 
   DoSync(MpidManager::UnresolvedPutAlert(
@@ -238,7 +242,8 @@ void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& a
 
 void MpidManagerService::HandleGetMessageRequestFromMpidNode(
     const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver) {
-  if (!db_.Exists(alert, receiver))
+  ImmutableData data(NonEmptyString(alert.Serialise()));
+  if (!handler_.Has(data.name()))
     return;
 
   dispatcher_.SendGetMessageRequest(alert, receiver);
@@ -246,8 +251,8 @@ void MpidManagerService::HandleGetMessageRequestFromMpidNode(
 
 void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert,
                                                  const MpidName& receiver) {
-  return dispatcher_.SendGetMessageResponse(db_.GetMessage(alert, receiver), alert.sender,
-                                            receiver);
+  return dispatcher_.SendGetMessageResponse(
+      handler_.GetMessage(ImmutableData::Name(alert.message_id)), alert.base.sender, receiver);
 }
 
 void MpidManagerService::HandleGetMessageResponse(
@@ -261,7 +266,7 @@ bool MpidManagerService::IsOnline(const MpidName& /*mpid_name*/) {
 
 void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert,
                                              const MpidName& receiver) {
-  if (!db_.Exists(alert, receiver))
+  if (!handler_.Has(ImmutableData::Name(alert.message_id)))
     return;
 
   DoSync(MpidManager::UnresolvedDeleteAlert(MpidManager::SyncGroupKey(receiver),
@@ -272,11 +277,12 @@ void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& 
 }
 
 void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert,
-                                             const MpidName& receiver, const MpidName& sender) {
-  if (!db_.Exists(alert.sender))
+                                             const MpidName& /*receiver*/,
+                                             const MpidName& sender) {
+  if (!handler_.HasAccount(alert.base.sender))
     return;
 
-  auto expected(db_.GetMessage(alert, receiver));
+  auto expected(handler_.GetMessage(ImmutableData::Name(alert.message_id)));
   if (!expected.valid())
     return;
 
