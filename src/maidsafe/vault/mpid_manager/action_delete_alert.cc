@@ -19,8 +19,6 @@
 #include "maidsafe/vault/mpid_manager/action_delete_alert.h"
 #include "maidsafe/vault/mpid_manager/action_delete_alert.pb.h"
 
-#include "maidsafe/vault/mpid_manager/value.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -46,15 +44,6 @@ std::string ActionMpidManagerDeleteAlert::Serialise() const {
   protobuf::ActionMpidManagerDeleteAlert proto;
   proto.set_serialised_alert(kAlert.Serialise());
   return proto.SerializeAsString();
-}
-
-detail::DbAction ActionMpidManagerDeleteAlert::operator()(
-    std::unique_ptr<MpidManagerValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-
-  value->RemoveAlert(kAlert);
-  return detail::DbAction::kDelete;
 }
 
 bool operator==(const ActionMpidManagerDeleteAlert& lhs, const ActionMpidManagerDeleteAlert& rhs) {
