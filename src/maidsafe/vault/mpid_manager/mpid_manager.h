@@ -34,6 +34,7 @@
 #include "maidsafe/vault/mpid_manager/action_delete_alert.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_delete_message.h"
+#include "maidsafe/vault/mpid_manager/value.h"
 
 namespace maidsafe {
 
@@ -48,6 +49,7 @@ struct PersonaTypes<Persona::kMpidManager> {
   using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
 
   using Key = passport::PublicMpid::Name;
+  using Value = vault::MpidManagerValue;
   using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
   using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,
