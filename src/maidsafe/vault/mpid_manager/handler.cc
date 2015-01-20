@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
+#include "maidsafe/vault/mpid_manager/handler.h"
 
 namespace maidsafe {
 

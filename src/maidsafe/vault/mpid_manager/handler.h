@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANGER_MPID_MANAGER_HANDLER_H_
-#define MAIDSAFE_VAULT_MPID_MANGER_MPID_MANAGER_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_HANDLER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_HANDLER_H_
 
 #include <string>
 #include <vector>
@@ -30,7 +30,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_database.h"
+#include "maidsafe/vault/mpid_manager/database.h"
 
 namespace maidsafe {
 
@@ -58,7 +58,7 @@ class MpidManagerHandler {
   void DeleteChunk(const DataName& data_name);
 
   ChunkStore chunk_store_;
-  MpidManagerDataBase db_;
+  MpidManagerDatabase db_;
 };
 
 template <typename Data>
@@ -85,4 +85,4 @@ void MpidManagerHandler::DeleteChunk(const DataName& data_name) {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANGER_MPID_MANAGER_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_HANDLER_H_

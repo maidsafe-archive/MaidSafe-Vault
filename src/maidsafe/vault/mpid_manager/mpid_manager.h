@@ -19,7 +19,9 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
+#include <map>
 #include <utility>
+#include <vector>
 
 #include "boost/expected/expected.hpp"
 
@@ -41,7 +43,6 @@ namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
-
   using GroupName = passport::PublicMpid::Name;
   using MessageKey = ImmutableData::Name;
   using GKPair = std::pair<GroupName, MessageKey>;
@@ -74,3 +75,4 @@ typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+
