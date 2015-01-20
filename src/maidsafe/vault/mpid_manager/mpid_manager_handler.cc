@@ -55,6 +55,35 @@ DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& d
   return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
+MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
+    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+  MpidManager::DbTransferInfo db_transfer_info(db_.GetTransferInfo(close_nodes_change));
+  auto prune_itr(db_transfer_info.find(NodeId()));
+  if (prune_itr != db_transfer_info.end()) {
+    for (const auto& prune_entry : prune_itr->second)
+      try {
+        Delete(prune_entry.second);
+      }
+      catch (const maidsafe_error& /*error*/) {
+      }
+    db_transfer_info.erase(prune_itr);
+  }
+
+  MpidManager::TransferInfo transfer_info;
+  for (const auto& transfer : db_transfer_info) {
+    std::vector<MpidManager::KVPair> kv_pairs;
+    for (const auto& account_entry : transfer.second)
+      try {
+        kv_pairs.push_back(std::make_pair(account_entry.first,
+            MpidManager::Value(GetChunk<ImmutableData>(account_entry.second))));
+      }
+      catch (const maidsafe_error& /*error*/) {
+      }
+    transfer_info.insert(std::make_pair(transfer.first, std::move(kv_pairs)));
+  }
+  return transfer_info;
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

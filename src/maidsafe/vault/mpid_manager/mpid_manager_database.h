@@ -45,7 +45,7 @@ class MpidManagerDataBase {
   void Delete(const MpidManager::MessageKey& key);
   bool Has(const MpidManager::MessageKey& key);
 
-  MpidManager::TransferInfo GetTransferInfo(
+  MpidManager::DbTransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
   bool HasGroup(const MpidManager::GroupName& mpid);
@@ -57,7 +57,7 @@ class MpidManagerDataBase {
   void PutIntoTransferInfo(const NodeId& new_holder,
                            const std::string& group_name_string,
                            const std::string& key_string,
-                           MpidManager::TransferInfo& transfer_info);
+                           MpidManager::DbTransferInfo& transfer_info);
 
   MpidManager::MessageKey ComposeKey(const std::string& chunk_name) const {
     return MpidManager::MessageKey(Identity(HexDecode(chunk_name)));

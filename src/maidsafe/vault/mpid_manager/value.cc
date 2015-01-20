@@ -29,9 +29,9 @@ namespace maidsafe {
 
 namespace vault {
 
-MpidManagerValue::MpidManagerValue() : data() {}
+//MpidManagerValue::MpidManagerValue() : data() {}
 
-MpidManagerValue::MpidManagerValue(const ImmutableData data_in) : data(data_in) {}
+MpidManagerValue::MpidManagerValue(const ImmutableData& data_in) : data(data_in) {}
 
 MpidManagerValue::MpidManagerValue(const MpidManagerValue& other) : data(other.data) {}
 
@@ -42,14 +42,15 @@ MpidManagerValue& MpidManagerValue::operator=(MpidManagerValue other) {
   return *this;
 }
 
-MpidManagerValue::MpidManagerValue(const std::string& serialised_value) {
-  protobuf::MpidManagerValue mpid_manager_value_proto;
-  if (!mpid_manager_value_proto.ParseFromString(serialised_value)) {
-    LOG(kError) << "Failed to read or parse serialised mpid manager value";
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  }
-  data = ImmutableData(NonEmptyString(mpid_manager_value_proto.data_stored()));
-}
+MpidManagerValue::MpidManagerValue(const std::string& serialised_value)
+  : data([&serialised_value]()->NonEmptyString {
+             protobuf::MpidManagerValue mpid_manager_value_proto;
+             if (!mpid_manager_value_proto.ParseFromString(serialised_value)) {
+               LOG(kError) << "Failed to read or parse serialised mpid manager value";
+               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+             }
+             return NonEmptyString(mpid_manager_value_proto.data());
+         }()) {}
 
 std::string MpidManagerValue::Serialise() const {
   protobuf::MpidManagerValue mpid_manager_value_proto;
@@ -93,7 +94,7 @@ void swap(MpidManagerValue& lhs, MpidManagerValue& rhs) {
 }
 
 bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs) {
-  return lhs.data == rhs.data;
+  return lhs.data.data() == rhs.data.data();
 }
 
 }  // namespace vault

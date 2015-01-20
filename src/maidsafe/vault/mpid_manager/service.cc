@@ -33,6 +33,8 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       asio_service_(2),
       data_getter_(data_getter),
       accumulator_mutex_(),
+      mutex_(),
+      stopped_(false),
       dispatcher_(routing),
       handler_(vault_root_dir, max_disk_usage),
       account_transfer_(),
@@ -213,6 +215,78 @@ void MpidManagerService::HandleMessage(
       assert(false && "Unhandled action type");
     }
   }
+}
+
+void MpidManagerService::HandleChurnEvent(
+  std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+  try {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (stopped_)
+      return;
+    close_nodes_change_ = *close_nodes_change;
+    //    VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
+    MpidManager::TransferInfo transfer_info(handler_.GetTransferInfo(close_nodes_change));
+    for (const auto& transfer : transfer_info)
+      TransferAccount(transfer.first, transfer.second);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Error : " << boost::diagnostic_information(e) << "\n\n";
+  }
+}
+
+void MpidManagerService::TransferAccount(const NodeId& destination,
+                                         const std::vector<MpidManager::KVPair>& accounts) {
+  assert(!accounts.empty());
+  protobuf::AccountTransfer account_transfer_proto;
+  {
+//    std::lock_guard<std::mutex> lock(mutex_);
+    for (auto& account : accounts) {
+//      VLOG(nfs::Persona::kMpidManager, VisualiserAction::kAccountTransfer, account.first.value,
+//           Identity{ destination.string() });
+      protobuf::MpidManagerKeyValuePair kv_pair;
+      kv_pair.set_key(account.first.value.string());
+      kv_pair.set_value(account.second.Serialise());
+      account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
+    }
+  }
+  dispatcher_.SendAccountTransfer(destination, account_transfer_proto.SerializeAsString());
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+  const AccountTransferFromMpidManagerToMpidManager& message,
+  const typename AccountTransferFromMpidManagerToMpidManager::Sender& sender,
+  const typename AccountTransferFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+    HandleAccountTransferEntry(serialised_account, sender);
+  }
+}
+
+void MpidManagerService::HandleAccountTransferEntry(
+  const std::string& serialised_account, const routing::SingleSource& sender) {
+  using Handler = AccountTransferHandler<MpidManager>;
+  protobuf::MpidManagerKeyValuePair kv_pair;
+  if (!kv_pair.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse action";
+    return;
+  }
+  auto value(MpidManagerValue(kv_pair.value()));
+  auto result(account_transfer_.Add(MpidManager::Key(Identity(kv_pair.key())),
+                                    value, sender.data));
+  if (result.result == Handler::AddResult::kSuccess) {
+    HandleAccountTransfer(std::make_pair(result.key, value));
+  } else if (result.result == Handler::AddResult::kFailure) {
+    dispatcher_.SendAccountQuery(result.key, value.data.name());
+  }
+}
+
+void MpidManagerService::HandleAccountTransfer(const MpidManager::KVPair& account) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  handler_.Put(account.second.data, account.first);
 }
 
 // ================================================================================================

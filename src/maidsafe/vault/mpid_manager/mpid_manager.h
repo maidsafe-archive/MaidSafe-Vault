@@ -43,13 +43,17 @@ namespace nfs {
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
 
+  // =======  for database usage =======
   using GroupName = passport::PublicMpid::Name;
   using MessageKey = ImmutableData::Name;
   using GKPair = std::pair<GroupName, MessageKey>;
-  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
+  using DbTransferInfo = std::map<NodeId, std::vector<GKPair>>;
 
+  // =======  for service usage =======
   using Key = passport::PublicMpid::Name;
   using Value = vault::MpidManagerValue;
+  using KVPair = std::pair<Key, Value>;
+  using TransferInfo = std::map<NodeId, std::vector<KVPair>>;
   using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
   using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,

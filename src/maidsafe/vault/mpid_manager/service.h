@@ -34,12 +34,14 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/account_transfer_handler.h"
-#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/accumulator.h"
-#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
-#include "maidsafe/vault/mpid_manager/dispatcher.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
+
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.pb.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
+#include "maidsafe/vault/mpid_manager/dispatcher.h"
 
 namespace maidsafe {
 
@@ -101,10 +103,17 @@ class MpidManagerService {
   void HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver,
                            const MpidName& sender);
 
+  void TransferAccount(const NodeId& destination,
+                       const std::vector<MpidManager::KVPair>& accounts);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::SingleSource& sender);
+  void HandleAccountTransfer(const MpidManager::KVPair& account);
+
   routing::Routing& routing_;
   AsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
-  mutable std::mutex accumulator_mutex_;
+  mutable std::mutex accumulator_mutex_, mutex_;
+  bool stopped_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   MpidManagerDispatcher dispatcher_;

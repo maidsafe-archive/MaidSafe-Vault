@@ -33,7 +33,7 @@ namespace vault {
 
 class MpidManagerValue {
  public:
-  MpidManagerValue();
+//  MpidManagerValue();
   explicit MpidManagerValue(const ImmutableData& data_in);
   MpidManagerValue(const MpidManagerValue& other);
   MpidManagerValue(MpidManagerValue&& other);

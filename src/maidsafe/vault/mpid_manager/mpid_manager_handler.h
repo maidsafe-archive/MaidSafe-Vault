@@ -47,6 +47,9 @@ class MpidManagerHandler {
   bool Has(const ImmutableData::Name& data_name);
   bool HasAccount(const MpidName& mpid);
 
+  MpidManager::TransferInfo GetTransferInfo(
+      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+
  private:
   template <typename Data>
   Data GetChunk(const typename Data::Name& data_name);

@@ -26,6 +26,6 @@ message MpidManagerValue {
 
 message MpidManagerKeyValuePair {
   required bytes key = 1;
-  required MpidManagerValue value = 2;
+  required bytes value = 2;
 }
 
