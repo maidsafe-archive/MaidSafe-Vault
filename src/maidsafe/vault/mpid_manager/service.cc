@@ -40,6 +40,8 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_put_messages_(NodeId(pmid.name()->string())),
       sync_delete_messages_(NodeId(pmid.name()->string())) {}
 
+MpidManagerService::~MpidManagerService() {}
+
 template <>
 void MpidManagerService::HandleMessage(const SendAlertFromMpidManagerToMpidManager &message,
     const typename SendAlertFromMpidManagerToMpidManager::Sender& sender,
@@ -211,6 +213,12 @@ void MpidManagerService::HandleMessage(
 }
 
 // ================================================================================================
+
+void MpidManagerService::HandleChurnEvent(
+    std::shared_ptr<routing::ClientNodesChange> /*client_nodes_change*/) {}
+
+void MpidManagerService::HandleChurnEvent(
+    std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {}
 
 
 void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,

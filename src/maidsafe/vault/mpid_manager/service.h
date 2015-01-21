@@ -47,6 +47,10 @@ namespace vault {
 
 class MpidManagerService {
  public:
+  using PublicMessages = nfs::MpidManagerServiceMessages;
+  using VaultMessages = MpidManagerServiceMessages;
+  using HandleMessageReturnType = void ;
+
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
                      const boost::filesystem::path& vault_root_dir);
@@ -57,6 +61,7 @@ class MpidManagerService {
                      const typename MessageType::Receiver& receiver);
 
   void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+  void HandleChurnEvent(std::shared_ptr<routing::ClientNodesChange> client_nodes_change);
 
   template <typename UnresolvedAction>
   void DoSync(const UnresolvedAction& unresolved_action);
@@ -65,10 +70,10 @@ class MpidManagerService {
   typedef boost::mpl::vector<> InitialType;
   typedef boost::mpl::insert_range<InitialType,
                                    boost::mpl::end<InitialType>::type,
-                                   MpidManagerServiceMessages::types>::type IntermediateType;
+                                   PublicMessages::types>::type IntermediateType;
   typedef boost::mpl::insert_range<IntermediateType,
                                    boost::mpl::end<IntermediateType>::type,
-                                   nfs::MpidManagerServiceMessages::types>::type FinalType;
+                                   VaultMessages::types>::type FinalType;
 
  public:
   typedef boost::make_variant_over<FinalType>::type Messages;
