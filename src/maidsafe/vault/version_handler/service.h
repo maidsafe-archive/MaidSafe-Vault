@@ -76,7 +76,7 @@ class VersionHandlerService {
 
   template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
-                     const typename MessageType::Receiver& receiver) = delete;
+                     const typename MessageType::Receiver& receiver);
 
   void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
@@ -164,12 +164,12 @@ class VersionHandlerService {
   AccountTransfer<VersionHandler::UnresolvedAccountTransfer> account_transfer_;
 };
 
-//template <typename MessageType>
-//void VersionHandlerService::HandleMessage(const MessageType& /*message*/,
-//                                          const typename MessageType::Sender& /*sender*/,
-//                                          const typename MessageType::Receiver& /*receiver*/) {
-//  MessageType::No_generic_handler_is_available__Specialisation_is_required;
-//}
+template <typename MessageType>
+void VersionHandlerService::HandleMessage(const MessageType& /*message*/,
+                                          const typename MessageType::Sender& /*sender*/,
+                                          const typename MessageType::Receiver& /*receiver*/) {
+  MessageType::No_generic_handler_is_available__Specialisation_is_required;
+}
 
 template <typename MessageType>
 bool VersionHandlerService::ValidateSender(const MessageType& /*message*/,

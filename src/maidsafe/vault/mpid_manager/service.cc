@@ -26,14 +26,14 @@ namespace maidsafe {
 namespace vault {
 
 MpidManagerService::MpidManagerService(const passport::Pmid& pmid,routing::Routing& routing,
-                                       nfs_client::DataGetter& data_getter/*,
-                                       const boost::filesystem::path& vault_root_dir*/)
+                                       nfs_client::DataGetter& data_getter,
+                                       const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       data_getter_(data_getter),
       accumulator_mutex_(),
-//      dispatcher_(routing),
-//      db_(vault_root_dir),
-//      account_transfer_(),
+      dispatcher_(routing),
+      db_(vault_root_dir/"tempo"),
+      account_transfer_(),
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),
       sync_put_messages_(NodeId(pmid.name()->string())),
@@ -126,169 +126,169 @@ void MpidManagerService::HandleMessage(
 
 // ========================== Sync / AccountTransfer implementation ================================
 
-//template <>
-//void MpidManagerService::HandleMessage(
-//    const SynchroniseFromMpidManagerToMpidManager& message,
-//    const typename SynchroniseFromMpidManagerToMpidManager::Sender& sender,
-//    const typename SynchroniseFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
-//  protobuf::Sync proto_sync;
-//  if (!proto_sync.ParseFromString(message.contents->data))
-//    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+template <>
+void MpidManagerService::HandleMessage(
+    const SynchroniseFromMpidManagerToMpidManager& message,
+    const typename SynchroniseFromMpidManagerToMpidManager::Sender& sender,
+    const typename SynchroniseFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  protobuf::Sync proto_sync;
+  if (!proto_sync.ParseFromString(message.contents->data))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
-//  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
-//    case ActionMpidManagerPutMessage::kActionId: {
-//      MpidManager::UnresolvedPutMessage unresolved_action(proto_sync.serialised_unresolved_action(),
-//                                                          sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        try {
-//          db_.Commit(resolved_action->key, resolved_action->action);
-//        }
-//        catch (const maidsafe_error& error) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-//            throw;
-//        }
-//        dispatcher_.SendMessageAlert(
-//            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.alert),
-//            resolved_action->action.kMessage.alert.receiver);
-//      }
-//      break;
-//    }
-//    case ActionMpidManagerDeleteMessage::kActionId: {
-//      MpidManager::UnresolvedDeleteMessage
-//          unresolved_action(proto_sync.serialised_unresolved_action(), sender.sender_id,
-//                            routing_.kNodeId());
-//      auto resolved_action(sync_delete_messages_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        try {
-//          db_.Commit(resolved_action->key, resolved_action->action);
-//        }
-//        catch (const maidsafe_error& error) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-//            throw;
-//        }
-//      }
-//      break;
-//    }
-//    case ActionMpidManagerPutAlert::kActionId: {
-//      MpidManager::UnresolvedPutAlert unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_put_alerts_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        try {
-//          db_.Commit(resolved_action->key, resolved_action->action);
-//        }
-//        catch (const maidsafe_error& error) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-//            throw;
-//        }
+  switch (static_cast<nfs::MessageAction>(proto_sync.action_type())) {
+    case ActionMpidManagerPutMessage::kActionId: {
+      MpidManager::UnresolvedPutMessage unresolved_action(proto_sync.serialised_unresolved_action(),
+                                                          sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+        dispatcher_.SendMessageAlert(
+            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.alert),
+            resolved_action->action.kMessage.alert.receiver);
+      }
+      break;
+    }
+    case ActionMpidManagerDeleteMessage::kActionId: {
+      MpidManager::UnresolvedDeleteMessage
+          unresolved_action(proto_sync.serialised_unresolved_action(), sender.sender_id,
+                            routing_.kNodeId());
+      auto resolved_action(sync_delete_messages_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+      }
+      break;
+    }
+    case ActionMpidManagerPutAlert::kActionId: {
+      MpidManager::UnresolvedPutAlert unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_put_alerts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
 
-//        if (IsOnline(resolved_action->key.group_name()))
-//          dispatcher_.SendMessageAlert(resolved_action->action.kAlert,
-//                                       resolved_action->key.group_name());
-//      }
-//      break;
-//    }
-//    case ActionMpidManagerDeleteAlert::kActionId: {
-//      MpidManager::UnresolvedDeleteAlert unresolved_action(
-//          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
-//      auto resolved_action(sync_delete_alerts_.AddUnresolvedAction(unresolved_action));
-//      if (resolved_action) {
-//        try {
-//          db_.Commit(resolved_action->key, resolved_action->action);
-//        }
-//        catch (const maidsafe_error& error) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-//            throw;
-//        }
-//      }
-//      break;
-//    }
-//    default: {
-//      LOG(kError) << "SynchroniseFromMpidManagerToMpidManager Unhandled action type";
-//      assert(false && "Unhandled action type");
-//    }
-//  }
-//}
+        if (IsOnline(resolved_action->key.group_name()))
+          dispatcher_.SendMessageAlert(resolved_action->action.kAlert,
+                                       resolved_action->key.group_name());
+      }
+      break;
+    }
+    case ActionMpidManagerDeleteAlert::kActionId: {
+      MpidManager::UnresolvedDeleteAlert unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_delete_alerts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        try {
+          db_.Commit(resolved_action->key, resolved_action->action);
+        }
+        catch (const maidsafe_error& error) {
+          if (error.code() != make_error_code(VaultErrors::no_such_account))
+            throw;
+        }
+      }
+      break;
+    }
+    default: {
+      LOG(kError) << "SynchroniseFromMpidManagerToMpidManager Unhandled action type";
+      assert(false && "Unhandled action type");
+    }
+  }
+}
 
 // ================================================================================================
 
-//void MpidManagerService::HandleChurnEvent(
-//    std::shared_ptr<routing::ClientNodesChange> /*client_nodes_change*/) {}
+void MpidManagerService::HandleChurnEvent(
+    std::shared_ptr<routing::ClientNodesChange> /*client_nodes_change*/) {}
 
-//void MpidManagerService::HandleChurnEvent(
-//    std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {}
+void MpidManagerService::HandleChurnEvent(
+    std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {}
 
 
-void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& /*message*/,
-                                           const MpidName& /*sender*/) {
-//  if (!db_.Exists(sender)) {
-//    dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account));
-//    return;
-//  }
-//  dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success));
-//  // After sync alert must be sent out -- TO BE IMPLEMENTED
-//  DoSync(MpidManager::UnresolvedPutMessage(MpidManager::SyncGroupKey(sender),
-//                                           ActionMpidManagerPutMessage(message),
-//                                           routing_.kNodeId()));
+void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,
+                                           const MpidName& sender) {
+  if (!db_.Exists(sender)) {
+    dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account));
+    return;
+  }
+  dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success));
+  // After sync alert must be sent out -- TO BE IMPLEMENTED
+  DoSync(MpidManager::UnresolvedPutMessage(MpidManager::SyncGroupKey(sender),
+                                           ActionMpidManagerPutMessage(message),
+                                           routing_.kNodeId()));
 }
 
-void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& /*alert*/,
-                                            const MpidName& /*receiver*/) {
-//  if (!db_.Exists(receiver))
-//    return;
+void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert,
+                                            const MpidName& receiver) {
+  if (!db_.Exists(receiver))
+    return;
 
-//  DoSync(MpidManager::UnresolvedPutAlert(
-//      MpidManager::SyncGroupKey(receiver), ActionMpidManagerPutAlert(alert), routing_.kNodeId()));
+  DoSync(MpidManager::UnresolvedPutAlert(
+      MpidManager::SyncGroupKey(receiver), ActionMpidManagerPutAlert(alert), routing_.kNodeId()));
 }
 
 void MpidManagerService::HandleGetMessageRequestFromMpidNode(
-    const nfs_vault::MpidMessageAlert& /*alert*/, const MpidName& /*receiver*/) {
-//  if (!db_.Exists(alert, receiver))
-//    return;
+    const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver) {
+  if (!db_.Exists(alert, receiver))
+    return;
 
-//  dispatcher_.SendGetMessageRequest(alert, receiver);
+  dispatcher_.SendGetMessageRequest(alert, receiver);
 }
 
-void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& /*alert*/,
-                                                 const MpidName& /*receiver*/) {
-//  return dispatcher_.SendGetMessageResponse(db_.GetMessage(alert, receiver), alert.sender,
-//                                            receiver);
+void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert,
+                                                 const MpidName& receiver) {
+  return dispatcher_.SendGetMessageResponse(db_.GetMessage(alert, receiver), alert.sender,
+                                            receiver);
 }
 
 void MpidManagerService::HandleGetMessageResponse(
-    const nfs_client::MpidMessageOrReturnCode& /*response*/, const MpidName& /*receiver*/) {
-//  return dispatcher_.SendGetMessageResponseToMpid(response, receiver);
+    const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver) {
+  return dispatcher_.SendGetMessageResponseToMpid(response, receiver);
 }
 
-//bool MpidManagerService::IsOnline(const MpidName& /*mpid_name*/) {
-//  return true;
-//}
-
-void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& /*alert*/,
-                                             const MpidName& /*receiver*/) {
-//  if (!db_.Exists(alert, receiver))
-//    return;
-
-//  DoSync(MpidManager::UnresolvedDeleteAlert(MpidManager::SyncGroupKey(receiver),
-//                                            ActionMpidManagerDeleteAlert(alert),
-//                                            routing_.kNodeId()));
-
-//  dispatcher_.SendDeleteRequest(alert, receiver);
+bool MpidManagerService::IsOnline(const MpidName& /*mpid_name*/) {
+  return true;
 }
 
-void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& /*alert*/,
-                                             const MpidName& /*receiver*/, const MpidName& /*sender*/) {
-//  if (!db_.Exists(alert.sender))
-//    return;
+void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert,
+                                             const MpidName& receiver) {
+  if (!db_.Exists(alert, receiver))
+    return;
 
-//  auto expected(db_.GetMessage(alert, receiver));
-//  if (!expected.valid())
-//    return;
+  DoSync(MpidManager::UnresolvedDeleteAlert(MpidManager::SyncGroupKey(receiver),
+                                            ActionMpidManagerDeleteAlert(alert),
+                                            routing_.kNodeId()));
 
-//  DoSync(MpidManager::UnresolvedDeleteMessage(MpidManager::SyncGroupKey(sender),
-//                                              ActionMpidManagerDeleteMessage(alert),
-//                                              routing_.kNodeId()));
+  dispatcher_.SendDeleteRequest(alert, receiver);
+}
+
+void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert,
+                                             const MpidName& receiver, const MpidName& sender) {
+  if (!db_.Exists(alert.sender))
+    return;
+
+  auto expected(db_.GetMessage(alert, receiver));
+  if (!expected.valid())
+    return;
+
+  DoSync(MpidManager::UnresolvedDeleteMessage(MpidManager::SyncGroupKey(sender),
+                                              ActionMpidManagerDeleteMessage(alert),
+                                              routing_.kNodeId()));
 }
 
 }  // namespace vault

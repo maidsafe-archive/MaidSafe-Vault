@@ -52,13 +52,13 @@ class MpidManagerService {
   using HandleMessageReturnType = void ;
 
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                     nfs_client::DataGetter& data_getter/*,
-                     const boost::filesystem::path& vault_root_dir*/);
+                     nfs_client::DataGetter& data_getter,
+                     const boost::filesystem::path& vault_root_dir);
   ~MpidManagerService();
 
   template <typename MessageType>
   void HandleMessage(const MessageType& message, const typename MessageType::Sender& sender,
-                     const typename MessageType::Receiver& receiver) = delete;
+                     const typename MessageType::Receiver& receiver);
 
   void HandleChurnEvent(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
   void HandleChurnEvent(std::shared_ptr<routing::ClientNodesChange> client_nodes_change);
@@ -110,9 +110,9 @@ class MpidManagerService {
   mutable std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
-//  MpidManagerDispatcher dispatcher_;
-//  MpidManagerDataBase db_;
-//  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
+  MpidManagerDispatcher dispatcher_;
+  MpidManagerDataBase db_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
   Sync<MpidManager::UnresolvedPutAlert> sync_put_alerts_;
   Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;
   Sync<MpidManager::UnresolvedPutMessage> sync_put_messages_;
@@ -126,12 +126,19 @@ bool MpidManagerService::ValidateSender(const MessageType& /*message*/,
 }
 
 template <typename UnresolvedAction>
-void MpidManagerService::DoSync(const UnresolvedAction& /*unresolved_action*/) {
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_alerts_, unresolved_action);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_alerts_, unresolved_action);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_messages_, unresolved_action);
-//  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_messages_, unresolved_action);
+void MpidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_alerts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_alerts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_messages_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_messages_, unresolved_action);
 }
+  
+template <typename MessageType>
+void HandleMessage(const MessageType&, const typename MessageType::Sender&,
+                   const typename MessageType::Receiver&) {
+  MessageType::Bad;
+}
+
 
 template <>
 void MpidManagerService::HandleMessage(
