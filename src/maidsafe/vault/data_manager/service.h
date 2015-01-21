@@ -272,7 +272,7 @@ class DataManagerService {
   friend class test::DataManagerServiceTest;
 
   routing::Routing& routing_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
   nfs_client::DataGetter& data_getter_;
   mutable std::mutex accumulator_mutex_, close_nodes_change_mutex_, lru_cache_mutex_;
   bool stopped_;
@@ -280,7 +280,7 @@ class DataManagerService {
   routing::CloseNodesChange close_nodes_change_;
   DataManagerDispatcher dispatcher_;
   routing::Timer<std::pair<PmidName, GetResponseContents>> get_timer_;
-  DataManagerDataBase db_;
+  DataManagerDatabase db_;
   Sync<DataManager::UnresolvedPut> sync_puts_;
   Sync<DataManager::UnresolvedDelete> sync_deletes_;
   Sync<DataManager::UnresolvedAddPmid> sync_add_pmids_;

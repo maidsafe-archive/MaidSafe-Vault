@@ -62,7 +62,7 @@ class CacheHandlerServiceTest : public testing::Test {
   boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   CacheHandlerService cache_handler_service_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
 };
 
 TEST_F(CacheHandlerServiceTest, BEH_ShortTermPutGet) {

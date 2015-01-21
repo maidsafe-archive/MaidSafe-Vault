@@ -16,34 +16,50 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
-#define MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_DATABASE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_DATABASE_H_
 
+#include <map>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "maidsafe/common/sqlite3_wrapper.h"
+
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class VaultDatabase {
-  typedef std::string VALUE;
+class MpidManagerDataBase {
  public:
-  typedef std::string KEY;
-  explicit VaultDatabase(const boost::filesystem::path& db_path);
+  explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
+  ~MpidManagerDataBase();
 
-  void Put(const KEY& key, const VALUE& value);
-  void Get(const KEY& key, VALUE& value);
-  void Delete(const KEY& key);
-  bool SeekNext(std::pair<KEY, VALUE>& result);
+  std::unique_ptr<MpidManager::Value> Commit(const MpidManager::SyncGroupKey& /*key*/,
+      std::function<detail::DbAction(std::unique_ptr<MpidManager::Value>& value)> /*functor*/) {
+    return std::unique_ptr<MpidManager::Value>();
+  }
 
- private:
+  bool Exists(const nfs_vault::MpidMessageAlert&  /*alert*/, const MpidName& /*receiver*/) {
+    return false;  // To be fixed
+  }
+
+  // checks account exists
+  bool Exists(const MpidName& /*mpid_name*/) {
+    return false;  // To be fixed
+  }
+
+  DbMessageQueryResult GetMessage(const nfs_vault::MpidMessageAlert& /*alert*/,
+                                  const MpidName& /*receiver*/) {
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));  // To be fixed
+  }
+
   void CheckPoint();
 
-  std::unique_ptr<sqlite::Database> database_;
-  std::unique_ptr<sqlite::Statement> seeking_statement_;
+  std::unique_ptr<sqlite::Database> data_base_;
+  const boost::filesystem::path kDbPath_;
   int write_operations_;
 };
 
@@ -51,4 +67,5 @@ class VaultDatabase {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_DATABASE_H_
+

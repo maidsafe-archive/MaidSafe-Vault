@@ -6,7 +6,7 @@ Design document 1.0
 Introduction
 ============
 
-In MaidSafe the ability for secured messaging is obvious and may take many forms, mail like, IM like etc. This document outlines the system componenets and design for general communications infrastructure and security. The assumption is that all personal communications are only handled by a Structured Data Version ([SDV](https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)) type container. This is described in Future Work section. 
+In MaidSafe the ability for secured messaging is obvious and may take many forms, mail like, IM like etc. This document outlines the system componenets and design for general communications infrastructure and security. 
 
 Motivation
 ==========
@@ -32,12 +32,14 @@ This is a simple data structure for now and will be a ```std::map``` ordered by 
 ```c++
 struct MpidMessage {
   PublicMpid::Name sender;
-  std::vector<PublicMpid::Name> recipients;
-  std::string message, body;
+  PublicMpid::Name recipient;
+  std::string message_head, message_body;
   Identity id, parent_id;
 };
 
 ```
+
+It needs to be highlighted that each above MpidMessage only targets one recipient. When a sender sending a message to multiple recipients, multiple MpidMessages will be created in the ```OutBox``` . This is to ensure spammers will run out of limited resource quickly, so the network doesn't have to suffer from abused usage.
 
 Network Inbox
 -------------
@@ -46,8 +48,9 @@ The network inbox is an even simpler structure and will be again named with the 
 
 ```c++
 struct MpidAlert {
-  Identity message_id,
+  Identity message_id;
   PublicMpid::Name sender;
+  BoundedString<0, MAX_HEADER_SIZE> message_head;
 };
 ```
 
@@ -61,13 +64,29 @@ Mpid (A) -> - *                                    * - <-Mpid (B)
 
 ```
 1. The user at Mpid(A) sends MpidMessage to MpidManager(A) signed with the recipient included
-2. The MpidManagers(A) sync this message and perform the action() which sends the MpidAlert to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is simply the hash of the MpidMessage.
-3. MpidManager(B) either store the MpidAlert or send immediately to the Mpid(B) user if they are off-line or on-line respectively.
-4. Mpid(B) then sends a ```Signed(retrieve_message)``` to the MpidManager(B) group who send this on to the MpidManagers(A). This message is of the form ```retrieve_message(MpidAlert, MpidPacket)[signed by Mpid(B)]``` 
-5. MpidManagers(A) then sync() the MpidAlert and confirm this is from the MpidManager(B) group, do a signature check and then perform action() which sends the message to MpidManagers(B) and remove the message.
-6. MpidManager(B) then sync() the message to confirm it was delivered from MpidManagers(A) and send the message to Mpid(B), or store for later retieval if the node has gone off-line. 
+2. The MpidManagers(A) sync this message and perform the action() which sends the MpidAlert to MpidManagers(B) [the ```MpidAlert::message_id``` at this stage is hash of the MpidMessage.
+3. MpidManager(B) stores the MpidAlert and sends the alert to Mpid(B) as soon as it is found online.
+4. On receving the alert, Mpid(B) sends a ```retrieve_message``` to MpidManagers(B) which is forwarded to MpidManagers(A).
+5. MpidManagers(A) sends the message to MpidManagers(B) which is forwarded to MPid(B) if MPid(B) is online.
+6. On receiving the message, Mpid(B) sends a remove request to MpidManagers(B), MpidManagers(B) sync remove the corresponding alert and forward the remove request to MpidManager(A). MpidManagers(A) sync remove the corresponding entry. 
+7. When Mpid(A) decides to remove the MpidMessage from the OutBox, if the message hasn't been retrived by Mpid(B) yet. The MpidManagers(A) group should not only remove the correspondent MpidMessage from their OutBox of Mpid(A), but also send a notification to the group of MpidManagers(B) so they can remove the correspodent MpidAlert from their InBox of Mpid(B).
+
+_MPid(A)_ =>> |__MPidManager(A)__ (Put.Sync)(Alert.So) *->> | __MPidManager(B)__  (Store(Alert).Sync)(Online(Mpid(B)) ? Alert.So : (WaitForOnlineB)(Alert.So)) *-> | _Mpid(B)_ So.Retreive ->> | __MpidManager(B)__ *-> | __MpidManager(A)__ So.Message *->> | __MpidManager(B)__ Online(Mpid(B)) ? Message.So *-> | _Mpid(B)_ Remove.So ->> | __MpidManager(B)__ {Remove(Alert).Sync, Remove.So} *->> | __MpidManager(A)__ Remove.Sync
+
+MPID Messaging Client
+--------------
+The messaging client, as described as Mpid(X) in the above section, can be named as nfs_mpid_client. It shall provide following key functionalities :
+
+1. Send Message (Put from sender)
+2. Retrieve Full Message (Get from receiver)
+3. Remove sent Message (Delete from sender)
+4. Accept Message Alert (when ```PUSH``` model used) and/or Retrive Message Alert (when ```PULL``` model used)
+
+When ```PUSH``` model is used, nfs_mpid_client is expected to have it's own routing object (not sharing with maid_nfs). So it can connect to network directly allowing the MpidManagers around it to tell the connection status directly.
+
+Such seperate routing object is not required when ```PULL``` model is used. It may also have the benefit of saving the battery life on mobile device as the client app doesn't need to keeps nfs_mpid_client running all the time.
 
 Future Works
 ============
 
-This proposal implements a container as a std::map, it is assumed this will fall over to become an SDV when/if SDV is able to insert/delete single elements in a branch (possibly doubly linked list type). This is considered premature optimisation at this stage of development and requires measuring of the performance/size hit on adding two pointers per node. 
+This proposal implements a container as a std::map, it is assumed this will fall over to become a Structured Data Version ([SDV](https://github.com/maidsafe/MaidSafe-Common/blob/next/include/maidsafe/common/data_types/structured_data_versions.h)) when/if SDV is able to insert/delete single elements in a branch (possibly doubly linked list type). This is considered premature optimisation at this stage of development and requires measuring of the performance/size hit on adding two pointers per node. 

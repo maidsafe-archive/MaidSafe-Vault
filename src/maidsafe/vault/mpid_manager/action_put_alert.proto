@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2013 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,39 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
-#define MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+option optimize_for = LITE_RUNTIME;
 
-#include <string>
-#include <utility>
+package maidsafe.vault.protobuf;
 
-#include "maidsafe/common/sqlite3_wrapper.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-class VaultDatabase {
-  typedef std::string VALUE;
- public:
-  typedef std::string KEY;
-  explicit VaultDatabase(const boost::filesystem::path& db_path);
-
-  void Put(const KEY& key, const VALUE& value);
-  void Get(const KEY& key, VALUE& value);
-  void Delete(const KEY& key);
-  bool SeekNext(std::pair<KEY, VALUE>& result);
-
- private:
-  void CheckPoint();
-
-  std::unique_ptr<sqlite::Database> database_;
-  std::unique_ptr<sqlite::Statement> seeking_statement_;
-  int write_operations_;
-};
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+message ActionMpidManagerPutAlert {
+  required bytes serialised_alert = 1;
+}

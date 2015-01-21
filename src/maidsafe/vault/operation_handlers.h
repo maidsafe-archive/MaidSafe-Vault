@@ -27,7 +27,7 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/pmid_node/service.h"
-
+#include "maidsafe/vault/mpid_manager/service.h"
 
 namespace maidsafe {
 
@@ -39,6 +39,7 @@ class DataManagerService;
 class PmidManagerService;
 class PmidNodeService;
 class VersionHandlerService;
+class MpidManagerService;
 
 namespace detail {
 
@@ -372,6 +373,50 @@ void DoOperation(
     const CreateVersionTreeRequestFromMaidManagerToVersionHandler& message,
     const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Sender& sender,
     const typename CreateVersionTreeRequestFromMaidManagerToVersionHandler::Receiver& receiver);
+
+//====================================== To MpidManager ===========================================
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const SendAlertFromMpidManagerToMpidManager& message,
+    const typename SendAlertFromMpidManagerToMpidManager::Sender& sender,
+    const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::GetRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetRequestFromMpidManagerToMpidManager& message,
+    const typename GetRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetRequestFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const GetResponseFromMpidManagerToMpidManager& message,
+    const typename GetResponseFromMpidManagerToMpidManager::Sender& sender,
+    const typename GetResponseFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::DeleteRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 }  // namespace detail
 

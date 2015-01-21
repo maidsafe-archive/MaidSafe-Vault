@@ -16,35 +16,17 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_
+option optimize_for = LITE_RUNTIME;
 
-#include <utility>
+package maidsafe.vault.protobuf;
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/nfs/types.h"
+message MpidManagerValue {
+  repeated bytes serialised_outbox_entry = 1;
+  repeated bytes serialised_inbox_entry = 2;
+}
 
-namespace maidsafe {
+message MpidManagerKeyValuePair {
+  required bytes key = 1;
+  required MpidManagerValue value = 2;
+}
 
-namespace nfs {
-
-template <>
-struct PersonaTypes<Persona::kMpidManager> {
-  typedef DataNameVariant DbKey;
-  typedef NonEmptyString DbValue;
-  typedef std::pair<DbKey, MessageAction> UnresolvedEntryKey;
-  typedef DbValue UnresolvedEntryValue;
-  static const Persona persona = Persona::kMpidManager;
-};
-
-}  // namespace nfs
-
-namespace vault {
-
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidAccountHolder;
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_HOLDER_H_

@@ -65,7 +65,7 @@ class VersionHandlerServiceTest : public testing::Test {
   boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   VersionHandlerService version_handler_service_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
 };
 
 template <typename UnresolvedActionType>
