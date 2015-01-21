@@ -75,7 +75,7 @@ ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(nfs::MessageId mess
 template <bool Remove>
 ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(const std::string& serialised_action)
     : kMessageId([&serialised_action]()->int32_t {
-        protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
+        protobuf::ActionCreateRemoveAccount action_proto;
         if (!action_proto.ParseFromString(serialised_action))
           BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_proto.message_id();
@@ -91,7 +91,7 @@ ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(ActionCreateRemoveA
 
 template <bool Remove>
 std::string ActionCreateRemoveAccount<Remove>::Serialise() const {
-  protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
+  protobuf::ActionCreateRemoveAccount action_proto;
   action_proto.set_message_id(kMessageId);
   return action_proto.SerializeAsString();
 }
