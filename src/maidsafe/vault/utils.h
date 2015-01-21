@@ -246,8 +246,23 @@ void IncrementAttemptsAndSendSync(
   SendSync(dispatcher, unresolved_actions);
 }
 
-}  // namespace detail
+template<typename Key, typename SignerKey>
+struct AccountCreationStatus {
+  AccountCreationStatus(typename Key::Name name_in, typename SignerKey::Name signer_name)
+  : name(std::move(name_in)),
+    an_name(std::move(signer_name)),
+    name_stored(false),
+    an_name_stored(false) {}
 
+  typename Key::Name name;
+  typename SignerKey::Name an_name;
+  bool name_stored, an_name_stored;
+};
+
+template <typename Key, typename Signer>
+using AccountCreationStatusType = AccountCreationStatus<Key, Signer>;
+
+}  // namespace detail
 
 // ============================ dispatcher utils ===================================================
 nfs::MessageId HashStringToMessageId(const std::string& input);

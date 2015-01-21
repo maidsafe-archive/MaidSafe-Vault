@@ -221,6 +221,10 @@ template <>
 void DoOperation(DataManagerService* service, const PutRequestFromMaidManagerToDataManager& message,
                  const typename PutRequestFromMaidManagerToDataManager::Sender& sender,
                  const typename PutRequestFromMaidManagerToDataManager::Receiver&);
+template <>
+void DoOperation(DataManagerService* service, const PutRequestFromMpidManagerToDataManager& message,
+                 const typename PutRequestFromMpidManagerToDataManager::Sender& sender,
+                 const typename PutRequestFromMpidManagerToDataManager::Receiver&);
 
 template <>
 void DoOperation(DataManagerService* service,

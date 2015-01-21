@@ -123,6 +123,161 @@ void MpidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+// =============== Mpid Account Creation ===========================================================
+
+void MpidManagerService::HandleCreateMpidAccount(const passport::PublicMpid& public_mpid,
+                                                 const passport::PublicAnmpid& public_anmpid,
+                                                 nfs::MessageId message_id) {
+  nfs::MessageId mpid_hash_message_id(vault::HashStringToMessageId(public_mpid.name()->string()));
+  nfs::MessageId anmpid_hash_message_id(
+                     vault::HashStringToMessageId(public_anmpid.name()->string()));
+  nfs::MessageId mpid_message_id(mpid_hash_message_id ^ message_id);
+  nfs::MessageId anmpid_message_id(anmpid_hash_message_id ^ message_id);
+  bool exists(db_.Exists(public_mpid.name()));
+//  {
+//    std::lock_guard<std::mutex> lock(mutex_);
+//    auto it(accounts_.find(key));
+//    exists = (it != std::end(accounts_));
+//  }
+
+  if (exists) {
+    maidsafe_error error(MakeError(VaultErrors::account_already_exists));
+    dispatcher_.SendCreateAccountResponse(public_mpid.name(), error, message_id);
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(pending_account_mutex_);
+    MpidAccountCreationStatus account_creation_status(public_mpid.name(), public_anmpid.name());
+    pending_account_map_.insert(std::make_pair(message_id, account_creation_status));
+  }
+
+  dispatcher_.SendPutRequest(public_mpid.name(), public_mpid, mpid_message_id);
+  dispatcher_.SendPutRequest(public_mpid.name(), public_anmpid, anmpid_message_id);
+}
+
+template <>
+void MpidManagerService::HandlePutResponse<passport::PublicMpid>(
+         const MpidName& mpid_name, const typename passport::PublicMpid::Name& data_name,
+         int64_t /*size*/, nfs::MessageId mpid_message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId mpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(mpid_message_id ^ mpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    LOG(kInfo) << "Unexpected PublicMpid put response";
+    return;
+  }
+  // In case of a churn, drop it silently
+  if (data_name != mpid_name)
+    return;
+  assert(pending_account_itr->second.name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.name->string())
+         == mpid_hash_message_id);
+  static_cast<void>(data_name);
+  pending_account_itr->second.name_stored = true;
+
+  if (pending_account_itr->second.an_name_stored) {
+    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(mpid_name->string());
+    DoSync(MpidManager::UnresolvedCreateAccount(MpidManager::SyncGroupKey(mpid_name),
+                                                ActionCreateAccount(original_message_id),
+                                                routing_.kNodeId()));
+    pending_account_map_.erase(pending_account_itr);
+  }
+}
+
+template <>
+void MpidManagerService::HandlePutResponse<passport::PublicAnmpid>(
+         const MpidName& mpid_name, const typename passport::PublicAnmpid::Name& data_name,
+         int64_t /*size*/, nfs::MessageId anmpid_message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId anmpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(anmpid_message_id ^ anmpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(pending_account_itr->second.an_name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.an_name->string())
+         == anmpid_hash_message_id);
+  static_cast<void>(data_name);
+  pending_account_itr->second.an_name_stored = true;
+
+  if (pending_account_itr->second.name_stored) {
+    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(mpid_name->string());
+    DoSync(MpidManager::UnresolvedCreateAccount(MpidManager::SyncGroupKey(mpid_name),
+                                                ActionCreateAccount(original_message_id),
+                                                routing_.kNodeId()));
+    pending_account_map_.erase(pending_account_itr);
+  }
+}
+
+template <>
+void MpidManagerService::HandlePutFailure<passport::PublicMpid>(
+         const MpidName& mpid_name, const passport::PublicMpid::Name& data_name,
+         const maidsafe_error& error, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId mpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(message_id ^ mpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(data_name == mpid_name);
+  assert(pending_account_itr->second.name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.name->string())
+         == message_id);
+  static_cast<void>(data_name);
+  // TODO(Team): Consider deleting anmpid key if stored
+  pending_account_map_.erase(pending_account_itr);
+  dispatcher_.SendCreateAccountResponse(mpid_name, error, original_message_id);
+}
+
+template <>
+void MpidManagerService::HandlePutFailure<passport::PublicAnmpid>(
+         const MpidName& mpid_name, const passport::PublicAnmpid::Name& data_name,
+         const maidsafe_error& error, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId anmpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(message_id ^ anmpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(pending_account_itr->second.an_name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.an_name->string())
+         == message_id);
+  static_cast<void>(data_name);
+  // TODO(Team): Consider deleting mpid key if stored
+  pending_account_map_.erase(pending_account_itr);
+  dispatcher_.SendCreateAccountResponse(mpid_name, error, original_message_id);
+}
+
+void MpidManagerService::HandleSyncedCreateMpidAccount(
+         std::unique_ptr<MpidManager::UnresolvedCreateAccount>&& synced_action) {
+  MpidManager::Value value;
+  maidsafe_error error(CommonErrors::success);
+/*  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    auto result(accounts_.insert(std::make_pair(synced_action->key.group_name(), value)));
+    if (!result.second)
+      error = MakeError(VaultErrors::account_already_exists);
+  } */
+  dispatcher_.SendCreateAccountResponse(synced_action->key.group_name(), error,
+                                        synced_action->action.kMessageId);
+}
+
+void MpidManagerService::HandleSyncedRemoveMpidAccount(
+         std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action) {
+/*  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    accounts_.erase(synced_action->key.group_name());
+  } */
+  dispatcher_.SendRemoveAccountResponse(synced_action->key.group_name(),
+                                        maidsafe_error(CommonErrors::success),
+                                        synced_action->action.kMessageId);
+}
+
 // ========================== Sync / AccountTransfer implementation ================================
 
 template <>

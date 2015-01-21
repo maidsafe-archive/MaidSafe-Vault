@@ -89,6 +89,21 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
+         const PutRequestFromMpidManagerToDataManager& message,
+         const typename PutRequestFromMpidManagerToDataManager::Sender& sender,
+         const typename PutRequestFromMpidManagerToDataManager::Receiver& receiver) {
+  typedef PutRequestFromMpidManagerToDataManager MessageType;
+  OperationHandlerWrapper<DataManagerService, MessageType>(
+  accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+    return this->ValidateSender(message, sender);
+  },
+  Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+  this, accumulator_mutex_)(message, sender, receiver);
+}
+
+  
+template <>
+void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender& sender,
     const typename PutResponseFromPmidManagerToDataManager::Receiver& receiver) {

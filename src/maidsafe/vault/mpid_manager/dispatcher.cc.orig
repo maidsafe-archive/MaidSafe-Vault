@@ -118,6 +118,7 @@ void MpidManagerDispatcher::SendMessageResponse(const MpidName& receiver,
   routing_.Send(message);
 }
 
+<<<<<<< Updated upstream
 void MpidManagerDispatcher::SendSync(const MpidManager::SyncGroupKey& key,
                                      const std::string& serialised_sync) {
   using  VaultMessage = DeleteRequestFromMpidManagerToMpidManager;
@@ -130,25 +131,11 @@ void MpidManagerDispatcher::SendSync(const MpidManager::SyncGroupKey& key,
                          VaultMessage::Receiver(NodeId(key.group_name()->string())));
   routing_.Send(message);
 }
-
-void MpidManagerDispatcher::SendCreateAccountResponse(const MpidName& mpid_name,
-                                                      const maidsafe_error& result,
-                                                      nfs::MessageId message_id) {
-  typedef nfs::CreateAccountResponseFromMpidManagerToMpidNode NfsMessage;
-  typedef routing::Message<NfsMessage::Sender, NfsMessage::Receiver> RoutingMessage;
-  CheckSourcePersonaType<NfsMessage>();
-
-  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(result));
-  RoutingMessage message(nfs_message.Serialise(),
-                         NfsMessage::Sender(routing::GroupId(NodeId(mpid_name->string())),
-                                            routing::SingleId(routing_.kNodeId())),
-                         NfsMessage::Receiver(routing::SingleId(NodeId(mpid_name.value.string()))));
-  routing_.Send(message);
-}
-
-
-void MpidManagerDispatcher::SendRemoveAccountResponse(const MpidName&, const maidsafe_error&,
-                                                      nfs::MessageId) {}
+=======
+void MpidManagerDispatcher::SendCreateAccountResponse(const MpidName& /*mpid_name*/,
+                                                      const maidsafe_error& /*error*/,
+                                                      nfs::MessageId /*message_id*/) {}
+>>>>>>> Stashed changes
 
 }  // namespace vault
 
