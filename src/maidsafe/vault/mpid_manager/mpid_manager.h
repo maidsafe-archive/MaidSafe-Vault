@@ -72,6 +72,7 @@ struct PersonaTypes<Persona::kMpidManager> {
 namespace vault {
 
 using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
+using DbDataQueryResult = boost::expected<ImmutableData, maidsafe_error>;
 
 typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
 

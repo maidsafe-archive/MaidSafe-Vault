@@ -617,6 +617,17 @@ void DoOperation(
   service->HandleSendMessage(*message.contents, MpidName(Identity(sender.data.string())));
 }
 
+template <>
+void DoOperation(MpidManagerService* service,
+                 const AccountQueryFromMpidManagerToMpidManager& message,
+                 const AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+                 const AccountQueryFromMpidManagerToMpidManager::Receiver& receiver) {
+  auto data_name(GetNameVariant(*message.contents));
+  MpidManagerAccountQueryVisitor<MpidManagerService> account_request_visitor(service, sender,
+                                                                             receiver);
+  boost::apply_visitor(account_request_visitor, data_name);
+}
+
 }  // namespace detail
 
 }  // namespace vault

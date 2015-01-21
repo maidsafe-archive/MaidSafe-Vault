@@ -289,6 +289,60 @@ void MpidManagerService::HandleAccountTransfer(const MpidManager::KVPair& accoun
   handler_.Put(account.second.data, account.first);
 }
 
+template <>
+void MpidManagerService::HandleMessage(
+    const AccountQueryFromMpidManagerToMpidManager& message,
+    const typename AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+    const typename AccountQueryFromMpidManagerToMpidManager::Receiver& receiver) {
+  typedef AccountQueryFromMpidManagerToMpidManager MessageType;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+void MpidManagerService::HandleAccountQuery(const ImmutableData::Name& name,
+                                            const NodeId& sender,
+                                            const NodeId& receiver) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto data_result(handler_.GetData(name));
+    if (!data_result.valid())
+      return;
+    MpidManagerValue value(data_result.value());
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::MpidManagerKeyValuePair kv_msg;
+    kv_msg.set_key(receiver.string());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountQueryResponse(account_transfer_proto.SerializeAsString(),
+                                         routing::GroupId(NodeId(name->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const AccountQueryResponseFromMpidManagerToMpidManager& message,
+    const typename AccountQueryResponseFromMpidManagerToMpidManager::Sender& sender,
+    const typename AccountQueryResponseFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+    return;
+  }
+  assert(account_transfer_proto.serialised_accounts_size() == 1);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0),
+                             routing::SingleSource(sender.sender_id));
+}
+
 // ================================================================================================
 
 

@@ -44,6 +44,7 @@ class MpidManagerHandler {
   void Put(const ImmutableData& data, const MpidName& mpid);
   void Delete(const ImmutableData::Name& data_name);
   DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name);
+  DbDataQueryResult GetData(const ImmutableData::Name& data_name);
   bool Has(const ImmutableData::Name& data_name);
   bool HasAccount(const MpidName& mpid);
 

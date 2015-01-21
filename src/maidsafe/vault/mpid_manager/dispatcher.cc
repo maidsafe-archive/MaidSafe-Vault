@@ -68,10 +68,12 @@ void MpidManagerDispatcher::SendGetMessageRequest(const nfs_vault::MpidMessageAl
 void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& query_result,
                                                    const MpidName& sender,
                                                    const MpidName& receiver) {
+  if (!query_result.valid())
+    return;
   using  VaultMessage = GetResponseFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  VaultMessage::Contents vault_message(query_result);
+  VaultMessage::Contents vault_message(query_result.value());
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(sender->string())),
                                               routing::SingleId(routing_.kNodeId())),

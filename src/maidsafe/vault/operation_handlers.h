@@ -418,6 +418,12 @@ void DoOperation(
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
+template <>
+void DoOperation(MpidManagerService* service,
+                 const AccountQueryFromMpidManagerToMpidManager& message,
+                 const AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+                 const AccountQueryFromMpidManagerToMpidManager::Receiver& receiver);
+
 }  // namespace detail
 
 template <typename ServiceHandler, typename MessageType,

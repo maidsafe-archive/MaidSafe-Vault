@@ -55,6 +55,16 @@ DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& d
   return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
+DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) {
+  try {
+    ImmutableData data(GetChunk<ImmutableData>(data_name));
+    return std::move(data);
+  }
+  catch (const maidsafe_error& /*error*/) {
+  }
+  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+}
+
 MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   MpidManager::DbTransferInfo db_transfer_info(db_.GetTransferInfo(close_nodes_change));
