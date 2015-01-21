@@ -29,7 +29,7 @@ namespace maidsafe {
 
 namespace vault {
 
-//MpidManagerValue::MpidManagerValue() : data() {}
+// MpidManagerValue::MpidManagerValue() : data() {}
 
 MpidManagerValue::MpidManagerValue(const ImmutableData& data_in) : data(data_in) {}
 

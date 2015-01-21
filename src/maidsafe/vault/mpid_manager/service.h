@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_MPID_MANAGER_SERVICE_H_
 
 #include <vector>
+#include <string>
 
 #include "boost/expected/expected.hpp"
 #include "boost/mpl/vector.hpp"
