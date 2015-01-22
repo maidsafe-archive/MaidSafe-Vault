@@ -95,10 +95,11 @@ class MpidManagerService {
                          nfs::MessageId message_id);
   void HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void HandleGetMessageRequestFromMpidNode(const nfs_vault::MpidMessageAlert& alert,
-                                           const MpidName& receiver);
-  void HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+                                           const MpidName& receiver, nfs::MessageId message_id);
+  void HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver,
+                               nfs::MessageId message_id);
   void HandleGetMessageResponse(const nfs_client::MpidMessageOrReturnCode& message,
-                                const MpidName& receiver);
+                                const MpidName& receiver, nfs::MessageId message_id);
 
   void HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
 
@@ -106,9 +107,10 @@ class MpidManagerService {
                            const MpidName& sender);
 
   routing::Routing& routing_;
-  mutable std::mutex accumulator_mutex_;
+  mutable std::mutex accumulator_mutex_, nodes_change_mutex_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
+  routing::ClientNodesChange client_nodes_change_;
   MpidManagerDispatcher dispatcher_;
   MpidManagerDataBase db_;
   AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
