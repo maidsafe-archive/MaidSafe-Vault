@@ -59,7 +59,7 @@ ms_glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 ms_glob_dir(CacheHandlerTests ${VaultSourcesDir}/cache_handler/tests "Tests")
 ms_glob_dir(DataManagerTests ${VaultSourcesDir}/data_manager/tests "Tests")
 ms_glob_dir(MaidManagerTests ${VaultSourcesDir}/maid_manager/tests "Tests")
-#ms_glob_dir(MpidManagerTests ${VaultSourcesDir}/mpid_manager/tests "Tests")
+ms_glob_dir(MpidManagerTests ${VaultSourcesDir}/mpid_manager/tests "Tests")
 ms_glob_dir(PmidManagerTests ${VaultSourcesDir}/pmid_manager/tests "Tests")
 ms_glob_dir(PmidNodeTests ${VaultSourcesDir}/pmid_node/tests "Tests")
 ms_glob_dir(VersionHandlerTests ${VaultSourcesDir}/version_handler/tests "Tests")
@@ -73,7 +73,8 @@ set(VaultTests         ${VaultTestsAllFiles}
                        ${DataManagerTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}
                        ${CacheHandlerTestsAllFiles}
-                       ${MaidManagerTestsAllFiles})
+                       ${MaidManagerTestsAllFiles}
+                       ${MpidManagerTestsAllFiles})
 
 set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/tests/vault_network.cc
