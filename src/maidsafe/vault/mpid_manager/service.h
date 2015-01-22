@@ -49,7 +49,7 @@ class MpidManagerService {
  public:
   using PublicMessages = nfs::MpidManagerServiceMessages;
   using VaultMessages = MpidManagerServiceMessages;
-  using HandleMessageReturnType = void ;
+  using HandleMessageReturnType = void;
 
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      nfs_client::DataGetter& data_getter,
@@ -132,11 +132,11 @@ void MpidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_messages_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_messages_, unresolved_action);
 }
-  
+
 template <typename MessageType>
 void HandleMessage(const MessageType&, const typename MessageType::Sender&,
                    const typename MessageType::Receiver&) {
-  MessageType::Bad;
+  MessageType::No_generic_handler_is_available__Specialisation_required;
 }
 
 

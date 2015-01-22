@@ -25,14 +25,14 @@ namespace maidsafe {
 
 namespace vault {
 
-MpidManagerService::MpidManagerService(const passport::Pmid& pmid,routing::Routing& routing,
+MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                                        nfs_client::DataGetter& data_getter,
                                        const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
       data_getter_(data_getter),
       accumulator_mutex_(),
       dispatcher_(routing),
-      db_(vault_root_dir/"tempo"),
+      db_(vault_root_dir/"MpidManager"),
       account_transfer_(),
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),

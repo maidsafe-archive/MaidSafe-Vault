@@ -182,7 +182,7 @@ void Vault::OnCloseNodesChange(std::shared_ptr<routing::CloseNodesChange> close_
 
 void Vault::OnClientNodesChange(std::shared_ptr<routing::ClientNodesChange> client_nodes_change) {
   asio_service_.service().post([=] {
-   mpid_manager_service_.HandleChurnEvent(client_nodes_change);
+    mpid_manager_service_.HandleChurnEvent(client_nodes_change);
   });
 }
 
