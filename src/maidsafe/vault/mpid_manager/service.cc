@@ -26,10 +26,8 @@ namespace maidsafe {
 namespace vault {
 
 MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                                       nfs_client::DataGetter& data_getter,
                                        const boost::filesystem::path& vault_root_dir)
     : routing_(routing),
-      data_getter_(data_getter),
       accumulator_mutex_(),
       dispatcher_(routing),
       db_(vault_root_dir/"MpidManager"),
@@ -221,9 +219,9 @@ void MpidManagerService::HandleChurnEvent(
 
 
 void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,
-                                           const MpidName& sender) {
+                                           const MpidName& sender, nfs::MessageId message_id) {
   if (!db_.Exists(sender)) {
-    dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account));
+    dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account), message_id);
     return;
   }
   dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success));

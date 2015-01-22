@@ -52,7 +52,6 @@ class MpidManagerService {
   using HandleMessageReturnType = void;
 
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                     nfs_client::DataGetter& data_getter,
                      const boost::filesystem::path& vault_root_dir);
   ~MpidManagerService();
 
@@ -92,7 +91,8 @@ class MpidManagerService {
 
   bool IsOnline(const MpidName& mpid_name);  // TO BE IMPLEMENTED
 
-  void HandleSendMessage(const nfs_vault::MpidMessage& message, const MpidName& sender);
+  void HandleSendMessage(const nfs_vault::MpidMessage& message, const MpidName& sender,
+                         nfs::MessageId message_id);
   void HandleMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void HandleGetMessageRequestFromMpidNode(const nfs_vault::MpidMessageAlert& alert,
                                            const MpidName& receiver);
@@ -106,7 +106,6 @@ class MpidManagerService {
                            const MpidName& sender);
 
   routing::Routing& routing_;
-  nfs_client::DataGetter& data_getter_;
   mutable std::mutex accumulator_mutex_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;

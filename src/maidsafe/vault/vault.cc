@@ -55,7 +55,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
           new PmidNodeService(vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
                               vault_config.max_disk_usage)))),
       mpid_manager_service_(std::move(std::unique_ptr<MpidManagerService>(new MpidManagerService(
-          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
+          vault_config.pmid, *routing_, vault_config.vault_dir)))),
       // FIXME need to specialise
       cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
           new CacheHandlerService(*routing_, vault_config.vault_dir)))),
