@@ -30,6 +30,7 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
     : routing_(routing),
       accumulator_mutex_(),
       nodes_change_mutex_(),
+      client_nodes_change_(),
       dispatcher_(routing),
       db_(vault_root_dir/"MpidManager"),
       account_transfer_(),
