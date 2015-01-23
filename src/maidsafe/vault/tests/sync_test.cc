@@ -39,7 +39,7 @@
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.h"
+#include "maidsafe/vault/action_create_remove_account.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_manager/value.h"
 #include "maidsafe/vault/version_handler/value.h"

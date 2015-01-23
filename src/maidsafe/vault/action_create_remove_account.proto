@@ -20,6 +20,6 @@ option optimize_for = LITE_RUNTIME;
 
 package maidsafe.vault.protobuf;
 
-message ActionMaidManagerCreateRemoveAccount{
+message ActionCreateRemoveAccount{
   required int32 message_id = 1;
 }

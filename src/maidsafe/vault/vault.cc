@@ -57,8 +57,10 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
       // FIXME need to specialise
       cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
           new CacheHandlerService(*routing_, vault_config.vault_dir)))),
+      mpid_manager_service_(std::move(std::unique_ptr<MpidManagerService>(new MpidManagerService(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, data_getter_),
+             pmid_manager_service_, pmid_node_service_, mpid_manager_service_, data_getter_),
       getting_keys_()
 #ifdef TESTING
       ,
@@ -171,6 +173,7 @@ void Vault::OnCloseNodesChange(std::shared_ptr<routing::CloseNodesChange> close_
   });
   asio_service_.service().post([=] { data_manager_service_.HandleChurnEvent(close_nodes_change); });
   asio_service_.service().post([=] { pmid_manager_service_.HandleChurnEvent(close_nodes_change); });
+  // asio_service_.service().post([=] { mpid_manager_service_.HandleChurnEvent(close_nodes_change); });
 }
 
 }  // namespace vault

@@ -40,6 +40,7 @@
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/version_handler/service.h"
 #include "maidsafe/vault/cache_handler/service.h"
+#include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 
@@ -102,6 +103,7 @@ class Vault {
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;
   nfs::Service<CacheHandlerService> cache_service_;
+  nfs::Service<MpidManagerService> mpid_manager_service_;
   Demultiplexer demux_;
   std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING

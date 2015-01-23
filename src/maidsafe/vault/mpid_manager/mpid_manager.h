@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
+#include <map>
 #include <utility>
 
 #include "boost/expected/expected.hpp"
@@ -38,14 +39,24 @@
 
 namespace maidsafe {
 
+namespace vault {
+
+template <bool Remove>
+struct ActionCreateRemoveAccount;
+using ActionCreateAccount = ActionCreateRemoveAccount<false>;
+using ActionRemoveAccount = ActionCreateRemoveAccount<true>;
+
+}  // namespace vault
+
 namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
   using Key = passport::PublicMpid::Name;
   using Value = vault::MpidManagerValue;
-  using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
+  using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionCreateAccount>;
+  using UnresolvedRemoveAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionRemoveAccount>;
   using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,
                                                      vault::ActionMpidManagerPutAlert>;
   using UnresolvedDeleteAlert = vault::UnresolvedAction<SyncGroupKey,
