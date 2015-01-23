@@ -174,6 +174,16 @@ struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kMai
 };
 
 template <>
+struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>> {
+  typedef nfs::GetResponseFromDataManagerToMpidNode Type;
+};
+
+template <>
+struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>> {
+  typedef nfs::GetResponseFromDataManagerToMpidNodePartial Type;
+};
+
+template <>
 struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>> {
   typedef nfs::GetResponseFromDataManagerToDataGetter Type;
 };
@@ -215,9 +225,15 @@ routing::SingleIdRelay GetDestination(
 routing::SingleIdRelay GetDestination(
         const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>& requestor);
 
+routing::SingleIdRelay GetDestination(
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>& requestor);
+
 // FIXME after changing requestor in vaults to hold exact sender type
 routing::SingleId GetDestination(
         const Requestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>& requestor);
+
+routing::SingleId GetDestination(
+        const Requestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>& requestor);
 
 routing::SingleId GetDestination(
         const Requestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>& requestor);

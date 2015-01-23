@@ -48,6 +48,9 @@ namespace vault {
 
 class MpidManagerService {
  public:
+  using PublicMessages = nfs::MpidManagerServiceMessages;
+  using VaultMessages = MpidManagerServiceMessages;
+  using HandleMessageReturnType = void;
   using MpidAccountCreationStatus = detail::AccountCreationStatusType<
                                         passport::PublicMpid, passport::PublicAnmpid>;
 
@@ -113,13 +116,13 @@ class MpidManagerService {
                         const maidsafe_error& error, nfs::MessageId message_id);
 
   // =============== Account Creation ==============================================================
-  void HandleCreateMpidAccount(const passport::PublicMpid &public_mpid,
-                               const passport::PublicAnmpid& public_anmpid,
-                               nfs::MessageId message_id);
-  void HandleSyncedCreateMpidAccount(
+  void HandleCreateAccount(const passport::PublicMpid &public_mpid,
+                           const passport::PublicAnmpid& public_anmpid,
+                           nfs::MessageId message_id);
+  void HandleSyncedCreateAccount(
            std::unique_ptr<MpidManager::UnresolvedCreateAccount>&& synced_action);
 
-  void HandleSyncedRemoveMpidAccount(
+  void HandleSyncedRemoveAccount(
            std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action);
 
   routing::Routing& routing_;
@@ -156,6 +159,13 @@ void MpidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
 template <typename MessageType>
 void MpidManagerService::HandleMessage(const MessageType&, const typename MessageType::Sender&,
                                        const typename MessageType::Receiver&) {}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
 template <>
 void MpidManagerService::HandleMessage(
     const SendAlertFromMpidManagerToMpidManager& message,
@@ -164,9 +174,9 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
-    const nfs::GetRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(

@@ -81,7 +81,7 @@ void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& q
 
 void MpidManagerDispatcher::SendGetMessageResponseToMpid(
     const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver) {
-  using NfsMessage = nfs::GetResponseFromMpidManagerToMpidNode;
+  using NfsMessage = nfs::GetMessageResponseFromMpidManagerToMpidNode;
   CheckSourcePersonaType<NfsMessage>();
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
   NfsMessage::Contents nfs_message(response);

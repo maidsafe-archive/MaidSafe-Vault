@@ -234,6 +234,19 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
+                 const nfs::GetRequestFromMpidNodeToDataManager& message,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Receiver& /*receiver*/) {
+  auto data_name(GetNameVariant(*message.contents));
+  typedef nfs::GetRequestFromMpidNodeToDataManager::SourcePersona SourceType;
+  Requestor<SourceType> requestor(sender.data);
+  GetRequestVisitor<DataManagerService, Requestor<SourceType>> get_request_visitor(
+      service, requestor, message.id);
+  boost::apply_visitor(get_request_visitor, data_name);
+}
+
+template <>
+void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
@@ -568,6 +581,16 @@ operator()(const IntegrityCheckRequestFromDataManagerToPmidNode& message,
 template <>
 void DoOperation(
     MpidManagerService* service,
+    const nfs::CreateAccountRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Sender& /*sender*/,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+   service->HandleCreateAccount(message.contents->public_mpid(), message.contents->public_anmpid(),
+                                message.id);
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
     const SendAlertFromMpidManagerToMpidManager& message,
     const typename SendAlertFromMpidManagerToMpidManager::Sender& /*sender*/,
     const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver) {
@@ -577,9 +600,9 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const nfs::GetRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
   service->HandleGetMessageRequestFromMpidNode(*message.contents,
                                                MpidName(Identity(sender.data.string())));
 }

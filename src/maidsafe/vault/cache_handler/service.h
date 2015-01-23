@@ -133,6 +133,20 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
+    const nfs::GetResponseFromDataManagerToMpidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetCachedResponseFromCacheHandlerToMpidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
     const nfs::GetResponseFromDataManagerToDataGetter& message,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver);
@@ -150,6 +164,13 @@ CacheHandlerService::HandleMessage(
     const nfs::GetRequestFromMaidNodeToDataManager& message,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+
+template <>
+CacheHandlerService::HandleMessageReturnType
+CacheHandlerService::HandleMessage(
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
 
 template <>
 CacheHandlerService::HandleMessageReturnType

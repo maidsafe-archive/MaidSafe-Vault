@@ -33,6 +33,7 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/pmid_node/service.h"
 #include "maidsafe/vault/version_handler/service.h"
 #include "maidsafe/vault/cache_handler/service.h"
@@ -48,6 +49,7 @@ class Demultiplexer {
                 nfs::Service<DataManagerService>& data_manager_service,
                 nfs::Service<PmidManagerService>& pmid_manager_service,
                 nfs::Service<PmidNodeService>& pmid_node_service,
+                nfs::Service<MpidManagerService>& mpid_manager_service,
                 nfs_client::DataGetter& data_getter);
   template <typename T>
   void HandleMessage(const T& routing_message);
@@ -58,6 +60,7 @@ class Demultiplexer {
   nfs::Service<DataManagerService>& data_manager_service_;
   nfs::Service<PmidManagerService>& pmid_manager_service_;
   nfs::Service<PmidNodeService>& pmid_node_service_;
+  nfs::Service<MpidManagerService>& mpid_manager_service_;
   nfs_client::DataGetter& data_getter_;
 };
 
@@ -93,6 +96,9 @@ void Demultiplexer::HandleMessage(const T& routing_message) {
     case nfs::Persona::kPmidNode:
       return pmid_node_service_.HandleMessage(wrapper_tuple, routing_message.sender,
                                               routing_message.receiver);
+    case nfs::Persona::kMpidManager:
+      return mpid_manager_service_.HandleMessage(wrapper_tuple, routing_message.sender,
+                                                 routing_message.receiver);
     case nfs::Persona::kDataGetter:
       return data_getter_.service().HandleMessage(wrapper_tuple, routing_message.sender,
                                                   routing_message.receiver);
