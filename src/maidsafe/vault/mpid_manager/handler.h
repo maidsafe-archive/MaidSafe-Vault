@@ -38,18 +38,17 @@ namespace vault {
 
 class MpidManagerHandler {
  public:
-  explicit MpidManagerHandler(const boost::filesystem::path vault_root_dir,
-                              DiskUsage max_disk_usage);
+  MpidManagerHandler(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
 
   void Put(const ImmutableData& data, const MpidName& mpid);
   void Delete(const ImmutableData::Name& data_name);
-  DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name);
-  bool Has(const ImmutableData::Name& data_name);
-  bool HasAccount(const MpidName& mpid);
+  DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name) const;
+  bool Has(const ImmutableData::Name& data_name) const;
+  bool HasAccount(const MpidName& mpid) const;
 
  private:
   template <typename Data>
-  Data GetChunk(const typename Data::Name& data_name);
+  Data GetChunk(const typename Data::Name& data_name) const;
 
   template <typename Data>
   void PutChunk(const Data& data);
@@ -62,7 +61,7 @@ class MpidManagerHandler {
 };
 
 template <typename Data>
-Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) {
+Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) const {
   DataNameVariant data_name_variant(data_name);
   Data data(data_name,
             typename Data::serialised_type(chunk_store_.Get(data_name_variant)));

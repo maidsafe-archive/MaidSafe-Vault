@@ -142,13 +142,7 @@ void MpidManagerService::HandleMessage(
       auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         ImmutableData data(NonEmptyString(resolved_action->action.kMessage.Serialise()));
-        try {
-          handler_.Put(data, resolved_action->action.kMessage.base.sender);
-        }
-        catch (const maidsafe_error& /*error*/) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-          throw;
-        }
+         handler_.Put(data, resolved_action->action.kMessage.base.sender);
         dispatcher_.SendMessageAlert(
             nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.base,
                                         nfs_vault::MessageIdType(data.name().value.string())),
@@ -162,13 +156,7 @@ void MpidManagerService::HandleMessage(
                             routing_.kNodeId());
       auto resolved_action(sync_delete_messages_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        try {
-          handler_.Delete(ImmutableData::Name(resolved_action->action.kAlert.message_id));
-        }
-        catch (const maidsafe_error& /*error*/) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-            throw;
-        }
+       handler_.Delete(ImmutableData::Name(resolved_action->action.kAlert.message_id));
       }
       break;
     }
@@ -178,14 +166,7 @@ void MpidManagerService::HandleMessage(
       auto resolved_action(sync_put_alerts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
         ImmutableData data(NonEmptyString(resolved_action->action.kAlert.Serialise()));
-        try {
-          handler_.Put(data, resolved_action->action.kAlert.base.receiver);
-        }
-        catch (const maidsafe_error& /*error*/) {
-//          if (error.code() != make_error_code(VaultErrors::no_such_account))
-            throw;
-        }
-
+        handler_.Put(data, resolved_action->action.kAlert.base.receiver);
         if (IsOnline(resolved_action->key.group_name()))
           dispatcher_.SendMessageAlert(resolved_action->action.kAlert,
                                        resolved_action->key.group_name());
@@ -197,14 +178,8 @@ void MpidManagerService::HandleMessage(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_delete_alerts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        try {
-          ImmutableData data(NonEmptyString(resolved_action->action.kAlert.Serialise()));
-          handler_.Delete(data.name());
-        }
-        catch (const maidsafe_error& error) {
-          if (error.code() != make_error_code(VaultErrors::no_such_account))
-            throw;
-        }
+        ImmutableData data(NonEmptyString(resolved_action->action.kAlert.Serialise()));
+        handler_.Delete(data.name());
       }
       break;
     }

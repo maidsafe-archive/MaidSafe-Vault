@@ -32,20 +32,20 @@ void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   db_.Put(data.name(), data.data().string().size(), mpid);
 }
 
-void MpidManagerHandler::Delete(const ImmutableData::Name& data_name){
+void MpidManagerHandler::Delete(const ImmutableData::Name& data_name) {
   DeleteChunk(data_name);
   db_.Delete(data_name);
 }
 
-bool MpidManagerHandler::Has(const ImmutableData::Name& data_name){
+bool MpidManagerHandler::Has(const ImmutableData::Name& data_name) const {
   return db_.Has(data_name);
 }
 
-bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
+bool MpidManagerHandler::HasAccount(const MpidName& mpid) const {
   return db_.HasGroup(mpid);
 }
 
-DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) {
+DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
     nfs_vault::MpidMessage mpid_message(GetChunk<ImmutableData>(data_name).data().string());
     return std::move(mpid_message);
