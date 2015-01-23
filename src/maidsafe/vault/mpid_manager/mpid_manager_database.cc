@@ -120,7 +120,8 @@ MpidManager::DbTransferInfo MpidManagerDataBase::GetTransferInfo(
     sqlite::Statement statement{*data_base_, query};
     while (statement.Step() == sqlite::StepResult::kSqliteRow) {
       std::string group_name(statement.ColumnText(0));
-      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(group_name));
+      MpidManager::GroupName mpid(ComposeGroupName(group_name));
+      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(mpid->string()));
       if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
         if (check_holder_result.new_holder == NodeId())
           continue;
@@ -134,8 +135,6 @@ MpidManager::DbTransferInfo MpidManagerDataBase::GetTransferInfo(
       }
     }
   }
-  for (const auto& group_name : groups_to_be_removed)
-    DeleteGroup(group_name);
 
   MpidManager::DbTransferInfo transfer_info;
   for (const auto& transfer_entry : groups_to_be_transferred) {
@@ -146,6 +145,10 @@ MpidManager::DbTransferInfo MpidManagerDataBase::GetTransferInfo(
       PutIntoTransferInfo(transfer_entry.first, transfer_entry.second,
                           statement.ColumnText(0), transfer_info);
   }
+
+  for (const auto& group_name : groups_to_be_removed)
+    DeleteGroup(group_name);
+
   return transfer_info;
 }
 
