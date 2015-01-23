@@ -29,7 +29,7 @@ MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
-  db_.Put(data.name(), data.data().string().size(), mpid);
+  db_.Put(data.name(), static_cast<uint32_t>(data.data().string().size()), mpid);
 }
 
 void MpidManagerHandler::Delete(const ImmutableData::Name& data_name) {
