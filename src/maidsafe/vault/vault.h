@@ -38,6 +38,7 @@
 #include "maidsafe/vault/maid_manager/service.h"
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
+#include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/version_handler/service.h"
 #include "maidsafe/vault/cache_handler/service.h"
 #include "maidsafe/vault/db.h"
@@ -83,6 +84,7 @@ class Vault {
   void OnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
   void DoOnPublicKeyRequested(const NodeId& node_id, const routing::GivePublicKeyFunctor& give_key);
   void OnCloseNodesChange(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+  void OnClientNodesChange(std::shared_ptr<routing::ClientNodesChange> client_nodes_change);
   template <typename T>
   bool OnGetFromCache(const T& message);
   template <typename T>
@@ -101,6 +103,7 @@ class Vault {
   nfs::Service<DataManagerService> data_manager_service_;
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;
+  nfs::Service<MpidManagerService> mpid_manager_service_;
   nfs::Service<CacheHandlerService> cache_service_;
   Demultiplexer demux_;
   std::vector<std::future<void>> getting_keys_;
