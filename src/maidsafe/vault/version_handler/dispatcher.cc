@@ -177,17 +177,41 @@ void VersionHandlerDispatcher::SendSync(const VersionHandler::Key& key,
   sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key);
 }
 
-void VersionHandlerDispatcher::SendAccountTransfer(const NodeId& destination_peer,
-                                                   nfs::MessageId message_id,
+void VersionHandlerDispatcher::SendAccountTransfer(const NodeId& peer,
                                                    const std::string& serialised_account) {
   typedef AccountTransferFromVersionHandlerToVersionHandler VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  VaultMessage vault_message(message_id, nfs_vault::Content(serialised_account));
+  VaultMessage vault_message{ nfs_vault::Content(serialised_account) };
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(destination_peer),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing::SingleId(peer)));
+  routing_.Send(message);
+}
+
+
+void VersionHandlerDispatcher::SendAccountQuery(const VersionHandler::Key& key) {
+  typedef AccountQueryFromVersionHandlerToVersionHandler VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message;
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(key.name.string()))));
+  routing_.Send(message);
+}
+
+void VersionHandlerDispatcher::SendAccountQueryResponse(const std::string& serialised_account,
+                                                        const routing::GroupId& group_id,
+                                                        const NodeId& sender) {
+  typedef AccountQueryResponseFromVersionHandlerToVersionHandler VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message{ VaultMessage::Contents{ serialised_account } };
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(group_id),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(routing::SingleId(destination_peer)));
+                         VaultMessage::Receiver(sender));
   routing_.Send(message);
 }
 

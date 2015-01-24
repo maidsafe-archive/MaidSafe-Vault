@@ -25,6 +25,8 @@
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
 
+#include "maidsafe/routing/parameters.h"
+
 #include "maidsafe/vault/version_handler/version_handler.pb.h"
 
 namespace maidsafe {
@@ -36,7 +38,20 @@ VersionHandlerValue::VersionHandlerValue(const std::string& serialised_version_h
           [&serialised_version_handler_value]()->StructuredDataVersionsPtr {
             protobuf::VersionHandlerValue version_handler_value_proto;
             if (!version_handler_value_proto.ParseFromString(serialised_version_handler_value)) {
-              LOG(kError) << "Failed to read or parse serialised maid manager value.";
+              LOG(kError) << "Failed to read or parse serialised verison handler value.";
+              BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+            }
+            return StructuredDataVersionsPtr(new StructuredDataVersions(
+                StructuredDataVersions::serialised_type(NonEmptyString(
+                    version_handler_value_proto.serialised_structured_data_versions()))));
+          }())) {}
+
+VersionHandlerValue::VersionHandlerValue(const VersionHandlerValue& other)
+    : structured_data_versions_(std::move(
+          [&other]()->StructuredDataVersionsPtr {
+            protobuf::VersionHandlerValue version_handler_value_proto;
+            if (!version_handler_value_proto.ParseFromString(other.Serialise())) {
+              LOG(kError) << "Failed to read or parse serialised verison handler value.";
               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
             }
             return StructuredDataVersionsPtr(new StructuredDataVersions(
@@ -87,12 +102,56 @@ void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs) {
   swap(lhs.structured_data_versions_, rhs.structured_data_versions_);
 }
 
+bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs) {
+  bool result(lhs.structured_data_versions_->max_versions() ==
+                  rhs.structured_data_versions_->max_versions() &&
+              lhs.structured_data_versions_->max_branches() ==
+                  rhs.structured_data_versions_->max_branches());
+  if (result) {
+    auto lhs_versions(lhs.structured_data_versions_->Get());
+    auto rhs_versions(rhs.structured_data_versions_->Get());
+    result = lhs_versions.size() == rhs_versions.size();
+    if (result) {
+      for (size_t i(0); i< lhs_versions.size(); ++i)
+        if (lhs_versions[i] != rhs_versions[0])
+          return false;
+    }
+  }
+  return result;
+}
+
 std::string VersionHandlerValue::Print() const {
   std::stringstream stream;
   stream << "\n\t[max_versions," << structured_data_versions_->max_versions()
          << "] [max_branches," << structured_data_versions_->max_branches()
          << "] [current_versions," << structured_data_versions_->Get().size() << "]";
   return stream.str();
+}
+
+VersionHandlerValue VersionHandlerValue::Resolve(const std::vector<VersionHandlerValue>& values) {
+  std::vector<std::pair<VersionHandlerValue, unsigned int>> stats;
+  for (const auto& value : values) {
+    auto iter(std::find_if(std::begin(stats), std::end(stats),
+                           [&](const std::pair<VersionHandlerValue, unsigned int>& pair) {
+                             return value == pair.first;
+                           }));
+    if (iter == std::end(stats))
+      stats.push_back(std::make_pair(value, 1));
+    else
+      iter->second++;
+  }
+
+  auto max_iter(std::begin(stats));
+  for (auto iter(std::begin(stats)); iter != std::end(stats); ++iter)
+    max_iter = (iter->second > max_iter->second) ? iter : max_iter;
+
+  if (max_iter->second == (routing::Parameters::group_size + 1) / 2)
+    return max_iter->first;
+
+  if (values.size() == routing::Parameters::group_size - 1)
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::failed_to_handle_request));
+
+  BOOST_THROW_EXCEPTION(MakeError(VaultErrors::too_few_entries_to_resolve));
 }
 
 }  // namespace vault
