@@ -218,11 +218,6 @@ template <typename RequestorIdType>
 struct GetResponseMessage {};
 
 template <>
-struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>> {
-  typedef nfs::GetResponseFromDataManagerToMaidNodePartial Type;
-};
-
-template <>
 struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>> {
   typedef nfs::GetResponseFromDataManagerToDataGetter Type;
 };
