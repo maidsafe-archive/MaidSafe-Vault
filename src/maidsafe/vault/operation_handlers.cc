@@ -553,7 +553,8 @@ void DoOperation(
     const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
   service->HandleGetMessageRequestFromMpidNode(*message.contents,
-                                               MpidName(Identity(sender.data.string())));
+                                               MpidName(Identity(sender.data.string())),
+                                               message.id);
 }
 
 template <>
@@ -563,7 +564,8 @@ void DoOperation(
     const typename GetRequestFromMpidManagerToMpidManager::Sender& sender,
     const typename GetRequestFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
   service->HandleGetMessageRequest(*message.contents,
-                                    MpidName(Identity(sender.group_id.data.string())));
+                                    MpidName(Identity(sender.group_id.data.string())),
+                                    message.id);
 }
 
 template <>
@@ -572,7 +574,8 @@ void DoOperation(
     const GetResponseFromMpidManagerToMpidManager& message,
     const typename GetResponseFromMpidManagerToMpidManager::Sender& /*sender*/,
     const typename GetResponseFromMpidManagerToMpidManager::Receiver& receiver) {
-  service->HandleGetMessageResponse(*message.contents, MpidName(Identity(receiver.data.string())));
+  service->HandleGetMessageResponse(*message.contents, MpidName(Identity(receiver.data.string())),
+                                    message.id);
 }
 
 template <>
@@ -600,7 +603,8 @@ void DoOperation(
     const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
-  service->HandleSendMessage(*message.contents, MpidName(Identity(sender.data.string())));
+  service->HandleSendMessage(*message.contents, MpidName(Identity(sender.data.string())),
+                             message.id);
 }
 
 }  // namespace detail

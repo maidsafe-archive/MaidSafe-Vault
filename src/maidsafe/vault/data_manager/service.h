@@ -147,9 +147,7 @@ class DataManagerService {
                          const GetResponseContents& contents);
 
   // Removes a pmid_name from the set and returns it.
-  template <typename DataName>
-  PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
-                                   const DataName& data_name) const;
+  PmidName ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids) const;
   template <typename Data>
   std::set<PmidName> GetOnlinePmids(const typename Data::Name& data_name);
 
@@ -544,7 +542,7 @@ void DataManagerService::HandleGet(const typename Data::Name& data_name,
   }
 
   // Choose the one we're going to ask for actual data, and set up the others for integrity checks.
-  auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids, data_name));
+  auto pmid_node_to_get_from(ChoosePmidNodeToGetFrom(online_pmids));
   std::map<PmidName, IntegrityCheckData> integrity_checks;
   // TODO(Team): IntegrityCheck is temporarily disabled because of the performance concern
   //             1, May only undertake IntegrityCheck for mutable data
@@ -609,34 +607,6 @@ void DataManagerService::DoGetForReplication(const typename Data::Name& data_nam
   for (auto& pmid_node : online_pmids) {
     dispatcher_.SendGetRequest<Data>(pmid_node, data_name, message_id);
   }
-}
-
-template <typename DataName>
-PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids,
-                                                     const DataName& data_name) const {
-  LOG(kVerbose) << "ChoosePmidNodeToGetFrom having following online_pmids : ";
-  for (auto pmid : online_pmids)
-    LOG(kVerbose) << "       online_pmids       ---     " << HexSubstr(pmid->string());
-  // Convert the set of PmidNames to a set of NodeIds
-  std::set<NodeId> online_node_ids;
-  auto hint_itr(std::end(online_node_ids));
-  std::for_each(std::begin(online_pmids), std::end(online_pmids),
-                [&](const PmidName& name) {
-                  hint_itr = online_node_ids.insert(hint_itr, NodeId(name->string()));
-                });
-
-  PmidName chosen;
-  {
-    std::lock_guard<std::mutex> lock(close_nodes_change_mutex_);
-//     LOG(kVerbose) << "ChoosePmidNodeToGetFrom matrix containing following info : ";
-//     close_nodes_change_.Print();
-    chosen = PmidName(Identity(
-        close_nodes_change_.ChoosePmidNode(online_node_ids, NodeId(data_name->string())).string()));
-  }
-
-  online_pmids.erase(chosen);
-  LOG(kVerbose) << "PmidNode : " << HexSubstr(chosen->string()) << " is chosen by this DataManager";
-  return chosen;
 }
 
 template <typename Data>

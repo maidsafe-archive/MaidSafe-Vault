@@ -33,6 +33,7 @@ namespace vault {
 class VersionHandlerValue {
  public:
   explicit VersionHandlerValue(const std::string& serialised_version_handler_value);
+  VersionHandlerValue(const VersionHandlerValue& other);
   VersionHandlerValue(uint32_t max_versions, uint32_t max_branches);  // BEFORE_RELEASE
   VersionHandlerValue(VersionHandlerValue&& other) MAIDSAFE_NOEXCEPT;
   VersionHandlerValue& operator=(VersionHandlerValue other);
@@ -50,14 +51,16 @@ class VersionHandlerValue {
   friend void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
   friend bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
+  static VersionHandlerValue Resolve(const std::vector<VersionHandlerValue>& values);
+
  private:
   typedef std::unique_ptr<StructuredDataVersions> StructuredDataVersionsPtr;
-  VersionHandlerValue(const VersionHandlerValue&) = delete;
 
   StructuredDataVersionsPtr structured_data_versions_;
 };
 
 void swap(VersionHandlerValue& lhs, VersionHandlerValue& rhs);
+bool operator==(const VersionHandlerValue& lhs, const VersionHandlerValue& rhs);
 
 }  // namespace vault
 
