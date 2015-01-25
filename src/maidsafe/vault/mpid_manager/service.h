@@ -52,8 +52,7 @@ class MpidManagerService {
   using HandleMessageReturnType = void;
 
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                     const boost::filesystem::path& vault_root_dir,
-                     DiskUsage max_disk_usage = DiskUsage(1024 * 1024 * 1024));
+                     const boost::filesystem::path& vault_root_dir, DiskUsage max_disk_usage);
   ~MpidManagerService();
 
   template <typename MessageType>
