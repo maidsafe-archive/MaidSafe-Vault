@@ -38,65 +38,6 @@ class CacheHandlerTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToMaidNode) {
-  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  NodeId random_id(RandomString(NodeId::kSize));
-  nfs::MessageId message_id(RandomUint32());
-  typedef nfs::GetResponseFromDataManagerToMaidNode NfsMessage;
-  typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
-      RoutingMessage;
-
-  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
-
-  for (size_t index(0); index < 30; ++index) {
-    RoutingMessage message(
-        nfs_message.Serialise(),
-        routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
-                             routing::SingleId(env_->kNodeId(0))),
-        NfsMessage::Receiver(random_id), routing::Cacheable::kPut);
-    LOG(kVerbose) << "To be cached: " << HexSubstr(data.name().value.string()) << " id"
-                  << message_id;
-    // Caching on all nodes in the network.
-    routing::Parameters::max_route_history = kNetworkSize;
-    env_->Send(0, message);
-    Sleep(std::chrono::milliseconds(300));
-    random_id = NodeId(RandomString(NodeId::kSize));
-  }
-
-  LOG(kVerbose) << "Get attempt";
-
-  EXPECT_NO_THROW(env_->Get<ImmutableData>(data.name()))
-      << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
-}
-
-TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToMaidNode) {
-  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  NodeId random_id(RandomString(NodeId::kSize));
-  nfs::MessageId message_id(RandomUint32());
-  typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode NfsMessage;
-  typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
-      RoutingMessage;
-
-  NfsMessage nfs_message(message_id, NfsMessage::Contents(data));
-
-  for (size_t index(0); index < 30; ++index) {
-    RoutingMessage message(nfs_message.Serialise(),
-                           routing::SingleSource(routing::SingleId(env_->kNodeId(0))),
-                           NfsMessage::Receiver(random_id), routing::Cacheable::kPut);
-    LOG(kVerbose) << "To be cached: " << HexSubstr(data.name().value.string()) << " id"
-                  << message_id;
-    // Caching on all nodes in the network.
-    routing::Parameters::max_route_history = kNetworkSize;
-    env_->Send(0, message);
-    Sleep(std::chrono::milliseconds(300));
-    random_id = NodeId(RandomString(NodeId::kSize));
-  }
-
-  LOG(kVerbose) << "Get attempt";
-  EXPECT_NO_THROW(env_->Get<ImmutableData>(data.name()))
-      << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
-}
-
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(RandomString(NodeId::kSize));
