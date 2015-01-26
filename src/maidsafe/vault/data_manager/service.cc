@@ -519,6 +519,15 @@ void DataManagerService::DerankPmidNode(const PmidName& /*pmid_node*/) {
   // BEFORE_RELEASE: to be implemented
 }
 
+PmidName DataManagerService::ChoosePmidNodeToGetFrom(std::set<PmidName>& online_pmids) const {
+  auto chosen_iter(online_pmids.begin());
+  std::advance(chosen_iter, RandomUint32() % online_pmids.size());
+  auto chosen(*chosen_iter);
+  online_pmids.erase(chosen_iter);
+  LOG(kVerbose) << "PmidNode : " << HexSubstr(chosen->string()) << " is chosen by this DataManager";
+  return chosen;
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

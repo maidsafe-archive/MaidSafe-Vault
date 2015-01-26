@@ -26,15 +26,16 @@ namespace maidsafe {
 namespace vault {
 
 MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
-                                       nfs_client::DataGetter& data_getter,
                                        const boost::filesystem::path& vault_root_dir,
                                        DiskUsage max_disk_usage)
     : routing_(routing),
-      asio_service_(2),
-      data_getter_(data_getter),
       accumulator_mutex_(),
+      nodes_change_mutex_(),
       mutex_(),
       stopped_(false),
+      accumulator_(),
+      close_nodes_change_(),
+      client_nodes_change_(),
       dispatcher_(routing),
       handler_(vault_root_dir, max_disk_usage),
       account_transfer_(),
@@ -42,6 +43,8 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_delete_alerts_(NodeId(pmid.name()->string())),
       sync_put_messages_(NodeId(pmid.name()->string())),
       sync_delete_messages_(NodeId(pmid.name()->string())) {}
+
+MpidManagerService::~MpidManagerService() {}
 
 template <>
 void MpidManagerService::HandleMessage(const SendAlertFromMpidManagerToMpidManager &message,
@@ -154,7 +157,8 @@ void MpidManagerService::HandleMessage(
         dispatcher_.SendMessageAlert(
             nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.base,
                                         nfs_vault::MessageIdType(data.name().value.string())),
-            resolved_action->action.kMessage.base.receiver);
+            resolved_action->action.kMessage.base.receiver,
+            message.id);
       }
       break;
     }
@@ -190,7 +194,7 @@ void MpidManagerService::HandleMessage(
 
         if (IsOnline(resolved_action->key.group_name()))
           dispatcher_.SendMessageAlert(resolved_action->action.kAlert,
-                                       resolved_action->key.group_name());
+                                       resolved_action->key.group_name(), message.id);
       }
       break;
     }
@@ -220,7 +224,7 @@ void MpidManagerService::HandleMessage(
 void MpidManagerService::HandleChurnEvent(
   std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   try {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<decltype(nodes_change_mutex_)> lock(nodes_change_mutex_);
     if (stopped_)
       return;
     close_nodes_change_ = *close_nodes_change;
@@ -345,14 +349,14 @@ void MpidManagerService::HandleMessage(
 
 // ================================================================================================
 
-
 void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,
-                                           const MpidName& sender) {
+                                           const MpidName& sender,
+                                           nfs::MessageId message_id) {
   if (!handler_.HasAccount(sender)) {
-    dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account));
+    dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account), message_id);
     return;
   }
-  dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success));
+  dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success), message_id);
   // After sync alert must be sent out -- TO BE IMPLEMENTED
   DoSync(MpidManager::UnresolvedPutMessage(MpidManager::SyncGroupKey(sender),
                                            ActionMpidManagerPutMessage(message),
@@ -369,27 +373,37 @@ void MpidManagerService::HandleMessageAlert(const nfs_vault::MpidMessageAlert& a
 }
 
 void MpidManagerService::HandleGetMessageRequestFromMpidNode(
-    const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver) {
+    const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver, nfs::MessageId message_id) {
   ImmutableData data(NonEmptyString(alert.Serialise()));
   if (!handler_.Has(data.name()))
     return;
 
-  dispatcher_.SendGetMessageRequest(alert, receiver);
+  dispatcher_.SendGetMessageRequest(alert, receiver, message_id);
 }
 
-void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAlert& alert,
-                                                 const MpidName& receiver) {
+void MpidManagerService::HandleGetMessageRequest(
+    const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver, nfs::MessageId message_id) {
   return dispatcher_.SendGetMessageResponse(
-      handler_.GetMessage(ImmutableData::Name(alert.message_id)), alert.base.sender, receiver);
+      handler_.GetMessage(ImmutableData::Name(alert.message_id)),
+      alert.base.sender, receiver, message_id);
 }
 
 void MpidManagerService::HandleGetMessageResponse(
-    const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver) {
-  return dispatcher_.SendGetMessageResponseToMpid(response, receiver);
+    const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver,
+    nfs::MessageId message_id) {
+  return dispatcher_.SendGetMessageResponseToMpid(response, receiver, message_id);
 }
 
-bool MpidManagerService::IsOnline(const MpidName& /*mpid_name*/) {
-  return true;
+bool MpidManagerService::IsOnline(const MpidName& mpid_name) {
+  std::vector<NodeId> new_clients;
+  {
+    std::lock_guard<decltype(nodes_change_mutex_)> lock(nodes_change_mutex_);
+    new_clients = client_nodes_change_.new_close_nodes();
+  }
+  return std::any_of(new_clients.begin(), new_clients.end(),
+                     [&](const NodeId& node_id) {
+                       return NodeId(mpid_name->string()) == node_id;
+                     });
 }
 
 void MpidManagerService::HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert,
