@@ -229,9 +229,30 @@ std::vector<ChunkStore::KeyType> ChunkStore::GetKeys() const {
     for (fs::directory_iterator dir_iter(kDiskPath_); dir_iter != end_iter; ++dir_iter) {
       if (fs::is_regular_file(dir_iter->status()))
         keys.push_back(detail::GetDataNameVariant(*dir_iter));
+      else
+        GetKeys(dir_iter->path(), dir_iter->path().filename().string(), keys);
     }
   }
   return keys;
+}
+
+void ChunkStore::GetKeys(const boost::filesystem::path& path,
+                         std::string prefix,
+                         std::vector<DataNameVariant>& keys) const {
+  fs::directory_iterator end_iter;
+  for (fs::directory_iterator dir_iter(path); dir_iter != end_iter; ++dir_iter) {
+    if (fs::is_regular_file(dir_iter->status()))
+      keys.push_back(ComposeDataNameVariant(prefix + dir_iter->path().filename().string()));
+    else
+      GetKeys(dir_iter->path(), prefix + dir_iter->path().filename().string(), keys);
+  }
+}
+
+DataNameVariant ChunkStore::ComposeDataNameVariant(std::string file_name_str) const {
+  size_t index(file_name_str.rfind('_'));
+  auto id(static_cast<DataTagValue>(std::stoul(file_name_str.substr(index + 1))));
+  Identity key_id(HexDecode(file_name_str.substr(0, index)));
+  return GetDataNameVariant(id, key_id);
 }
 
 fs::path ChunkStore::GetFilePath(const KeyType& key) const {

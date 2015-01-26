@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -26,39 +26,55 @@
 
 #include "maidsafe/common/sqlite3_wrapper.h"
 
+#include "maidsafe/routing/routing_api.h"
+
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-class MpidManagerDataBase {
+class MpidManagerDatabase {
  public:
-  explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
-  ~MpidManagerDataBase();
+  explicit MpidManagerDatabase(const boost::filesystem::path& db_path);
+  ~MpidManagerDatabase();
 
-  std::unique_ptr<MpidManager::Value> Commit(const MpidManager::SyncGroupKey& /*key*/,
-      std::function<detail::DbAction(std::unique_ptr<MpidManager::Value>& value)> /*functor*/) {
-    return std::unique_ptr<MpidManager::Value>();
+  void Put(const MpidManager::MessageKey& key,
+           const uint32_t size,
+           const MpidManager::GroupName& mpid);
+  void Delete(const MpidManager::MessageKey& key);
+  bool Has(const MpidManager::MessageKey& key) const;
+
+  MpidManager::TransferInfo GetTransferInfo(
+      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+
+  bool HasGroup(const MpidManager::GroupName& mpid) const;
+  std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid) const;
+  std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid) const;
+
+ private:
+  void DeleteGroup(const std::string& mpid);
+  void PutIntoTransferInfo(const NodeId& new_holder,
+                           const std::string& group_name_string,
+                           const std::string& key_string,
+                           MpidManager::TransferInfo& transfer_info);
+
+  MpidManager::MessageKey ComposeKey(const std::string& chunk_name) const {
+    return MpidManager::MessageKey(Identity(HexDecode(chunk_name)));
   }
-
-  bool Exists(const nfs_vault::MpidMessageAlert&  /*alert*/, const MpidName& /*receiver*/) {
-    return false;  // To be fixed
+  std::string EncodeKey(const MpidManager::MessageKey& key) const {
+    return HexEncode(key->string());
   }
-
-  // checks account exists
-  bool Exists(const MpidName& /*mpid_name*/) {
-    return false;  // To be fixed
+  MpidManager::GroupName ComposeGroupName(const std::string& mpid) const {
+    return MpidManager::GroupName(Identity(HexDecode(mpid)));
   }
-
-  DbMessageQueryResult GetMessage(const nfs_vault::MpidMessageAlert& /*alert*/,
-                                  const MpidName& /*receiver*/) {
-    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));  // To be fixed
+  std::string EncodeGroupName(const MpidManager::GroupName& group_name) const {
+    return HexEncode(group_name->string());
   }
 
   void CheckPoint();
 
-  std::unique_ptr<sqlite::Database> data_base_;
+  std::unique_ptr<sqlite::Database> db_;
   const boost::filesystem::path kDbPath_;
   int write_operations_;
 };

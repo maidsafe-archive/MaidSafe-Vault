@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -21,6 +21,7 @@
 
 #include <map>
 #include <utility>
+#include <vector>
 
 #include "boost/expected/expected.hpp"
 
@@ -31,7 +32,6 @@
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/key.h"
 #include "maidsafe/vault/types.h"
-#include "maidsafe/vault/mpid_manager/value.h"
 #include "maidsafe/vault/mpid_manager/action_put_alert.h"
 #include "maidsafe/vault/mpid_manager/action_delete_alert.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
@@ -52,8 +52,13 @@ namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
+  using GroupName = passport::PublicMpid::Name;
+  using MessageKey = ImmutableData::Name;
+  using GKPair = std::pair<GroupName, MessageKey>;
+  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
+
   using Key = passport::PublicMpid::Name;
-  using Value = vault::MpidManagerValue;
+  using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
   using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionCreateAccount>;
   using UnresolvedRemoveAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionRemoveAccount>;
@@ -81,3 +86,4 @@ typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+

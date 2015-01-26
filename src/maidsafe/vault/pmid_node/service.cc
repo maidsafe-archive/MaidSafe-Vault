@@ -134,39 +134,39 @@ void PmidNodeService::StartUp() {
 //  dispatcher_.SendPmidAccountRequest(handler_.AvailableSpace());
 }
 
-void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-                                         const std::vector<DataNameVariant>& /*to_be_retrieved*/) {
-  for (auto file_name : to_be_deleted) {
-    try {
-      handler_.Delete(file_name);
-    }
-    catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in deletion: " << error.code() << " - "
-                    << boost::diagnostic_information(error);
-    }
-  }
-
-  std::vector<std::future<void>> futures;
-//  for (auto file_name : to_be_retrieved) {
-//    GetCallerVisitor get_caller_visitor(data_getter_,
-//                                        futures,
-//                                        [this](const DataNameVariant& key,
-//                                               const NonEmptyString& value) {
-//                                          this->handler_.Put(key, value);
-//                                        });
-//    boost::apply_visitor(get_caller_visitor, file_name);
+// void PmidNodeService::UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+//                                       const std::vector<DataNameVariant>& /*to_be_retrieved*/) {
+//  for (auto file_name : to_be_deleted) {
+//    try {
+//      handler_.Delete(file_name);
+//    }
+//    catch(const maidsafe_error& error) {
+//      LOG(kWarning) << "Error in deletion: " << error.code() << " - "
+//                    << boost::diagnostic_information(error);
+//    }
 //  }
 
-  for (auto iter(futures.begin()); iter != futures.end(); ++iter) {
-    try {
-      iter->wait();
-    }
-    catch(const maidsafe_error& error) {
-      LOG(kWarning) << "Error in retreivel: " << error.code() << " - "
-                    << boost::diagnostic_information(error);
-    }
-  }
-}
+//  std::vector<std::future<void>> futures;
+////  for (auto file_name : to_be_retrieved) {
+////    GetCallerVisitor get_caller_visitor(data_getter_,
+////                                        futures,
+////                                        [this](const DataNameVariant& key,
+////                                               const NonEmptyString& value) {
+////                                          this->handler_.Put(key, value);
+////                                        });
+////    boost::apply_visitor(get_caller_visitor, file_name);
+////  }
+
+//  for (auto iter(futures.begin()); iter != futures.end(); ++iter) {
+//    try {
+//      iter->wait();
+//    }
+//    catch(const maidsafe_error& error) {
+//      LOG(kWarning) << "Error in retreivel: " << error.code() << " - "
+//                    << boost::diagnostic_information(error);
+//    }
+//  }
+// }
 
 }  // namespace vault
 
