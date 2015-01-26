@@ -19,8 +19,6 @@
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.pb.h"
 
-#include "maidsafe/vault/mpid_manager/value.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -46,15 +44,6 @@ std::string ActionMpidManagerPutMessage::Serialise() const {
   protobuf::ActionMpidManagerPutMessage proto;
   proto.set_serialised_message(kMessage.Serialise());
   return proto.SerializeAsString();
-}
-
-detail::DbAction ActionMpidManagerPutMessage::operator()(
-    std::unique_ptr<MpidManagerValue>& value) {
-  if (!value)
-    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
-
-  value->AddMessage(kMessage);
-  return detail::DbAction::kPut;
 }
 
 bool operator==(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs) {

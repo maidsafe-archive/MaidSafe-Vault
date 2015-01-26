@@ -28,6 +28,7 @@
 #include <utility>
 #include <deque>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
@@ -74,6 +75,10 @@ class ChunkStore {
   boost::filesystem::path GetFilePath(const KeyType& key) const;
   bool HasDiskSpace(uint64_t required_space) const;
   boost::filesystem::path KeyToFilePath(const KeyType& key) const;
+  void GetKeys(const boost::filesystem::path& path,
+               std::string prefix,
+               std::vector<DataNameVariant>& keys) const;
+  DataNameVariant ComposeDataNameVariant(std::string file_name_str) const;
 
   const boost::filesystem::path kDiskPath_;
   DiskUsage max_disk_usage_, current_disk_usage_;

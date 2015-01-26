@@ -21,12 +21,14 @@
 #include <functional>
 #include <memory>
 
-#include "boost/filesystem/operations.hpp"
-#include "boost/filesystem/path.hpp"
-
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/passport/passport.h"
+
+#include "maidsafe/vault/tests/hybrid_network.h"
+#include "maidsafe/vault/tests/tests_utils.h"
+
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
@@ -36,29 +38,45 @@ namespace test {
 
 class VaultTest : public testing::Test {
  public:
-  VaultTest()
-      : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")),
-        vault_root_directory_(*kTestRoot_ / RandomAlphaNumericString(8)),
-        pmid_(passport::CreatePmidAndSigner().first),
-        vault_() {
-    boost::filesystem::create_directory(vault_root_directory_);
-  }
+  VaultTest() : env_(HybridEnvironment::g_environment()) {}
 
  protected:
-  const maidsafe::test::TestPath kTestRoot_;
-  boost::filesystem::path vault_root_directory_;
-  passport::Pmid pmid_;
-  std::unique_ptr<Vault> vault_;
+  std::shared_ptr<HybridNetwork> env_;
 };
 
-TEST_F(VaultTest, DISABLED_FUNC_Constructor) {
-  std::vector<passport::PublicPmid> public_pmids_from_file;
-  public_pmids_from_file.push_back(passport::PublicPmid(passport::CreatePmidAndSigner().first));
-  vault_manager::VaultConfig vault_config(pmid_, vault_root_directory_, DiskUsage(100000));
-  vault_config.test_config.public_pmid_list = public_pmids_from_file;
-  EXPECT_THROW(vault_.reset(new Vault(vault_config)),
-               vault_error);  // throws VaultErrors::failed_to_join_network
+
+TEST_F(VaultTest, FUNC_Constructor) {
+  EXPECT_TRUE(env_->AddVault());
 }
+
+TEST_F(VaultTest, BEH_HandleDataManagerMessage) {
+  using VaultMessage = vault::PutRequestFromMaidManagerToDataManager;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto manager_index(env_->ManagerIndex(maid_node_id));
+  auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
+  RoutingMessage routing_message(
+                     CreateMessage<VaultMessage>(VaultMessage::Contents(data)).Serialise(),
+                     routing::GroupSource(routing::GroupId(maid_node_id),
+                                          routing::SingleId(
+                                              env_->nodes_.at(manager_index)->node_id())),
+                     routing::GroupId(NodeId(data.name()->string())));
+}
+
+TEST_F(VaultTest, BEH_HandleInvalidMessage) {
+  using VaultMessage = vault::PutRequestFromMaidManagerToDataManager;
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto manager_index(env_->ManagerIndex(maid_node_id));
+  auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
+  RoutingMessage routing_message(
+                     RandomString(128),
+                     routing::GroupSource(routing::GroupId(maid_node_id),
+                                          routing::SingleId(
+                                              env_->nodes_.at(manager_index)->node_id())),
+                     routing::GroupId(NodeId(data.name()->string())));
+}
+
 
 }  // namespace test
 

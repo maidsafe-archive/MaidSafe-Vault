@@ -16,39 +16,13 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
-#define MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+#include "maidsafe/common/test.h"
 
-#include <string>
-#include <utility>
+#include "maidsafe/vault/parameters.h"
+#include "maidsafe/vault/tests/hybrid_network.h"
 
-#include "maidsafe/common/sqlite3_wrapper.h"
-
-namespace maidsafe {
-
-namespace vault {
-
-class VaultDatabase {
-  typedef std::string VALUE;
- public:
-  typedef std::string KEY;
-  explicit VaultDatabase(const boost::filesystem::path& db_path);
-
-  void Put(const KEY& key, const VALUE& value);
-  void Get(const KEY& key, VALUE& value);
-  void Delete(const KEY& key);
-  bool SeekNext(std::pair<KEY, VALUE>& result);
-
- private:
-  void CheckPoint();
-
-  std::unique_ptr<sqlite::Database> database_;
-  std::unique_ptr<sqlite::Statement> seeking_statement_;
-  int write_operations_;
-};
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif  // MAIDSAFE_VAULT_DATABASE_OPERATIONS_H_
+int main(int argc, char** argv) {
+  //  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
+  testing::AddGlobalTestEnvironment(new maidsafe::vault::test::HybridEnvironment());
+  return maidsafe::test::ExecuteMain(argc, argv);
+}

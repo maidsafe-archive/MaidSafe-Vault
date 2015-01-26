@@ -21,7 +21,9 @@
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/routing_api.h"
 
+#include "maidsafe/vault/account_transfer.pb.h"
 #include "maidsafe/vault/version_handler/service.h"
+#include "maidsafe/vault/version_handler/version_handler.pb.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
 
@@ -65,7 +67,7 @@ class VersionHandlerServiceTest : public testing::Test {
   boost::filesystem::path vault_root_dir_;
   routing::Routing routing_;
   VersionHandlerService version_handler_service_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
 };
 
 template <typename UnresolvedActionType>
@@ -188,7 +190,7 @@ TEST_F(VersionHandlerServiceTest, BEH_CreateVersionTree) {
   Identity originator(NodeId(RandomString(NodeId::kSize)).string());
   auto content(CreateContent<nfs_vault::VersionTreeCreation>());
   nfs::MessageId message_id(RandomInt32());
-  VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
+  VersionHandler::Key key(content.data_name.raw_name, MutableData::Tag::kValue);
   ActionVersionHandlerCreateVersionTree action_create_version(
       content.version_name, originator, content.max_versions, content.max_branches, message_id);
   auto group_source(CreateGroupSource(NodeId(content.data_name.raw_name.string())));
@@ -204,7 +206,7 @@ TEST_F(VersionHandlerServiceTest, BEH_PutVersion) {
   Identity originator(NodeId(RandomString(NodeId::kSize)).string());
   auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
   nfs::MessageId message_id(RandomInt32());
-  VersionHandler::Key key(content.data_name.raw_name, ImmutableData::Tag::kValue);
+  VersionHandler::Key key(content.data_name.raw_name, MutableData::Tag::kValue);
   Store(key, ActionVersionHandlerCreateVersionTree(content.old_version_name, originator, 10, 20,
                                                    message_id));
   EXPECT_NO_THROW(Get(key));
@@ -220,7 +222,7 @@ TEST_F(VersionHandlerServiceTest, BEH_PutVersion) {
 TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilFork) {
   NodeId sender_id(RandomString(NodeId::kSize));
   Identity originator(NodeId(RandomString(NodeId::kSize)).string());
-  VersionHandler::Key key(Identity(RandomString(64)), ImmutableData::Tag::kValue);
+  VersionHandler::Key key(Identity(RandomString(64)), MutableData::Tag::kValue);
   nfs::MessageId message_id(RandomUint32());
   VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
@@ -254,6 +256,92 @@ TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilFork) {
   SendSync<VersionHandler::UnresolvedDeleteBranchUntilFork>(group_unresolved_action, group_source);
   EXPECT_NO_THROW(Get(key).GetBranch(v2_ddd));
   EXPECT_ANY_THROW(Get(key).GetBranch(v4_iii));
+}
+
+TEST_F(VersionHandlerServiceTest, BEH_AccountTransferFromVersionHandlerToVersionHandler) {
+  VersionHandler::Key key(Identity(RandomString(64)), MutableData::Tag::kValue);
+  VersionHandlerValue value(10, 1);
+  protobuf::AccountTransfer account_transfer_proto;
+  protobuf::VersionHandlerKeyValuePair kv_msg;
+  kv_msg.set_key(key.Serialise());
+  kv_msg.set_value(value.Serialise());
+  account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+  auto content(AccountTransferFromVersionHandlerToVersionHandler::Contents(
+                    account_transfer_proto.SerializeAsString()));
+  auto account_transfer(CreateMessage<AccountTransferFromVersionHandlerToVersionHandler>(content));
+  for (unsigned int index(0); index < routing::Parameters::group_size - 1; ++index) {
+    EXPECT_NO_THROW(SingleSendsToSingle(&version_handler_service_, account_transfer,
+                                        routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                        routing::SingleId(routing_.kNodeId())));
+  }
+  EXPECT_NO_THROW(Get(key));
+}
+
+TEST_F(VersionHandlerServiceTest, BEH_AccountQueryFromVersionHandlerToVersionHandler) {
+  auto ori_content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+  auto sdv_name(ori_content.data_name.raw_name);
+  VersionHandler::Key key(sdv_name, MutableData::Tag::kValue);
+  auto content(CreateContent<AccountQueryFromVersionHandlerToVersionHandler::Contents>());
+  auto account_query(CreateMessage<AccountQueryFromVersionHandlerToVersionHandler>(content));
+  // query a non-existed account
+  EXPECT_NO_THROW(SingleSendsToGroup(&version_handler_service_, account_query,
+                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::GroupId(NodeId(sdv_name))));
+  // query an existing account
+  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  nfs::MessageId message_id(RandomInt32());
+  Store(key, ActionVersionHandlerCreateVersionTree(ori_content.old_version_name, originator,
+                                                   10, 20, message_id));
+  EXPECT_NO_THROW(SingleSendsToGroup(&version_handler_service_, account_query,
+                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::GroupId(NodeId(sdv_name))));
+}
+
+TEST_F(VersionHandlerServiceTest, BEH_AccountQueryResponseFromVersionHandlerToVersionHandler) {
+  auto sdv_name(RandomString(64));
+  VersionHandler::Key key(Identity(sdv_name), MutableData::Tag::kValue);
+  VersionHandlerValue value(10, 1);
+  protobuf::AccountTransfer account_transfer_proto;
+  protobuf::VersionHandlerKeyValuePair kv_msg;
+  kv_msg.set_key(key.Serialise());
+  kv_msg.set_value(value.Serialise());
+  account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+  auto content(AccountQueryResponseFromVersionHandlerToVersionHandler::Contents(
+                  account_transfer_proto.SerializeAsString()));
+  auto account_transfer(CreateMessage<AccountQueryResponseFromVersionHandlerToVersionHandler>(
+                            content));
+  auto group_source(CreateGroupSource(NodeId(sdv_name)));
+  EXPECT_NO_THROW(GroupSendToSingle(&version_handler_service_, account_transfer, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+  auto result(Get(key));
+  EXPECT_EQ(value, result);
+}
+
+TEST_F(VersionHandlerServiceTest, BEH_HandleChurn) {
+  auto ori_content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+  auto sdv_name(ori_content.data_name.raw_name);
+  std::vector<NodeId> old_close_nodes, new_close_nodes;
+  NodeId new_node(sdv_name);
+  new_close_nodes.push_back(new_node);
+  NodeId vault_id(pmid_.name()->string());
+  std::shared_ptr<routing::CloseNodesChange> close_node_change_ptr(new
+      routing::CloseNodesChange(vault_id, old_close_nodes, new_close_nodes));
+  EXPECT_NO_THROW(version_handler_service_.HandleChurnEvent(close_node_change_ptr));
+
+  VersionHandler::Key key(sdv_name, MutableData::Tag::kValue);
+  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  nfs::MessageId message_id(RandomInt32());
+  Store(key, ActionVersionHandlerCreateVersionTree(ori_content.old_version_name, originator,
+                                                   10, 20, message_id));
+  EXPECT_NO_THROW(version_handler_service_.HandleChurnEvent(close_node_change_ptr));
+
+  auto new_content(CreateContent<nfs_vault::DataNameOldNewVersion>());
+  VersionHandler::Key new_key(new_content.data_name.raw_name, MutableData::Tag::kValue);
+  Identity new_originator(NodeId(RandomString(NodeId::kSize)).string());
+  nfs::MessageId new_message_id(RandomInt32());
+  Store(new_key, ActionVersionHandlerCreateVersionTree(new_content.old_version_name, new_originator,
+                                                       10, 20, new_message_id));
+  EXPECT_NO_THROW(version_handler_service_.HandleChurnEvent(close_node_change_ptr));
 }
 
 }  //  namespace test

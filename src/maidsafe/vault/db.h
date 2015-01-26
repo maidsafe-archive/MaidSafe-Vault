@@ -67,13 +67,13 @@ class Db {
 
   const boost::filesystem::path kDbPath_;
   mutable std::mutex mutex_;
-  std::unique_ptr<VaultDataBase> sqlitedb_;
+  std::unique_ptr<VaultDatabase> sqlitedb_;
 };
 
 template <typename Key, typename Value>
 Db<Key, Value>::Db(const boost::filesystem::path& db_path)
     : kDbPath_(db_path), mutex_(), sqlitedb_() {
-  sqlitedb_.reset(new VaultDataBase(kDbPath_));
+  sqlitedb_.reset(new VaultDatabase(kDbPath_));
 #if defined(__GNUC__) && (!defined(MAIDSAFE_APPLE) && !(defined(_MSC_VER) && _MSC_VER == 1700))
   // Remove this assert if value needs to be copy constructible.
   // this is just a check to avoid copy constructor unless we require it

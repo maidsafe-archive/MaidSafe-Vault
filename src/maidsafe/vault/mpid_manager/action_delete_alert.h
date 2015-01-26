@@ -29,8 +29,6 @@
 #include "maidsafe/vault/config.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 
-#include "maidsafe/vault/mpid_manager/value.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -43,11 +41,9 @@ struct ActionMpidManagerDeleteAlert {
   ActionMpidManagerDeleteAlert() = delete;
   ActionMpidManagerDeleteAlert& operator=(ActionMpidManagerDeleteAlert other) = delete;
 
-  detail::DbAction operator()(std::unique_ptr<MpidManagerValue>& value);
-
   std::string Serialise() const;
 
-  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteRequest;
+  static const nfs::MessageAction kActionId = nfs::MessageAction::kDeleteAlert;
   const nfs_vault::MpidMessageAlert kAlert;
 };
 

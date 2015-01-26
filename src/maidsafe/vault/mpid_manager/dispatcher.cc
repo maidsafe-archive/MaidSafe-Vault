@@ -27,11 +27,12 @@ namespace vault {
 MpidManagerDispatcher::MpidManagerDispatcher(routing::Routing& routing) : routing_(routing) {}
 
 void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
-                                             const MpidName& sender, const MpidName& receiver) {
-  using  VaultMessage = MessageAlertFromMpidManagerToMpidManager;
+                                             const MpidName& sender, const MpidName& receiver,
+                                             nfs::MessageId message_id) {
+  using  VaultMessage = SendAlertFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  VaultMessage::Contents vault_message(alert);
+  VaultMessage vault_message(message_id, VaultMessage::Contents(alert));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(sender->string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -40,11 +41,11 @@ void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& 
 }
 
 void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
-                                             const MpidName& receiver) {
-  using  NfstMessage = nfs::MessageAlertFromMpidManagerToMpidNode;
+                                             const MpidName& receiver, nfs::MessageId message_id) {
+  using  NfstMessage = nfs::SendAlertFromMpidManagerToMpidNode;
   CheckSourcePersonaType<NfstMessage>();
   using RoutingMessage = routing::Message<NfstMessage::Sender, NfstMessage::Receiver>;
-  NfstMessage::Contents nfs_message(alert);
+  NfstMessage nfs_message(message_id, NfstMessage::Contents(alert));
   RoutingMessage message(nfs_message.Serialise(),
                          NfstMessage::Sender(routing::GroupId(NodeId(receiver->string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -53,25 +54,27 @@ void MpidManagerDispatcher::SendMessageAlert(const nfs_vault::MpidMessageAlert& 
 }
 
 void MpidManagerDispatcher::SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert,
-                                                  const MpidName& receiver) {
+                                                  const MpidName& receiver,
+                                                  nfs::MessageId message_id) {
   using  VaultMessage = GetRequestFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  VaultMessage::Contents vault_message(alert);
+  VaultMessage vault_message(message_id, VaultMessage::Contents(alert));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(receiver->string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(alert.sender->string())));
+                         VaultMessage::Receiver(NodeId(alert.base.sender->string())));
   routing_.Send(message);
 }
 
 void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& query_result,
                                                    const MpidName& sender,
-                                                   const MpidName& receiver) {
+                                                   const MpidName& receiver,
+                                                   nfs::MessageId message_id) {
   using  VaultMessage = GetResponseFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  VaultMessage::Contents vault_message(query_result);
+  VaultMessage vault_message(message_id, VaultMessage::Contents(query_result));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(sender->string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -80,11 +83,12 @@ void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& q
 }
 
 void MpidManagerDispatcher::SendGetMessageResponseToMpid(
-    const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver) {
+    const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver,
+    nfs::MessageId message_id) {
   using NfsMessage = nfs::GetResponseFromMpidManagerToMpidNode;
   CheckSourcePersonaType<NfsMessage>();
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
-  NfsMessage::Contents nfs_message(response);
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(response));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(receiver->string())),
                                             routing::SingleId(routing_.kNodeId())),
@@ -99,22 +103,36 @@ void MpidManagerDispatcher::SendDeleteRequest(const nfs_vault::MpidMessageAlert&
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
   VaultMessage::Contents vault_message(alert);
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(alert.sender->string())),
+                         VaultMessage::Sender(routing::GroupId(NodeId(alert.base.sender->string())),
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(NodeId(receiver->string())));
   routing_.Send(message);
 }
 
 void MpidManagerDispatcher::SendMessageResponse(const MpidName& receiver,
-                                                const maidsafe_error& error) {
+                                                const maidsafe_error& error,
+                                                nfs::MessageId message_id) {
   using NfsMessage = nfs::SendMessageResponseFromMpidManagerToMpidNode;
   CheckSourcePersonaType<NfsMessage>();
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
-  NfsMessage::Contents nfs_message(error);
+  NfsMessage nfs_message(message_id, NfsMessage::Contents(error));
   RoutingMessage message(nfs_message.Serialise(),
                          NfsMessage::Sender(routing::GroupId(NodeId(receiver->string())),
                                             routing::SingleId(routing_.kNodeId())),
                          NfsMessage::Receiver(NodeId(receiver->string())));
+  routing_.Send(message);
+}
+
+void MpidManagerDispatcher::SendSync(const MpidManager::SyncGroupKey& key,
+                                     const std::string& serialised_sync) {
+  using  VaultMessage = DeleteRequestFromMpidManagerToMpidManager;
+  CheckSourcePersonaType<VaultMessage>();
+  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+  VaultMessage::Contents vault_message(serialised_sync);
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(NodeId(key.group_name()->string())),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(NodeId(key.group_name()->string())));
   routing_.Send(message);
 }
 

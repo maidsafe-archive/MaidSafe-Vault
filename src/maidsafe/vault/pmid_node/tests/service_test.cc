@@ -61,7 +61,7 @@ class PmidNodeServiceTest : public testing::Test {
   routing::Routing routing_;
   nfs_client::DataGetter data_getter_;
   PmidNodeService pmid_node_service_;
-  AsioService asio_service_;
+  BoostAsioService asio_service_;
 };
 
 TEST_F(PmidNodeServiceTest, BEH_PutRequestFromPmidManagerToPmidNode) {
@@ -102,6 +102,16 @@ TEST_F(PmidNodeServiceTest, BEH_DeleteRequestFromPmidManagerToPmidNode) {
   EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service_, delete_request, group_source,
                                     routing::SingleId(routing_.kNodeId())));
   EXPECT_NO_THROW(Get<ImmutableData>(data.name()));
+}
+
+TEST_F(PmidNodeServiceTest, BEH_PutRequestExceedingLimit) {
+  auto content(CreateContent<PutRequestFromPmidManagerToPmidNode::Contents>());
+  auto put_request(CreateMessage<PutRequestFromPmidManagerToPmidNode>(content));
+  auto group_source(CreateGroupSource(routing_.kNodeId()));
+  PmidNodeService pmid_node_service(pmid_, routing_, data_getter_, vault_root_dir_, DiskUsage(10));
+  EXPECT_NO_THROW(GroupSendToSingle(&pmid_node_service, put_request, group_source,
+                                    routing::SingleId(routing_.kNodeId())));
+  EXPECT_ANY_THROW(Get<ImmutableData>(ImmutableData::Name(content.name.raw_name)));
 }
 
 }  //  namespace test
