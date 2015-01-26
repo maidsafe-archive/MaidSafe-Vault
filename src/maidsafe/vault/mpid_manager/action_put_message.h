@@ -33,8 +33,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class MpidManagerValue;
-
 struct ActionMpidManagerPutMessage {
   explicit ActionMpidManagerPutMessage(const nfs_vault::MpidMessage& alert);
   explicit ActionMpidManagerPutMessage(const std::string& serialised_action);
@@ -42,8 +40,6 @@ struct ActionMpidManagerPutMessage {
   ActionMpidManagerPutMessage(ActionMpidManagerPutMessage&& other);
   ActionMpidManagerPutMessage() = delete;
   ActionMpidManagerPutMessage& operator=(ActionMpidManagerPutMessage other) = delete;
-
-  detail::DbAction operator()(std::unique_ptr<MpidManagerValue>& value);
 
   std::string Serialise() const;
 

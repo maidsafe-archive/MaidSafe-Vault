@@ -63,7 +63,7 @@ void MpidManagerDispatcher::SendGetMessageRequest(const nfs_vault::MpidMessageAl
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(receiver->string())),
                                               routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(alert.sender->string())));
+                         VaultMessage::Receiver(NodeId(alert.base.sender->string())));
   routing_.Send(message);
 }
 
@@ -103,7 +103,7 @@ void MpidManagerDispatcher::SendDeleteRequest(const nfs_vault::MpidMessageAlert&
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
   VaultMessage::Contents vault_message(alert);
   RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(alert.sender->string())),
+                         VaultMessage::Sender(routing::GroupId(NodeId(alert.base.sender->string())),
                                               routing::SingleId(routing_.kNodeId())),
                          VaultMessage::Receiver(NodeId(receiver->string())));
   routing_.Send(message);
