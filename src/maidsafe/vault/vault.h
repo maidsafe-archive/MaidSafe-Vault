@@ -106,7 +106,6 @@ class Vault {
   nfs::Service<PmidNodeService> pmid_node_service_;
   nfs::Service<MpidManagerService> mpid_manager_service_;
   nfs::Service<CacheHandlerService> cache_service_;
-  nfs::Service<MpidManagerService> mpid_manager_service_;
   Demultiplexer demux_;
   std::vector<std::future<void>> getting_keys_;
 #ifdef TESTING
