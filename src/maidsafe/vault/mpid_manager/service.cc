@@ -323,6 +323,12 @@ void MpidManagerService::HandleMessage(
 
 // ================================================================================================
 
+void MpidManagerService::HandleChurnEvent(
+  std::shared_ptr<routing::ClientNodesChange> client_nodes_change) {
+  std::lock_guard<decltype(nodes_change_mutex_)> lock(nodes_change_mutex_);
+  client_nodes_change_ = *client_nodes_change;
+}
+
 void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,
                                            const MpidName& sender, nfs::MessageId message_id) {
   if (!handler_.HasAccount(sender)) {
