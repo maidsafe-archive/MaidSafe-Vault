@@ -32,34 +32,6 @@ namespace detail {
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->content)
-    return false;
-  auto data_name(detail::GetNameVariant(message.contents->name));
-  detail::PutToCacheVisitor put_to_cache(service, NonEmptyString(message.contents->content->data));
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
-
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
-  if (!message.contents->content)
-    return false;
-  auto data_name(detail::GetNameVariant(message.contents->name));
-  PutToCacheVisitor put_to_cache(service, NonEmptyString(message.contents->content->data));
-  boost::apply_visitor(put_to_cache, data_name);
-  return true;
-}
-
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
     const nfs::GetResponseFromDataManagerToDataGetter& message,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& /*sender*/,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& /*receiver*/) {
@@ -96,21 +68,6 @@ bool DoCacheOperation(
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>
       get_from_cache(service, requestor, message.id);
-  return boost::apply_visitor(get_from_cache, data_name);
-}
-
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
-  auto data_name(detail::GetNameVariant(*message.contents));
-  detail::Requestor<SourcePersonaType> requestor(sender.data);
-  detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>
-      get_from_cache(service, requestor, message.id);
-  LOG(kVerbose) << "DoCacheOperation :" << message.id;
   return boost::apply_visitor(get_from_cache, data_name);
 }
 

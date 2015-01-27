@@ -220,20 +220,6 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const nfs::GetRequestFromMaidNodeToDataManager& message,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation GetRequestFromMaidNodeToDataManager";
-  auto data_name(GetNameVariant(*message.contents));
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourceType;
-  Requestor<SourceType> requestor(sender.data);
-  GetRequestVisitor<DataManagerService, Requestor<SourceType>> get_request_visitor(
-      service, requestor, message.id);
-  boost::apply_visitor(get_request_visitor, data_name);
-}
-
-template <>
-void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& /*receiver*/) {
