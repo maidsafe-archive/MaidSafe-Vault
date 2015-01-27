@@ -133,10 +133,10 @@ void DataManagerService::HandleMessage(
 // ==================== Get / IntegrityCheck implementation ========================================
 template<>
 void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver) {
+  typedef nfs::GetRequestFromMpidNodeToDataManager MessageType;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
                       return this->ValidateSender(message, sender);
@@ -161,15 +161,11 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodePartialToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DataManagerService::HandleMessage GetRequestFromMaidNodePartialToDataManager"
-                << " from " << HexSubstr(sender.node_id->string())
-                << " for chunk " << HexSubstr(message.contents->raw_name.string())
-                << " with message id " << message.id;
+    const nfs::GetRequestFromMpidNodePartialToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Receiver& /*receiver*/) {
   auto data_name(detail::GetNameVariant(*message.contents));
-  typedef nfs::GetRequestFromMaidNodePartialToDataManager::SourcePersona SourceType;
+  typedef nfs::GetRequestFromMpidNodePartialToDataManager::SourcePersona SourceType;
   detail::PartialRequestor<SourceType> requestor(sender);
   detail::GetRequestVisitor<DataManagerService, detail::PartialRequestor<SourceType>>
           get_request_visitor(this, requestor, message.id);

@@ -220,12 +220,11 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const nfs::GetRequestFromMaidNodeToDataManager& message,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  LOG(kVerbose) << "DoOperation GetRequestFromMaidNodeToDataManager";
+                 const nfs::GetRequestFromMpidNodeToDataManager& message,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Receiver& /*receiver*/) {
   auto data_name(GetNameVariant(*message.contents));
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourceType;
+  typedef nfs::GetRequestFromMpidNodeToDataManager::SourcePersona SourceType;
   Requestor<SourceType> requestor(sender.data);
   GetRequestVisitor<DataManagerService, Requestor<SourceType>> get_request_visitor(
       service, requestor, message.id);

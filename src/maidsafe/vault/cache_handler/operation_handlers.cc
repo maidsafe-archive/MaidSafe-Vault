@@ -32,9 +32,9 @@ namespace detail {
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& /*receiver*/) {
+    const nfs::GetResponseFromDataManagerToMpidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Sender& /*sender*/,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Receiver& /*receiver*/) {
   if (!message.contents->content)
     return false;
   auto data_name(detail::GetNameVariant(message.contents->name));
@@ -46,9 +46,9 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& /*sender*/,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& /*receiver*/) {
+    const nfs::GetCachedResponseFromCacheHandlerToMpidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Sender& /*sender*/,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Receiver& /*receiver*/) {
   if (!message.contents->content)
     return false;
   auto data_name(detail::GetNameVariant(message.contents->name));
@@ -130,15 +130,14 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& /*receiver*/) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager::SourcePersona SourcePersonaType;
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& /*receiver*/) {
+  typedef nfs::GetRequestFromMpidNodeToDataManager::SourcePersona SourcePersonaType;
   auto data_name(detail::GetNameVariant(*message.contents));
   detail::Requestor<SourcePersonaType> requestor(sender.data);
   detail::GetFromCacheVisitor<detail::Requestor<SourcePersonaType>>
       get_from_cache(service, requestor, message.id);
-  LOG(kVerbose) << "DoCacheOperation :" << message.id;
   return boost::apply_visitor(get_from_cache, data_name);
 }
 

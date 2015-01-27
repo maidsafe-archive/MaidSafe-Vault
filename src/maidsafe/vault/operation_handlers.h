@@ -234,9 +234,9 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const nfs::GetRequestFromMaidNodeToDataManager& message,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+                 const nfs::GetRequestFromMpidNodeToDataManager& message,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
 
 template <>
 void DoOperation(DataManagerService* service,

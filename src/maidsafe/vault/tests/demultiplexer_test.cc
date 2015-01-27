@@ -101,19 +101,6 @@ TEST_F(DemultiplexerTest, BEH_HandleDataGetterMessage) {
   demux_.HandleMessage(routing_message);
 }
 
-TEST_F(DemultiplexerTest, BEH_HandleMaidNodeMessage) {
-  using NfsMessage = nfs::GetResponseFromDataManagerToMaidNode;
-  using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
-  auto data_id(NodeId(RandomString(NodeId::kSize))),
-       data_manager_id(NodeId(RandomString(NodeId::kSize)));
-  RoutingMessage routing_message(
-      CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
-      routing::GroupSource(routing::GroupId(data_id),
-                           routing::SingleId(data_manager_id)),
-      routing::SingleId(routing_->kNodeId()));
-  demux_.HandleMessage(routing_message);
-}
-
 TEST_F(DemultiplexerTest, BEH_HandleDataManagerMessage) {
   using VaultMessage = PutRequestFromMaidManagerToDataManager;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;

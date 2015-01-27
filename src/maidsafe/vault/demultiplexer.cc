@@ -41,10 +41,6 @@ void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& rout
         return data_manager_service_.HandleMessage(
             nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
                 routing_message.sender, routing_message.receiver);
-      } else if (source_persona.data == nfs::Persona::kMaidNode) {
-        return data_manager_service_.HandleMessage(
-            nfs::GetRequestFromMaidNodePartialToDataManager(wrapper_tuple), routing_message.sender,
-                routing_message.receiver);
       } else if (source_persona.data == nfs::Persona::kMpidNode) {
         return data_manager_service_.HandleMessage(
             nfs::GetRequestFromMpidNodePartialToDataManager(wrapper_tuple), routing_message.sender,

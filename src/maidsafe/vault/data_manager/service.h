@@ -326,9 +326,9 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
@@ -339,9 +339,9 @@ void DataManagerService::HandleMessage(
 // Special case for relay messages
 template <>
 void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodePartialToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodePartialToDataManager::Receiver& receiver);
+    const nfs::GetRequestFromMpidNodePartialToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(

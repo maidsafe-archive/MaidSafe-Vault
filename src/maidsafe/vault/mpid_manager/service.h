@@ -128,7 +128,7 @@ class MpidManagerService {
            std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action);
 
   routing::Routing& routing_;
-  mutable std::mutex accumulator_mutex_, nodes_change_mutex_;
+  mutable std::mutex accumulator_mutex_, nodes_change_mutex_, pending_account_mutex_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   routing::ClientNodesChange client_nodes_change_;
@@ -139,7 +139,6 @@ class MpidManagerService {
   Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;
   Sync<MpidManager::UnresolvedPutMessage> sync_put_messages_;
   Sync<MpidManager::UnresolvedDeleteMessage> sync_delete_messages_;
-  std::mutex pending_account_mutex_;
   std::map<nfs::MessageId, MpidAccountCreationStatus> pending_account_map_;
 };
 

@@ -164,13 +164,13 @@ template <typename RequestorIdType>
 struct GetResponseMessage {};
 
 template <>
-struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>> {
-  typedef nfs::GetResponseFromDataManagerToMaidNode Type;
+struct GetResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>> {
+  typedef nfs::GetResponseFromDataManagerToMpidNode Type;
 };
 
 template <>
-struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>> {
-  typedef nfs::GetResponseFromDataManagerToMaidNodePartial Type;
+struct GetResponseMessage<PartialRequestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>> {
+  typedef nfs::GetResponseFromDataManagerToMpidNodePartial Type;
 };
 
 template <>
