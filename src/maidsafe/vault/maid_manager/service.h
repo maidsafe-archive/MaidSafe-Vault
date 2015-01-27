@@ -51,7 +51,7 @@
 #include "maidsafe/vault/types.h"
 #include "maidsafe/vault/unresolved_action.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.h"
+#include "maidsafe/vault/action_create_remove_account.h"
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
 #include "maidsafe/vault/maid_manager/dispatcher.h"
