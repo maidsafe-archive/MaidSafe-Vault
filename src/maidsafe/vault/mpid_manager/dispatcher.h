@@ -41,13 +41,16 @@ class MpidManagerDispatcher {
   MpidManagerDispatcher& operator=(MpidManagerDispatcher) = delete;
 
   void SendMessageAlert(const nfs_vault::MpidMessageAlert& alert,
-                        const MpidName& sender, const MpidName& receiver);
-  void SendMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
-  void SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
+                        const MpidName& sender, const MpidName& receiver,
+                        nfs::MessageId message_id);
+  void SendMessageAlert(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver,
+                        nfs::MessageId message_id);
+  void SendGetMessageRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver,
+                             nfs::MessageId message_id);
   void SendGetMessageResponse(const DbMessageQueryResult& query_result, const MpidName& sender,
-                              const MpidName& receiver);
+                              const MpidName& receiver, nfs::MessageId message_id);
   void SendGetMessageResponseToMpid(const nfs_client::MpidMessageOrReturnCode& response,
-                                    const MpidName& receiver);
+                                    const MpidName& receiver, nfs::MessageId message_id);
 
   // =========================== Sync / AccountTransfer section ====================================
   void SendSync(const MpidManager::SyncGroupKey& key, const std::string& serialised_sync);
@@ -58,7 +61,8 @@ class MpidManagerDispatcher {
                                 const routing::GroupId& group_id,
                                 const NodeId& sender);
   void SendDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
-  void SendMessageResponse(const MpidName& receiver, const maidsafe_error& error);
+  void SendMessageResponse(const MpidName& receiver, const maidsafe_error& error,
+                           nfs::MessageId message_id);
 
  private:
   template <typename Message>

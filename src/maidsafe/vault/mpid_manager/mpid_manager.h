@@ -19,7 +19,9 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
+#include <map>
 #include <utility>
+#include <vector>
 
 #include "boost/expected/expected.hpp"
 
@@ -81,3 +83,4 @@ typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+

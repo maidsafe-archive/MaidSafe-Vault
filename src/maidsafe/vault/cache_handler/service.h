@@ -119,20 +119,6 @@ bool CacheHandlerService::ValidateSender(const MessageType& /*message*/,
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver);
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
     const nfs::GetResponseFromDataManagerToDataGetter& message,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver);
@@ -143,13 +129,6 @@ CacheHandlerService::HandleMessage(
     const nfs::GetCachedResponseFromCacheHandlerToDataGetter& message,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver);
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
 
 template <>
 CacheHandlerService::HandleMessageReturnType

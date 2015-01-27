@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_DATABASE_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_DATABASE_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_DATABASE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_DATABASE_H_
 
 #include <map>
 #include <string>
@@ -34,23 +34,23 @@ namespace maidsafe {
 
 namespace vault {
 
-class MpidManagerDataBase {
+class MpidManagerDatabase {
  public:
-  explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
-  ~MpidManagerDataBase();
+  explicit MpidManagerDatabase(const boost::filesystem::path& db_path);
+  ~MpidManagerDatabase();
 
   void Put(const MpidManager::MessageKey& key,
            const uint32_t size,
            const MpidManager::GroupName& mpid);
   void Delete(const MpidManager::MessageKey& key);
-  bool Has(const MpidManager::MessageKey& key);
+  bool Has(const MpidManager::MessageKey& key) const;
 
   MpidManager::DbTransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
-  bool HasGroup(const MpidManager::GroupName& mpid);
-  std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
-  std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid);
+  bool HasGroup(const MpidManager::GroupName& mpid) const;
+  std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid) const;
+  std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid) const;
 
  private:
   void DeleteGroup(const std::string& mpid);
@@ -74,7 +74,7 @@ class MpidManagerDataBase {
 
   void CheckPoint();
 
-  std::unique_ptr<sqlite::Database> data_base_;
+  std::unique_ptr<sqlite::Database> db_;
   const boost::filesystem::path kDbPath_;
   int write_operations_;
 };
@@ -83,4 +83,5 @@ class MpidManagerDataBase {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_DATABASE_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_DATABASE_H_
+

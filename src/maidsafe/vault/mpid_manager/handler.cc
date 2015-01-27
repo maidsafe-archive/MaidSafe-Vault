@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
+#include "maidsafe/vault/mpid_manager/handler.h"
 
 namespace maidsafe {
 
@@ -29,23 +29,23 @@ MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
-  db_.Put(data.name(), data.data().string().size(), mpid);
+  db_.Put(data.name(), static_cast<uint32_t>(data.data().string().size()), mpid);
 }
 
-void MpidManagerHandler::Delete(const ImmutableData::Name& data_name){
+void MpidManagerHandler::Delete(const ImmutableData::Name& data_name) {
   DeleteChunk(data_name);
   db_.Delete(data_name);
 }
 
-bool MpidManagerHandler::Has(const ImmutableData::Name& data_name){
+bool MpidManagerHandler::Has(const ImmutableData::Name& data_name) const {
   return db_.Has(data_name);
 }
 
-bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
+bool MpidManagerHandler::HasAccount(const MpidName& mpid) const {
   return db_.HasGroup(mpid);
 }
 
-DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) {
+DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
     nfs_vault::MpidMessage mpid_message(GetChunk<ImmutableData>(data_name).data().string());
     return std::move(mpid_message);
@@ -55,7 +55,7 @@ DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& d
   return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
-DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) {
+DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) const {
   try {
     ImmutableData data(GetChunk<ImmutableData>(data_name));
     return std::move(data);

@@ -23,6 +23,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <utility>
 
 #include "boost/mpl/vector.hpp"
 #include "boost/mpl/insert_range.hpp"
@@ -35,7 +36,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/nfs/message_types.h"
 
-#include "maidsafe/vault/account_transfer.h"
+#include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/sync.h"
@@ -70,6 +71,7 @@ class VersionHandlerService {
   typedef VersionHandlerServiceMessages VaultMessages;
   typedef void HandleMessageReturnType;
   typedef Identity VersionHandlerAccountName;
+  using AccountType = std::pair<Key, VersionHandlerValue>;
 
   VersionHandlerService(const passport::Pmid& pmid, routing::Routing& routing,
                         const boost::filesystem::path& vault_root_dir);
@@ -133,8 +135,10 @@ class VersionHandlerService {
                        const std::vector<Db<VersionHandler::Key,
                                             VersionHandler::Value>::KvPair>& accounts);
 
-  void HandleAccountTransfer(
-      std::unique_ptr<VersionHandler::UnresolvedAccountTransfer>&& resolved_action);
+  void HandleAccountTransfer(const AccountType& account);
+  void HandleAccountQuery(const VersionHandler::Key& key, const NodeId& sender);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::SingleSource& sender);
 
 
   typedef boost::mpl::vector<> InitialType;
@@ -161,7 +165,7 @@ class VersionHandlerService {
   Sync<VersionHandler::UnresolvedCreateVersionTree> sync_create_version_tree_;
   Sync<VersionHandler::UnresolvedPutVersion> sync_put_versions_;
   Sync<VersionHandler::UnresolvedDeleteBranchUntilFork> sync_delete_branch_until_fork_;
-  AccountTransfer<VersionHandler::UnresolvedAccountTransfer> account_transfer_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kVersionHandler>> account_transfer_;
 };
 
 template <typename MessageType>
@@ -231,6 +235,17 @@ void VersionHandlerService::HandleMessage(
     const typename AccountTransferFromVersionHandlerToVersionHandler::Sender& sender,
     const typename AccountTransferFromVersionHandlerToVersionHandler::Receiver& receiver);
 
+template<>
+void VersionHandlerService::HandleMessage(
+    const AccountQueryFromVersionHandlerToVersionHandler& /*message*/,
+    const typename AccountQueryFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename AccountQueryFromVersionHandlerToVersionHandler::Receiver& receiver);
+
+template <>
+void VersionHandlerService::HandleMessage(
+    const AccountQueryResponseFromVersionHandlerToVersionHandler& message,
+    const typename AccountQueryResponseFromVersionHandlerToVersionHandler::Sender& sender,
+    const typename AccountQueryResponseFromVersionHandlerToVersionHandler::Receiver& /*receiver*/);
 
 template <typename RequestorType>
 void VersionHandlerService::HandleGetVersions(const VersionHandler::Key& key,

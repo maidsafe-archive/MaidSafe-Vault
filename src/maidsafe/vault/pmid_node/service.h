@@ -177,8 +177,8 @@ class PmidNodeService {
 
   // populates chunks map
   //  void UpdateLocalStorage(const std::map<DataNameVariant, uint16_t>& expected_files);
-  void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
-                          const std::vector<DataNameVariant>& to_be_retrieved);
+//  void UpdateLocalStorage(const std::vector<DataNameVariant>& to_be_deleted,
+//                          const std::vector<DataNameVariant>& to_be_retrieved);
 
   std::future<std::unique_ptr<ImmutableData>> RetrieveFileFromNetwork(
       const DataNameVariant& file_id);

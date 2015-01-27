@@ -230,12 +230,6 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const nfs::GetRequestFromMaidNodeToDataManager& message,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
-
-template <>
-void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
