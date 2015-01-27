@@ -43,11 +43,6 @@ struct GetCacheResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMpidN
 };
 
 template <>
-struct GetCacheResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>> {
-  typedef nfs::GetCachedResponseFromCacheHandlerToMpidNode Type;
-};
-
-template <>
 struct GetCacheResponseMessage<Requestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>> {
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter Type;
 };

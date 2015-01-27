@@ -131,19 +131,6 @@ void DataManagerService::HandleMessage(
 }
 
 // ==================== Get / IntegrityCheck implementation ========================================
-template<>
-void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMpidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver) {
-  typedef nfs::GetRequestFromMpidNodeToDataManager MessageType;
-  OperationHandlerWrapper<DataManagerService, MessageType>(
-      accumulator_, [this](const MessageType &message, const MessageType::Sender &sender) {
-                      return this->ValidateSender(message, sender);
-                    },
-      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
-      this, accumulator_mutex_)(message, sender, receiver);
-}
 
 template<>
 void DataManagerService::HandleMessage(
@@ -157,19 +144,6 @@ void DataManagerService::HandleMessage(
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
-}
-
-template <>
-void DataManagerService::HandleMessage(
-    const nfs::GetRequestFromMpidNodePartialToDataManager& message,
-    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Receiver& /*receiver*/) {
-  auto data_name(detail::GetNameVariant(*message.contents));
-  typedef nfs::GetRequestFromMpidNodePartialToDataManager::SourcePersona SourceType;
-  detail::PartialRequestor<SourceType> requestor(sender);
-  detail::GetRequestVisitor<DataManagerService, detail::PartialRequestor<SourceType>>
-          get_request_visitor(this, requestor, message.id);
-  boost::apply_visitor(get_request_visitor, data_name);
 }
 
 template <>

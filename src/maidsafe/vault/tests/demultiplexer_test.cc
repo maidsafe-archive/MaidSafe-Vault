@@ -58,7 +58,7 @@ class DemultiplexerTest : public testing::Test {
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(pmid_, *routing_, data_getter_, vault_dir_, DiskUsage(100))))),
       mpid_manager_service_(std::move(std::unique_ptr<MpidManagerService>(new MpidManagerService(
-          pmid_, *routing_, data_getter_, vault_dir_)))),
+          pmid_, *routing_, vault_dir_, DiskUsage(100))))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
              pmid_manager_service_, pmid_node_service_, mpid_manager_service_, data_getter_) {}
 
