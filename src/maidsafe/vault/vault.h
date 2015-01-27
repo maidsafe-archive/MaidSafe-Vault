@@ -41,6 +41,7 @@
 #include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/version_handler/service.h"
 #include "maidsafe/vault/cache_handler/service.h"
+#include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/db.h"
 #include "maidsafe/vault/demultiplexer.h"
 

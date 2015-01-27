@@ -234,6 +234,12 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
+                 const nfs::GetRequestFromMpidNodeToDataManager& message,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+                 const nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
+
+template <>
+void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
@@ -377,6 +383,13 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
+    const nfs::CreateAccountRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
     const SendAlertFromMpidManagerToMpidManager& message,
     const typename SendAlertFromMpidManagerToMpidManager::Sender& sender,
     const typename SendAlertFromMpidManagerToMpidManager::Receiver& receiver);
@@ -384,9 +397,9 @@ void DoOperation(
 template <>
 void DoOperation(
     MpidManagerService* service,
-    const nfs::GetRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 template <>
 void DoOperation(
