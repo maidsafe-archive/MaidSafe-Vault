@@ -25,7 +25,7 @@ namespace vault {
 MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                                        DiskUsage max_disk_usage)
     : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage),
-      db_(vault_root_dir) {}
+      db_() {}
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
