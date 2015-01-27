@@ -570,8 +570,8 @@ void DoOperation(
     const nfs::CreateAccountRequestFromMpidNodeToMpidManager& message,
     const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Sender& /*sender*/,
     const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
-   service->HandleCreateAccount(message.contents->public_mpid(), message.contents->public_anmpid(),
-                                message.id);
+  service->HandleCreateAccount(message.contents->public_mpid(), message.contents->public_anmpid(),
+                               message.id);
 }
 
 template <>

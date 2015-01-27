@@ -258,10 +258,10 @@ class DataManagerService {
 
   template <typename ServiceHandlerType, typename RequestorIdType>
   friend class detail::GetRequestVisitor;
-  
+
   template <typename ServiceHandlerType, typename RequestorIdType>
   friend class detail::DataManagerPutVisitor;
-  
+
   friend class detail::DataManagerPutResponseVisitor<DataManagerService>;
   friend class detail::DataManagerSendPutRequestVisitor<DataManagerService>;
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;

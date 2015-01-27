@@ -313,7 +313,7 @@ void DataManagerDispatcher::SendFalseDataNotification(const PmidName& pmid_node,
   routing_.Send(message);
 }
 
-  // ==================== Put implementation =========================================================
+// ==================== Put implementation =========================================================
 template <typename Data>
 void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data& data,
                                            nfs::MessageId message_id) {
@@ -322,7 +322,7 @@ void DataManagerDispatcher::SendPutRequest(const PmidName& pmid_name, const Data
   typedef PutRequestFromDataManagerToPmidManager VaultMessage;
   CheckSourcePersonaType<VaultMessage>();
   typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
-  
+
   VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
   RoutingMessage message(vault_message.Serialise(),
                          routing::GroupSource(routing::GroupId(NodeId(data.name().value.string())),
@@ -339,7 +339,6 @@ void DataManagerDispatcher::SendPutResponse(const RequestorIdType& requestor,
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<typename VaultMessage::Sender,
                                           typename VaultMessage::Receiver>;
-  
   VaultMessage vault_message(message_id,
                              typename VaultMessage::Contents(data_name,
                                                              static_cast<int32_t>(cost)));

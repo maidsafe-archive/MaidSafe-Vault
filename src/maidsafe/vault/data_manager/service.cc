@@ -101,7 +101,6 @@ void DataManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
-  
 template <>
 void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
