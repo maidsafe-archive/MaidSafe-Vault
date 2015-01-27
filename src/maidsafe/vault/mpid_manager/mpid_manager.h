@@ -44,7 +44,6 @@ namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
-
   // =======  for database usage =======
   using GroupName = passport::PublicMpid::Name;
   using MessageKey = ImmutableData::Name;
