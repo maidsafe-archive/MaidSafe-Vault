@@ -24,7 +24,11 @@
 #include <utility>
 #include <vector>
 
-#include "maidsafe/common/sqlite3_wrapper.h"
+#include "boost/multi_index_container.hpp"
+#include "boost/multi_index/global_fun.hpp"
+#include "boost/multi_index/member.hpp"
+#include "boost/multi_index/ordered_index.hpp"
+#include "boost/multi_index/identity.hpp"
 
 #include "maidsafe/routing/routing_api.h"
 
@@ -34,10 +38,38 @@ namespace maidsafe {
 
 namespace vault {
 
+struct DatabaseEntry {
+  DatabaseEntry(const MpidManager::MessageKey& key_in,
+                const uint32_t size_in,
+                const MpidManager::GroupName& mpid_in)
+      : key(key_in), size(size_in), mpid(mpid_in) {}
+  DatabaseEntry Key() const { return *this; }
+  MpidManager::MessageKey key;
+  uint32_t size;
+  MpidManager::GroupName mpid;
+};
+
+struct EntryKey_Tag {};
+struct EntryMpid_Tag {};
+
+typedef boost::multi_index_container<
+    DatabaseEntry,
+    boost::multi_index::indexed_by<
+        boost::multi_index::ordered_unique<boost::multi_index::tag<EntryKey_Tag>,
+            BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, MpidManager::MessageKey, key)>,
+        boost::multi_index::ordered_non_unique<boost::multi_index::tag<EntryMpid_Tag>,
+            BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, MpidManager::GroupName, mpid)>
+    >
+> DatabaseEntrySet;
+
+using EntryByKey = typename boost::multi_index::index<DatabaseEntrySet, EntryKey_Tag>::type;
+using EntryByMpid = typename boost::multi_index::index<DatabaseEntrySet, EntryMpid_Tag>::type;
+using EntryByMpidIterator = typename DatabaseEntrySet::index<EntryMpid_Tag>::type::iterator;
+
 class MpidManagerDataBase {
  public:
-  explicit MpidManagerDataBase(const boost::filesystem::path& db_path);
-  ~MpidManagerDataBase();
+  MpidManagerDataBase();
+//  ~MpidManagerDataBase();
 
   void Put(const MpidManager::MessageKey& key,
            const uint32_t size,
@@ -45,38 +77,22 @@ class MpidManagerDataBase {
   void Delete(const MpidManager::MessageKey& key);
   bool Has(const MpidManager::MessageKey& key);
 
-  MpidManager::DbTransferInfo GetTransferInfo(
-      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
-
   bool HasGroup(const MpidManager::GroupName& mpid);
   std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
   std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid);
 
+  MpidManager::DbTransferInfo GetTransferInfo(
+      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+
  private:
-  void DeleteGroup(const std::string& mpid);
+  void DeleteGroup(const MpidManager::GroupName& mpid);
   void PutIntoTransferInfo(const NodeId& new_holder,
-                           const std::string& group_name_string,
-                           const std::string& key_string,
+                           const MpidManager::GroupName& mpid,
+                           const MpidManager::MessageKey& key,
                            MpidManager::DbTransferInfo& transfer_info);
 
-  MpidManager::MessageKey ComposeKey(const std::string& chunk_name) const {
-    return MpidManager::MessageKey(Identity(HexDecode(chunk_name)));
-  }
-  std::string EncodeKey(const MpidManager::MessageKey& key) const {
-    return HexEncode(key->string());
-  }
-  MpidManager::GroupName ComposeGroupName(const std::string& mpid) const {
-    return MpidManager::GroupName(Identity(HexDecode(mpid)));
-  }
-  std::string EncodeGroupName(const MpidManager::GroupName& group_name) const {
-    return HexEncode(group_name->string());
-  }
-
-  void CheckPoint();
-
-  std::unique_ptr<sqlite::Database> data_base_;
-  const boost::filesystem::path kDbPath_;
-  int write_operations_;
+  DatabaseEntrySet container_;
+  mutable std::mutex mutex_;
 };
 
 }  // namespace vault
