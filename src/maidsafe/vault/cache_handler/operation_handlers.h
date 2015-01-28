@@ -109,13 +109,6 @@ bool DoCacheOperation(
     const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
     const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
 
-template <>
-bool DoCacheOperation(
-    CacheHandlerService* service,
-    const nfs::GetRequestFromMpidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
-
 }  // namespace detail
 
 template <typename MessageType>
