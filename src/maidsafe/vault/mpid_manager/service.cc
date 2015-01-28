@@ -127,6 +127,20 @@ void MpidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void MpidManagerService::HandleMessage(
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver) {
+  using  MessageType = DeleteRequestFromMpidManagerToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // ========================== Sync / AccountTransfer implementation ================================
 
 template <>

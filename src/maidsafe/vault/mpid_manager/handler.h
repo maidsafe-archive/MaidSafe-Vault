@@ -63,11 +63,15 @@ class MpidManagerHandler {
 template <typename Data>
 Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) const {
   DataNameVariant data_name_variant(data_name);
-  Data data(data_name,
-            typename Data::serialised_type(chunk_store_.Get(data_name_variant)));
-  return data;
+  try {
+    Data data(data_name,
+              typename Data::serialised_type(chunk_store_.Get(data_name_variant)));
+    return data;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    throw;
+  }
 }
-
 
 template <typename Data>
 void MpidManagerHandler::PutChunk(const Data& data) {

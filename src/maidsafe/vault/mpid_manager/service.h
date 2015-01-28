@@ -45,6 +45,10 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace test {
+  class MpidManagerServiceTest;
+}
+
 class MpidManagerService {
  public:
   using PublicMessages = nfs::MpidManagerServiceMessages;
@@ -83,6 +87,8 @@ class MpidManagerService {
       ServiceHandlerType* service, const MessageType& message,
       const typename MessageType::Sender& sender,
       const typename MessageType::Receiver& receiver);
+
+  friend class test::MpidManagerServiceTest;
 
  private:
   template <typename MessageType>
@@ -170,6 +176,12 @@ void MpidManagerService::HandleMessage(
     const nfs::DeleteRequestFromMpidNodeToMpidManager& message,
     const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::DeleteRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(

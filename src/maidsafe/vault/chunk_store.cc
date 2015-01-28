@@ -208,8 +208,13 @@ NonEmptyString ChunkStore::Get(const KeyType& key) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
   auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
-  auto content(ReadFile(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash))));
-  return crypto::DeobfuscateData(key_tag_and_id.second, crypto::CipherText(content));
+  try {
+    auto content(ReadFile(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash))));
+    return crypto::DeobfuscateData(key_tag_and_id.second, crypto::CipherText(content));
+  }
+  catch (const std::exception&) {
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  }
 }
 
 void ChunkStore::SetMaxDiskUsage(DiskUsage max_disk_usage) {
