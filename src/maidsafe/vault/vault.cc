@@ -60,7 +60,7 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
       cache_service_(std::move(maidsafe::make_unique<CacheHandlerService>(
           *routing_, vault_config.vault_dir))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, data_getter_),
+             pmid_manager_service_, pmid_node_service_, mpid_manager_service_, data_getter_),
       getting_keys_()
 #ifdef TESTING
       ,

@@ -28,6 +28,7 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/pmid_node/service.h"
+#include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -56,8 +57,10 @@ class DemultiplexerTest : public testing::Test {
           new PmidManagerService(pmid_, *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(pmid_, *routing_, data_getter_, vault_dir_, DiskUsage(100))))),
+      mpid_manager_service_(std::move(std::unique_ptr<MpidManagerService>(new MpidManagerService(
+          pmid_, *routing_, vault_dir_, DiskUsage(100))))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, data_getter_) {}
+             pmid_manager_service_, pmid_node_service_, mpid_manager_service_, data_getter_) {}
 
  protected:
   const maidsafe::test::TestPath kTestRoot_;
@@ -71,6 +74,7 @@ class DemultiplexerTest : public testing::Test {
   nfs::Service<DataManagerService> data_manager_service_;
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;
+  nfs::Service<MpidManagerService> mpid_manager_service_;
   Demultiplexer demux_;
 };
 

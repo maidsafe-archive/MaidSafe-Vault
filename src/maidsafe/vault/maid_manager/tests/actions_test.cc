@@ -22,7 +22,7 @@
 
 #include "maidsafe/vault/maid_manager/action_put.h"
 #include "maidsafe/vault/maid_manager/action_delete.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.h"
+#include "maidsafe/vault/action_create_remove_account.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/maid_manager/value.h"
 
