@@ -25,6 +25,7 @@
 
 #include "maidsafe/nfs/vault/messages.h"
 #include "maidsafe/nfs/client/messages.h"
+#include "maidsafe/vault/message_types.h"
 
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/utils.h"
@@ -87,8 +88,18 @@ void MpidManagerDispatcher::CheckSourcePersonaType() const {
 }
 
 template <typename Data>
-void MpidManagerDispatcher::SendPutRequest(const MpidName& /*account_name*/,
-                                           const Data& /*data*/, nfs::MessageId /*message_id*/) {}
+void MpidManagerDispatcher::SendPutRequest(const MpidName& account_name,
+                                           const Data& data, nfs::MessageId message_id) {
+    using VaultMessage = PutRequestFromMpidManagerToDataManager;
+    using  RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
+    CheckSourcePersonaType<VaultMessage>();
+
+    VaultMessage vault_message(message_id, nfs_vault::DataNameAndContent(data));
+    RoutingMessage message(vault_message.Serialise(),
+                           GroupOrKeyHelper::GroupSender(routing_, account_name),
+                           VaultMessage::Receiver(routing::GroupId(NodeId(data.name()))));
+    routing_.Send(message);
+}
 
 }  // namespace vault
 

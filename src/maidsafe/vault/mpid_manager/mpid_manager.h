@@ -79,7 +79,7 @@ namespace vault {
 
 using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
+using  MpidManager = nfs::PersonaTypes<nfs::Persona::kMpidManager>;
 
 }  // namespace vault
 

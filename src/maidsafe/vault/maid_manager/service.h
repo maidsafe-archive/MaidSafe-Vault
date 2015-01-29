@@ -216,7 +216,7 @@ class MaidManagerService {
       const typename MessageType::Receiver& receiver);
 
   friend class detail::MaidManagerPutVisitor<MaidManagerService>;
-  friend class detail::MaidManagerPutResponseVisitor<MaidManagerService>;
+  friend class detail::PutResponseVisitor<MaidManagerService, MaidName>;
   friend class detail::MaidManagerPutResponseFailureVisitor<MaidManagerService>;
   friend class detail::MaidManagerDeleteVisitor<MaidManagerService>;
   friend class detail::MaidManagerPutVersionRequestVisitor<MaidManagerService>;

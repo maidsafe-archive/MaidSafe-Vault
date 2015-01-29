@@ -391,8 +391,6 @@ void DataManagerService::HandleMessage(
 template <typename Data, typename RequestorIdType>
 void DataManagerService::HandlePut(const Data& data, const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << requestor.node_id;
   uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;

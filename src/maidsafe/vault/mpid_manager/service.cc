@@ -40,7 +40,9 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),
       sync_put_messages_(NodeId(pmid.name()->string())),
-      sync_delete_messages_(NodeId(pmid.name()->string())) {}
+      sync_delete_messages_(NodeId(pmid.name()->string())),
+      sync_create_accounts_(NodeId(pmid.name()->string())),
+      sync_remove_accounts_(NodeId(pmid.name()->string())) {}
 
 MpidManagerService::~MpidManagerService() {}
 
@@ -155,6 +157,20 @@ void MpidManagerService::HandleMessage(
       this, accumulator_mutex_)(message, sender, receiver);
 }
 
+template <>
+void MpidManagerService::HandleMessage(
+    const PutResponseFromDataManagerToMpidManager& message,
+    const typename PutResponseFromDataManagerToMpidManager::Sender& sender,
+    const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver) {
+  using  MessageType = PutResponseFromDataManagerToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
 // =============== Mpid Account Creation ===========================================================
 
 void MpidManagerService::HandleCreateAccount(const passport::PublicMpid& public_mpid,
@@ -190,7 +206,6 @@ void MpidManagerService::HandlePutResponse<passport::PublicMpid>(
   nfs::MessageId original_message_id(mpid_message_id ^ mpid_hash_message_id);
   auto pending_account_itr(pending_account_map_.find(original_message_id));
   if (pending_account_itr == pending_account_map_.end()) {
-    LOG(kInfo) << "Unexpected PublicMpid put response";
     return;
   }
   // In case of a churn, drop it silently
@@ -203,7 +218,6 @@ void MpidManagerService::HandlePutResponse<passport::PublicMpid>(
   pending_account_itr->second.name_stored = true;
 
   if (pending_account_itr->second.an_name_stored) {
-    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(mpid_name->string());
     DoSync(MpidManager::UnresolvedCreateAccount(MpidManager::SyncGroupKey(mpid_name),
                                                 ActionCreateAccount(original_message_id),
                                                 routing_.kNodeId()));
@@ -229,7 +243,6 @@ void MpidManagerService::HandlePutResponse<passport::PublicAnmpid>(
   pending_account_itr->second.an_name_stored = true;
 
   if (pending_account_itr->second.name_stored) {
-    LOG(kVerbose) << "AddLocalAction create account for " << HexSubstr(mpid_name->string());
     DoSync(MpidManager::UnresolvedCreateAccount(MpidManager::SyncGroupKey(mpid_name),
                                                 ActionCreateAccount(original_message_id),
                                                 routing_.kNodeId()));
@@ -348,6 +361,28 @@ void MpidManagerService::HandleMessage(
       if (resolved_action) {
         ImmutableData data(NonEmptyString(resolved_action->action.kAlert.Serialise()));
         handler_.Delete(data.name());
+      }
+      break;
+    }
+    case ActionCreateAccount::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionCreateAccount";
+      MpidManager::UnresolvedCreateAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedCreateMaidAccount";
+        HandleSyncedCreateAccount(std::move(resolved_action));
+      }
+      break;
+    }
+    case ActionRemoveAccount::kActionId: {
+      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionRemoveAccount";
+      MpidManager::UnresolvedRemoveAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_remove_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedRemoveMaidAccount";
+        HandleSyncedRemoveAccount(std::move(resolved_action));
       }
       break;
     }

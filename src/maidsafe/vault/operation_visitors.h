@@ -246,22 +246,22 @@ class PutResponseSuccessVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template <typename ServiceHandlerType>
-class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
+template <typename ServiceHandlerType, typename AccountType>
+class PutResponseVisitor : public boost::static_visitor<> {
  public:
-  MaidManagerPutResponseVisitor(ServiceHandlerType* service, const Identity& maid_node,
-                                int32_t cost, nfs::MessageId message_id)
-      : kService_(service), kMaidNode_(maid_node), kCost_(cost), kMessageId_(message_id) {}
+  PutResponseVisitor(ServiceHandlerType* service, const Identity& account, int32_t cost,
+                     nfs::MessageId message_id)
+      : kService_(service), kAccountName_(account), kCost_(cost), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(kMaidNode_, data_name, kCost_,
-                                                                    kMessageId_);
+    kService_->template HandlePutResponse<typename Name::data_type>(kAccountName_, data_name,
+                                                                    kCost_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
-  const MaidName kMaidNode_;
+  const AccountType kAccountName_;
   const int32_t kCost_;
   const nfs::MessageId kMessageId_;
 };
