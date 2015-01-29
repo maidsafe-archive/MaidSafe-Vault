@@ -16,13 +16,13 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
+#ifndef MAIDSAFE_VAULT_ACTION_CREATE_REMOVE_ACCOUNT_H_
+#define MAIDSAFE_VAULT_ACTION_CREATE_REMOVE_ACCOUNT_H_
 
 #include <string>
 
 #include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/maid_manager/action_create_remove_account.pb.h"
+#include "maidsafe/vault/action_create_remove_account.pb.h"
 
 namespace maidsafe {
 
@@ -75,7 +75,7 @@ ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(nfs::MessageId mess
 template <bool Remove>
 ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(const std::string& serialised_action)
     : kMessageId([&serialised_action]()->int32_t {
-        protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
+        protobuf::ActionCreateRemoveAccount action_proto;
         if (!action_proto.ParseFromString(serialised_action))
           BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
         return action_proto.message_id();
@@ -91,7 +91,7 @@ ActionCreateRemoveAccount<Remove>::ActionCreateRemoveAccount(ActionCreateRemoveA
 
 template <bool Remove>
 std::string ActionCreateRemoveAccount<Remove>::Serialise() const {
-  protobuf::ActionMaidManagerCreateRemoveAccount action_proto;
+  protobuf::ActionCreateRemoveAccount action_proto;
   action_proto.set_message_id(kMessageId);
   return action_proto.SerializeAsString();
 }
@@ -109,4 +109,4 @@ typedef ActionCreateRemoveAccount<true> ActionRemoveAccount;
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_ACTION_CREATE_REMOVE_ACCOUNT_H_
+#endif  // MAIDSAFE_VAULT_ACTION_CREATE_REMOVE_ACCOUNT_H_

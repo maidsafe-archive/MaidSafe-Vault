@@ -24,7 +24,7 @@
 #include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/test.h"
-#include "maidsafe/nfs/client/maid_node_nfs.h"
+#include "maidsafe/nfs/client/maid_client.h"
 #include "maidsafe/vault/vault.h"
 
 namespace fs = boost::filesystem;
@@ -51,7 +51,7 @@ class PmidManagerTest;
 class VaultNetwork {
  public:
   typedef std::shared_ptr<Vault> VaultPtr;
-  typedef std::shared_ptr<nfs_client::MaidNodeNfs> ClientPtr;
+  typedef std::shared_ptr<nfs_client::MaidClient> ClientPtr;
 
   VaultNetwork();
   virtual ~VaultNetwork() {}

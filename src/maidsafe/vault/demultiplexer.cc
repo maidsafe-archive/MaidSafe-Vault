@@ -40,7 +40,11 @@ void Demultiplexer::HandleMessage(const routing::SingleToGroupRelayMessage& rout
       if (source_persona.data == nfs::Persona::kDataGetter) {
         return data_manager_service_.HandleMessage(
             nfs::GetRequestFromDataGetterPartialToDataManager(wrapper_tuple),
-            routing_message.sender, routing_message.receiver);
+                routing_message.sender, routing_message.receiver);
+      } else if (source_persona.data == nfs::Persona::kMpidNode) {
+        return data_manager_service_.HandleMessage(
+            nfs::GetRequestFromMpidNodePartialToDataManager(wrapper_tuple), routing_message.sender,
+                routing_message.receiver);
       }
       // This assert will happen if vault starts sending messages except Get() triggred
       // by routing's request for public key before having positive health.
@@ -56,12 +60,14 @@ Demultiplexer::Demultiplexer(nfs::Service<MaidManagerService>& maid_manager_serv
                              nfs::Service<DataManagerService>& data_manager_service,
                              nfs::Service<PmidManagerService>& pmid_manager_service,
                              nfs::Service<PmidNodeService>& pmid_node_service,
+                             nfs::Service<MpidManagerService>& mpid_manager_service,
                              nfs_client::DataGetter& data_getter)
     : maid_manager_service_(maid_manager_service),
       version_handler_service_(version_handler_service),
       data_manager_service_(data_manager_service),
       pmid_manager_service_(pmid_manager_service),
       pmid_node_service_(pmid_node_service),
+      mpid_manager_service_(mpid_manager_service),
       data_getter_(data_getter) {}
 
 }  // namespace vault

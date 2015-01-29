@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/mpid_manager/handler.h"
 
+#include "maidsafe/vault/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -25,7 +27,7 @@ namespace vault {
 MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                                        DiskUsage max_disk_usage)
     : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage),
-      db_(vault_root_dir) {}
+      db_(UniqueDbPath(vault_root_dir)) {}
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
