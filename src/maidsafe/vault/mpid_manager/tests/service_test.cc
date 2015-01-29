@@ -147,8 +147,8 @@ TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMpidNodeToMpidManager) {
                                      routing::GroupId(NodeId(content.base.sender->string()))));
 }
 
-TEST_F(MpidManagerServiceTest, BEH_GetRequestFromMpidNodeToMpidManager) {
-  using MessageType = nfs::GetRequestFromMpidNodeToMpidManager;
+TEST_F(MpidManagerServiceTest, BEH_GetMessageRequestFromMpidNodeToMpidManager) {
+  using MessageType = nfs::GetMessageRequestFromMpidNodeToMpidManager;
   auto content(CreateContent<MessageType::Contents>());
   auto send_message_request(CreateMessage<MessageType>(content));
   EXPECT_NO_THROW(SingleSendsToGroup(&mpid_manager_service_, send_message_request,

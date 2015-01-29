@@ -27,6 +27,7 @@
 #include "maidsafe/nfs/client/messages.h"
 
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -63,7 +64,17 @@ class MpidManagerDispatcher {
   void SendMessageResponse(const MpidName& receiver, const maidsafe_error& error,
                            nfs::MessageId message_id);
 
+  void SendCreateAccountResponse(const MpidName& mpid_name, const maidsafe_error& error,
+                                 nfs::MessageId message_id);
+  void SendRemoveAccountResponse(const MpidName& mpid_name, const maidsafe_error& result,
+                                 nfs::MessageId message_id);
+
+  template <typename Data>
+  void SendPutRequest(const MpidName& account_name, const Data& data, nfs::MessageId message_id);
+
  private:
+  using GroupOrKeyHelper = detail::GroupOrKeyType<MpidManager>;
+
   template <typename Message>
   void CheckSourcePersonaType() const;
   routing::Routing& routing_;
@@ -74,6 +85,10 @@ void MpidManagerDispatcher::CheckSourcePersonaType() const {
   static_assert(Message::SourcePersona::value == nfs::Persona::kMpidManager,
                 "The source Persona must be kMpidManager.");
 }
+
+template <typename Data>
+void MpidManagerDispatcher::SendPutRequest(const MpidName& /*account_name*/,
+                                           const Data& /*data*/, nfs::MessageId /*message_id*/) {}
 
 }  // namespace vault
 
