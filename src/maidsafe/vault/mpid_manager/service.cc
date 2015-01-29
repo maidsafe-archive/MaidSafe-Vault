@@ -365,23 +365,19 @@ void MpidManagerService::HandleMessage(
       break;
     }
     case ActionCreateAccount::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionCreateAccount";
       MpidManager::UnresolvedCreateAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedCreateMaidAccount";
         HandleSyncedCreateAccount(std::move(resolved_action));
       }
       break;
     }
     case ActionRemoveAccount::kActionId: {
-      LOG(kVerbose) << "SynchroniseFromMaidManagerToMaidManager ActionRemoveAccount";
       MpidManager::UnresolvedRemoveAccount unresolved_action(
           proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_remove_accounts_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        LOG(kInfo) << "SynchroniseFromMaidManagerToMaidManager HandleSyncedRemoveMaidAccount";
         HandleSyncedRemoveAccount(std::move(resolved_action));
       }
       break;

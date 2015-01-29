@@ -183,7 +183,7 @@ TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMpidManagerToMpidManager) {
                                    routing::GroupId(NodeId(content.base.sender->string()))));
 }
 
-TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMaidManagerToMpidManager) {
+TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMpidManagerToMpidManager) {
   using MessageType = DeleteRequestFromMpidManagerToMpidManager;
   auto content(CreateContent<MessageType::Contents>());
   auto get_message_request(CreateMessage<MessageType>(content));
