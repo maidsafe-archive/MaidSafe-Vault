@@ -183,15 +183,6 @@ TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMpidManagerToMpidManager) {
                                    routing::GroupId(NodeId(content.base.sender->string()))));
 }
 
-TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMpidManagerToMpidManager) {
-  using MessageType = DeleteRequestFromMpidManagerToMpidManager;
-  auto content(CreateContent<MessageType::Contents>());
-  auto get_message_request(CreateMessage<MessageType>(content));
-  auto group_source(CreateGroupSource(NodeId(content.base.receiver->string())));
-  EXPECT_NO_THROW(GroupSendToGroup(&mpid_manager_service_, get_message_request, group_source,
-                                   routing::GroupId(NodeId(content.base.sender->string()))));
-}
-
 }  //  namespace test
 
 }  //  namespace vault
