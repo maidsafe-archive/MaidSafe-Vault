@@ -109,7 +109,7 @@ void MpidManagerDatabase::DeleteGroup(const std::string& mpid) {
   transaction.Commit();
 }
 
-MpidManager::TransferInfo MpidManagerDatabase::GetTransferInfo(
+MpidManager::DbTransferInfo MpidManagerDatabase::GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
   if (!db_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
@@ -129,8 +129,6 @@ MpidManager::TransferInfo MpidManagerDatabase::GetTransferInfo(
                                                           group_name));
       } else {
   //      VLOG(VisualiserAction::kRemoveAccount, key.name);
-        LOG(kInfo) << "Db::GetTransferInfo current node is not in the closest of account "
-                   << HexSubstr(group_name);
         groups_to_be_removed.push_back(group_name);
         // empty NodeId indicates removing from local
         groups_to_be_transferred.push_back(std::make_pair(NodeId(), group_name));
@@ -140,7 +138,7 @@ MpidManager::TransferInfo MpidManagerDatabase::GetTransferInfo(
   for (const auto& group_name : groups_to_be_removed)
     DeleteGroup(group_name);
 
-  MpidManager::TransferInfo transfer_info;
+  MpidManager::DbTransferInfo transfer_info;
   for (const auto& transfer_entry : groups_to_be_transferred) {
     std::string query("SELECT Chunk_Name from MpidManagerAccounts WHERE MPID=?");
     sqlite::Statement statement{*db_, query};
@@ -155,17 +153,13 @@ MpidManager::TransferInfo MpidManagerDatabase::GetTransferInfo(
 void MpidManagerDatabase::PutIntoTransferInfo(const NodeId& new_holder,
                                               const std::string& group_name_string,
                                               const std::string& key_string,
-                                              MpidManager::TransferInfo& transfer_info) {
+                                              MpidManager::DbTransferInfo& transfer_info) {
   MpidManager::GroupName group_name(ComposeGroupName(group_name_string));
   MpidManager::MessageKey key(ComposeKey(key_string));
   auto found_itr = transfer_info.find(new_holder);
   if (found_itr != transfer_info.end()) {  // append
-    LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
-               << HexSubstr(group_name_string) << " to " << new_holder;
     found_itr->second.push_back(std::make_pair(group_name, key));
   } else {  // create
-    LOG(kInfo) << "Db::GetTransferInfo create transfering account "
-               << HexSubstr(group_name_string) << " to " << new_holder;
     std::vector<MpidManager::GKPair> group_key_vector;
     group_key_vector.push_back(std::make_pair(group_name, key));
     transfer_info.insert(std::make_pair(new_holder, std::move(group_key_vector)));

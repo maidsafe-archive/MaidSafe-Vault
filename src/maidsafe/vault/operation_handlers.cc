@@ -650,11 +650,21 @@ void DoOperation(
     const PutResponseFromDataManagerToMpidManager& message,
     const typename PutResponseFromDataManagerToMpidManager::Sender& /*sender*/,
     const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PutResponseFromDataManagerToMpidManager";
   auto data_name(GetNameVariant(*message.contents));
   PutResponseVisitor<MpidManagerService, MpidName> put_response_visitor(
       service, Identity(receiver.data.string()), message.contents->cost, message.id);
   boost::apply_visitor(put_response_visitor, data_name);
+}
+
+template <>
+void DoOperation(MpidManagerService* service,
+                 const AccountQueryFromMpidManagerToMpidManager& message,
+                 const AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+                 const AccountQueryFromMpidManagerToMpidManager::Receiver& receiver) {
+  auto data_name(GetNameVariant(*message.contents));
+  MpidManagerAccountQueryVisitor<MpidManagerService> account_request_visitor(service, sender,
+                                                                             receiver);
+  boost::apply_visitor(account_request_visitor, data_name);
 }
 
 }  // namespace detail
