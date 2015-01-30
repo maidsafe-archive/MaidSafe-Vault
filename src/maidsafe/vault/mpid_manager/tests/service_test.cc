@@ -20,6 +20,7 @@
 #include "maidsafe/common/asio_service.h"
 
 #include "maidsafe/passport/passport.h"
+#include "maidsafe/passport/types.h"
 
 #include "maidsafe/routing/routing_api.h"
 #include "maidsafe/routing/parameters.h"
@@ -52,6 +53,14 @@ class MpidManagerServiceTest : public testing::Test {
   template <typename UnresolvedActionType>
   void SendSync(const std::vector<UnresolvedActionType>& unresolved_actions,
                 const std::vector<routing::GroupSource>& group_source);
+
+  DbMessageQueryResult Get(const ImmutableData::Name& data_name) const {
+    return mpid_manager_service_.handler_.GetMessage(data_name);
+  }
+
+  void Put(const ImmutableData& data, const MpidName& mpid_name) {
+    mpid_manager_service_.handler_.Put(data, mpid_name);
+  }
 
  protected:
   virtual void SetUp() override {
@@ -181,6 +190,74 @@ TEST_F(MpidManagerServiceTest, BEH_DeleteRequestFromMpidManagerToMpidManager) {
   auto group_source(CreateGroupSource(NodeId(content.base.receiver->string())));
   EXPECT_NO_THROW(GroupSendToGroup(&mpid_manager_service_, get_message_request, group_source,
                                    routing::GroupId(NodeId(content.base.sender->string()))));
+}
+
+TEST_F(MpidManagerServiceTest, BEH_SyncPutMessage) {
+  passport::PublicMpid mpid(passport::CreateMpidAndSigner().first);
+  auto message(CreateContent<nfs_vault::MpidMessage>());
+  ImmutableData data(NonEmptyString(message.Serialise()));
+  auto group_source(CreateGroupSource(mpid.name()));
+  ActionMpidManagerPutMessage action_put(message, nfs::MessageId(RandomInt32()));
+  auto group_unresolved_action(
+      CreateGroupUnresolvedAction<MpidManager::UnresolvedPutMessage>(
+          MpidManager::SyncGroupKey(mpid.name()), action_put, group_source));
+  SendSync<MpidManager::UnresolvedPutMessage>(group_unresolved_action, group_source);
+  EXPECT_TRUE(Get(data.name()).valid());
+}
+
+TEST_F(MpidManagerServiceTest, BEH_SyncDeleteMessage) {
+  passport::PublicMpid mpid(passport::CreateMpidAndSigner().first);
+  auto message(CreateContent<nfs_vault::MpidMessage>());
+  ImmutableData data(NonEmptyString(message.Serialise()));
+  Put(data, mpid.name());
+  EXPECT_TRUE(Get(data.name()).valid());
+  auto group_source(CreateGroupSource(mpid.name()));
+  auto delete_message_action(ActionMpidManagerDeleteMessage(
+                                 nfs_vault::MpidMessageAlert(
+                                     message.base,
+                                     nfs_vault::MessageIdType(data.name().value.string()))));
+  auto group_unresolved_action(
+      CreateGroupUnresolvedAction<MpidManager::UnresolvedDeleteMessage>(
+          MpidManager::SyncGroupKey(mpid.name()), delete_message_action, group_source));
+  SendSync<MpidManager::UnresolvedDeleteMessage>(group_unresolved_action, group_source);
+  EXPECT_FALSE(Get(data.name()).valid());
+}
+
+TEST_F(MpidManagerServiceTest, BEH_SyncPutAlert) {
+  passport::PublicMpid mpid(passport::CreateMpidAndSigner().first);
+  auto message(CreateContent<nfs_vault::MpidMessage>());
+  ImmutableData data(NonEmptyString(message.Serialise()));
+  auto alert(nfs_vault::MpidMessageAlert(message.base,
+                                         nfs_vault::MessageIdType(data.name().value.string())));
+  ImmutableData alert_data(NonEmptyString(alert.Serialise()));
+  auto group_source(CreateGroupSource(mpid.name()));
+  ActionMpidManagerPutAlert action_put(alert);
+  auto group_unresolved_action(
+      CreateGroupUnresolvedAction<MpidManager::UnresolvedPutAlert>(
+          MpidManager::SyncGroupKey(mpid.name()), action_put, group_source));
+  SendSync<MpidManager::UnresolvedPutAlert>(group_unresolved_action, group_source);
+  EXPECT_TRUE(Get(alert_data.name()).valid());
+}
+
+TEST_F(MpidManagerServiceTest, BEH_SyncDeleteAlert) {
+  passport::PublicMpid mpid(passport::CreateMpidAndSigner().first);
+  auto message(CreateContent<nfs_vault::MpidMessage>());
+  ImmutableData data(NonEmptyString(message.Serialise()));
+  auto alert(nfs_vault::MpidMessageAlert(message.base,
+                                         nfs_vault::MessageIdType(data.name().value.string())));
+  ImmutableData alert_data(NonEmptyString(alert.Serialise()));
+  Put(alert_data, mpid.name());
+  EXPECT_TRUE(Get(alert_data.name()).valid());
+  auto group_source(CreateGroupSource(mpid.name()));
+  auto delete_alert_action(
+           ActionMpidManagerDeleteAlert(
+               nfs_vault::MpidMessageAlert(message.base,
+                                           nfs_vault::MessageIdType(data.name().value.string()))));
+  auto group_unresolved_action(
+           CreateGroupUnresolvedAction<MpidManager::UnresolvedDeleteAlert>(
+               MpidManager::SyncGroupKey(mpid.name()), delete_alert_action, group_source));
+  SendSync<MpidManager::UnresolvedDeleteAlert>(group_unresolved_action, group_source);
+  EXPECT_FALSE(Get(alert_data.name()).valid());
 }
 
 }  //  namespace test

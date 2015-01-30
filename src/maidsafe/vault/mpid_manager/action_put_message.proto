@@ -22,4 +22,5 @@ package maidsafe.vault.protobuf;
 
 message ActionMpidManagerPutMessage {
   required bytes serialised_message = 1;
+  required int32 message_id = 2;
 }

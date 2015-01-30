@@ -288,14 +288,14 @@ TEST_F(DataManagerServiceTest, BEH_Put) {
 }
 
 TEST_F(DataManagerServiceTest, BEH_SyncPut) {
-    ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-    DataManager::Key key(data.name());
-    auto group_source(CreateGroupSource(data.name()));
-    ActionDataManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
-    auto group_unresolved_action(
-        CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
-    SendSync<DataManager::UnresolvedPut>(group_unresolved_action, group_source);
-    EXPECT_NO_THROW(Get(key));
+  ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
+  DataManager::Key key(data.name());
+  auto group_source(CreateGroupSource(data.name()));
+  ActionDataManagerPut action_put(kTestChunkSize, nfs::MessageId(RandomInt32()));
+  auto group_unresolved_action(
+      CreateGroupUnresolvedAction<DataManager::UnresolvedPut>(key, action_put, group_source));
+  SendSync<DataManager::UnresolvedPut>(group_unresolved_action, group_source);
+  EXPECT_NO_THROW(Get(key));
 }
 
 TEST_F(DataManagerServiceTest, BEH_Delete) {

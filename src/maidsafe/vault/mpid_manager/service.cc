@@ -322,12 +322,13 @@ void MpidManagerService::HandleMessage(
                                                           sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        ImmutableData data(NonEmptyString(resolved_action->action.kMessage.Serialise()));
-         handler_.Put(data, resolved_action->action.kMessage.base.sender);
+        ImmutableData data(NonEmptyString(
+                               resolved_action->action.kMessageAndId.message.Serialise()));
+        handler_.Put(data, resolved_action->action.kMessageAndId.message.base.sender);
         dispatcher_.SendMessageAlert(
-            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.base,
+            nfs_vault::MpidMessageAlert(resolved_action->action.kMessageAndId.message.base,
                                         nfs_vault::MessageIdType(data.name().value.string())),
-            resolved_action->action.kMessage.base.receiver, message.id);
+            resolved_action->action.kMessageAndId.message.base.receiver, message.id);
       }
       break;
     }
@@ -408,9 +409,8 @@ void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message
     return;
   }
   dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success), message_id);
-  // After sync alert must be sent out -- TO BE IMPLEMENTED
   DoSync(MpidManager::UnresolvedPutMessage(MpidManager::SyncGroupKey(sender),
-                                           ActionMpidManagerPutMessage(message),
+                                           ActionMpidManagerPutMessage(message, message_id),
                                            routing_.kNodeId()));
 }
 
