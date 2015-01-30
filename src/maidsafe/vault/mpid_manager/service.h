@@ -35,9 +35,9 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/account_transfer_handler.h"
-#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/mpid_manager/handler.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
