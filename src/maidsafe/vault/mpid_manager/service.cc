@@ -368,7 +368,6 @@ void MpidManagerService::TransferAccount(const NodeId& destination,
   assert(!accounts.empty());
   protobuf::AccountTransfer account_transfer_proto;
   {
-//    std::lock_guard<std::mutex> lock(mutex_);
     for (auto& account : accounts) {
 //      VLOG(nfs::Persona::kMpidManager, VisualiserAction::kAccountTransfer, account.first.value,
 //           Identity{ destination.string() });

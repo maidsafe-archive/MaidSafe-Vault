@@ -49,22 +49,20 @@ bool MpidManagerHandler::HasAccount(const MpidName& mpid) const {
 
 DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
-    nfs_vault::MpidMessage mpid_message(GetChunk<ImmutableData>(data_name).data().string());
-    return std::move(mpid_message);
+    return nfs_vault::MpidMessage(GetChunk<ImmutableData>(data_name).data().string());
   }
-  catch (const maidsafe_error& /*error*/) {
+  catch (const maidsafe_error& error) {
+    return boost::make_unexpected(error);
   }
-  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
 DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) const {
   try {
-    ImmutableData data(GetChunk<ImmutableData>(data_name));
-    return std::move(data);
+    return GetChunk<ImmutableData>(data_name);
   }
-  catch (const maidsafe_error& /*error*/) {
+  catch (const maidsafe_error& error) {
+    return boost::make_unexpected(error);
   }
-  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
 MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(

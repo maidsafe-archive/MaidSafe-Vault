@@ -373,9 +373,11 @@ template <typename ServiceHandlerType>
 class MpidManagerAccountQueryVisitor : public boost::static_visitor<> {
  public:
   MpidManagerAccountQueryVisitor(ServiceHandlerType* service,
-                                 const NodeId& sender_node_id,
-                                 const NodeId& receiver_node_id)
-      : kService_(service), kSenderNodeId_(sender_node_id), kReceiverNodeId_(receiver_node_id) {}
+                                 const NodeId sender_node_id,
+                                 const NodeId receiver_node_id)
+      : kService_(service),
+        kSenderNodeId_(std::move(sender_node_id)),
+        kReceiverNodeId_(std::move(receiver_node_id)) {}
 
   template <typename Name>
   void operator()(const Name& name) {

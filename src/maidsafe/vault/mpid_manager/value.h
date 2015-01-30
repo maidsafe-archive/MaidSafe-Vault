@@ -19,13 +19,10 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
 
-#include <cstdint>
 #include <string>
 #include <vector>
 
-#include "maidsafe/common/data_types/data_name_variant.h"
-
-#include "maidsafe/vault/types.h"
+#include "maidsafe/common/data_types/immutable_data.h"
 
 namespace maidsafe {
 
@@ -33,8 +30,8 @@ namespace vault {
 
 class MpidManagerValue {
  public:
-//  MpidManagerValue();
-  explicit MpidManagerValue(const ImmutableData& data_in);
+  MpidManagerValue();
+  explicit MpidManagerValue(const ImmutableData data_in);
   MpidManagerValue(const MpidManagerValue& other);
   MpidManagerValue(MpidManagerValue&& other);
   MpidManagerValue& operator=(MpidManagerValue other);

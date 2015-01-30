@@ -29,9 +29,9 @@ namespace maidsafe {
 
 namespace vault {
 
-// MpidManagerValue::MpidManagerValue() : data() {}
+MpidManagerValue::MpidManagerValue() : data(NonEmptyString(std::string(64, 0))) {}
 
-MpidManagerValue::MpidManagerValue(const ImmutableData& data_in) : data(data_in) {}
+MpidManagerValue::MpidManagerValue(const ImmutableData data_in) : data(std::move(data_in)) {}
 
 MpidManagerValue::MpidManagerValue(const MpidManagerValue& other) : data(other.data) {}
 
