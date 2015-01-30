@@ -356,7 +356,7 @@ template <typename ServiceHandlerType>
 class DataManagerAccountQueryVisitor : public boost::static_visitor<> {
  public:
   DataManagerAccountQueryVisitor(ServiceHandlerType* service,
-                                   const NodeId& sender_node_id)
+                                 const NodeId& sender_node_id)
       : kService_(service), kDataManagerNodeId_(sender_node_id) {}
 
   template <typename Name>
@@ -367,6 +367,28 @@ class DataManagerAccountQueryVisitor : public boost::static_visitor<> {
  private:
   ServiceHandlerType* const kService_;
   const NodeId kDataManagerNodeId_;
+};
+
+template <typename ServiceHandlerType>
+class MpidManagerAccountQueryVisitor : public boost::static_visitor<> {
+ public:
+  MpidManagerAccountQueryVisitor(ServiceHandlerType* service,
+                                 const NodeId sender_node_id,
+                                 const NodeId receiver_node_id)
+      : kService_(service),
+        kSenderNodeId_(std::move(sender_node_id)),
+        kReceiverNodeId_(std::move(receiver_node_id)) {}
+
+  template <typename Name>
+  void operator()(const Name& name) {
+    ImmutableData::Name data_name(Identity(name->string()));
+    kService_->HandleAccountQuery(data_name, kSenderNodeId_, kReceiverNodeId_);
+  }
+
+ private:
+  ServiceHandlerType* const kService_;
+  const NodeId kSenderNodeId_;
+  const NodeId kReceiverNodeId_;
 };
 
 template <typename ServiceHandlerType>
