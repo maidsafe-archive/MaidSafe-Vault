@@ -19,6 +19,8 @@
 #include "maidsafe/vault/mpid_manager/handler.h"
 #include "maidsafe/vault/utils.h"
 
+#include "maidsafe/vault/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
