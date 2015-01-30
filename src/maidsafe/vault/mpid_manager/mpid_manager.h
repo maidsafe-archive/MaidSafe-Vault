@@ -36,6 +36,7 @@
 #include "maidsafe/vault/mpid_manager/action_delete_alert.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_delete_message.h"
+#include "maidsafe/vault/action_create_remove_account.h"
 
 namespace maidsafe {
 
@@ -79,7 +80,7 @@ namespace vault {
 
 using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
+using  MpidManager = nfs::PersonaTypes<nfs::Persona::kMpidManager>;
 
 }  // namespace vault
 

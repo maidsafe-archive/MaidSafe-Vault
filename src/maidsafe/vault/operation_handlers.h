@@ -435,6 +435,20 @@ void DoOperation(
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const PutResponseFromDataManagerToMpidManager& message,
+    const typename PutResponseFromDataManagerToMpidManager::Sender& sender,
+    const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver);
+
 }  // namespace detail
 
 template <typename ServiceHandler, typename MessageType,

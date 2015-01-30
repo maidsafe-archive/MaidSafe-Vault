@@ -92,7 +92,7 @@ void DataManagerService::HandleMessage(
          const PutRequestFromMpidManagerToDataManager& message,
          const typename PutRequestFromMpidManagerToDataManager::Sender& sender,
          const typename PutRequestFromMpidManagerToDataManager::Receiver& receiver) {
-  typedef PutRequestFromMpidManagerToDataManager MessageType;
+  using MessageType = PutRequestFromMpidManagerToDataManager;
   OperationHandlerWrapper<DataManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
         return this->ValidateSender(message, sender);

@@ -64,7 +64,7 @@ void DoOperation(MaidManagerService* service,
                  const PutResponseFromDataManagerToMaidManager::Receiver& receiver) {
   LOG(kVerbose) << "DoOperation PutResponseFromDataManagerToMaidManager";
   auto data_name(GetNameVariant(*message.contents));
-  MaidManagerPutResponseVisitor<MaidManagerService> put_response_visitor(
+  PutResponseVisitor<MaidManagerService, MaidName> put_response_visitor(
       service, Identity(receiver.data.string()), message.contents->cost, message.id);
   boost::apply_visitor(put_response_visitor, data_name);
 }
@@ -642,6 +642,19 @@ void DoOperation(
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& /*receiver*/) {
   service->HandleSendMessage(*message.contents, MpidName(Identity(sender.data.string())),
                              message.id);
+}
+
+template <>
+void DoOperation(
+    MpidManagerService* service,
+    const PutResponseFromDataManagerToMpidManager& message,
+    const typename PutResponseFromDataManagerToMpidManager::Sender& /*sender*/,
+    const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver) {
+  LOG(kVerbose) << "DoOperation PutResponseFromDataManagerToMpidManager";
+  auto data_name(GetNameVariant(*message.contents));
+  PutResponseVisitor<MpidManagerService, MpidName> put_response_visitor(
+      service, Identity(receiver.data.string()), message.contents->cost, message.id);
+  boost::apply_visitor(put_response_visitor, data_name);
 }
 
 }  // namespace detail
