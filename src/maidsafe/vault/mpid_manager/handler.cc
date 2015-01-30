@@ -17,7 +17,6 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "maidsafe/vault/mpid_manager/handler.h"
-
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
