@@ -234,18 +234,6 @@ void DoOperation(DataManagerService* service,
 
 template <>
 void DoOperation(DataManagerService* service,
-                 const nfs::GetRequestFromMpidNodeToDataManager& message,
-                 const nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
-
-template <>
-void DoOperation(DataManagerService* service,
-                 const nfs::GetRequestFromMpidNodeToDataManager& message,
-                 const nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
-                 const nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
-
-template <>
-void DoOperation(DataManagerService* service,
                  const nfs::GetRequestFromDataGetterToDataManager& message,
                  const nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
                  const nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver);
