@@ -661,10 +661,9 @@ void DoOperation(MpidManagerService* service,
                  const AccountQueryFromMpidManagerToMpidManager& message,
                  const AccountQueryFromMpidManagerToMpidManager::Sender& sender,
                  const AccountQueryFromMpidManagerToMpidManager::Receiver& receiver) {
-  auto data_name(GetNameVariant(*message.contents));
-  MpidManagerAccountQueryVisitor<MpidManagerService> account_request_visitor(service, sender,
-                                                                             receiver);
-  boost::apply_visitor(account_request_visitor, data_name);
+  assert(message.contents->type == ImmutableData::Tag::kValue);
+  service->HandleAccountQuery(ImmutableData::Name(message.contents->raw_name), sender.data,
+                              receiver.data);
 }
 
 }  // namespace detail

@@ -95,7 +95,6 @@ class MpidManagerService {
 
   friend class test::MpidManagerServiceTest;
   friend class detail::PutResponseVisitor<MpidManagerService, MpidName>;
-  friend class detail::MpidManagerAccountQueryVisitor<MpidManagerService>;
 
  private:
   template <typename MessageType>
