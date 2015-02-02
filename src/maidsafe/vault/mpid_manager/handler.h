@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANGER_MPID_MANAGER_HANDLER_H_
-#define MAIDSAFE_VAULT_MPID_MANGER_MPID_MANAGER_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_HANDLER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_HANDLER_H_
 
 #include <string>
 #include <vector>
@@ -30,7 +30,7 @@
 #include "maidsafe/nfs/types.h"
 #include "maidsafe/vault/types.h"
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_database.h"
+#include "maidsafe/vault/mpid_manager/database.h"
 
 namespace maidsafe {
 
@@ -38,22 +38,22 @@ namespace vault {
 
 class MpidManagerHandler {
  public:
-  explicit MpidManagerHandler(const boost::filesystem::path vault_root_dir,
-                              DiskUsage max_disk_usage);
+  MpidManagerHandler(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
 
   void Put(const ImmutableData& data, const MpidName& mpid);
   void Delete(const ImmutableData::Name& data_name);
-  DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name);
-  DbDataQueryResult GetData(const ImmutableData::Name& data_name);
-  bool Has(const ImmutableData::Name& data_name);
-  bool HasAccount(const MpidName& mpid);
+
+  DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name) const;
+  DbDataQueryResult GetData(const ImmutableData::Name& data_name) const;
+  bool Has(const ImmutableData::Name& data_name) const;
+  bool HasAccount(const MpidName& mpid) const;
 
   MpidManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
  private:
   template <typename Data>
-  Data GetChunk(const typename Data::Name& data_name);
+  Data GetChunk(const typename Data::Name& data_name) const;
 
   template <typename Data>
   void PutChunk(const Data& data);
@@ -62,17 +62,21 @@ class MpidManagerHandler {
   void DeleteChunk(const DataName& data_name);
 
   ChunkStore chunk_store_;
-  MpidManagerDataBase db_;
+  MpidManagerDatabase db_;
 };
 
 template <typename Data>
-Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) {
+Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) const {
   DataNameVariant data_name_variant(data_name);
-  Data data(data_name,
-            typename Data::serialised_type(chunk_store_.Get(data_name_variant)));
-  return data;
+  try {
+    Data data(data_name,
+              typename Data::serialised_type(chunk_store_.Get(data_name_variant)));
+    return data;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    throw;
+  }
 }
-
 
 template <typename Data>
 void MpidManagerHandler::PutChunk(const Data& data) {
@@ -89,4 +93,4 @@ void MpidManagerHandler::DeleteChunk(const DataName& data_name) {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MPID_MANGER_MPID_MANAGER_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_HANDLER_H_

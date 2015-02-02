@@ -19,7 +19,9 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
+#include <map>
 #include <utility>
+#include <vector>
 
 #include "boost/expected/expected.hpp"
 
@@ -34,15 +36,24 @@
 #include "maidsafe/vault/mpid_manager/action_delete_alert.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_delete_message.h"
+#include "maidsafe/vault/action_create_remove_account.h"
 #include "maidsafe/vault/mpid_manager/value.h"
 
 namespace maidsafe {
+
+namespace vault {
+
+template <bool Remove>
+struct ActionCreateRemoveAccount;
+using ActionCreateAccount = ActionCreateRemoveAccount<false>;
+using ActionRemoveAccount = ActionCreateRemoveAccount<true>;
+
+}  // namespace vault
 
 namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
-
   // =======  for database usage =======
   using GroupName = passport::PublicMpid::Name;
   using MessageKey = ImmutableData::Name;
@@ -56,6 +67,8 @@ struct PersonaTypes<Persona::kMpidManager> {
   using TransferInfo = std::map<NodeId, std::vector<KVPair>>;
   using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
+  using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionCreateAccount>;
+  using UnresolvedRemoveAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionRemoveAccount>;
   using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,
                                                      vault::ActionMpidManagerPutAlert>;
   using UnresolvedDeleteAlert = vault::UnresolvedAction<SyncGroupKey,
@@ -74,10 +87,11 @@ namespace vault {
 using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
 using DbDataQueryResult = boost::expected<ImmutableData, maidsafe_error>;
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
+using  MpidManager = nfs::PersonaTypes<nfs::Persona::kMpidManager>;
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+

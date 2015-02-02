@@ -67,27 +67,27 @@ class MaidManagerPutVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template <typename ServiceHandlerType>
+template <typename ServiceHandlerType, typename RequestorIdType>
 class DataManagerPutVisitor : public boost::static_visitor<> {
  public:
-  DataManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content, Identity maid_name,
-                        nfs::MessageId message_id)
+  DataManagerPutVisitor(ServiceHandlerType* service, NonEmptyString content,
+                        RequestorIdType requestor, nfs::MessageId message_id)
       : kService_(service),
         kContent_(std::move(content)),
-        kMaidName_(std::move(maid_name)),
+        kRequestorId_(std::move(requestor)),
         kMessageId_(std::move(message_id)) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
     kService_->HandlePut(
         typename Name::data_type(data_name, typename Name::data_type::serialised_type(kContent_)),
-        kMaidName_, kMessageId_);
+        kRequestorId_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
   const NonEmptyString kContent_;
-  const MaidName kMaidName_;
+  const RequestorIdType kRequestorId_;
   const nfs::MessageId kMessageId_;
 };
 
@@ -246,22 +246,22 @@ class PutResponseSuccessVisitor : public boost::static_visitor<> {
   const nfs::MessageId kMessageId_;
 };
 
-template <typename ServiceHandlerType>
-class MaidManagerPutResponseVisitor : public boost::static_visitor<> {
+template <typename ServiceHandlerType, typename AccountType>
+class PutResponseVisitor : public boost::static_visitor<> {
  public:
-  MaidManagerPutResponseVisitor(ServiceHandlerType* service, const Identity& maid_node,
-                                int32_t cost, nfs::MessageId message_id)
-      : kService_(service), kMaidNode_(maid_node), kCost_(cost), kMessageId_(message_id) {}
+  PutResponseVisitor(ServiceHandlerType* service, const Identity& account, int32_t cost,
+                     nfs::MessageId message_id)
+      : kService_(service), kAccountName_(account), kCost_(cost), kMessageId_(message_id) {}
 
   template <typename Name>
   void operator()(const Name& data_name) {
-    kService_->template HandlePutResponse<typename Name::data_type>(kMaidNode_, data_name, kCost_,
-                                                                    kMessageId_);
+    kService_->template HandlePutResponse<typename Name::data_type>(kAccountName_, data_name,
+                                                                    kCost_, kMessageId_);
   }
 
  private:
   ServiceHandlerType* const kService_;
-  const MaidName kMaidNode_;
+  const AccountType kAccountName_;
   const int32_t kCost_;
   const nfs::MessageId kMessageId_;
 };
@@ -369,25 +369,6 @@ class DataManagerAccountQueryVisitor : public boost::static_visitor<> {
   const NodeId kDataManagerNodeId_;
 };
 
-template <typename ServiceHandlerType>
-class MpidManagerAccountQueryVisitor : public boost::static_visitor<> {
- public:
-  MpidManagerAccountQueryVisitor(ServiceHandlerType* service,
-                                 const NodeId& sender_node_id,
-                                 const NodeId& receiver_node_id)
-      : kService_(service), kSenderNodeId_(sender_node_id), kReceiverNodeId_(receiver_node_id) {}
-
-  template <typename Name>
-  void operator()(const Name& name) {
-    ImmutableData::Name data_name(Identity(name->string()));
-    kService_->HandleAccountQuery(data_name, kSenderNodeId_, kReceiverNodeId_);
-  }
-
- private:
-  ServiceHandlerType* const kService_;
-  const NodeId kSenderNodeId_;
-  const NodeId kReceiverNodeId_;
-};
 
 template <typename ServiceHandlerType>
 class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {

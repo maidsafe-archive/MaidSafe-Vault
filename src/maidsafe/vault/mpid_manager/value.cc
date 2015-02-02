@@ -29,8 +29,6 @@ namespace maidsafe {
 
 namespace vault {
 
-// MpidManagerValue::MpidManagerValue() : data() {}
-
 MpidManagerValue::MpidManagerValue(const ImmutableData& data_in) : data(data_in) {}
 
 MpidManagerValue::MpidManagerValue(const MpidManagerValue& other) : data(other.data) {}
@@ -43,7 +41,7 @@ MpidManagerValue& MpidManagerValue::operator=(MpidManagerValue other) {
 }
 
 MpidManagerValue::MpidManagerValue(const std::string& serialised_value)
-  : data([&serialised_value]()->NonEmptyString {
+    : data([&serialised_value]()->NonEmptyString {
              protobuf::MpidManagerValue mpid_manager_value_proto;
              if (!mpid_manager_value_proto.ParseFromString(serialised_value)) {
                LOG(kError) << "Failed to read or parse serialised mpid manager value";

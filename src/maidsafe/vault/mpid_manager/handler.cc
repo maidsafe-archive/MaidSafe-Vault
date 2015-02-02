@@ -16,7 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_handler.h"
+#include "maidsafe/vault/mpid_manager/handler.h"
+
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -25,44 +27,42 @@ namespace vault {
 MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                                        DiskUsage max_disk_usage)
     : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage),
-      db_(vault_root_dir) {}
+      db_(UniqueDbPath(vault_root_dir)) {}
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
-  db_.Put(data.name(), data.data().string().size(), mpid);
+  db_.Put(data.name(), static_cast<uint32_t>(data.data().string().size()), mpid);
 }
 
-void MpidManagerHandler::Delete(const ImmutableData::Name& data_name){
+void MpidManagerHandler::Delete(const ImmutableData::Name& data_name) {
   DeleteChunk(data_name);
   db_.Delete(data_name);
 }
 
-bool MpidManagerHandler::Has(const ImmutableData::Name& data_name){
+bool MpidManagerHandler::Has(const ImmutableData::Name& data_name) const {
   return db_.Has(data_name);
 }
 
-bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
+bool MpidManagerHandler::HasAccount(const MpidName& mpid) const {
   return db_.HasGroup(mpid);
 }
 
-DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) {
+DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
-    nfs_vault::MpidMessage mpid_message(GetChunk<ImmutableData>(data_name).data().string());
-    return std::move(mpid_message);
+    return nfs_vault::MpidMessage(GetChunk<ImmutableData>(data_name).data().string());
   }
-  catch (const maidsafe_error& /*error*/) {
+  catch (const maidsafe_error& error) {
+    return boost::make_unexpected(error);
   }
-  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
-DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) {
+DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) const {
   try {
-    ImmutableData data(GetChunk<ImmutableData>(data_name));
-    return std::move(data);
+    return GetChunk<ImmutableData>(data_name);
   }
-  catch (const maidsafe_error& /*error*/) {
+  catch (const maidsafe_error& error) {
+    return boost::make_unexpected(error);
   }
-  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
 MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
@@ -70,25 +70,29 @@ MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
   MpidManager::DbTransferInfo db_transfer_info(db_.GetTransferInfo(close_nodes_change));
   auto prune_itr(db_transfer_info.find(NodeId()));
   if (prune_itr != db_transfer_info.end()) {
-    for (const auto& prune_entry : prune_itr->second)
+    for (const auto& prune_entry : prune_itr->second) {
       try {
         Delete(prune_entry.second);
+      } catch (const maidsafe_error& error) {
+        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
+                    << " when deleting chunk " << HexSubstr(prune_entry.second->string());
       }
-      catch (const maidsafe_error& /*error*/) {
-      }
+    }
     db_transfer_info.erase(prune_itr);
   }
 
   MpidManager::TransferInfo transfer_info;
   for (const auto& transfer : db_transfer_info) {
     std::vector<MpidManager::KVPair> kv_pairs;
-    for (const auto& account_entry : transfer.second)
+    for (const auto& account_entry : transfer.second) {
       try {
         kv_pairs.push_back(std::make_pair(account_entry.first,
             MpidManager::Value(GetChunk<ImmutableData>(account_entry.second))));
+      } catch (const maidsafe_error& error) {
+        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
+                    << " when fetching chunk " << HexSubstr(account_entry.second->string());
       }
-      catch (const maidsafe_error& /*error*/) {
-      }
+    }
     transfer_info.insert(std::make_pair(transfer.first, std::move(kv_pairs)));
   }
   return transfer_info;

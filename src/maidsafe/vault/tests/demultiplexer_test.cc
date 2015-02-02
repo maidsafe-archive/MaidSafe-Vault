@@ -28,6 +28,7 @@
 #include "maidsafe/vault/data_manager/service.h"
 #include "maidsafe/vault/pmid_manager/service.h"
 #include "maidsafe/vault/pmid_node/service.h"
+#include "maidsafe/vault/mpid_manager/service.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -56,8 +57,10 @@ class DemultiplexerTest : public testing::Test {
           new PmidManagerService(pmid_, *routing_)))),
       pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
           new PmidNodeService(pmid_, *routing_, data_getter_, vault_dir_, DiskUsage(100))))),
+      mpid_manager_service_(std::move(std::unique_ptr<MpidManagerService>(new MpidManagerService(
+          pmid_, *routing_, vault_dir_, DiskUsage(100))))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, data_getter_) {}
+             pmid_manager_service_, pmid_node_service_, mpid_manager_service_, data_getter_) {}
 
  protected:
   const maidsafe::test::TestPath kTestRoot_;
@@ -71,6 +74,7 @@ class DemultiplexerTest : public testing::Test {
   nfs::Service<DataManagerService> data_manager_service_;
   nfs::Service<PmidManagerService> pmid_manager_service_;
   nfs::Service<PmidNodeService> pmid_node_service_;
+  nfs::Service<MpidManagerService> mpid_manager_service_;
   Demultiplexer demux_;
 };
 
@@ -86,19 +90,6 @@ TEST_F(DemultiplexerTest, BEH_HandleMaidManagerMessage) {
 
 TEST_F(DemultiplexerTest, BEH_HandleDataGetterMessage) {
   using NfsMessage = nfs::GetResponseFromDataManagerToDataGetter;
-  using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
-  auto data_id(NodeId(RandomString(NodeId::kSize))),
-       data_manager_id(NodeId(RandomString(NodeId::kSize)));
-  RoutingMessage routing_message(
-      CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
-      routing::GroupSource(routing::GroupId(data_id),
-                           routing::SingleId(data_manager_id)),
-      routing::SingleId(routing_->kNodeId()));
-  demux_.HandleMessage(routing_message);
-}
-
-TEST_F(DemultiplexerTest, BEH_HandleMaidNodeMessage) {
-  using NfsMessage = nfs::GetResponseFromDataManagerToMaidNode;
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
   auto data_id(NodeId(RandomString(NodeId::kSize))),
        data_manager_id(NodeId(RandomString(NodeId::kSize)));

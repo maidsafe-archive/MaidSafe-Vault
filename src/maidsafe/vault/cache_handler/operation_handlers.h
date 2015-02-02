@@ -70,16 +70,16 @@ bool DoCacheOperation(CacheHandlerService* /*service*/, const MessageType& /*mes
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver);
+    const nfs::GetResponseFromDataManagerToMpidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver);
+    const nfs::GetCachedResponseFromCacheHandlerToMpidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Receiver& receiver);
 
 template <>
 bool DoCacheOperation(
@@ -105,9 +105,9 @@ bool DoCacheOperation(
 template <>
 bool DoCacheOperation(
     CacheHandlerService* service,
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver);
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
 
 }  // namespace detail
 

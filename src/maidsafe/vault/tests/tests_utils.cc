@@ -18,6 +18,8 @@
 
 #include <limits>
 
+#include "maidsafe/passport/passport.h"
+
 #include "maidsafe/vault/tests/tests_utils.h"
 
 namespace maidsafe {
@@ -82,6 +84,26 @@ nfs_client::DataNameAndReturnCode CreateContent<nfs_client::DataNameAndReturnCod
   return nfs_client::DataNameAndReturnCode(
       nfs_vault::DataName(DataTagValue::kImmutableDataValue, Identity(RandomString(64))),
       nfs_client::ReturnCode(CommonErrors::unable_to_handle_request));
+}
+
+template <>
+nfs_vault::MpidMessageAlert CreateContent<nfs_vault::MpidMessageAlert>() {
+  passport::PublicMpid source(passport::CreateMpidAndSigner().first),
+                       dest(passport::CreateMpidAndSigner().first);
+  return nfs_vault::MpidMessageAlert(
+             nfs_vault::MpidMessageBase(source.name(), dest.name(), RandomInt32(), RandomInt32(),
+                                        nfs_vault::MessageHeaderType(RandomString(128))),
+             nfs_vault::MessageIdType(RandomString(NodeId::kSize)));
+}
+
+template <>
+nfs_vault::MpidMessage CreateContent<nfs_vault::MpidMessage>() {
+  passport::PublicMpid source(passport::CreateMpidAndSigner().first),
+                       dest(passport::CreateMpidAndSigner().first);
+  return nfs_vault::MpidMessage(
+             nfs_vault::MpidMessageBase(source.name(), dest.name(), RandomInt32(), RandomInt32(),
+                                        nfs_vault::MessageHeaderType(RandomString(128))),
+             nfs_vault::MessageBodyType(RandomString(128 * 2)));
 }
 
 template <>

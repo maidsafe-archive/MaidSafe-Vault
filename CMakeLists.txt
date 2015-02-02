@@ -71,6 +71,7 @@ set(TestsHybridMain ${VaultSourcesDir}/tests/tests_hybrid_main.cc)
 set(VaultTests         ${VaultTestsAllFiles}
                        ${PmidNodeTestsAllFiles}
                        ${PmidManagerTestsAllFiles}
+                       ${MpidManagerTestsAllFiles}
                        ${DataManagerTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}
                        ${CacheHandlerTestsAllFiles}

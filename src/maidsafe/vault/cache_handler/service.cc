@@ -50,11 +50,10 @@ CacheHandlerService::CacheHandlerService(routing::Routing& routing,
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetResponseFromDataManagerToMaidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Sender& sender,
-    const typename nfs::GetResponseFromDataManagerToMaidNode::Receiver& receiver) {
-  typedef nfs::GetResponseFromDataManagerToMaidNode MessageType;
-  LOG(kVerbose) << message;
+    const nfs::GetResponseFromDataManagerToMpidNode& message,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Sender& sender,
+    const typename nfs::GetResponseFromDataManagerToMpidNode::Receiver& receiver) {
+  typedef nfs::GetResponseFromDataManagerToMpidNode MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -64,11 +63,10 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetCachedResponseFromCacheHandlerToMaidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Sender& sender,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMaidNode::Receiver& receiver) {
-  typedef nfs::GetCachedResponseFromCacheHandlerToMaidNode MessageType;
-  LOG(kVerbose) << message;
+    const nfs::GetCachedResponseFromCacheHandlerToMpidNode& message,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Sender& sender,
+    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Receiver& receiver) {
+  typedef nfs::GetCachedResponseFromCacheHandlerToMpidNode MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -82,7 +80,6 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver) {
   typedef nfs::GetResponseFromDataManagerToDataGetter MessageType;
-  LOG(kVerbose) << message;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -96,7 +93,6 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver) {
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter MessageType;
-  LOG(kVerbose) << message;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -106,11 +102,10 @@ CacheHandlerService::HandleMessage(
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetRequestFromMaidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMaidNodeToDataManager::Receiver& receiver) {
-  typedef nfs::GetRequestFromMaidNodeToDataManager MessageType;
-  LOG(kVerbose) << message;
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver) {
+  typedef nfs::GetRequestFromMpidNodeToDataManager MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -124,7 +119,6 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetRequestFromDataGetterToDataManager::Sender& sender,
     const typename nfs::GetRequestFromDataGetterToDataManager::Receiver& receiver) {
   typedef nfs::GetRequestFromDataGetterToDataManager MessageType;
-  LOG(kVerbose) << message;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);

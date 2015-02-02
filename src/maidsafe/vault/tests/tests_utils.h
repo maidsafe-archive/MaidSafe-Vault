@@ -102,6 +102,12 @@ nfs_vault::DiffSize CreateContent<nfs_vault::DiffSize>();
 template <>
 nfs_vault::VersionTreeCreation CreateContent<nfs_vault::VersionTreeCreation>();
 
+template <>
+nfs_vault::MpidMessageAlert CreateContent<nfs_vault::MpidMessageAlert>();
+
+template <>
+nfs_vault::MpidMessage CreateContent<nfs_vault::MpidMessage>();
+
 template <typename MessageType>
 MessageType CreateMessage(const typename MessageType::Contents& contents) {
   nfs::MessageId message_id(RandomUint32());

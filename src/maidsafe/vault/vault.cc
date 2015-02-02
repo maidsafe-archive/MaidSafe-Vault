@@ -43,24 +43,24 @@ Vault::Vault(const vault_manager::VaultConfig& vault_config)
 #endif
       data_getter_(asio_service_, *routing_),
       public_pmid_helper_(),
-      maid_manager_service_(std::move(std::unique_ptr<MaidManagerService>(new MaidManagerService(
-          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
-      version_handler_service_(std::move(std::unique_ptr<VersionHandlerService>(
-          new VersionHandlerService(vault_config.pmid, *routing_, vault_config.vault_dir)))),
-      data_manager_service_(std::move(std::unique_ptr<DataManagerService>(new DataManagerService(
-          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir)))),
-      pmid_manager_service_(std::move(std::unique_ptr<PmidManagerService>(
-          new PmidManagerService(vault_config.pmid, *routing_)))),
-      pmid_node_service_(std::move(std::unique_ptr<PmidNodeService>(
-          new PmidNodeService(vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
-                              vault_config.max_disk_usage)))),
-      mpid_manager_service_(std::move(std::unique_ptr<MpidManagerService>(new MpidManagerService(
-          vault_config.pmid, *routing_, vault_config.vault_dir, vault_config.max_disk_usage)))),
+      maid_manager_service_(std::move(maidsafe::make_unique<MaidManagerService>(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir))),
+      version_handler_service_(std::move(maidsafe::make_unique<VersionHandlerService>(
+          vault_config.pmid, *routing_, vault_config.vault_dir))),
+      data_manager_service_(std::move(maidsafe::make_unique<DataManagerService>(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir))),
+      pmid_manager_service_(std::move(maidsafe::make_unique<PmidManagerService>(
+          vault_config.pmid, *routing_))),
+      pmid_node_service_(std::move(maidsafe::make_unique<PmidNodeService>(
+          vault_config.pmid, *routing_, data_getter_, vault_config.vault_dir,
+          vault_config.max_disk_usage))),
+      mpid_manager_service_(std::move(maidsafe::make_unique<MpidManagerService>(
+          vault_config.pmid, *routing_, vault_config.vault_dir, vault_config.max_disk_usage))),
       // FIXME need to specialise
-      cache_service_(std::move(std::unique_ptr<CacheHandlerService>(
-          new CacheHandlerService(*routing_, vault_config.vault_dir)))),
+      cache_service_(std::move(maidsafe::make_unique<CacheHandlerService>(
+          *routing_, vault_config.vault_dir))),
       demux_(maid_manager_service_, version_handler_service_, data_manager_service_,
-             pmid_manager_service_, pmid_node_service_, data_getter_),
+             pmid_manager_service_, pmid_node_service_, mpid_manager_service_, data_getter_),
       getting_keys_()
 #ifdef TESTING
       ,
