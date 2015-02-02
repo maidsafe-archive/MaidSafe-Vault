@@ -29,7 +29,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MpidManagerValue::MpidManagerValue(const ImmutableData& data_in) : data(data_in) {}
+MpidManagerValue::MpidManagerValue(ImmutableData data_in) : data(std::move(data_in)) {}
 
 MpidManagerValue::MpidManagerValue(const MpidManagerValue& other) : data(other.data) {}
 
