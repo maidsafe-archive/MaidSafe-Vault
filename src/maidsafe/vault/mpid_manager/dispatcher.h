@@ -58,9 +58,10 @@ class MpidManagerDispatcher {
   void SendSync(const MpidManager::SyncGroupKey& key, const std::string& serialised_sync);
 
   void SendAccountTransfer(const NodeId& destination_peer, const std::string& serialised_account);
-  void SendAccountRequest(const Key& key);
-  void SendAccountResponse(const std::string& serialised_account, const routing::GroupId& group_id,
-                           const NodeId& sender);
+  void SendAccountQuery(const MpidName& receiver, const ImmutableData::Name account_name);
+  void SendAccountQueryResponse(const std::string& serialised_account,
+                                const routing::GroupId& group_id,
+                                const NodeId& sender);
   void SendDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver);
   void SendMessageResponse(const MpidName& receiver, const maidsafe_error& error,
                            nfs::MessageId message_id);
