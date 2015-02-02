@@ -200,7 +200,9 @@ std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
   statement.BindText(1, group_name);
   while (statement.Step() == sqlite::StepResult::kSqliteRow) {
     ++num_of_messages;
-    total_size += std::stoi(statement.ColumnText(0));
+    uint32_t chunk_size(0);
+    ConvertFromString(statement.ColumnText(0), chunk_size);
+    total_size += chunk_size;
   }
   return std::make_pair(num_of_messages, total_size);
 }

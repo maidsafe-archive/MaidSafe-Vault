@@ -20,7 +20,7 @@
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/routing/close_nodes_change.h"
 
-#include "maidsafe/vault/mpid_manager/mpid_manager_database.h"
+#include "maidsafe/vault/mpid_manager/database.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/tests/tests_utils.h"
 #include "maidsafe/vault/utils.h"
@@ -41,7 +41,7 @@ class MpidManagerDatabaseTest : public testing::Test {
 };
 
 TEST_F(MpidManagerDatabaseTest, BEH_Put) {
-  MpidManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   MpidName mpid(Identity(RandomString(64)));
   EXPECT_NO_THROW(db.Put(data.name(), data.data().string().size(), mpid));
@@ -57,7 +57,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_Put) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_Delete) {
-  MpidManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   MpidManager::MessageKey key(data.name());
   // Delete Empty
@@ -76,7 +76,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_Delete) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_HasGroup) {
-  MpidManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
   MpidName mpid(Identity(RandomString(64)));
   // HasGroup check for non-existing mpid account
   EXPECT_FALSE(db.HasGroup(mpid));
@@ -101,7 +101,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_HasGroup) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetEntriesForMPID) {
-  MpidManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
   for (size_t i(0); i < 10; ++i) {
     MpidName mpid(Identity(RandomString(64)));
     size_t num_of_entries(RandomUint32() % 5);
@@ -116,7 +116,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_GetEntriesForMPID) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetStatistic) {
-  MpidManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
   for (size_t i(0); i < 10; ++i) {
     MpidName mpid(Identity(RandomString(64)));
     size_t num_of_entries(RandomUint32() % 5);
@@ -135,7 +135,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_GetStatistic) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetTransferInfo) {
-  MpidManagerDataBase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
   std::map<MpidName, std::vector<ImmutableData::Name>> mpid_dataname_map;
   std::vector<NodeId> mpid_nodes;
   for (size_t i(0); i < 10; ++i) {
