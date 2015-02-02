@@ -50,32 +50,6 @@ CacheHandlerService::CacheHandlerService(routing::Routing& routing,
 template <>
 CacheHandlerService::HandleMessageReturnType
 CacheHandlerService::HandleMessage(
-    const nfs::GetResponseFromDataManagerToMpidNode& message,
-    const typename nfs::GetResponseFromDataManagerToMpidNode::Sender& sender,
-    const typename nfs::GetResponseFromDataManagerToMpidNode::Receiver& receiver) {
-  typedef nfs::GetResponseFromDataManagerToMpidNode MessageType;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const nfs::GetCachedResponseFromCacheHandlerToMpidNode& message,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Sender& sender,
-    const typename nfs::GetCachedResponseFromCacheHandlerToMpidNode::Receiver& receiver) {
-  typedef nfs::GetCachedResponseFromCacheHandlerToMpidNode MessageType;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
     const nfs::GetResponseFromDataManagerToDataGetter& message,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Sender& sender,
     const typename nfs::GetResponseFromDataManagerToDataGetter::Receiver& receiver) {
@@ -93,19 +67,6 @@ CacheHandlerService::HandleMessage(
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Sender& sender,
     const typename nfs::GetCachedResponseFromCacheHandlerToDataGetter::Receiver& receiver) {
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter MessageType;
-  return CacheOperationHandlerWrapper<MessageType>(
-             this, [this](const MessageType& message, const MessageType::Sender& sender) {
-                      return this->ValidateSender(message, sender);
-                   })(message, sender, receiver);
-}
-
-template <>
-CacheHandlerService::HandleMessageReturnType
-CacheHandlerService::HandleMessage(
-    const nfs::GetRequestFromMpidNodeToDataManager& message,
-    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver) {
-  typedef nfs::GetRequestFromMpidNodeToDataManager MessageType;
   return CacheOperationHandlerWrapper<MessageType>(
              this, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
