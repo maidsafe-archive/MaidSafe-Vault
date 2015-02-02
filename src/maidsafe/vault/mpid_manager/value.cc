@@ -95,6 +95,10 @@ bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs) {
   return lhs.data.data() == rhs.data.data();
 }
 
+bool operator!=(const MpidManagerValue& lhs, const MpidManagerValue& rhs) {
+  return !(lhs == rhs);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

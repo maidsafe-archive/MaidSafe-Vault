@@ -46,6 +46,9 @@ class MpidManagerValue {
   ImmutableData data;
 };
 
+bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
+bool operator!=(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
+
 }  // namespace vault
 
 }  // namespace maidsafe
