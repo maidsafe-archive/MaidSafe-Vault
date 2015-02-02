@@ -75,7 +75,8 @@ set(VaultTests         ${VaultTestsAllFiles}
                        ${DataManagerTestsAllFiles}
                        ${VersionHandlerTestsAllFiles}
                        ${CacheHandlerTestsAllFiles}
-                       ${MaidManagerTestsAllFiles})
+                       ${MaidManagerTestsAllFiles}
+                       ${MpidManagerTestsAllFiles})
 
 set(VaultFunctionalTestFiles ${VaultSourcesDir}/tests/vault_network.h
                              ${VaultSourcesDir}/tests/vault_network.cc
