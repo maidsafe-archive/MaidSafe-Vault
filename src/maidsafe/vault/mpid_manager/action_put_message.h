@@ -34,7 +34,8 @@ namespace maidsafe {
 namespace vault {
 
 struct ActionMpidManagerPutMessage {
-  explicit ActionMpidManagerPutMessage(const nfs_vault::MpidMessage& alert);
+  explicit ActionMpidManagerPutMessage(const nfs_vault::MpidMessage& message,
+                                       nfs::MessageId message_id);
   explicit ActionMpidManagerPutMessage(const std::string& serialised_action);
   ActionMpidManagerPutMessage(const ActionMpidManagerPutMessage& other);
   ActionMpidManagerPutMessage(ActionMpidManagerPutMessage&& other);
@@ -44,7 +45,22 @@ struct ActionMpidManagerPutMessage {
   std::string Serialise() const;
 
   static const nfs::MessageAction kActionId = nfs::MessageAction::kSendMessageRequest;
-  const nfs_vault::MpidMessage kMessage;
+
+  struct MessageAndId {
+    MessageAndId(const nfs_vault::MpidMessage& message_in, nfs::MessageId id_in)
+        : message(message_in), id(id_in) {}
+
+    MessageAndId(const MessageAndId& other)
+        : message(other.message), id(other.id) {}
+
+    MessageAndId(MessageAndId&& other)
+        : message(std::move(other.message)), id(std::move(other.id)) {}
+
+    nfs_vault::MpidMessage message;
+    nfs::MessageId id;
+  };
+
+  MessageAndId kMessageAndId;
 };
 
 bool operator==(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs);

@@ -24,30 +24,34 @@ namespace maidsafe {
 namespace vault {
 
 ActionMpidManagerPutMessage::ActionMpidManagerPutMessage(
-    const nfs_vault::MpidMessage& message) : kMessage(message) {}
+    const nfs_vault::MpidMessage& message, nfs::MessageId message_id)
+        : kMessageAndId(MessageAndId(message, message_id)) {}
 
 ActionMpidManagerPutMessage::ActionMpidManagerPutMessage(const std::string& serialised_action)
-  : kMessage([&serialised_action]()->std::string {
+  : kMessageAndId([&serialised_action]()->MessageAndId {
             protobuf::ActionMpidManagerPutMessage proto;
             if (!proto.ParseFromString(serialised_action))
               BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-            return proto.serialised_message ();
+            return MessageAndId(nfs_vault::MpidMessage(proto.serialised_message()),
+                                nfs::MessageId(proto.message_id()));
           }()) {}
 
 ActionMpidManagerPutMessage::ActionMpidManagerPutMessage(
-    const ActionMpidManagerPutMessage& other) : kMessage(other.kMessage) {}
+    const ActionMpidManagerPutMessage& other) : kMessageAndId(other.kMessageAndId) {}
 
 ActionMpidManagerPutMessage::ActionMpidManagerPutMessage(ActionMpidManagerPutMessage&& other)
-    : kMessage(std::move(other.kMessage)) {}
+    : kMessageAndId(std::move(other.kMessageAndId)) {}
 
 std::string ActionMpidManagerPutMessage::Serialise() const {
   protobuf::ActionMpidManagerPutMessage proto;
-  proto.set_serialised_message(kMessage.Serialise());
+  proto.set_serialised_message(kMessageAndId.message.Serialise());
+  proto.set_message_id(kMessageAndId.id.data);
   return proto.SerializeAsString();
 }
 
 bool operator==(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs) {
-  return lhs.kMessage == rhs.kMessage;
+  return (lhs.kMessageAndId.message == rhs.kMessageAndId.message) &&
+         (lhs.kMessageAndId.id == rhs.kMessageAndId.id);
 }
 
 bool operator!=(const ActionMpidManagerPutMessage& lhs, const ActionMpidManagerPutMessage& rhs) {
