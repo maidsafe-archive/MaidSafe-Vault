@@ -54,7 +54,7 @@ class VersionHandlerTest : public testing::Test {
 };
 
 
-TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
+TEST_F(VersionHandlerTest, NETWORK_CreateVersionTree) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   auto create_version_future(GetClients().front()->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
@@ -71,7 +71,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateVersionTree) {
   Sleep(std::chrono::seconds(5));
 }
 
-TEST_F(VersionHandlerTest, FUNC_FailingPut) {
+TEST_F(VersionHandlerTest, NETWORK_FailingPut) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   StructuredDataVersions::VersionName v_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));
@@ -80,7 +80,7 @@ TEST_F(VersionHandlerTest, FUNC_FailingPut) {
   Sleep(std::chrono::seconds(5));
 }
 
-TEST_F(VersionHandlerTest, FUNC_CreateGet) {
+TEST_F(VersionHandlerTest, NETWORK_CreateGet) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   auto create_version_future(GetClients().front()->CreateVersionTree(chunk.name(), v_aaa, 10, 20));
@@ -97,7 +97,7 @@ TEST_F(VersionHandlerTest, FUNC_CreateGet) {
   Sleep(std::chrono::seconds(5));
 }
 
-TEST_F(VersionHandlerTest, FUNC_PutGet) {
+TEST_F(VersionHandlerTest, NETWORK_PutGet) {
   ImmutableData chunk(NonEmptyString(RandomAlphaNumericString(1024)));
   StructuredDataVersions::VersionName v_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   StructuredDataVersions::VersionName v_bbb(0, ImmutableData::Name(Identity(std::string(64, 'b'))));
@@ -118,7 +118,7 @@ TEST_F(VersionHandlerTest, FUNC_PutGet) {
   }
 }
 
-TEST_F(VersionHandlerTest, FUNC_DeleteBranchUntilFork) {
+TEST_F(VersionHandlerTest, NETWORK_DeleteBranchUntilFork) {
   ImmutableData::Name name(Identity(RandomAlphaNumericString(64)));
   VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
   VersionName v1_bbb(1, ImmutableData::Name(Identity(std::string(64, 'b'))));

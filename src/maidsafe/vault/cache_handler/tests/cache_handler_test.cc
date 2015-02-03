@@ -38,7 +38,7 @@ class CacheHandlerTest : public testing::Test {
   std::shared_ptr<VaultNetwork> env_;
 };
 
-TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
+TEST_F(CacheHandlerTest, NETWORK_GetFromCacheStoredByGetResponseToDataGetter) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(RandomString(NodeId::kSize));
   nfs::MessageId message_id(RandomUint32());
@@ -67,7 +67,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
       << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
 }
 
-TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
+TEST_F(CacheHandlerTest, NETWORK_GetFromCacheStoredByCachedResponseToDataGetter) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   NodeId random_id(RandomString(NodeId::kSize));
   nfs::MessageId message_id(RandomUint32());
@@ -95,7 +95,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
       << "Failed to retrieve: " << DebugId(NodeId(data.name()->string()));
 }
 
-TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
+TEST_F(CacheHandlerTest, NETWORK_NonCacheableData) {
   passport::Anmaid anmaid;
   passport::PublicAnmaid public_anmaid(anmaid);
   NodeId random_id(RandomString(NodeId::kSize));
