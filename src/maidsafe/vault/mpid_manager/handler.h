@@ -45,8 +45,8 @@ class MpidManagerHandler {
 
   DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name) const;
   DbDataQueryResult GetData(const ImmutableData::Name& data_name) const;
-  bool Has(const ImmutableData::Name& data_name) const;
-  bool HasAccount(const MpidName& mpid) const;
+  bool Has(const ImmutableData::Name& data_name);
+  bool HasAccount(const MpidName& mpid);
 
   MpidManager::TransferInfo GetTransferInfo(
       std::shared_ptr<routing::CloseNodesChange> close_nodes_change);

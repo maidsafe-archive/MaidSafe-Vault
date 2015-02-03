@@ -33,15 +33,11 @@ namespace test {
 
 class MpidManagerDatabaseTest : public testing::Test {
  public:
-  MpidManagerDatabaseTest()
-      : kTestRoot_(maidsafe::test::CreateTestPath("MaidSafe_Test_Vault")) {}
-
- protected:
-  const maidsafe::test::TestPath kTestRoot_;
+  MpidManagerDatabaseTest() {}
 };
 
 TEST_F(MpidManagerDatabaseTest, BEH_Put) {
-  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   MpidName mpid(Identity(RandomString(64)));
   EXPECT_NO_THROW(db.Put(data.name(), data.data().string().size(), mpid));
@@ -57,7 +53,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_Put) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_Delete) {
-  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db;
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
   MpidManager::MessageKey key(data.name());
   // Delete Empty
@@ -76,7 +72,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_Delete) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_HasGroup) {
-  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db;
   MpidName mpid(Identity(RandomString(64)));
   // HasGroup check for non-existing mpid account
   EXPECT_FALSE(db.HasGroup(mpid));
@@ -101,7 +97,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_HasGroup) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetEntriesForMPID) {
-  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db;
   for (size_t i(0); i < 10; ++i) {
     MpidName mpid(Identity(RandomString(64)));
     size_t num_of_entries(RandomUint32() % 5);
@@ -116,7 +112,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_GetEntriesForMPID) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetStatistic) {
-  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db;
   for (size_t i(0); i < 10; ++i) {
     MpidName mpid(Identity(RandomString(64)));
     size_t num_of_entries(RandomUint32() % 5);
@@ -135,7 +131,7 @@ TEST_F(MpidManagerDatabaseTest, BEH_GetStatistic) {
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetTransferInfo) {
-  MpidManagerDatabase db(UniqueDbPath(*kTestRoot_));
+  MpidManagerDatabase db;
   std::map<MpidName, std::vector<ImmutableData::Name>> mpid_dataname_map;
   std::vector<NodeId> mpid_nodes;
   for (size_t i(0); i < 10; ++i) {
