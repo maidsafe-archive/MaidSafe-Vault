@@ -44,7 +44,14 @@ bool MpidManagerHandler::Has(const ImmutableData::Name& data_name) {
 }
 
 bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
-  return db_.HasGroup(mpid);
+  try {
+    auto account_name(db_.GetAccountChunkName(mpid));
+    NonEmptyString result(chunk_store_.Get(DataNameVariant(account_name)));
+    return result.IsInitialised();
+  }
+  catch (...) {
+    return false;
+  }
 }
 
 // mpid_account becomes a special entry in database with chunk_size to be 0
