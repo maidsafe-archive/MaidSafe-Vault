@@ -62,7 +62,7 @@ bool MpidManagerDatabase::Has(const MpidManager::MessageKey& key) {
 
 bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
-  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_); 
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr(mpid_index.lower_bound(mpid));
   if (itr != mpid_index.end())
     return itr->mpid == mpid;
@@ -73,7 +73,7 @@ bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) {
 MpidManager::MessageKey MpidManagerDatabase::GetAccountChunkName(
     const MpidManager::GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
-  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_); 
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
   while (itr0 != itr1) {
@@ -88,7 +88,7 @@ std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
     const MpidManager::GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
   uint32_t num_of_messages(0), total_size(0);
-  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_); 
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
   while (itr0 != itr1) {
@@ -103,7 +103,7 @@ std::vector<MpidManager::MessageKey> MpidManagerDatabase::GetEntriesForMPID(
     const MpidManager::GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
   std::vector<MpidManager::MessageKey> entries;
-  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_); 
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
   while (itr0 != itr1) {
@@ -158,7 +158,7 @@ MpidManager::DbTransferInfo MpidManagerDatabase::GetTransferInfo(
 
 void MpidManagerDatabase::DeleteGroup(const MpidManager::GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
-  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_); 
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
   while (itr0 != itr1)
