@@ -102,9 +102,9 @@ TEST_F(MpidManagerDatabaseTest, BEH_GetEntriesForMPID) {
     MpidName mpid(Identity(RandomString(64)));
     size_t num_of_entries(RandomUint32() % 5);
     for (size_t j(0); j < num_of_entries; ++j) {
-      ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-      EXPECT_NO_THROW(db.Put(data.name(), data.data().string().size(), mpid));
-      EXPECT_TRUE(db.Has(data.name()));
+      ImmutableData::Name data_name(Identity(RandomString(64)));
+      EXPECT_NO_THROW(db.Put(data_name, kTestChunkSize, mpid));
+      EXPECT_TRUE(db.Has(data_name));
     }
     auto entries(db.GetEntriesForMPID(mpid));
     EXPECT_EQ(num_of_entries, entries.size());
@@ -120,14 +120,32 @@ TEST_F(MpidManagerDatabaseTest, BEH_GetStatistic) {
     for (size_t j(0); j < num_of_entries; ++j) {
       size_t data_size(RandomUint32() % kTestChunkSize);
       total_size += data_size;
-      ImmutableData data(NonEmptyString(RandomString(data_size)));
-      EXPECT_NO_THROW(db.Put(data.name(), data.data().string().size(), mpid));
-      EXPECT_TRUE(db.Has(data.name()));
+      ImmutableData::Name data_name(Identity(RandomString(64)));
+      EXPECT_NO_THROW(db.Put(data_name, data_size, mpid));
+      EXPECT_TRUE(db.Has(data_name));
     }
     auto statistics(db.GetStatistic(mpid));
     EXPECT_EQ(num_of_entries, statistics.first);
     EXPECT_EQ(total_size, statistics.second);
   }
+}
+
+TEST_F(MpidManagerDatabaseTest, BEH_GetAccountChunkName) {
+  MpidManagerDatabase db;
+  MpidName mpid(Identity(RandomString(64)));
+  EXPECT_ANY_THROW(db.GetAccountChunkName(mpid));
+  for (size_t i(0); i < 10; ++i) {
+    size_t data_size(RandomUint32() % kTestChunkSize);
+    ImmutableData::Name data_name(Identity(RandomString(64)));
+    EXPECT_NO_THROW(db.Put(data_name, data_size, mpid));
+    EXPECT_TRUE(db.Has(data_name));
+  }
+  EXPECT_ANY_THROW(db.GetAccountChunkName(mpid));
+  ImmutableData::Name account_chunk_name(Identity(RandomString(64)));
+  db.Put(account_chunk_name, 0, mpid);
+  EXPECT_EQ(account_chunk_name, db.GetAccountChunkName(mpid));
+  EXPECT_NO_THROW(db.Delete(account_chunk_name));
+  EXPECT_ANY_THROW(db.GetAccountChunkName(mpid));
 }
 
 TEST_F(MpidManagerDatabaseTest, BEH_GetTransferInfo) {
