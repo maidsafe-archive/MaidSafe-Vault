@@ -37,6 +37,7 @@
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_delete_message.h"
 #include "maidsafe/vault/action_create_remove_account.h"
+#include "maidsafe/vault/mpid_manager/value.h"
 
 namespace maidsafe {
 
@@ -53,12 +54,17 @@ namespace nfs {
 
 template <>
 struct PersonaTypes<Persona::kMpidManager> {
+  // =======  for database usage =======
   using GroupName = passport::PublicMpid::Name;
   using MessageKey = ImmutableData::Name;
   using GKPair = std::pair<GroupName, MessageKey>;
-  using TransferInfo = std::map<NodeId, std::vector<GKPair>>;
+  using DbTransferInfo = std::map<NodeId, std::vector<GKPair>>;
 
+  // =======  for service usage =======
   using Key = passport::PublicMpid::Name;
+  using Value = vault::MpidManagerValue;
+  using KVPair = std::pair<Key, Value>;
+  using TransferInfo = std::map<NodeId, std::vector<KVPair>>;
   using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
   using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionCreateAccount>;
@@ -79,6 +85,7 @@ struct PersonaTypes<Persona::kMpidManager> {
 namespace vault {
 
 using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
+using DbDataQueryResult = boost::expected<ImmutableData, maidsafe_error>;
 
 using  MpidManager = nfs::PersonaTypes<nfs::Persona::kMpidManager>;
 

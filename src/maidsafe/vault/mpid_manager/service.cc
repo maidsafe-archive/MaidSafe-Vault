@@ -31,12 +31,14 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
     : routing_(routing),
       accumulator_mutex_(),
       nodes_change_mutex_(),
+      mutex_(),
+      stopped_(false),
       accumulator_(),
       close_nodes_change_(),
       client_nodes_change_(),
       dispatcher_(routing),
       handler_(vault_root_dir, max_disk_usage),
-//      account_transfer_(),
+      account_transfer_(),
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),
       sync_put_messages_(NodeId(pmid.name()->string())),
@@ -293,6 +295,9 @@ void MpidManagerService::HandlePutFailure<passport::PublicAnmpid>(
 
 void MpidManagerService::HandleSyncedCreateAccount(
          std::unique_ptr<MpidManager::UnresolvedCreateAccount>&& synced_action) {
+  // The NonEmptyString part shall be replaced by a serialised mpid_account once proper account
+  // struct and usage got defined
+  handler_.CreateAccount(synced_action->key.group_name(), NonEmptyString(std::string(64, 0)));
   maidsafe_error error(CommonErrors::success);
   dispatcher_.SendCreateAccountResponse(synced_action->key.group_name(), error,
                                         synced_action->action.kMessageId);
@@ -300,6 +305,7 @@ void MpidManagerService::HandleSyncedCreateAccount(
 
 void MpidManagerService::HandleSyncedRemoveAccount(
          std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action) {
+  handler_.RemoveAccount(synced_action->key.group_name());
   dispatcher_.SendRemoveAccountResponse(synced_action->key.group_name(),
                                         maidsafe_error(CommonErrors::success),
                                         synced_action->action.kMessageId);
@@ -328,7 +334,8 @@ void MpidManagerService::HandleMessage(
         dispatcher_.SendMessageAlert(
             nfs_vault::MpidMessageAlert(resolved_action->action.kMessageAndId.message.base,
                                         nfs_vault::MessageIdType(data.name().value.string())),
-            resolved_action->action.kMessageAndId.message.base.receiver, message.id);
+            resolved_action->action.kMessageAndId.message.base.receiver,
+            message.id);
       }
       break;
     }
@@ -390,20 +397,142 @@ void MpidManagerService::HandleMessage(
   }
 }
 
+void MpidManagerService::HandleChurnEvent(
+  std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+  try {
+    std::lock_guard<decltype(nodes_change_mutex_)> lock(nodes_change_mutex_);
+    if (stopped_)
+      return;
+    close_nodes_change_ = *close_nodes_change;
+    //    VLOG(VisualiserAction::kConnectionMap, close_nodes_change->ReportConnection());
+    MpidManager::TransferInfo transfer_info(handler_.GetTransferInfo(close_nodes_change));
+    for (const auto& transfer : transfer_info)
+      TransferAccount(transfer.first, transfer.second);
+  }
+  catch (const std::exception& e) {
+    LOG(kError) << "Error : " << boost::diagnostic_information(e) << "\n\n";
+  }
+}
+
+void MpidManagerService::TransferAccount(const NodeId& destination,
+                                         const std::vector<MpidManager::KVPair>& accounts) {
+  assert(!accounts.empty());
+  protobuf::AccountTransfer account_transfer_proto;
+  {
+    for (auto& account : accounts) {
+//      VLOG(nfs::Persona::kMpidManager, VisualiserAction::kAccountTransfer, account.first.value,
+//           Identity{ destination.string() });
+      protobuf::MpidManagerKeyValuePair kv_pair;
+      kv_pair.set_key(account.first.value.string());
+      kv_pair.set_value(account.second.Serialise());
+      account_transfer_proto.add_serialised_accounts(kv_pair.SerializeAsString());
+    }
+  }
+  dispatcher_.SendAccountTransfer(destination, account_transfer_proto.SerializeAsString());
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+  const AccountTransferFromMpidManagerToMpidManager& message,
+  const typename AccountTransferFromMpidManagerToMpidManager::Sender& sender,
+  const typename AccountTransferFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+  }
+  for (const auto& serialised_account : account_transfer_proto.serialised_accounts()) {
+    HandleAccountTransferEntry(serialised_account, sender);
+  }
+}
+
+void MpidManagerService::HandleAccountTransferEntry(
+  const std::string& serialised_account, const routing::SingleSource& sender) {
+  using Handler = AccountTransferHandler<MpidManager>;
+  protobuf::MpidManagerKeyValuePair kv_pair;
+  if (!kv_pair.ParseFromString(serialised_account)) {
+    LOG(kError) << "Failed to parse action";
+    return;
+  }
+  auto value(MpidManagerValue(kv_pair.value()));
+  auto result(account_transfer_.Add(MpidManager::Key(Identity(kv_pair.key())),
+                                    value, sender.data));
+  if (result.result == Handler::AddResult::kSuccess) {
+    HandleAccountTransfer(std::make_pair(result.key, value));
+  } else if (result.result == Handler::AddResult::kFailure) {
+    dispatcher_.SendAccountQuery(result.key, value.data.name());
+  }
+}
+
+void MpidManagerService::HandleAccountTransfer(const MpidManager::KVPair& account) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  handler_.Put(account.second.data, account.first);
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const AccountQueryFromMpidManagerToMpidManager& message,
+    const typename AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+    const typename AccountQueryFromMpidManagerToMpidManager::Receiver& receiver) {
+  typedef AccountQueryFromMpidManagerToMpidManager MessageType;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+void MpidManagerService::HandleAccountQuery(const ImmutableData::Name& name,
+                                            const NodeId& sender,
+                                            const NodeId& receiver) {
+  if (!close_nodes_change_.CheckIsHolder(NodeId(name->string()), sender)) {
+    LOG(kWarning) << "attempt to obtain account from non-holder";
+    return;
+  }
+  try {
+    auto data_result(handler_.GetData(name));
+    if (!data_result.valid())
+      return;
+    MpidManagerValue value(data_result.value());
+    protobuf::AccountTransfer account_transfer_proto;
+    protobuf::MpidManagerKeyValuePair kv_msg;
+    kv_msg.set_key(receiver.string());
+    kv_msg.set_value(value.Serialise());
+    account_transfer_proto.add_serialised_accounts(kv_msg.SerializeAsString());
+    dispatcher_.SendAccountQueryResponse(account_transfer_proto.SerializeAsString(),
+                                         routing::GroupId(NodeId(name->string())), sender);
+  }
+  catch (const std::exception& error) {
+    LOG(kError) << "failed to retrieve account: " << error.what();
+  }
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const AccountQueryResponseFromMpidManagerToMpidManager& message,
+    const typename AccountQueryResponseFromMpidManagerToMpidManager::Sender& sender,
+    const typename AccountQueryResponseFromMpidManagerToMpidManager::Receiver& /*receiver*/) {
+  protobuf::AccountTransfer account_transfer_proto;
+  if (!account_transfer_proto.ParseFromString(message.contents->data)) {
+    LOG(kError) << "Failed to parse account transfer ";
+    return;
+  }
+  assert(account_transfer_proto.serialised_accounts_size() == 1);
+  HandleAccountTransferEntry(account_transfer_proto.serialised_accounts(0),
+                             routing::SingleSource(sender.sender_id));
+}
+
 // ================================================================================================
 
 void MpidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::ClientNodesChange> client_nodes_change) {
+  std::shared_ptr<routing::ClientNodesChange> client_nodes_change) {
   std::lock_guard<decltype(nodes_change_mutex_)> lock(nodes_change_mutex_);
   client_nodes_change_ = *client_nodes_change;
 }
 
-void MpidManagerService::HandleChurnEvent(
-    std::shared_ptr<routing::CloseNodesChange> /*close_nodes_change*/) {}
-
-
 void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message,
-                                           const MpidName& sender, nfs::MessageId message_id) {
+                                           const MpidName& sender,
+                                           nfs::MessageId message_id) {
   if (!handler_.HasAccount(sender)) {
     dispatcher_.SendMessageResponse(sender, MakeError(VaultErrors::no_such_account), message_id);
     return;
@@ -436,8 +565,8 @@ void MpidManagerService::HandleGetMessageRequest(const nfs_vault::MpidMessageAle
                                                  const MpidName& receiver,
                                                  nfs::MessageId message_id) {
   return dispatcher_.SendGetMessageResponse(
-      handler_.GetMessage(ImmutableData::Name(alert.message_id)), alert.base.sender, receiver,
-                          message_id);
+      handler_.GetMessage(ImmutableData::Name(alert.message_id)),
+                          alert.base.sender, receiver, message_id);
 }
 
 void MpidManagerService::HandleGetMessageResponse(

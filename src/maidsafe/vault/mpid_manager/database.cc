@@ -27,205 +27,155 @@
 
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/sqlite3_wrapper.h"
-#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-MpidManagerDatabase::MpidManagerDatabase(const boost::filesystem::path& db_path)
-    : db_(), kDbPath_(db_path), write_operations_(0) {
-  db_.reset(new sqlite::Database(db_path,
-                                        sqlite::Mode::kReadWriteCreate));
-  std::string query(
-      "CREATE TABLE IF NOT EXISTS MpidManagerAccounts ("
-      "Chunk_Name TEXT  PRIMARY KEY NOT NULL, Chunk_Size TEXT NOT NULL,"
-      "MPID TEXT NOT NULL);");
-  sqlite::Transaction transaction{*db_};
-  sqlite::Statement statement{*db_, query};
-  statement.Step();
-  transaction.Commit();
-}
-
-MpidManagerDatabase::~MpidManagerDatabase() {
-  try {
-    db_.reset();
-    boost::filesystem::remove_all(kDbPath_);
-  }
-  catch (const std::exception& e) {
-    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
-  }
-}
+MpidManagerDatabase::MpidManagerDatabase() : container_(), mutex_() {}
 
 void MpidManagerDatabase::Put(const MpidManager::MessageKey& key,
                               const uint32_t size,
                               const MpidManager::GroupName& group_name) {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  CheckPoint();
-
-  sqlite::Transaction transaction{*db_};
-  std::string query(
-      "INSERT OR REPLACE INTO MpidManagerAccounts (Chunk_Name, Chunk_size,"
-      " MPID) VALUES (?, ?, ?)");
-  sqlite::Statement statement{*db_, query};
-
-  std::string mpid(EncodeGroupName(group_name));
-  statement.BindText(3, mpid);
-  std::string chunk_size(ConvertToString(size));
-  statement.BindText(2, chunk_size);
-  std::string chunk_name(EncodeKey(key));
-  statement.BindText(1, chunk_name);
-
-  statement.Step();
-  transaction.Commit();
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
+  auto iter(key_index.find(key));
+  if (iter == std::end(key_index))
+    container_.insert(DatabaseEntry(key, size, group_name));
+  // just keep silent in case of double put
+// else
+//   BOOST_THROW_EXCEPTION(MakeError(VaultErrors::data_already_exists));
 }
 
 void MpidManagerDatabase::Delete(const MpidManager::MessageKey& key) {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  CheckPoint();
-
-  sqlite::Transaction transaction{*db_};
-  std::string query("DELETE FROM MpidManagerAccounts WHERE Chunk_Name=?");
-  sqlite::Statement statement{*db_, query};
-  auto key_string(EncodeKey(key));
-  statement.BindText(1, key_string);
-  statement.Step();
-  transaction.Commit();
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
+  key_index.erase(key);
 }
 
-void MpidManagerDatabase::DeleteGroup(const std::string& mpid) {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  CheckPoint();
-
-  sqlite::Transaction transaction{*db_};
-  std::string query("DELETE FROM MpidManagerAccounts WHERE MPID=?");
-  sqlite::Statement statement{*db_, query};
-  statement.BindText(1, mpid);
-  statement.Step();
-  transaction.Commit();
+bool MpidManagerDatabase::Has(const MpidManager::MessageKey& key) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
+  auto iter(key_index.find(key));
+  return iter != std::end(key_index);
 }
 
-MpidManager::TransferInfo MpidManagerDatabase::GetTransferInfo(
+bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+  auto itr(mpid_index.lower_bound(mpid));
+  if (itr != mpid_index.end())
+    return itr->mpid == mpid;
+  else
+    return false;
+}
+
+MpidManager::MessageKey MpidManagerDatabase::GetAccountChunkName(
+    const MpidManager::GroupName& mpid) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+  auto itr0(mpid_index.lower_bound(mpid));
+  auto itr1(mpid_index.upper_bound(mpid));
+  while (itr0 != itr1) {
+    if (itr0->size == 0)
+      return itr0->key;
+    ++itr0;
+  }
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+}
+
+std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
+    const MpidManager::GroupName& mpid) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  uint32_t num_of_messages(0), total_size(0);
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+  auto itr0(mpid_index.lower_bound(mpid));
+  auto itr1(mpid_index.upper_bound(mpid));
+  while (itr0 != itr1) {
+    ++num_of_messages;
+    total_size += itr0->size;
+    ++itr0;
+  }
+  return std::make_pair(num_of_messages, total_size);
+}
+
+std::vector<MpidManager::MessageKey> MpidManagerDatabase::GetEntriesForMPID(
+    const MpidManager::GroupName& mpid) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  std::vector<MpidManager::MessageKey> entries;
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+  auto itr0(mpid_index.lower_bound(mpid));
+  auto itr1(mpid_index.upper_bound(mpid));
+  while (itr0 != itr1) {
+    entries.push_back(itr0->key);
+    ++itr0;
+  }
+  return entries;
+}
+
+MpidManager::DbTransferInfo MpidManagerDatabase::GetTransferInfo(
     std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-
-  std::vector<std::pair<NodeId, std::string>> groups_to_be_transferred;
-  std::vector<std::string> groups_to_be_removed;
+  std::vector<std::pair<NodeId, MpidManager::GroupName>> groups_to_be_transferred;
+  std::vector<MpidManager::GroupName> groups_to_be_removed;
   {
-    std::string query("SELECT DISTINCT MPID from MpidManagerAccounts");
-    sqlite::Statement statement{*db_, query};
-    while (statement.Step() == sqlite::StepResult::kSqliteRow) {
-      std::string group_name(statement.ColumnText(0));
-      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(group_name));
+    std::unique_lock<std::mutex> lock(mutex_);
+    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+    auto it0 = std::begin(mpid_index);
+    while (it0 != std::end(mpid_index)) {
+      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(it0->mpid->string()));
       if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
-        if (check_holder_result.new_holder == NodeId())
-          continue;
-        groups_to_be_transferred.push_back(std::make_pair(check_holder_result.new_holder,
-                                                          group_name));
+        if (check_holder_result.new_holder != NodeId())
+          groups_to_be_transferred.push_back(std::make_pair(check_holder_result.new_holder,
+                                                            it0->mpid));
       } else {
   //      VLOG(VisualiserAction::kRemoveAccount, key.name);
-        LOG(kInfo) << "Db::GetTransferInfo current node is not in the closest of account "
-                   << HexSubstr(group_name);
-        groups_to_be_removed.push_back(group_name);
+        groups_to_be_removed.push_back(it0->mpid);
         // empty NodeId indicates removing from local
-        groups_to_be_transferred.push_back(std::make_pair(NodeId(), group_name));
+        groups_to_be_transferred.push_back(std::make_pair(NodeId(), it0->mpid));
+      }
+      it0 = mpid_index.upper_bound(it0->mpid);
+    }
+  }
+  MpidManager::DbTransferInfo transfer_info;
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+    for (const auto& transfer_entry : groups_to_be_transferred) {
+      auto itr0(mpid_index.lower_bound(transfer_entry.second));
+      auto itr1(mpid_index.upper_bound(transfer_entry.second));
+      while (itr0 != itr1) {
+        PutIntoTransferInfo(transfer_entry.first, transfer_entry.second,
+                            itr0->key, transfer_info);
+        ++itr0;
       }
     }
   }
   for (const auto& group_name : groups_to_be_removed)
     DeleteGroup(group_name);
 
-  MpidManager::TransferInfo transfer_info;
-  for (const auto& transfer_entry : groups_to_be_transferred) {
-    std::string query("SELECT Chunk_Name from MpidManagerAccounts WHERE MPID=?");
-    sqlite::Statement statement{*db_, query};
-    statement.BindText(1, transfer_entry.second);
-    while (statement.Step() == sqlite::StepResult::kSqliteRow)
-      PutIntoTransferInfo(transfer_entry.first, transfer_entry.second,
-                          statement.ColumnText(0), transfer_info);
-  }
   return transfer_info;
 }
 
+void MpidManagerDatabase::DeleteGroup(const MpidManager::GroupName& mpid) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+  auto itr0(mpid_index.lower_bound(mpid));
+  auto itr1(mpid_index.upper_bound(mpid));
+  while (itr0 != itr1)
+    itr0 = mpid_index.erase(itr0);
+}
+
 void MpidManagerDatabase::PutIntoTransferInfo(const NodeId& new_holder,
-                                              const std::string& group_name_string,
-                                              const std::string& key_string,
-                                              MpidManager::TransferInfo& transfer_info) {
-  MpidManager::GroupName group_name(ComposeGroupName(group_name_string));
-  MpidManager::MessageKey key(ComposeKey(key_string));
+                                              const MpidManager::GroupName& mpid,
+                                              const MpidManager::MessageKey& key,
+                                              MpidManager::DbTransferInfo& transfer_info) {
   auto found_itr = transfer_info.find(new_holder);
   if (found_itr != transfer_info.end()) {  // append
-    LOG(kInfo) << "Db::GetTransferInfo add into transfering account "
-               << HexSubstr(group_name_string) << " to " << new_holder;
-    found_itr->second.push_back(std::make_pair(group_name, key));
+    found_itr->second.push_back(std::make_pair(mpid, key));
   } else {  // create
-    LOG(kInfo) << "Db::GetTransferInfo create transfering account "
-               << HexSubstr(group_name_string) << " to " << new_holder;
     std::vector<MpidManager::GKPair> group_key_vector;
-    group_key_vector.push_back(std::make_pair(group_name, key));
+    group_key_vector.push_back(std::make_pair(mpid, key));
     transfer_info.insert(std::make_pair(new_holder, std::move(group_key_vector)));
-  }
-}
-
-bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) const {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  std::string query("SELECT DISTINCT MPID from MpidManagerAccounts WHERE MPID=?");
-  sqlite::Statement statement{*db_, query};
-  auto group_name(EncodeGroupName(mpid));
-  statement.BindText(1, group_name);
-  return (statement.Step() == sqlite::StepResult::kSqliteRow);
-}
-
-bool MpidManagerDatabase::Has(const MpidManager::MessageKey& key) const {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  std::string query("SELECT * FROM MpidManagerAccounts WHERE Chunk_Name=?");
-  sqlite::Statement statement{*db_, query};
-  auto key_string(EncodeKey(key));
-  statement.BindText(1, key_string);
-  return (statement.Step() == sqlite::StepResult::kSqliteRow);
-}
-
-std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
-    const MpidManager::GroupName& mpid) const {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  uint32_t num_of_messages(0), total_size(0);
-  std::string query("SELECT Chunk_Size from MpidManagerAccounts WHERE MPID=?");
-  sqlite::Statement statement{*db_, query};
-  auto group_name(EncodeGroupName(mpid));
-  statement.BindText(1, group_name);
-  while (statement.Step() == sqlite::StepResult::kSqliteRow) {
-    ++num_of_messages;
-    total_size += std::stoi(statement.ColumnText(0));
-  }
-  return std::make_pair(num_of_messages, total_size);
-}
-
-std::vector<MpidManager::MessageKey> MpidManagerDatabase::GetEntriesForMPID(
-    const MpidManager::GroupName& mpid) const {
-  if (!db_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-  std::vector<MpidManager::MessageKey> entries;
-  std::string query("SELECT Chunk_Name from MpidManagerAccounts WHERE MPID=?");
-  sqlite::Statement statement{*db_, query};
-  auto group_name(EncodeGroupName(mpid));
-  statement.BindText(1, group_name);
-  while (statement.Step() == sqlite::StepResult::kSqliteRow)
-    entries.push_back(ComposeKey(statement.ColumnText(0)));
-  return entries;
-}
-
-void MpidManagerDatabase::CheckPoint() {
-  if (++write_operations_ > 1000) {
-    db_->CheckPoint();
-    write_operations_ = 0;
   }
 }
 

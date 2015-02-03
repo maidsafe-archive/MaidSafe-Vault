@@ -42,9 +42,18 @@ class MpidManagerHandler {
 
   void Put(const ImmutableData& data, const MpidName& mpid);
   void Delete(const ImmutableData::Name& data_name);
+
   DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name) const;
-  bool Has(const ImmutableData::Name& data_name) const;
-  bool HasAccount(const MpidName& mpid) const;
+  DbDataQueryResult GetData(const ImmutableData::Name& data_name) const;
+  bool Has(const ImmutableData::Name& data_name);
+  bool HasAccount(const MpidName& mpid);
+
+  void CreateAccount(const MpidName& mpid, const NonEmptyString& mpid_account);
+  void UpdateAccount(const MpidName& mpid, const NonEmptyString& mpid_account);
+  void RemoveAccount(const MpidName& mpid);
+
+  MpidManager::TransferInfo GetTransferInfo(
+      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
  private:
   template <typename Data>

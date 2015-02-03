@@ -449,6 +449,13 @@ void DoOperation(
     const typename PutResponseFromDataManagerToMpidManager::Sender& sender,
     const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver);
 
+template <>
+void DoOperation(MpidManagerService* service,
+                 const AccountQueryFromMpidManagerToMpidManager& message,
+                 const AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+                 const AccountQueryFromMpidManagerToMpidManager::Receiver& receiver);
+
+
 }  // namespace detail
 
 template <typename ServiceHandler, typename MessageType,
