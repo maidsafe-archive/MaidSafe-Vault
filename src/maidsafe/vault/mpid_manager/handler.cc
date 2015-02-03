@@ -47,6 +47,34 @@ bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
   return db_.HasGroup(mpid);
 }
 
+// mpid_account becomes a special entry in database with chunk_size to be 0
+// this allows no additional action need to be undertaken during account_transfer
+// and also allows update and query of account to be possbile
+// (once proper mpid_account struct got defined)
+void MpidManagerHandler::CreateAccount(const MpidName& mpid, const NonEmptyString& mpid_account) {
+  if (HasAccount(mpid))
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::account_already_exists));
+  ImmutableData data(mpid_account);
+  PutChunk(data);
+  db_.Put(data.name(), 0, mpid);
+}
+
+void MpidManagerHandler::UpdateAccount(const MpidName& mpid, const NonEmptyString& mpid_account) {
+  if (!HasAccount(mpid))
+    BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
+  auto prev_account_name(db_.GetAccountChunkName(mpid));
+  Delete(prev_account_name);
+  ImmutableData data(mpid_account);
+  PutChunk(data);
+  db_.Put(data.name(), 0, mpid);
+}
+
+void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
+  auto entries(db_.GetEntriesForMPID(mpid));
+  for (const auto& entry : entries)
+    Delete(entry);
+}
+
 DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
     return nfs_vault::MpidMessage(GetChunk<ImmutableData>(data_name).data().string());

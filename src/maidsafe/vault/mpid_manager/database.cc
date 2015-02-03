@@ -70,6 +70,20 @@ bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) {
     return false;
 }
 
+MpidManager::MessageKey MpidManagerDatabase::GetAccountChunkName(
+    const MpidManager::GroupName& mpid) {
+  std::unique_lock<std::mutex> lock(mutex_);
+  EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_); 
+  auto itr0(mpid_index.lower_bound(mpid));
+  auto itr1(mpid_index.upper_bound(mpid));
+  while (itr0 != itr1) {
+    if (itr0->size == 0)
+      return itr0->key;
+    ++itr0;
+  }
+  BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+}
+
 std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
     const MpidManager::GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);

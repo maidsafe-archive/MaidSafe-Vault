@@ -295,6 +295,9 @@ void MpidManagerService::HandlePutFailure<passport::PublicAnmpid>(
 
 void MpidManagerService::HandleSyncedCreateAccount(
          std::unique_ptr<MpidManager::UnresolvedCreateAccount>&& synced_action) {
+  // The NonEmptyString part shall be replaced by a serialised mpid_account once proper account
+  // struct and usage got defined
+  handler_.CreateAccount(synced_action->key.group_name(), NonEmptyString(std::string(64, 0)));
   maidsafe_error error(CommonErrors::success);
   dispatcher_.SendCreateAccountResponse(synced_action->key.group_name(), error,
                                         synced_action->action.kMessageId);
@@ -302,6 +305,7 @@ void MpidManagerService::HandleSyncedCreateAccount(
 
 void MpidManagerService::HandleSyncedRemoveAccount(
          std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action) {
+  handler_.RemoveAccount(synced_action->key.group_name());
   dispatcher_.SendRemoveAccountResponse(synced_action->key.group_name(),
                                         maidsafe_error(CommonErrors::success),
                                         synced_action->action.kMessageId);

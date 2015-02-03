@@ -77,6 +77,7 @@ class MpidManagerDatabase {
   bool Has(const MpidManager::MessageKey& key);
 
   bool HasGroup(const MpidManager::GroupName& mpid);
+  MpidManager::MessageKey GetAccountChunkName(const MpidManager::GroupName& mpid);
   std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
   std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid);
 
