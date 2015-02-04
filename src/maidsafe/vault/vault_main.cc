@@ -24,48 +24,44 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/vault_manager/vault_config.h"
-#include "maidsafe/vault_manager/vault_interface.h"
-
-#include "maidsafe/vault/types.h"
 #include "maidsafe/vault/vault.h"
 
 int main(int argc, char* argv[]) {
-  using maidsafe::vault_manager::VaultConfig;
-  using maidsafe::vault::Vault;
+//  using maidsafe::vault_manager::VaultConfig;
+//  using maidsafe::vault::Vault;
   int exit_code(0);
   try {
     auto unuseds(maidsafe::log::Logging::Instance().Initialise(argc, argv));
     if (unuseds.size() != 2U)
       BOOST_THROW_EXCEPTION(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
-    uint16_t port{static_cast<uint16_t>(std::stoi(std::string{&unuseds[1][0]}))};
-    maidsafe::vault_manager::VaultInterface vault_interface{port};
-    VaultConfig vault_config{vault_interface.GetConfiguration()};
+//    uint16_t port{static_cast<uint16_t>(std::stoi(std::string{&unuseds[1][0]}))};
+//    maidsafe::vault_manager::VaultInterface vault_interface{port};
+//    VaultConfig vault_config{vault_interface.GetConfiguration()};
 
     LOG(kVerbose) << "Starting vault...";
-    Vault vault(vault_config);
-    LOG(kInfo) << "Vault running as " << maidsafe::HexSubstr(vault_config.pmid.name().value);
-    exit_code = vault_interface.WaitForExit();
+    Vault vault(/*vault_config*/);
+    LOG(kInfo) << "Vault running as " /*<< maidsafe::HexSubstr(vault_config.pmid.name().value)*/;
+//    exit_code = vault_interface.WaitForExit(); // FIXME(Prakash)
   }
   catch (const maidsafe::maidsafe_error& error) {
-    LOG(kError) << "This is only designed to be invoked by VaultManager.";
+//    LOG(kError) << "This is only designed to be invoked by VaultManager.";
     exit_code = maidsafe::ErrorToInt(error);
   }
   catch (const std::exception& e) {
-    LOG(kError) << "This is only designed to be invoked by VaultManager: " << e.what();
+//    LOG(kError) << "This is only designed to be invoked by VaultManager: " << e.what();
     exit_code =
         maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
   }
-  try {
-    VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
-  }
-  catch (const maidsafe::maidsafe_error& err) {
-    if (err.code() == maidsafe::make_error_code(maidsafe::CommonErrors::unable_to_handle_request)) {
-      LOG(kWarning) << "Visualiser logging has not been initialised.";
-    } else {
-      LOG(kError) << boost::diagnostic_information(err);
-      throw;
-    }
-  }
+//  try {
+//    VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
+//  }
+//  catch (const maidsafe::maidsafe_error& err) {
+//    if (err.code() == maidsafe::make_error_code(maidsafe::CommonErrors::unable_to_handle_request)) {
+//      LOG(kWarning) << "Visualiser logging has not been initialised.";
+//    } else {
+//      LOG(kError) << boost::diagnostic_information(err);
+//      throw;
+//    }
+//  }
   return exit_code;
 }
