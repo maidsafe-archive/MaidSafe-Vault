@@ -15,3 +15,32 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
+
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_H_
+
+#include "maidsafe/common/types.h"
+#include "maidsafe/routing/types.h"
+
+namespace maidsafe {
+
+namespace vault {
+
+
+template <typename Child>
+class MaidManager {
+ public:
+  MaidManager() {}
+
+  template <typename DataType>
+  void HandlePut(routing::SourceAddress from , Identity data_name, DataType data);
+  void HandleChurn(routing::CloseGroupDifference);
+};
+
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif // MAIDSAFE_VAULT_MAID_MANAGER_H_
