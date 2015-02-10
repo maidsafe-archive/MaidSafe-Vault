@@ -30,8 +30,7 @@ namespace test {
 template <typename Child>
 class FakeRouting {
  public:
-  FakeRouting(asio::io_service& /*io_service*/, boost::filesystem::path /*db_location*/,
-              const passport::Pmid& /*pmid*/) {}
+  FakeRouting() {}
 
   FakeRouting(const FakeRouting&) = delete;
   FakeRouting(FakeRouting&&) = delete;

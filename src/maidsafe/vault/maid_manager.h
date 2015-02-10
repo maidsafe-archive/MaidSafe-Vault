@@ -34,7 +34,8 @@ class MaidManager {
   MaidManager() {}
 
   template <typename DataType>
-  void HandlePut(routing::SourceAddress from , Identity data_name, DataType data);
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
+                                         DataType data);
   void HandleChurn(routing::CloseGroupDifference);
 };
 

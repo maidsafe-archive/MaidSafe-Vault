@@ -36,7 +36,8 @@ class PmidManager {
   void HandleGet(routing::SourceAddress from, Identity data_name);
 
   template <typename DataType>
-  void HandlePut(routing::SourceAddress from , Identity data_name, DataType data);
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
+                                         DataType data);
   void HandleChurn(routing::CloseGroupDifference);
 };
 

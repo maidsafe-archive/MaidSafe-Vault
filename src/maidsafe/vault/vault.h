@@ -21,13 +21,14 @@
 
 #include "boost/expected/expected.hpp"
 
+#include "maidsafe/common/data_types/immutable_data.h"
+#include "maidsafe/common/data_types/mutable_data.h"
+
 #include "maidsafe/vault/tests/fake_routing.h"
 #include "maidsafe/vault/data_manager.h"
 #include "maidsafe/vault/maid_manager.h"
 #include "maidsafe/vault/pmid_manager.h"
 #include "maidsafe/vault/pmid_node.h"
-
-
 
 
 namespace maidsafe {
@@ -43,10 +44,9 @@ class VaultFacade : public MaidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
-  VaultFacade(asio::io_service& io_service, boost::filesystem::path db_location,
-              const passport::Pmid& pmid)
+  VaultFacade()
     : DataManager<VaultFacade>(),
-      routing::test::FakeRouting<VaultFacade>(io_service, db_location, pmid) {
+      routing::test::FakeRouting<VaultFacade>() {
   }
 
   ~VaultFacade() = default;
@@ -55,12 +55,13 @@ class VaultFacade : public MaidManager<VaultFacade>,
   enum class DataTypeEnum { ImmutableData, MutableData, End };
 
   template <typename DataType>
-  void HandleGet(routing::SourceAddress from, routing::Authority /* from_authority */,
-                 routing::Authority authority, DataType data_type, Identity data_name);
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority /* from_authority */,
+                                     routing::Authority authority, DataType data_type,
+                                     Identity data_name);
 
   template <typename DataType>
-  void HandlePut(routing::SourceAddress from, routing::Authority from_authority,
-                 routing::Authority authority, DataType data_type);
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority, DataType data_type);
 
   bool HandlePost(const routing::SerialisedMessage&) { return false; }
    template <typename DataType>
@@ -79,26 +80,27 @@ class VaultFacade : public MaidManager<VaultFacade>,
 };
 
 template <typename DataType>
-void VaultFacade::HandleGet(routing::SourceAddress from, routing::Authority /* from_authority */,
+routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
+                                                routing::Authority /* from_authority */,
                routing::Authority authority, DataType data_type, Identity data_name) {
   switch (authority) {
     case routing::Authority::nae_manager:
       if (data_type == DataTypeEnum::ImmutableData)
-        DataManager::template HandleGet<ImmutableData>(from, data_name);
+        return DataManager::template HandleGet<ImmutableData>(from, data_name);
       else if (data_type == DataTypeEnum::MutableData)
-        DataManager::template HandleGet<ImmutableData>(from, data_name);
+        return DataManager::template HandleGet<ImmutableData>(from, data_name);
       break;
     case routing::Authority::node_manager:
       if (data_type == DataTypeEnum::ImmutableData)
-        PmidManager::template HandleGet<ImmutableData>(from, data_name);
+        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
       else if (data_type == DataTypeEnum::MutableData)
         PmidManager::template HandleGet<ImmutableData>(from, data_name);
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTypeEnum::ImmutableData)
-        PmidNode::template HandleGet<ImmutableData>(from, data_name);
+        return PmidNode::template HandleGet<ImmutableData>(from, data_name);
       else if (data_type == DataTypeEnum::MutableData)
-        PmidNode::template HandleGet<ImmutableData>(from, data_name);
+        return PmidNode::template HandleGet<ImmutableData>(from, data_name);
       break;
     default:
       break;
@@ -106,28 +108,28 @@ void VaultFacade::HandleGet(routing::SourceAddress from, routing::Authority /* f
 }
 
 template <typename DataType>
-void VaultFacade::HandlePut(routing::SourceAddress from, routing::Authority from_authority,
-                            routing::Authority authority, DataType data_type) {
+routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
+    routing::Authority from_authority, routing::Authority authority, DataType data_type) {
   switch (authority) {
     case routing::Authority::nae_manager:
       if (from_authority != routing::Authority::client_manager)
         break;
       if (data_type == DataTypeEnum::ImmutableData)
-        DataManager::template HandlePut<ImmutableData>(from, data_type);
+        return DataManager::template HandlePut<ImmutableData>(from, data_type);
       else if (data_type == DataTypeEnum::MutableData)
-        DataManager::template HandlePut<MutableData>(from, data_type);
+        return DataManager::template HandlePut<MutableData>(from, data_type);
       break;
     case routing::Authority::node_manager:
       if (data_type == DataTypeEnum::ImmutableData)
-        PmidManager::template HandlePut<ImmutableData>(from, data_type);
+        return PmidManager::template HandlePut<ImmutableData>(from, data_type);
       else if (data_type == DataTypeEnum::MutableData)
-        PmidManager::template HandlePut<MutableData>(from, data_type);
+        return PmidManager::template HandlePut<MutableData>(from, data_type);
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTypeEnum::ImmutableData)
-        PmidNode::template HandlePut<ImmutableData>(from, data_type);
+        return PmidNode::template HandlePut<ImmutableData>(from, data_type);
       else if (data_type == DataTypeEnum::MutableData)
-        PmidNode::template HandlePut<MutableData>(from, data_type);
+        return PmidNode::template HandlePut<MutableData>(from, data_type);
       break;
     default:
       break;
