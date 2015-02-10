@@ -34,6 +34,13 @@ routing::SingleIdRelay GetDestination(
 }
 
 routing::SingleIdRelay GetDestination(
+        const PartialRequestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>& requestor) {
+  return routing::SingleIdRelay(routing::SingleId(NodeId(requestor.relay_source.node_id->string())),
+      requestor.relay_source.connection_id,
+                       routing::SingleId(NodeId(requestor.relay_source.relay_node->string())));
+}
+
+routing::SingleIdRelay GetDestination(
         const PartialRequestor<nfs::SourcePersona<nfs::Persona::kDataGetter>>& requestor) {
   return routing::SingleIdRelay(routing::SingleId(NodeId(requestor.relay_source.node_id->string())),
       requestor.relay_source.connection_id,
@@ -43,6 +50,11 @@ routing::SingleIdRelay GetDestination(
 // FIXME(Prakash) after changing requestor in vaults to hold exact sender type
 routing::SingleId GetDestination(
         const Requestor<nfs::SourcePersona<nfs::Persona::kMaidNode>>& requestor) {
+  return routing::SingleId(requestor.node_id);
+}
+
+routing::SingleId GetDestination(
+        const Requestor<nfs::SourcePersona<nfs::Persona::kMpidNode>>& requestor) {
   return routing::SingleId(requestor.node_id);
 }
 

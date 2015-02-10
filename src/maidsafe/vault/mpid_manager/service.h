@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_SERVICE_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_SERVICE_H_
 
+#include <map>
 #include <vector>
 
 #include "boost/expected/expected.hpp"
@@ -34,22 +35,29 @@
 
 #include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/account_transfer_handler.h"
-#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/mpid_manager/handler.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/operation_visitors.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+namespace test {
+  class MpidManagerServiceTest;
+}
 
 class MpidManagerService {
  public:
   using PublicMessages = nfs::MpidManagerServiceMessages;
   using VaultMessages = MpidManagerServiceMessages;
   using HandleMessageReturnType = void;
+  using MpidAccountCreationStatus = detail::AccountCreationStatusType<
+                                        passport::PublicMpid, passport::PublicAnmpid>;
 
   MpidManagerService(const passport::Pmid& pmid, routing::Routing& routing,
                      const boost::filesystem::path& vault_root_dir, DiskUsage max_disk_usage);
@@ -66,16 +74,15 @@ class MpidManagerService {
   void DoSync(const UnresolvedAction& unresolved_action);
 
  private:
-  typedef boost::mpl::vector<> InitialType;
-  typedef boost::mpl::insert_range<InitialType,
-                                   boost::mpl::end<InitialType>::type,
-                                   PublicMessages::types>::type IntermediateType;
-  typedef boost::mpl::insert_range<IntermediateType,
-                                   boost::mpl::end<IntermediateType>::type,
-                                   VaultMessages::types>::type FinalType;
+  using InitialType = boost::mpl::vector<>;
+  using IntermediateType = boost::mpl::insert_range<InitialType, boost::mpl::end<InitialType>::type,
+                                                    PublicMessages::types>::type;
+  using  FinalType = boost::mpl::insert_range<IntermediateType,
+                                              boost::mpl::end<IntermediateType>::type,
+                                              VaultMessages::types>::type;
 
  public:
-  typedef boost::make_variant_over<FinalType>::type Messages;
+  using Messages = boost::make_variant_over<FinalType>::type;
 
  private:
   template<typename ServiceHandlerType, typename MessageType>
@@ -84,12 +91,15 @@ class MpidManagerService {
       const typename MessageType::Sender& sender,
       const typename MessageType::Receiver& receiver);
 
+  friend class test::MpidManagerServiceTest;
+  friend class detail::PutResponseVisitor<MpidManagerService, MpidName>;
+
  private:
   template <typename MessageType>
   bool ValidateSender(const MessageType& /*message*/,
                       const typename MessageType::Sender& /*sender*/) const;
 
-  bool IsOnline(const MpidName& mpid_name);  // TO BE IMPLEMENTED
+  bool IsOnline(const MpidName& mpid_name);
 
   void HandleSendMessage(const nfs_vault::MpidMessage& message, const MpidName& sender,
                          nfs::MessageId message_id);
@@ -106,8 +116,26 @@ class MpidManagerService {
   void HandleDeleteRequest(const nfs_vault::MpidMessageAlert& alert, const MpidName& receiver,
                            const MpidName& sender);
 
+  template <typename Data>
+  void HandlePutResponse(const MpidName& maid_name, const typename Data::Name& data_name,
+                         int64_t size, nfs::MessageId message_id);
+
+  template <typename Data>
+  void HandlePutFailure(const MpidName& mpid_name, const typename Data::Name& data_name,
+                        const maidsafe_error& error, nfs::MessageId message_id);
+
+  // =============== Account Creation ==============================================================
+  void HandleCreateAccount(const passport::PublicMpid &public_mpid,
+                           const passport::PublicAnmpid& public_anmpid,
+                           nfs::MessageId message_id);
+  void HandleSyncedCreateAccount(
+           std::unique_ptr<MpidManager::UnresolvedCreateAccount>&& synced_action);
+
+  void HandleSyncedRemoveAccount(
+           std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action);
+
   routing::Routing& routing_;
-  mutable std::mutex accumulator_mutex_, nodes_change_mutex_;
+  mutable std::mutex accumulator_mutex_, nodes_change_mutex_, pending_account_mutex_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   routing::ClientNodesChange client_nodes_change_;
@@ -118,6 +146,9 @@ class MpidManagerService {
   Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;
   Sync<MpidManager::UnresolvedPutMessage> sync_put_messages_;
   Sync<MpidManager::UnresolvedDeleteMessage> sync_delete_messages_;
+  Sync<MpidManager::UnresolvedCreateAccount> sync_create_accounts_;
+  Sync<MpidManager::UnresolvedRemoveAccount> sync_remove_accounts_;
+  std::map<nfs::MessageId, MpidAccountCreationStatus> pending_account_map_;
 };
 
 template <typename MessageType>
@@ -132,14 +163,27 @@ void MpidManagerService::DoSync(const UnresolvedAction& unresolved_action) {
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_alerts_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_put_messages_, unresolved_action);
   detail::IncrementAttemptsAndSendSync(dispatcher_, sync_delete_messages_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_create_accounts_, unresolved_action);
+  detail::IncrementAttemptsAndSendSync(dispatcher_, sync_remove_accounts_, unresolved_action);
 }
 
 template <typename MessageType>
-void HandleMessage(const MessageType&, const typename MessageType::Sender&,
+void MpidManagerService::HandleMessage(const MessageType&, const typename MessageType::Sender&,
                    const typename MessageType::Receiver&) {
-  MessageType::No_generic_handler_is_available__Specialisation_required;
+//  MessageType::No_generic_handler_is_available__Specialisation_required;
 }
 
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const PutResponseFromDataManagerToMpidManager& message,
+    const typename PutResponseFromDataManagerToMpidManager::Sender& sender,
+    const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(
@@ -149,9 +193,9 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
-    const nfs::GetRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver);
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
 
 template <>
 void MpidManagerService::HandleMessage(
@@ -173,6 +217,12 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
     const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver);
@@ -182,6 +232,34 @@ void MpidManagerService::HandleMessage(
     const SynchroniseFromMpidManagerToMpidManager& message,
     const typename SynchroniseFromMpidManagerToMpidManager::Sender& sender,
     const typename SynchroniseFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <typename Data>
+void MpidManagerService::HandlePutResponse(const MpidName&, const typename Data::Name&,
+                                           int64_t, nfs::MessageId) {}
+
+template <>
+void MpidManagerService::HandlePutResponse<passport::PublicMpid>(
+    const MpidName&, const typename passport::PublicMpid::Name&, int64_t, nfs::MessageId);
+
+template <>
+void MpidManagerService::HandlePutResponse<passport::PublicAnmpid>(
+    const MpidName&, const typename passport::PublicAnmpid::Name&, int64_t, nfs::MessageId);
+
+template <typename Data>
+void MpidManagerService::HandlePutFailure(
+    const MpidName&, const typename Data::Name&, const maidsafe_error&, nfs::MessageId) {
+  Data::MpidManager_should_not_be_used_for_generic_put_handling;
+}
+
+template <>
+void MpidManagerService::HandlePutFailure<passport::PublicMpid>(
+    const MpidName& mpid_name, const typename passport::PublicMpid::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id);
+
+template <>
+void MpidManagerService::HandlePutFailure<passport::PublicAnmpid>(
+    const MpidName& mpid_name, const typename passport::PublicAnmpid::Name& data_name,
+    const maidsafe_error& error, nfs::MessageId message_id);
 
 }  // namespace vault
 

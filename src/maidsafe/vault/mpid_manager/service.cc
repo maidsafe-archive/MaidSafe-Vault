@@ -40,9 +40,25 @@ MpidManagerService::MpidManagerService(const passport::Pmid& pmid, routing::Rout
       sync_put_alerts_(NodeId(pmid.name()->string())),
       sync_delete_alerts_(NodeId(pmid.name()->string())),
       sync_put_messages_(NodeId(pmid.name()->string())),
-      sync_delete_messages_(NodeId(pmid.name()->string())) {}
+      sync_delete_messages_(NodeId(pmid.name()->string())),
+      sync_create_accounts_(NodeId(pmid.name()->string())),
+      sync_remove_accounts_(NodeId(pmid.name()->string())) {}
 
 MpidManagerService::~MpidManagerService() {}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const nfs::CreateAccountRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::CreateAccountRequestFromMpidNodeToMpidManager::Receiver& receiver) {
+  using MessageType = nfs::CreateAccountRequestFromMpidNodeToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
 
 template <>
 void MpidManagerService::HandleMessage(const SendAlertFromMpidManagerToMpidManager &message,
@@ -59,10 +75,10 @@ void MpidManagerService::HandleMessage(const SendAlertFromMpidManagerToMpidManag
 
 template <>
 void MpidManagerService::HandleMessage(
-    const nfs::GetRequestFromMpidNodeToMpidManager& message,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Sender& sender,
-    const typename nfs::GetRequestFromMpidNodeToMpidManager::Receiver& receiver) {
-  using  MessageType = nfs::GetRequestFromMpidNodeToMpidManager;
+    const nfs::GetMessageRequestFromMpidNodeToMpidManager& message,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Sender& sender,
+    const typename nfs::GetMessageRequestFromMpidNodeToMpidManager::Receiver& receiver) {
+  using  MessageType = nfs::GetMessageRequestFromMpidNodeToMpidManager;
   OperationHandlerWrapper<MpidManagerService, MessageType>(
       accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
                       return this->ValidateSender(message, sender);
@@ -115,6 +131,20 @@ void MpidManagerService::HandleMessage(
 
 template <>
 void MpidManagerService::HandleMessage(
+    const DeleteRequestFromMpidManagerToMpidManager& message,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Sender& sender,
+    const typename DeleteRequestFromMpidManagerToMpidManager::Receiver& receiver) {
+  using  MessageType = DeleteRequestFromMpidManagerToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MpidManagerService::HandleMessage(
     const nfs::SendMessageRequestFromMpidNodeToMpidManager& message,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Sender& sender,
     const typename nfs::SendMessageRequestFromMpidNodeToMpidManager::Receiver& receiver) {
@@ -125,6 +155,154 @@ void MpidManagerService::HandleMessage(
                     },
       Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
       this, accumulator_mutex_)(message, sender, receiver);
+}
+
+template <>
+void MpidManagerService::HandleMessage(
+    const PutResponseFromDataManagerToMpidManager& message,
+    const typename PutResponseFromDataManagerToMpidManager::Sender& sender,
+    const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver) {
+  using  MessageType = PutResponseFromDataManagerToMpidManager;
+  OperationHandlerWrapper<MpidManagerService, MessageType>(
+      accumulator_, [this](const MessageType& message, const MessageType::Sender& sender) {
+                      return this->ValidateSender(message, sender);
+                    },
+      Accumulator<Messages>::AddRequestChecker(RequiredRequests(message)),
+      this, accumulator_mutex_)(message, sender, receiver);
+}
+
+// =============== Mpid Account Creation ===========================================================
+
+void MpidManagerService::HandleCreateAccount(const passport::PublicMpid& public_mpid,
+                                             const passport::PublicAnmpid& public_anmpid,
+                                             nfs::MessageId message_id) {
+  nfs::MessageId mpid_hash_message_id(vault::HashStringToMessageId(public_mpid.name()->string()));
+  nfs::MessageId anmpid_hash_message_id(
+                     vault::HashStringToMessageId(public_anmpid.name()->string()));
+  nfs::MessageId mpid_message_id(mpid_hash_message_id ^ message_id);
+  nfs::MessageId anmpid_message_id(anmpid_hash_message_id ^ message_id);
+
+  if (handler_.HasAccount(public_mpid.name())) {
+    maidsafe_error error(MakeError(VaultErrors::account_already_exists));
+    dispatcher_.SendCreateAccountResponse(public_mpid.name(), error, message_id);
+    return;
+  }
+  {
+    std::lock_guard<std::mutex> lock(pending_account_mutex_);
+    MpidAccountCreationStatus account_creation_status(public_mpid.name(), public_anmpid.name());
+    pending_account_map_.insert(std::make_pair(message_id, account_creation_status));
+  }
+
+  dispatcher_.SendPutRequest(public_mpid.name(), public_mpid, mpid_message_id);
+  dispatcher_.SendPutRequest(public_mpid.name(), public_anmpid, anmpid_message_id);
+}
+
+template <>
+void MpidManagerService::HandlePutResponse<passport::PublicMpid>(
+         const MpidName& mpid_name, const typename passport::PublicMpid::Name& data_name,
+         int64_t /*size*/, nfs::MessageId mpid_message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId mpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(mpid_message_id ^ mpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  // In case of a churn, drop it silently
+  if (data_name != mpid_name)
+    return;
+  assert(pending_account_itr->second.name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.name->string())
+         == mpid_hash_message_id);
+  static_cast<void>(data_name);
+  pending_account_itr->second.name_stored = true;
+
+  if (pending_account_itr->second.an_name_stored) {
+    DoSync(MpidManager::UnresolvedCreateAccount(MpidManager::SyncGroupKey(mpid_name),
+                                                ActionCreateAccount(original_message_id),
+                                                routing_.kNodeId()));
+    pending_account_map_.erase(pending_account_itr);
+  }
+}
+
+template <>
+void MpidManagerService::HandlePutResponse<passport::PublicAnmpid>(
+         const MpidName& mpid_name, const typename passport::PublicAnmpid::Name& data_name,
+         int64_t /*size*/, nfs::MessageId anmpid_message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId anmpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(anmpid_message_id ^ anmpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(pending_account_itr->second.an_name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.an_name->string())
+         == anmpid_hash_message_id);
+  static_cast<void>(data_name);
+  pending_account_itr->second.an_name_stored = true;
+
+  if (pending_account_itr->second.name_stored) {
+    DoSync(MpidManager::UnresolvedCreateAccount(MpidManager::SyncGroupKey(mpid_name),
+                                                ActionCreateAccount(original_message_id),
+                                                routing_.kNodeId()));
+    pending_account_map_.erase(pending_account_itr);
+  }
+}
+
+template <>
+void MpidManagerService::HandlePutFailure<passport::PublicMpid>(
+         const MpidName& mpid_name, const passport::PublicMpid::Name& data_name,
+         const maidsafe_error& error, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId mpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(message_id ^ mpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(data_name == mpid_name);
+  assert(pending_account_itr->second.name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.name->string())
+         == message_id);
+  static_cast<void>(data_name);
+  // TODO(Team): Consider deleting anmpid key if stored
+  pending_account_map_.erase(pending_account_itr);
+  dispatcher_.SendCreateAccountResponse(mpid_name, error, original_message_id);
+}
+
+template <>
+void MpidManagerService::HandlePutFailure<passport::PublicAnmpid>(
+         const MpidName& mpid_name, const passport::PublicAnmpid::Name& data_name,
+         const maidsafe_error& error, nfs::MessageId message_id) {
+  std::lock_guard<std::mutex> lock(pending_account_mutex_);
+  nfs::MessageId anmpid_hash_message_id(vault::HashStringToMessageId(data_name->string()));
+  nfs::MessageId original_message_id(message_id ^ anmpid_hash_message_id);
+  auto pending_account_itr(pending_account_map_.find(original_message_id));
+  if (pending_account_itr == pending_account_map_.end()) {
+    return;
+  }
+  assert(pending_account_itr->second.an_name == data_name);
+  assert(vault::HashStringToMessageId(pending_account_itr->second.an_name->string())
+         == message_id);
+  static_cast<void>(data_name);
+  // TODO(Team): Consider deleting mpid key if stored
+  pending_account_map_.erase(pending_account_itr);
+  dispatcher_.SendCreateAccountResponse(mpid_name, error, original_message_id);
+}
+
+void MpidManagerService::HandleSyncedCreateAccount(
+         std::unique_ptr<MpidManager::UnresolvedCreateAccount>&& synced_action) {
+  maidsafe_error error(CommonErrors::success);
+  dispatcher_.SendCreateAccountResponse(synced_action->key.group_name(), error,
+                                        synced_action->action.kMessageId);
+}
+
+void MpidManagerService::HandleSyncedRemoveAccount(
+         std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action) {
+  dispatcher_.SendRemoveAccountResponse(synced_action->key.group_name(),
+                                        maidsafe_error(CommonErrors::success),
+                                        synced_action->action.kMessageId);
 }
 
 // ========================== Sync / AccountTransfer implementation ================================
@@ -144,12 +322,13 @@ void MpidManagerService::HandleMessage(
                                                           sender.sender_id, routing_.kNodeId());
       auto resolved_action(sync_put_messages_.AddUnresolvedAction(unresolved_action));
       if (resolved_action) {
-        ImmutableData data(NonEmptyString(resolved_action->action.kMessage.Serialise()));
-         handler_.Put(data, resolved_action->action.kMessage.base.sender);
+        ImmutableData data(NonEmptyString(
+                               resolved_action->action.kMessageAndId.message.Serialise()));
+        handler_.Put(data, resolved_action->action.kMessageAndId.message.base.sender);
         dispatcher_.SendMessageAlert(
-            nfs_vault::MpidMessageAlert(resolved_action->action.kMessage.base,
+            nfs_vault::MpidMessageAlert(resolved_action->action.kMessageAndId.message.base,
                                         nfs_vault::MessageIdType(data.name().value.string())),
-            resolved_action->action.kMessage.base.receiver, message.id);
+            resolved_action->action.kMessageAndId.message.base.receiver, message.id);
       }
       break;
     }
@@ -186,6 +365,24 @@ void MpidManagerService::HandleMessage(
       }
       break;
     }
+    case ActionCreateAccount::kActionId: {
+      MpidManager::UnresolvedCreateAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_create_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        HandleSyncedCreateAccount(std::move(resolved_action));
+      }
+      break;
+    }
+    case ActionRemoveAccount::kActionId: {
+      MpidManager::UnresolvedRemoveAccount unresolved_action(
+          proto_sync.serialised_unresolved_action(), sender.sender_id, routing_.kNodeId());
+      auto resolved_action(sync_remove_accounts_.AddUnresolvedAction(unresolved_action));
+      if (resolved_action) {
+        HandleSyncedRemoveAccount(std::move(resolved_action));
+      }
+      break;
+    }
     default: {
       LOG(kError) << "SynchroniseFromMpidManagerToMpidManager Unhandled action type";
       assert(false && "Unhandled action type");
@@ -212,9 +409,8 @@ void MpidManagerService::HandleSendMessage(const nfs_vault::MpidMessage& message
     return;
   }
   dispatcher_.SendMessageResponse(sender, MakeError(CommonErrors::success), message_id);
-  // After sync alert must be sent out -- TO BE IMPLEMENTED
   DoSync(MpidManager::UnresolvedPutMessage(MpidManager::SyncGroupKey(sender),
-                                           ActionMpidManagerPutMessage(message),
+                                           ActionMpidManagerPutMessage(message, message_id),
                                            routing_.kNodeId()));
 }
 

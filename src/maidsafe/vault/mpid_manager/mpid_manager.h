@@ -36,8 +36,18 @@
 #include "maidsafe/vault/mpid_manager/action_delete_alert.h"
 #include "maidsafe/vault/mpid_manager/action_put_message.h"
 #include "maidsafe/vault/mpid_manager/action_delete_message.h"
+#include "maidsafe/vault/action_create_remove_account.h"
 
 namespace maidsafe {
+
+namespace vault {
+
+template <bool Remove>
+struct ActionCreateRemoveAccount;
+using ActionCreateAccount = ActionCreateRemoveAccount<false>;
+using ActionRemoveAccount = ActionCreateRemoveAccount<true>;
+
+}  // namespace vault
 
 namespace nfs {
 
@@ -51,6 +61,8 @@ struct PersonaTypes<Persona::kMpidManager> {
   using Key = passport::PublicMpid::Name;
   using SyncKey = vault::GroupKey<Key>;
   using SyncGroupKey = vault::MetadataKey<Key>;
+  using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionCreateAccount>;
+  using UnresolvedRemoveAccount = vault::UnresolvedAction<SyncGroupKey, vault::ActionRemoveAccount>;
   using UnresolvedPutAlert = vault::UnresolvedAction<SyncGroupKey,
                                                      vault::ActionMpidManagerPutAlert>;
   using UnresolvedDeleteAlert = vault::UnresolvedAction<SyncGroupKey,
@@ -68,7 +80,7 @@ namespace vault {
 
 using DbMessageQueryResult = boost::expected<nfs_vault::MpidMessage, maidsafe_error>;
 
-typedef nfs::PersonaTypes<nfs::Persona::kMpidManager> MpidManager;
+using  MpidManager = nfs::PersonaTypes<nfs::Persona::kMpidManager>;
 
 }  // namespace vault
 

@@ -99,19 +99,19 @@ class DataManagerService {
   DataManagerService& operator=(DataManagerService&&);
 
   // =========================== Put section =======================================================
-  template <typename Data>
-  void HandlePut(const Data& data, const MaidName& maid_name, nfs::MessageId message_id);
+  template <typename Data, typename RequestorIdType>
+  void HandlePut(const Data& data, const RequestorIdType& requestor, nfs::MessageId message_id);
 
   template <typename Data>
   bool EntryExist(const typename Data::Name& name);
 
   typedef std::true_type EntryMustBeUnique;
   typedef std::false_type EntryNeedNotBeUnique;
-  template <typename Data>
-  void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+  template <typename Data, typename RequestorIdType>
+  void HandlePutWhereEntryExists(const Data& data, const RequestorIdType& requestor,
                                  nfs::MessageId message_id, uint64_t cost, EntryMustBeUnique);
-  template <typename Data>
-  void HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
+  template <typename Data, typename RequestorIdType>
+  void HandlePutWhereEntryExists(const Data& data, const RequestorIdType& requestor,
                                  nfs::MessageId message_id, uint64_t cost, EntryNeedNotBeUnique);
 
   template <typename Data>
@@ -259,7 +259,9 @@ class DataManagerService {
   template <typename ServiceHandlerType, typename RequestorIdType>
   friend class detail::GetRequestVisitor;
 
-  friend class detail::DataManagerPutVisitor<DataManagerService>;
+  template <typename ServiceHandlerType, typename RequestorIdType>
+  friend class detail::DataManagerPutVisitor;
+
   friend class detail::DataManagerPutResponseVisitor<DataManagerService>;
   friend class detail::DataManagerSendPutRequestVisitor<DataManagerService>;
   friend class detail::DataManagerDeleteVisitor<DataManagerService>;
@@ -306,6 +308,12 @@ void DataManagerService::HandleMessage(
 
 template <>
 void DataManagerService::HandleMessage(
+         const PutRequestFromMpidManagerToDataManager& message,
+         const typename PutRequestFromMpidManagerToDataManager::Sender&,
+         const typename PutRequestFromMpidManagerToDataManager::Receiver&);
+
+template <>
+void DataManagerService::HandleMessage(
     const PutResponseFromPmidManagerToDataManager& message,
     const typename PutResponseFromPmidManagerToDataManager::Sender&,
     const typename PutResponseFromPmidManagerToDataManager::Receiver&);
@@ -315,6 +323,19 @@ void DataManagerService::HandleMessage(
     const PutFailureFromPmidManagerToDataManager& message,
     const typename PutFailureFromPmidManagerToDataManager::Sender& sender,
     const typename PutFailureFromPmidManagerToDataManager::Receiver& receiver);
+
+template <>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromMpidNodeToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodeToDataManager::Receiver& receiver);
+
+// Special case for relay messages
+template <>
+void DataManagerService::HandleMessage(
+    const nfs::GetRequestFromMpidNodePartialToDataManager& message,
+    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Sender& sender,
+    const typename nfs::GetRequestFromMpidNodePartialToDataManager::Receiver& receiver);
 
 template <>
 void DataManagerService::HandleMessage(
@@ -367,11 +388,9 @@ void DataManagerService::HandleMessage(
     const typename AccountQueryResponseFromDataManagerToDataManager::Receiver& receiver);
 
 // ================================== Put implementation ===========================================
-template <typename Data>
-void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
+template <typename Data, typename RequestorIdType>
+void DataManagerService::HandlePut(const Data& data, const RequestorIdType& requestor,
                                    nfs::MessageId message_id) {
-  LOG(kVerbose) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-                << " from maid_node " << HexSubstr(maid_name->string());
   uint64_t cost(static_cast<uint64_t>(data.Serialise().data.string().size()));
   if (!EntryExist<Data>(data.name())) {
     cost *= routing::Parameters::group_size;
@@ -386,13 +405,13 @@ void DataManagerService::HandlePut(const Data& data, const MaidName& maid_name,
                                         ActionDataManagerPut(serialised_data.string().size(),
                                                              message_id),
                                         routing_.kNodeId()));
-      dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
+      dispatcher_.SendPutResponse<Data, RequestorIdType>(requestor, data.name(), cost, message_id);
     }
     catch (const std::exception&) {
       LOG(kError) << "Failed to store data in to the cache";
     }
   } else {
-    HandlePutWhereEntryExists(data, maid_name, message_id, cost, is_unique_on_network<Data>());
+    HandlePutWhereEntryExists(data, requestor, message_id, cost, is_unique_on_network<Data>());
   }
 }
 
@@ -419,26 +438,26 @@ bool DataManagerService::EntryExist(const typename Data::Name& name) {
   }
 }
 
-template <typename Data>
-void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                                   nfs::MessageId message_id, uint64_t /*cost*/,
-                                                   EntryMustBeUnique) {
+template <typename Data, typename RequestorIdType>
+void DataManagerService::HandlePutWhereEntryExists(
+         const Data& data, const RequestorIdType& requestor, nfs::MessageId message_id,
+         uint64_t /*cost*/, EntryMustBeUnique) {
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-              << " from maid_node " << HexSubstr(maid_name->string())
-              << " . SendPutFailure with message_id " << message_id.data;
-  dispatcher_.SendPutFailure<Data>(maid_name, data.name(),
-                                   maidsafe_error(VaultErrors::unique_data_clash), message_id);
+             << " from maid_node " << requestor.node_id
+             << " . SendPutFailure with message_id " << message_id.data;
+  dispatcher_.SendPutFailure<Data, RequestorIdType>(
+      requestor, data.name(), maidsafe_error(VaultErrors::unique_data_clash), message_id);
 }
 
-template <typename Data>
-void DataManagerService::HandlePutWhereEntryExists(const Data& data, const MaidName& maid_name,
-                                                   nfs::MessageId message_id, uint64_t cost,
-                                                   EntryNeedNotBeUnique) {
+template <typename Data, typename RequestorIdType>
+void DataManagerService::HandlePutWhereEntryExists(
+     const Data& data, const RequestorIdType& requestor, nfs::MessageId message_id, uint64_t cost,
+     EntryNeedNotBeUnique) {
   // As the subscribers has been removed, no need to carry out any further actions for duplicates
   LOG(kInfo) << "DataManagerService::HandlePut " << HexSubstr(data.name().value)
-              << " from maid_node " << HexSubstr(maid_name->string())
+              << " from maid_node " << requestor.node_id
               << " . SendPutResponse with message_id " << message_id.data;
-  dispatcher_.SendPutResponse<Data>(maid_name, data.name(), cost, message_id);
+  dispatcher_.SendPutResponse<Data, RequestorIdType>(requestor, data.name(), cost, message_id);
 }
 
 template <typename Data>

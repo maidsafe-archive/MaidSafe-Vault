@@ -85,7 +85,7 @@ void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& q
 void MpidManagerDispatcher::SendGetMessageResponseToMpid(
     const nfs_client::MpidMessageOrReturnCode& response, const MpidName& receiver,
     nfs::MessageId message_id) {
-  using NfsMessage = nfs::GetResponseFromMpidManagerToMpidNode;
+  using NfsMessage = nfs::GetMessageResponseFromMpidManagerToMpidNode;
   CheckSourcePersonaType<NfsMessage>();
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
   NfsMessage nfs_message(message_id, NfsMessage::Contents(response));
@@ -125,16 +125,30 @@ void MpidManagerDispatcher::SendMessageResponse(const MpidName& receiver,
 
 void MpidManagerDispatcher::SendSync(const MpidManager::SyncGroupKey& key,
                                      const std::string& serialised_sync) {
-  using  VaultMessage = DeleteRequestFromMpidManagerToMpidManager;
+  using  VaultMessage = SynchroniseFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
-  using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  VaultMessage::Contents vault_message(serialised_sync);
-  RoutingMessage message(vault_message.Serialise(),
-                         VaultMessage::Sender(routing::GroupId(NodeId(key.group_name()->string())),
-                                              routing::SingleId(routing_.kNodeId())),
-                         VaultMessage::Receiver(NodeId(key.group_name()->string())));
+  SendSyncMessage<VaultMessage> sync_sender;
+  sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
+}
+
+void MpidManagerDispatcher::SendCreateAccountResponse(const MpidName& mpid_name,
+                                                      const maidsafe_error& result,
+                                                      nfs::MessageId message_id) {
+  using NfsMessage = nfs::CreateAccountResponseFromMpidManagerToMpidNode;
+  using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
+  CheckSourcePersonaType<NfsMessage>();
+
+  NfsMessage nfs_message(message_id, nfs_client::ReturnCode(result));
+  RoutingMessage message(nfs_message.Serialise(),
+                         NfsMessage::Sender(routing::GroupId(NodeId(mpid_name->string())),
+                                            routing::SingleId(routing_.kNodeId())),
+                         NfsMessage::Receiver(routing::SingleId(NodeId(mpid_name.value.string()))));
   routing_.Send(message);
 }
+
+
+void MpidManagerDispatcher::SendRemoveAccountResponse(const MpidName&, const maidsafe_error&,
+                                                      nfs::MessageId) {}
 
 }  // namespace vault
 

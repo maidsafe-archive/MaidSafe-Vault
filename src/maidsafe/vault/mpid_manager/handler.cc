@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/mpid_manager/handler.h"
 
+#include "maidsafe/vault/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -25,7 +27,7 @@ namespace vault {
 MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
                                        DiskUsage max_disk_usage)
     : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage),
-      db_(vault_root_dir) {}
+      db_(UniqueDbPath(vault_root_dir)) {}
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
@@ -47,12 +49,11 @@ bool MpidManagerHandler::HasAccount(const MpidName& mpid) const {
 
 DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
-    nfs_vault::MpidMessage mpid_message(GetChunk<ImmutableData>(data_name).data().string());
-    return std::move(mpid_message);
+    return nfs_vault::MpidMessage(GetChunk<ImmutableData>(data_name).data().string());
   }
-  catch (const maidsafe_error& /*error*/) {
+  catch (const maidsafe_error& error) {
+    return boost::make_unexpected(error);
   }
-  return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 }
 
 }  // namespace vault
