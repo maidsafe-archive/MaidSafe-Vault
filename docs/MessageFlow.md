@@ -86,5 +86,14 @@ Implementation:
 
     < MaidNode::Get(D.name) {
         client_routing.get(D.name) }
-    | DataManager::HandleGet(D.name) {
+    | DataManager{D.name}::HandleGet(D.name, ReplyToClient) {
+        if (LRUcache.get(D.name)) {
+          return Flow [ ReplyToClient, GetResponse(LRUcache.get(D.name)) ]
         }
+        OnlinePmidNodes = Register.getOnlinePmidNodes(D.name)
+        return Flow [ OnlinePmidNodes, PushForward(D.name, ReplyToClient) ] }
+    | PmidNode{OnlinePmidNode}::PushForward(D.name, ReplyToClient) {
+        return Flow [ ReplyToClient, GetResponse(Vault.get(D.name)) }
+    >
+
+### CHURN HANDLE
