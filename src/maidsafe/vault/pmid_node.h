@@ -22,6 +22,9 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 
+#include "maidsafe/vault/chunk_store.h"
+
+
 namespace maidsafe {
 
 namespace vault {
@@ -32,10 +35,11 @@ class PmidNode {
  public:
   PmidNode() {}
   template <typename DataType>
-  void HandleGet(routing::SourceAddress from, Identity data_name);
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
   template <typename DataType>
-  void HandlePut(routing::SourceAddress from , Identity data_name, DataType data);
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
+                                         DataType data);
   void HandleChurn(routing::CloseGroupDifference);
 };
 
