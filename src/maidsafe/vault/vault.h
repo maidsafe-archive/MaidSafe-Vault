@@ -24,7 +24,7 @@
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
 
-#include "maidsafe/vault/tests/fake_routing.h"
+#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager.h"
 #include "maidsafe/vault/maid_manager.h"
 #include "maidsafe/vault/pmid_manager.h"
@@ -45,7 +45,10 @@ class VaultFacade : public MaidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
-    : DataManager<VaultFacade>(),
+    : MaidManager<VaultFacade>(),
+      DataManager<VaultFacade>(),
+      PmidManager<VaultFacade>(),
+      PmidNode<VaultFacade>(),
       routing::test::FakeRouting<VaultFacade>() {
   }
 
