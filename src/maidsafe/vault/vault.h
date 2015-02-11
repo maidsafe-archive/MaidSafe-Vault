@@ -35,8 +35,6 @@ namespace maidsafe {
 
 namespace vault {
 
-class VaultFacade;
-
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
