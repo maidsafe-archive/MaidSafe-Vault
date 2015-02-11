@@ -30,7 +30,7 @@ namespace test {
 
 
 TEST(VaultTest, FUNC_Constructor) {
-  VaultFacade vault();
+  VaultFacade vault;
 }
 
 }  // namespace test
