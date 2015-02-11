@@ -58,7 +58,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
   enum class DataTypeEnum { ImmutableData, MutableData, End };
 
   template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority /* from_authority */,
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority from_authority,
                                      routing::Authority authority, DataType data_type,
                                      Identity data_name);
 
@@ -66,27 +66,30 @@ class VaultFacade : public MaidManager<VaultFacade>,
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
       routing::Authority from_authority, routing::Authority authority, DataType data_type);
 
-  bool HandlePost(const routing::SerialisedMessage&) { return false; }
+  bool HandlePost(const routing::SerialisedMessage& message);
+  // not in local cache do upper layers have it (called when we are in target group)
    template <typename DataType>
   boost::expected<routing::SerialisedMessage, maidsafe_error> HandleGet(routing::Address) {
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
   // default put is allowed unless prevented by upper layers
-  bool HandlePut(routing::Address, routing::SerialisedMessage) { return true; }
+  bool HandlePut(routing::Address, routing::SerialisedMessage);
   // if the implementation allows any put of data in unauthenticated mode
-  bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage) { return true; }
-  void HandleChurn(routing::CloseGroupDifference /*diff*/) {
-//    MaidManager::HandleChurn(diff);
-//    DataManager::HandleChurn(diff);
-//    PmidManager::HandleChurn(diff);
-  }
+  bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage);
+  void HandleChurn(routing::CloseGroupDifference diff);
 };
 
 template <typename DataType>
 routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
-                                                routing::Authority /* from_authority */,
-               routing::Authority authority, DataType data_type, Identity data_name) {
+    routing::Authority /* from_authority */, routing::Authority authority, DataType data_type,
+        Identity data_name) {
   switch (authority) {
+    case routing::Authority::client_manager:
+      if (data_type == DataTypeEnum::ImmutableData)
+        return MaidManager::template HandleGet<ImmutableData>(from, data_name);
+      else if (data_type == DataTypeEnum::MutableData)
+        return MaidManager::template HandleGet<ImmutableData>(from, data_name);
+      break;
     case routing::Authority::nae_manager:
       if (data_type == DataTypeEnum::ImmutableData)
         return DataManager::template HandleGet<ImmutableData>(from, data_name);
@@ -114,6 +117,13 @@ template <typename DataType>
 routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
     routing::Authority from_authority, routing::Authority authority, DataType data_type) {
   switch (authority) {
+    case routing::Authority::client_manager:
+      if (from_authority != routing::Authority::client)
+        break;
+      if (data_type == DataTypeEnum::ImmutableData)
+        return MaidManager::template HandlePut<ImmutableData>(from, data_type);
+      else if (data_type == DataTypeEnum::MutableData)
+        return MaidManager::template HandlePut<MutableData>(from, data_type);
     case routing::Authority::nae_manager:
       if (from_authority != routing::Authority::client_manager)
         break;
