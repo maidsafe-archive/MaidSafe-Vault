@@ -16,35 +16,37 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#ifndef MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
+#define MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_H_
-
-#include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 
 namespace maidsafe {
 
-namespace vault {
+namespace routing {
 
+namespace test {
 
 template <typename Child>
-class MaidManager {
+class FakeRouting {
  public:
-  MaidManager() {}
+  FakeRouting() {}
+
+  FakeRouting(const FakeRouting&) = delete;
+  FakeRouting(FakeRouting&&) = delete;
+  FakeRouting& operator=(const FakeRouting&) = delete;
+  FakeRouting& operator=(FakeRouting&&) = delete;
+  ~FakeRouting() = default;
 
   template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
-
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
-                                         DataType data);
-  void HandleChurn(routing::CloseGroupDifference);
+  routing::HandlePutPostReturn TriggerHandleGet(SourceAddress from, Authority from_authority,
+      Authority authority, DataType data_type, Identity data_name) {
+    return static_cast<Child*>(this)->HandleGet(from, from_authority, authority, data_type,
+                                                data_name);
+  }
 };
 
-
-}  // namespace vault
-
-}  // namespace maidsafe
-
-#endif // MAIDSAFE_VAULT_MAID_MANAGER_H_
+}  // namespace test
+}  // namespace routing
+} // namespace maidsafe
+#endif  // MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_

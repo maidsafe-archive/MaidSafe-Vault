@@ -16,35 +16,25 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/vault/vault.h"
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_H_
+#include "maidsafe/common/test.h"
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/routing/types.h"
+namespace fs = boost::filesystem;
 
 namespace maidsafe {
 
 namespace vault {
 
+namespace test {
 
-template <typename Child>
-class MaidManager {
- public:
-  MaidManager() {}
 
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+TEST(VaultTest, FUNC_Constructor) {
+  VaultFacade vault;
+}
 
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
-                                         DataType data);
-  void HandleChurn(routing::CloseGroupDifference);
-};
-
+}  // namespace test
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif // MAIDSAFE_VAULT_MAID_MANAGER_H_

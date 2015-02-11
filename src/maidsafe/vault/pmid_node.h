@@ -15,3 +15,37 @@
 
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
+
+#ifndef MAIDSAFE_VAULT_PMID_NODE_H_
+#define MAIDSAFE_VAULT_PMID_NODE_H_
+
+#include "maidsafe/common/types.h"
+#include "maidsafe/routing/types.h"
+
+#include "maidsafe/vault/chunk_store.h"
+
+
+namespace maidsafe {
+
+namespace vault {
+
+
+template <typename Child>
+class PmidNode {
+ public:
+  PmidNode() {}
+  template <typename DataType>
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+
+  template <typename DataType>
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
+                                         DataType data);
+  void HandleChurn(routing::CloseGroupDifference);
+};
+
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif // MAIDSAFE_VAULT_PMID_NODE_H_
