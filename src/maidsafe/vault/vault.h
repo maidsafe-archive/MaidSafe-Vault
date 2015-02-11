@@ -64,7 +64,8 @@ class VaultFacade : public MaidManager<VaultFacade>,
 
   template <typename DataType>
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
-      routing::Authority from_authority, routing::Authority authority, DataType data_type);
+      routing::Authority from_authority, routing::Authority authority, DataType data_type,
+      std::vector<byte> data);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
@@ -92,9 +93,9 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
       break;
     case routing::Authority::nae_manager:
       if (data_type == DataTypeEnum::ImmutableData)
-        return DataManager::template HandleGet<ImmutableData>(from, data_name);
+        return DataManager::template HandleGet<ImmutableData>(data_name);
       else if (data_type == DataTypeEnum::MutableData)
-        return DataManager::template HandleGet<ImmutableData>(from, data_name);
+        return DataManager::template HandleGet<ImmutableData>(data_name);
       break;
     case routing::Authority::node_manager:
       if (data_type == DataTypeEnum::ImmutableData)
@@ -115,7 +116,8 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
 
 template <typename DataType>
 routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
-    routing::Authority from_authority, routing::Authority authority, DataType data_type) {
+    routing::Authority from_authority, routing::Authority authority, DataType data_type,
+    std::vector<byte> data) {
   switch (authority) {
     case routing::Authority::client_manager:
       if (from_authority != routing::Authority::client)
@@ -128,9 +130,9 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
       if (from_authority != routing::Authority::client_manager)
         break;
       if (data_type == DataTypeEnum::ImmutableData)
-        return DataManager::template HandlePut<ImmutableData>(from, data_type);
+        return DataManager::template HandlePut<ImmutableData>(ImmutableData(NonEmptyString("data")));
       else if (data_type == DataTypeEnum::MutableData)
-        return DataManager::template HandlePut<MutableData>(from, data_type);
+        return DataManager::template HandlePut<MutableData>(MutableData(NonEmptyString("data")));
       break;
     case routing::Authority::node_manager:
       if (data_type == DataTypeEnum::ImmutableData)

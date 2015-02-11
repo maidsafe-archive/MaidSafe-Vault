@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 //    VaultConfig vault_config{vault_interface.GetConfiguration()};
 
     LOG(kVerbose) << "Starting vault...";
-    VaultFacade vault(/*vault_config*/);
+    VaultFacade vault;
     LOG(kInfo) << "Vault running as " /*<< maidsafe::HexSubstr(vault_config.pmid.name().value)*/;
 //    exit_code = vault_interface.WaitForExit(); // FIXME(Prakash)
   }
