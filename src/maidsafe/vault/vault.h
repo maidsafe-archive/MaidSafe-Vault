@@ -16,7 +16,131 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#ifndef MAIDSAFE_VAULT_VAULT_H_
+#define MAIDSAFE_VAULT_VAULT_H_
 
-class Vault {
+#include "boost/expected/expected.hpp"
 
+#include "maidsafe/common/data_types/immutable_data.h"
+#include "maidsafe/common/data_types/mutable_data.h"
+
+#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
+#include "maidsafe/vault/data_manager.h"
+#include "maidsafe/vault/maid_manager.h"
+#include "maidsafe/vault/pmid_manager.h"
+#include "maidsafe/vault/pmid_node.h"
+
+
+namespace maidsafe {
+
+namespace vault {
+
+class VaultFacade;
+
+
+class VaultFacade : public MaidManager<VaultFacade>,
+                    public DataManager<VaultFacade>,
+                    public PmidManager<VaultFacade>,
+                    public PmidNode<VaultFacade>,
+                    public routing::test::FakeRouting<VaultFacade> {
+ public:
+  VaultFacade()
+    : MaidManager<VaultFacade>(),
+      DataManager<VaultFacade>(),
+      PmidManager<VaultFacade>(),
+      PmidNode<VaultFacade>(),
+      routing::test::FakeRouting<VaultFacade>() {
+  }
+
+  ~VaultFacade() = default;
+
+  enum class FunctorType { FunctionOne, FunctionTwo };
+  enum class DataTypeEnum { ImmutableData, MutableData, End };
+
+  template <typename DataType>
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority /* from_authority */,
+                                     routing::Authority authority, DataType data_type,
+                                     Identity data_name);
+
+  template <typename DataType>
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority, DataType data_type);
+
+  bool HandlePost(const routing::SerialisedMessage&) { return false; }
+   template <typename DataType>
+  boost::expected<routing::SerialisedMessage, maidsafe_error> HandleGet(routing::Address) {
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+  }
+  // default put is allowed unless prevented by upper layers
+  bool HandlePut(routing::Address, routing::SerialisedMessage) { return true; }
+  // if the implementation allows any put of data in unauthenticated mode
+  bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage) { return true; }
+  void HandleChurn(routing::CloseGroupDifference /*diff*/) {
+//    MaidManager::HandleChurn(diff);
+//    DataManager::HandleChurn(diff);
+//    PmidManager::HandleChurn(diff);
+  }
 };
+
+template <typename DataType>
+routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
+                                                routing::Authority /* from_authority */,
+               routing::Authority authority, DataType data_type, Identity data_name) {
+  switch (authority) {
+    case routing::Authority::nae_manager:
+      if (data_type == DataTypeEnum::ImmutableData)
+        return DataManager::template HandleGet<ImmutableData>(from, data_name);
+      else if (data_type == DataTypeEnum::MutableData)
+        return DataManager::template HandleGet<ImmutableData>(from, data_name);
+      break;
+    case routing::Authority::node_manager:
+      if (data_type == DataTypeEnum::ImmutableData)
+        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
+      else if (data_type == DataTypeEnum::MutableData)
+        PmidManager::template HandleGet<ImmutableData>(from, data_name);
+      break;
+    case routing::Authority::managed_node:
+      if (data_type == DataTypeEnum::ImmutableData)
+        return PmidNode::template HandleGet<ImmutableData>(from, data_name);
+      else if (data_type == DataTypeEnum::MutableData)
+        return PmidNode::template HandleGet<ImmutableData>(from, data_name);
+      break;
+    default:
+      break;
+  }
+}
+
+template <typename DataType>
+routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
+    routing::Authority from_authority, routing::Authority authority, DataType data_type) {
+  switch (authority) {
+    case routing::Authority::nae_manager:
+      if (from_authority != routing::Authority::client_manager)
+        break;
+      if (data_type == DataTypeEnum::ImmutableData)
+        return DataManager::template HandlePut<ImmutableData>(from, data_type);
+      else if (data_type == DataTypeEnum::MutableData)
+        return DataManager::template HandlePut<MutableData>(from, data_type);
+      break;
+    case routing::Authority::node_manager:
+      if (data_type == DataTypeEnum::ImmutableData)
+        return PmidManager::template HandlePut<ImmutableData>(from, data_type);
+      else if (data_type == DataTypeEnum::MutableData)
+        return PmidManager::template HandlePut<MutableData>(from, data_type);
+      break;
+    case routing::Authority::managed_node:
+      if (data_type == DataTypeEnum::ImmutableData)
+        return PmidNode::template HandlePut<ImmutableData>(from, data_type);
+      else if (data_type == DataTypeEnum::MutableData)
+        return PmidNode::template HandlePut<MutableData>(from, data_type);
+      break;
+    default:
+      break;
+  }
+}
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_VAULT_H_
