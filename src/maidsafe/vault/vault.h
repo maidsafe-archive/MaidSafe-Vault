@@ -25,7 +25,7 @@
 #include "maidsafe/common/data_types/mutable_data.h"
 
 #include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
-#include "maidsafe/vault/data_manager.h"
+#include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/maid_manager.h"
 #include "maidsafe/vault/pmid_manager.h"
 #include "maidsafe/vault/pmid_node.h"
@@ -35,6 +35,7 @@ namespace maidsafe {
 
 namespace vault {
 
+boost::filesystem::path vault_dir("SomeDir");
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
@@ -44,7 +45,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
  public:
   VaultFacade()
     : MaidManager<VaultFacade>(),
-      DataManager<VaultFacade>(),
+      DataManager<VaultFacade>(vault_dir),
       PmidManager<VaultFacade>(),
       PmidNode<VaultFacade>(),
       routing::test::FakeRouting<VaultFacade>() {

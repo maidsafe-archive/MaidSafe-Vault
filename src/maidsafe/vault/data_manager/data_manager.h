@@ -19,33 +19,17 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_H_
 
+#include "boost/filesystem.hpp"
+
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/routing/types.h"
 
+#include "maidsafe/vault/data_manager/database.h"
+
 namespace maidsafe {
 
 namespace vault {
-
-class DataManagerDatabase {
- public:
-  template <typename DataType>
-  bool Exist(typename DataType::Name /*name*/) {
-    return true;
-  }
-
-  template <typename DataType>
-  void Put(typename DataType::Name /*name*/, std::vector<routing::Address> /*pmid_nodes*/,
-           u_int64_t /*size*/) {}
-
-  template <typename DataType>
-  void RemovePmid(typename DataType::Name /*name*/, routing::Address /*address*/) {}
-
-  template <typename DataType>
-  std::vector<routing::Address> GetPmids(typename DataType::Name /*name*/) {
-    return std::vector<routing::Address>();
-  }
-};
 
 namespace detail {
   template <typename DataType>
@@ -58,13 +42,28 @@ namespace detail {
     static size_t min_holders;
   };
 
+  void InitialiseDirectory(const boost::filesystem::path& directory) {
+    if (boost::filesystem::exists(directory)) {
+      if (!boost::filesystem::is_directory(directory))
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::not_a_directory));
+    } else {
+      boost::filesystem::create_directory(directory);
+    }
+  }
+
+  boost::filesystem::path UniqueDbPath(boost::filesystem::path vault_root_dir) {
+    boost::filesystem::path db_root_path(vault_root_dir / "db");
+    detail::InitialiseDirectory(db_root_path);
+    return (db_root_path / boost::filesystem::unique_path());
+  }
+
   size_t Parameters::min_holders = 4;
 }
 
 template <typename FacadeType>
 class DataManager {
  public:
-  DataManager() {}
+  DataManager(boost::filesystem::path vault_root_dir);
 
   template <typename DataType>
   routing::HandleGetReturn HandleGet(Identity name);
@@ -81,8 +80,7 @@ class DataManager {
 
  private:
   template <typename DataType>
-  routing::HandlePutPostReturn Replicate(typename DataType::Name name,
-                                         routing::Address exclude = routing::Address());
+  routing::HandlePutPostReturn Replicate(typename DataType::Name name, routing::Address exclude);
 
   void DownRank(routing::Address /*address*/) {}
 
@@ -90,16 +88,16 @@ class DataManager {
   routing::CloseGroupDifference close_group_;
 };
 
-//template <typename FacadeType>
-//DataManager<FacadeType>::DataManager(boost::filesystem::path vault_root_dir)
-//    : db_(UniqueDbPath(vault_root_dir)), close_group_() {}
+template <typename FacadeType>
+DataManager<FacadeType>::DataManager(boost::filesystem::path vault_root_dir)
+    : db_(detail::UniqueDbPath(vault_root_dir)) {}
 
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(DataType data) {
   if (!db_.Exist(data)) {
     auto pmid_nodes(detail::GetClosestNodes(data.name()));
-    db_.Put(data.name(), pmid_nodes, data.size());
+    db_.Put(data.name(), pmid_nodes);
     return boost::make_expected(pmid_nodes);
   }
   return boost::make_unexpected(CommonErrors::success);
@@ -131,28 +129,40 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn
-DataManager<FacadeType>::Replicate(typename DataType::Name name, routing::Address tried_pmid_node) {
-  std::vector<routing::Address> current_pmid_nodes;
+DataManager<FacadeType>::Replicate(typename DataType::Name name, routing::Address from) {
+  std::vector<routing::Address> current_pmid_nodes, new_pmid_nodes;
+  bool is_holder(false);
   try {
     current_pmid_nodes = db_.GetPmids(name);
-    if (tried_pmid_node != routing::Address())
-      current_pmid_nodes.push_back(tried_pmid_node);
+    is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
+                             [&](routing::Address pmid) { return pmid == from; }));
+    if (current_pmid_nodes.size() > detail::Parameters::min_holders) {
+      if (is_holder)
+        db_.RemovePmid(name, from);
+      return boost::make_unexpected(CommonErrors::success);
+    }
+
+    new_pmid_nodes = detail::GetClosestNodes(name, current_pmid_nodes);
+    if (new_pmid_nodes.empty()) {
+      if (is_holder)
+        db_.RemovePmid(name, from);
+      LOG(kError) << "Failed to find a valid close pmid node";
+      return boost::make_unexpected(CommonErrors::unable_to_handle_request);
+    }
+    current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
+                                         from),
+                             current_pmid_nodes.end());
+    current_pmid_nodes.insert(current_pmid_nodes.end(), new_pmid_nodes.begin(),
+                              new_pmid_nodes.end());
+    db_.ReplacePmidNodes(name, current_pmid_nodes);
   }
   catch (maidsafe_error error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element))
-      return boost::make_unexpected(CommonErrors::unable_to_handle_request);
+      return boost::make_unexpected(CommonErrors::no_such_element);
 
     throw;
   }
-  if (current_pmid_nodes.size() >= detail::Parameters::min_holders)
-    return boost::make_unexpected(CommonErrors::success);
-
-  auto pmid_nodes(detail::GetClosestNodes(name, current_pmid_nodes));
-  if (pmid_nodes.empty()) {
-    LOG(kError) << "Failed to find a valid close pmid node";
-    return boost::make_unexpected(CommonErrors::unable_to_handle_request);
-  }
-  return boost::make_expected(pmid_nodes);
+  return boost::make_expected(new_pmid_nodes);
 }
 
 template <typename FacadeType>
