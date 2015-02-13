@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
 //    LOG(kError) << "This is only designed to be invoked by VaultManager.";
     exit_code = maidsafe::ErrorToInt(error);
   }
-  catch (const std::exception& e) {
+  catch (const std::exception& /*e*/) {
 //    LOG(kError) << "This is only designed to be invoked by VaultManager: " << e.what();
     exit_code =
         maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
