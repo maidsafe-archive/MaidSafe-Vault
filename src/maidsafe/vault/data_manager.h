@@ -35,10 +35,22 @@ class DataManager {
   template <typename DataType>
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
   template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress /* from */, Identity /* data_name */,
-                                         DataType /* data */);
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress /* from */, DataType /* data */);
   void HandleChurn(routing::CloseGroupDifference);
 };
+
+template <typename Child>
+template <typename DataType>
+routing::HandleGetReturn DataManager<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+}
+
+template <typename Child>
+template <typename DataType>
+routing::HandlePutPostReturn DataManager<Child>::HandlePut(routing::SourceAddress /* from */,
+                                                           DataType /* data */) {
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+}
 
 }  // namespace vault
 
