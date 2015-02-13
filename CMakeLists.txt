@@ -44,6 +44,8 @@ set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 ms_glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultAllFiles ${VaultSourcesDir}/vault_main.cc)
 ms_glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
+ms_glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
+list(APPEND VaultAllFiles ${MaidManagerAllFiles})
 
 
 #==================================================================================================#
