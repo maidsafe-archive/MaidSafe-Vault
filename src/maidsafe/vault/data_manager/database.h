@@ -23,61 +23,34 @@
 
 #include "maidsafe/routing/types.h"
 
+#include "maidsafe/vault/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-  struct PaddedWidth {
-    static const int value = 1;
-  };
-
-  using FixedWidthString = maidsafe::detail::BoundedString<NodeId::kSize + PaddedWidth::value,
-                                                           NodeId::kSize + PaddedWidth::value>;
-  template <int width>
-  std::string ToFixedWidthString(uint32_t number) {
-    static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
-    assert(number < std::pow(256, width));
-    std::string result(width, 0);
-    for (int i(0); i != width; ++i) {
-      result[width - i - 1] = static_cast<char>(number);
-      number /= 256;
-    }
-    return result;
-  }
-
-  template <>
-  std::string ToFixedWidthString<1>(uint32_t number);
-
-  template <typename DataType>
-  std::string EncodeToString(typename DataType::Name name) {
-    return detail::FixedWidthString(
-               name.string() + ToFixedWidthString<PaddedWidth::value>(
-                                   static_cast<uint32_t>(DataType::Tag::kValue))).string();
-  }
-}
-
 class DataManagerDatabase {
  public:
+  using GetPmidsResult = boost::expected<std::vector<routing::Address>, maidsafe_error>;
   DataManagerDatabase(boost::filesystem::path db_path);
   ~DataManagerDatabase();
 
   template <typename DataType>
-  bool Exist(typename DataType::Name /*name*/) {
-    return true;
-  }
+  bool Exist(const typename DataType::Name& name);
 
   template <typename DataType>
-  void Put(typename DataType::Name name, std::vector<routing::Address> pmid_nodes);
+  void Put(const typename DataType::Name& name, const std::vector<routing::Address>& pmid_nodes);
 
   template <typename DataType>
-  void ReplacePmidNodes(typename DataType::Name name, std::vector<routing::Address> pmid_nodes);
+  void ReplacePmidNodes(const typename DataType::Name& name,
+                        const std::vector<routing::Address>& pmid_nodes);
 
   template <typename DataType>
-  void RemovePmid(typename DataType::Name name, routing::Address remove_pmid);
+  void RemovePmid(const typename DataType::Name& name,
+                  const routing::Address& remove_pmid);
 
   template <typename DataType>
-  std::vector<routing::Address> GetPmids(typename DataType::Name name);
+  GetPmidsResult GetPmids(const typename DataType::Name& name);
 
  private:
   void CheckPoint();
@@ -88,8 +61,8 @@ class DataManagerDatabase {
 };
 
 template <typename DataType>
-void DataManagerDatabase::Put(typename DataType::Name name,
-                              std::vector<routing::Address> pmid_nodes) {
+void DataManagerDatabase::Put(const typename DataType::Name& name,
+                              const std::vector<routing::Address>& pmid_nodes) {
   if (!database_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
@@ -98,69 +71,75 @@ void DataManagerDatabase::Put(typename DataType::Name name,
   CheckPoint();
   sqlite::Transaction transaction{*database_};
   std::string query(
-      "INSERT OR REPLACE INTO DataManagerAccounts (ChunkName, PmidNodes) VALUES (?, ?, ?)");
+      "INSERT OR REPLACE INTO DataManagerAccounts (ChunkName, PmidNodes) VALUES (?, ?)");
   sqlite::Statement statement{*database_, query};
-  statement.BindText(1, detail::EncodeToString(name));
+  statement.BindText(1, EncodeToString<DataType>(name));
   for (const auto& pmid_node : pmid_nodes)
-    pmids_str += NodeId(pmid_node.string()).ToStringEncoded(NodeId::EncodingType::kHex) +";";
+    pmids_str += NodeId(pmid_node.string()).string();
   statement.BindText(2, pmids_str);
   statement.Step();
   transaction.Commit();
 }
 
 template <typename DataType>
-void DataManagerDatabase::ReplacePmidNodes(typename DataType::Name name,
-                                           std::vector<routing::Address> pmid_nodes) {
-  if (!database_)
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
-
-  std::string pmids_str;
-
-  CheckPoint();
-  sqlite::Transaction transaction{*database_};
-  std::string query(
-      "Update DataManagerAccounts SET PmidNodes = ? WHERE ChunkName = ?");
-  sqlite::Statement statement{*database_, query};
-  statement.BindText(1, detail::EncodeToString(name));
-  for (const auto& pmid_node : pmid_nodes)
-    pmids_str += NodeId(pmid_node.string()).ToStringEncoded(NodeId::EncodingType::kHex);
-  statement.BindText(2, pmids_str);
-  statement.Step();
-  transaction.Commit();
+void DataManagerDatabase::ReplacePmidNodes(const typename DataType::Name& name,
+                                           const std::vector<routing::Address>& pmid_nodes) {
+  Put<DataType>(name, pmid_nodes);
 }
 
 template <typename DataType>
-void DataManagerDatabase::RemovePmid(typename DataType::Name name, routing::Address remove_pmid) {
-  auto pmid_nodes(GetPmids(name));
+void DataManagerDatabase::RemovePmid(const typename DataType::Name& name,
+                                     const routing::Address& remove_pmid) {
+  auto pmid_nodes(GetPmids<DataType>(name).value());
   if (std::any_of(pmid_nodes.begin(), pmid_nodes.end(),
                   [&](const routing::Address& pmid_node) {
                     return pmid_node == remove_pmid;
                   })) {
     pmid_nodes.erase(std::remove(pmid_nodes.begin(), pmid_nodes.end(), remove_pmid),
                      pmid_nodes.end());
-    ReplacePmidNodes(name, pmid_nodes);
+    ReplacePmidNodes<DataType>(name, pmid_nodes);
   }
 }
 
 template <typename DataType>
-std::vector<routing::Address> DataManagerDatabase::GetPmids(typename DataType::Name name) {
+DataManagerDatabase::GetPmidsResult
+DataManagerDatabase::GetPmids(const typename DataType::Name& name) {
   if (!database_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   std::vector<routing::Address> pmid_nodes;
 
-  std::string query(
-      "SELECT PmidNodes FROM DataManagerAccounts WHERE ChunkName = ?");
+  std::string query("SELECT PmidNodes FROM DataManagerAccounts WHERE ChunkName = ?");
   sqlite::Statement statement{*database_, query};
-  statement.BindText(1, detail::EncodeToString(name));
+  statement.BindText(1, EncodeToString<DataType>(name));
 
   if (statement.Step() == sqlite::StepResult::kSqliteRow) {
+    assert(statement.ColumnText(0).size() % NodeId::kSize == 0);
     size_t pmids_count(statement.ColumnText(0).size() / NodeId::kSize);
     for (size_t index(0); index < pmids_count; ++index)
       pmid_nodes.emplace_back(NodeId(statement.ColumnText(0).substr(index * NodeId::kSize,
                                                                     NodeId::kSize)));
+  } else {
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
   return pmid_nodes;
+}
+
+template <typename DataType>
+bool DataManagerDatabase::Exist(const typename DataType::Name& name) {
+  if (!database_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
+
+  std::string query("SELECT Count(*) FROM DataManagerAccounts WHERE ChunkName = ?");
+  sqlite::Statement statement{*database_, query};
+  statement.BindText(1, EncodeToString<DataType>(name));
+
+  if (statement.Step() == sqlite::StepResult::kSqliteRow) {
+    auto count(std::stoul(statement.ColumnText(0)));
+    assert(count <= 1);
+    return (count > 0);
+  }
+  return false;
 }
 
 }  // namespace vault

@@ -16,44 +16,33 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
+#include "maidsafe/vault/utils.h"
+
 #include <string>
-
-#include "boost/filesystem.hpp"
-
-#include "maidsafe/vault/data_manager/database.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-DataManagerDatabase::DataManagerDatabase(boost::filesystem::path db_path)
-    : database_(), kDbPath_(db_path), write_operations_(0) {
-  database_.reset(new sqlite::Database(kDbPath_,
-                                        sqlite::Mode::kReadWriteCreate));
-  std::string query(
-      "CREATE TABLE IF NOT EXISTS DataManagerAccounts ("
-      "ChunkName TEXT  PRIMARY KEY NOT NULL, PmidNodes TEXT NOT NULL);");
-  sqlite::Transaction transaction{*database_};
-  sqlite::Statement statement{*database_, query};
-  statement.Step();
-  transaction.Commit();
+template <>
+std::string ToFixedWidthString<1>(uint32_t number) {
+  assert(number < 256);
+  return std::string(1, static_cast<char>(number));
 }
 
-DataManagerDatabase::~DataManagerDatabase() {
-  try {
-    database_.reset();
-    boost::filesystem::remove_all(kDbPath_);
-  }
-  catch (std::exception e) {
-    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
+void InitialiseDirectory(const boost::filesystem::path& directory) {
+  if (boost::filesystem::exists(directory)) {
+    if (!boost::filesystem::is_directory(directory))
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::not_a_directory));
+  } else {
+    boost::filesystem::create_directory(directory);
   }
 }
 
-void DataManagerDatabase::CheckPoint() {
-  if (++write_operations_ > 1000) {
-    database_->CheckPoint();
-    write_operations_ = 0;
-  }
+boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_dir) {
+  boost::filesystem::path db_root_path(vault_root_dir / "db");
+  InitialiseDirectory(db_root_path);
+  return (db_root_path / boost::filesystem::unique_path());
 }
 
 }  // namespace vault

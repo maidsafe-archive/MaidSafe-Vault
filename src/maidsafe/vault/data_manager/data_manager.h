@@ -19,12 +19,11 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_H_
 
-#include "boost/filesystem.hpp"
-
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/routing/types.h"
 
+#include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/data_manager/database.h"
 
 namespace maidsafe {
@@ -41,21 +40,6 @@ namespace detail {
   class Parameters {
     static size_t min_holders;
   };
-
-  void InitialiseDirectory(const boost::filesystem::path& directory) {
-    if (boost::filesystem::exists(directory)) {
-      if (!boost::filesystem::is_directory(directory))
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::not_a_directory));
-    } else {
-      boost::filesystem::create_directory(directory);
-    }
-  }
-
-  boost::filesystem::path UniqueDbPath(boost::filesystem::path vault_root_dir) {
-    boost::filesystem::path db_root_path(vault_root_dir / "db");
-    detail::InitialiseDirectory(db_root_path);
-    return (db_root_path / boost::filesystem::unique_path());
-  }
 
   size_t Parameters::min_holders = 4;
 }
@@ -90,7 +74,7 @@ class DataManager {
 
 template <typename FacadeType>
 DataManager<FacadeType>::DataManager(boost::filesystem::path vault_root_dir)
-    : db_(detail::UniqueDbPath(vault_root_dir)) {}
+    : db_(UniqueDbPath(vault_root_dir)) {}
 
 template <typename FacadeType>
 template <typename DataType>
