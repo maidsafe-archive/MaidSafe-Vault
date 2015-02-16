@@ -24,6 +24,8 @@
 #include "maidsafe/common/node_id.h"
 #include "maidsafe/common/types.h"
 
+#include "maidsafe/routing/types.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -58,6 +60,17 @@ std::string EncodeToString(typename DataType::Name name) {
                           ToFixedWidthString<PaddedWidth::value>(
                               static_cast<uint32_t>(DataType::Tag::kValue))).string();
 }
+
+template <typename DataType>
+std::vector<routing::Address> GetClosestNodes(
+    typename DataType::Name /*name*/,
+    std::vector<routing::Address> = std::vector<routing::Address>()) {
+  return std::vector<routing::Address>();
+}
+
+class Parameters {
+  static size_t min_pmid_holders;
+};
 
 }  // namespace vault
 

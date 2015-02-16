@@ -30,21 +30,6 @@ namespace maidsafe {
 
 namespace vault {
 
-namespace detail {
-  template <typename DataType>
-  std::vector<routing::Address> GetClosestNodes(
-      typename DataType::Name /*name*/,
-      std::vector<routing::Address> = std::vector<routing::Address>()) {
-    return std::vector<routing::Address>();
-  }
-
-  class Parameters {
-    static size_t min_holders;
-  };
-
-  size_t Parameters::min_holders = 4;
-}
-
 template <typename FacadeType>
 class DataManager {
  public:
@@ -58,16 +43,17 @@ class DataManager {
 
   template <typename DataType>
   routing::HandlePutPostReturn
-  HandlePutResponse(typename DataType::Name name, routing::DestinationAddress from,
+  HandlePutResponse(const typename DataType::Name& name, const routing::DestinationAddress& from,
                     maidsafe_error return_code);
 
   void HandleChurn(routing::CloseGroupDifference);
 
  private:
   template <typename DataType>
-  routing::HandlePutPostReturn Replicate(typename DataType::Name name, routing::Address exclude);
+  routing::HandlePutPostReturn Replicate(const typename DataType::Name& name,
+                                         const routing::Address& exclude);
 
-  void DownRank(routing::Address /*address*/) {}
+  void DownRank(const routing::Address& /*address*/) {}
 
   DataManagerDatabase db_;
   routing::CloseGroupDifference close_group_;
@@ -82,7 +68,7 @@ template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
     const routing::SourceAddress& /*from*/, DataType data) {
   if (!db_.Exist<DataType>(data.name())) {
-    auto pmid_addresses(detail::GetClosestNodes<DataType>(data.name()));
+    auto pmid_addresses(GetClosestNodes<DataType>(data.name()));
     db_.Put<DataType>(data.name(), pmid_addresses);
     std::vector<routing::DestinationAddress> destination_addresses;
     for (const auto& pmid_address : pmid_addresses)
@@ -97,7 +83,7 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
-    typename DataType::Name name, routing::DestinationAddress from,
+    const typename DataType::Name& name, const routing::DestinationAddress& from,
     maidsafe_error return_code) {
   if (return_code.code() == make_error_code(CommonErrors::success)) {
     return boost::make_unexpected(CommonErrors::success);
@@ -120,25 +106,26 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn
-DataManager<FacadeType>::Replicate(typename DataType::Name name, routing::Address from) {
+DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
+                                   const routing::Address& from) {
   std::vector<routing::Address> current_pmid_nodes, new_pmid_nodes;
   bool is_holder(false);
   try {
     current_pmid_nodes = db_.GetPmids(name);
     is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
                              [&](routing::Address pmid) { return pmid == from; }));
-    if (current_pmid_nodes.size() > detail::Parameters::min_holders) {
+    if (current_pmid_nodes.size() > Parameters::min_pmid_holders) {
       if (is_holder)
         db_.RemovePmid(name, from);
-      return boost::make_unexpected(CommonErrors::success);
+      return boost::make_unexpected(MakeError(CommonErrors::success));
     }
 
-    new_pmid_nodes = detail::GetClosestNodes(name, current_pmid_nodes);
+    new_pmid_nodes = GetClosestNodes(name, current_pmid_nodes);
     if (new_pmid_nodes.empty()) {
       if (is_holder)
         db_.RemovePmid(name, from);
       LOG(kError) << "Failed to find a valid close pmid node";
-      return boost::make_unexpected(CommonErrors::unable_to_handle_request);
+      return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
     }
     current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
                                          from),
@@ -149,11 +136,11 @@ DataManager<FacadeType>::Replicate(typename DataType::Name name, routing::Addres
   }
   catch (maidsafe_error error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element))
-      return boost::make_unexpected(CommonErrors::no_such_element);
+      return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 
     throw;
   }
-  return boost::make_expected(new_pmid_nodes);
+  return new_pmid_nodes;
 }
 
 template <typename FacadeType>

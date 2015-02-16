@@ -45,6 +45,8 @@ boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_d
   return (db_root_path / boost::filesystem::unique_path());
 }
 
+size_t Parameters::min_pmid_holders = 4;
+
 }  // namespace vault
 
 }  // namespace maidsafe
