@@ -46,7 +46,7 @@ class DataManager {
   HandlePutResponse(const typename DataType::Name& name, const routing::DestinationAddress& from,
                     const maidsafe_error& return_code);
 
-  void HandleChurn(routing::CloseGroupDifference);
+  void HandleChurn(const routing::CloseGroupDifference& difference);
 
  private:
   template <typename DataType>
@@ -90,7 +90,7 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
     try {
       db_.RemovePmid(name, from);
     }
-    catch (maidsafe_error error) {
+    catch (const maidsafe_error& error) {
       if (error.code() == make_error_code(CommonErrors::no_such_element))
         return boost::make_unexpected(CommonErrors::no_such_element);
       else
@@ -133,7 +133,7 @@ DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
                               new_pmid_nodes.end());
     db_.ReplacePmidNodes(name, current_pmid_nodes);
   }
-  catch (maidsafe_error error) {
+  catch (const maidsafe_error& error) {
     if (error.code() == make_error_code(CommonErrors::no_such_element))
       return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 
