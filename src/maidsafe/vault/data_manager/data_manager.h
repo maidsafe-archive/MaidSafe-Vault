@@ -32,9 +32,10 @@ namespace vault {
 
 namespace detail {
   template <typename DataType>
-  std::vector<routing::DestinationAddress> GetClosestNodes(
-      typename DataType::Name /*name*/, std::vector<routing::Address> /*exclude*/) {
-    return std::vector<routing::DestinationAddress>();
+  std::vector<routing::Address> GetClosestNodes(
+      typename DataType::Name /*name*/,
+      std::vector<routing::Address> = std::vector<routing::Address>()) {
+    return std::vector<routing::Address>();
   }
 
   class Parameters {
@@ -50,10 +51,10 @@ class DataManager {
   DataManager(boost::filesystem::path vault_root_dir);
 
   template <typename DataType>
-  routing::HandleGetReturn HandleGet(Identity name);
+  routing::HandleGetReturn HandleGet(const routing::SourceAddress& from, const Identity& name);
 
   template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(DataType data);
+  routing::HandlePutPostReturn HandlePut(const routing::SourceAddress& from, DataType data);
 
   template <typename DataType>
   routing::HandlePutPostReturn
@@ -78,13 +79,19 @@ DataManager<FacadeType>::DataManager(boost::filesystem::path vault_root_dir)
 
 template <typename FacadeType>
 template <typename DataType>
-routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(DataType data) {
-  if (!db_.Exist(data)) {
-    auto pmid_nodes(detail::GetClosestNodes(data.name()));
-    db_.Put(data.name(), pmid_nodes);
-    return boost::make_expected(pmid_nodes);
+routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
+    const routing::SourceAddress& /*from*/, DataType data) {
+  if (!db_.Exist<DataType>(data.name())) {
+    auto pmid_addresses(detail::GetClosestNodes<DataType>(data.name()));
+    db_.Put<DataType>(data.name(), pmid_addresses);
+    std::vector<routing::DestinationAddress> destination_addresses;
+    for (const auto& pmid_address : pmid_addresses)
+      destination_addresses.emplace_back(routing::DestinationAddress(
+                                             std::make_pair(routing::Destination(pmid_address),
+                                                            boost::none)));
+    return destination_addresses;
   }
-  return boost::make_unexpected(CommonErrors::success);
+  return boost::make_unexpected(MakeError(CommonErrors::success));
 }
 
 template <typename FacadeType>
@@ -151,17 +158,23 @@ DataManager<FacadeType>::Replicate(typename DataType::Name name, routing::Addres
 
 template <typename FacadeType>
 template <typename DataType>
-routing::HandleGetReturn DataManager<FacadeType>::HandleGet(Identity name) {
-  std::vector<routing::Address> pmid_nodes;
-  try {
-    pmid_nodes = db_.GetPmids<DataType>(name);
+routing::HandleGetReturn DataManager<FacadeType>::HandleGet(const routing::SourceAddress& from,
+                                                            const Identity& name) {
+  DataManagerDatabase::GetPmidsResult result;
+  result = db_.GetPmids<DataType>(typename DataType::Name(name));
+  if (!result.valid())
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+  if (result.value().empty())
+    return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
+
+  std::vector<routing::DestinationAddress> dest_pmids;
+  for (const auto& holder : *result) {
+    dest_pmids.emplace_back(routing::DestinationAddress(routing::Destination(holder),
+                                                        boost::optional<routing::ReplyToAddress>(
+                                                            from.node_address.data)));
   }
-  catch (maidsafe_error error) {
-    if (error.code() == make_error_code(CommonErrors::no_such_element))
-      return boost::make_unexpected(CommonErrors::no_such_element);
-    throw;
-  }
-  return boost::make_expected(pmid_nodes);
+  using GetVarType = boost::variant<std::vector<routing::DestinationAddress>, std::vector<byte>>;
+  return GetVarType(dest_pmids);
 }
 
 }  // namespace vault
