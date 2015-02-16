@@ -91,7 +91,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
   void HandleChurn(routing::CloseGroupDifference diff);
 
  private:
-  fs::path vault_dir_ { fs::path(getenv("HOME")) };
+  fs::path vault_dir_ { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
 };
 
 routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
