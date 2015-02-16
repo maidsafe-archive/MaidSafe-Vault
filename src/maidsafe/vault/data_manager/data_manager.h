@@ -39,7 +39,8 @@ class DataManager {
   routing::HandleGetReturn HandleGet(const routing::SourceAddress& from, const Identity& name);
 
   template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(const routing::SourceAddress& from, DataType data);
+  routing::HandlePutPostReturn HandlePut(const routing::SourceAddress& from,
+                                         const DataType& data);
 
   template <typename DataType>
   routing::HandlePutPostReturn
@@ -66,7 +67,7 @@ DataManager<FacadeType>::DataManager(boost::filesystem::path vault_root_dir)
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
-    const routing::SourceAddress& /*from*/, DataType data) {
+    const routing::SourceAddress& /*from*/, const DataType& data) {
   if (!db_.Exist<DataType>(data.name())) {
     auto pmid_addresses(GetClosestNodes<DataType>(data.name()));
     db_.Put<DataType>(data.name(), pmid_addresses);
