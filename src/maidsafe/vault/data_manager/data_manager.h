@@ -44,7 +44,7 @@ class DataManager {
   template <typename DataType>
   routing::HandlePutPostReturn
   HandlePutResponse(const typename DataType::Name& name, const routing::DestinationAddress& from,
-                    maidsafe_error return_code);
+                    const maidsafe_error& return_code);
 
   void HandleChurn(routing::CloseGroupDifference);
 
@@ -84,7 +84,7 @@ template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
     const typename DataType::Name& name, const routing::DestinationAddress& from,
-    maidsafe_error return_code) {
+    const maidsafe_error& return_code) {
   if (return_code.code() == make_error_code(CommonErrors::success)) {
     return boost::make_unexpected(CommonErrors::success);
   } else {
