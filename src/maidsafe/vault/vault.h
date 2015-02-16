@@ -34,6 +34,8 @@
 
 namespace fs = boost::filesystem;
 
+fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
+
 namespace maidsafe {
 
 namespace vault {
@@ -58,7 +60,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
  public:
   VaultFacade()
     : MaidManager<VaultFacade>(),
-      DataManager<VaultFacade>(vault_dir_),
+      DataManager<VaultFacade>(vault_dir),
       PmidManager<VaultFacade>(),
       PmidNode<VaultFacade>(),
       routing::test::FakeRouting<VaultFacade>() {
@@ -89,9 +91,6 @@ class VaultFacade : public MaidManager<VaultFacade>,
   // if the implementation allows any put of data in unauthenticated mode
   bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage);
   void HandleChurn(routing::CloseGroupDifference diff);
-
- private:
-  fs::path vault_dir_ { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
 };
 
 routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,

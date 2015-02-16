@@ -140,7 +140,11 @@ DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
 
     throw;
   }
-  return new_pmid_nodes;
+
+  std::vector<routing::DestinationAddress> dest_addresses;
+  for (const auto& pmid_address : new_pmid_nodes)
+    dest_addresses.emplace_back(std::make_pair(routing::Destination(pmid_address), boost::none));
+  return dest_addresses;
 }
 
 template <typename FacadeType>

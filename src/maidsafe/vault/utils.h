@@ -68,7 +68,7 @@ std::vector<routing::Address> GetClosestNodes(
   return std::vector<routing::Address>();
 }
 
-class Parameters {
+struct Parameters {
   static size_t min_pmid_holders;
 };
 
