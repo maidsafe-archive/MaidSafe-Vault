@@ -70,12 +70,11 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
   if (!db_.Exist<DataType>(data.name())) {
     auto pmid_addresses(GetClosestNodes<DataType>(data.name()));
     db_.Put<DataType>(data.name(), pmid_addresses);
-    std::vector<routing::DestinationAddress> destination_addresses;
+    std::vector<routing::DestinationAddress> dest_addresses;
     for (const auto& pmid_address : pmid_addresses)
-      destination_addresses.emplace_back(routing::DestinationAddress(
-                                             std::make_pair(routing::Destination(pmid_address),
-                                                            boost::none)));
-    return destination_addresses;
+      dest_addresses.emplace_back(std::make_pair(routing::Destination(pmid_address),
+                                                 boost::none));
+    return dest_addresses;
   }
   return boost::make_unexpected(MakeError(CommonErrors::success));
 }
@@ -155,11 +154,9 @@ routing::HandleGetReturn DataManager<FacadeType>::HandleGet(const routing::Sourc
     return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
 
   std::vector<routing::DestinationAddress> dest_pmids;
-  for (const auto& holder : *result) {
-    dest_pmids.emplace_back(routing::DestinationAddress(routing::Destination(holder),
-                                                        boost::optional<routing::ReplyToAddress>(
-                                                            from.node_address.data)));
-  }
+  for (const auto& holder : *result)
+    dest_pmids.emplace_back(routing::Destination(holder),
+                            boost::optional<routing::ReplyToAddress>(from.node_address.data));
   using GetVarType = boost::variant<std::vector<routing::DestinationAddress>, std::vector<byte>>;
   return GetVarType(dest_pmids);
 }
