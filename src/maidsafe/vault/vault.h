@@ -27,7 +27,7 @@
 #include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager.h"
 #include "maidsafe/vault/maid_manager.h"
-#include "maidsafe/vault/pmid_manager.h"
+#include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node.h"
 
 

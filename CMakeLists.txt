@@ -41,6 +41,8 @@ include(../../cmake_modules/standard_setup.cmake)
 #==================================================================================================#
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 
+ms_glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "pmid_manager")
+
 ms_glob_dir(Vault ${VaultSourcesDir} Vault)
 list(REMOVE_ITEM VaultAllFiles ${VaultSourcesDir}/vault_main.cc)
 ms_glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
@@ -49,7 +51,7 @@ ms_glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(maidsafe_vault ${VaultAllFiles})
+ms_add_static_library(maidsafe_vault ${VaultAllFiles} ${PmidManagerAllFiles})
 target_include_directories(maidsafe_vault PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(maidsafe_vault maidsafe_routing)
 
