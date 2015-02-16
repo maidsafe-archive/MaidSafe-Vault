@@ -20,6 +20,7 @@
 #define MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
 
 #include "maidsafe/routing/types.h"
+#include "maidsafe/routing/source_address.h"
 
 namespace maidsafe {
 
