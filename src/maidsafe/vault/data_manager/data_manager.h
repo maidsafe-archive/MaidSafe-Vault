@@ -85,20 +85,7 @@ template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
     const typename DataType::Name& name, const routing::DestinationAddress& from,
     const maidsafe_error& return_code) {
-  if (return_code.code() == make_error_code(CommonErrors::success)) {
-    return boost::make_unexpected(CommonErrors::success);
-  } else {
-    try {
-      db_.RemovePmid(name, from);
-    }
-    catch (const maidsafe_error& error) {
-      if (error.code() == make_error_code(CommonErrors::no_such_element))
-        return boost::make_unexpected(CommonErrors::no_such_element);
-      else
-        throw;
-    }
-  }
-
+  assert(return_code.code() != make_error_code(CommonErrors::success));
   DownRank(from);  // failed to store
   return Replicate(name, from);
 }
@@ -110,36 +97,28 @@ DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
                                    const routing::Address& from) {
   std::vector<routing::Address> current_pmid_nodes, new_pmid_nodes;
   bool is_holder(false);
-  try {
-    current_pmid_nodes = db_.GetPmids(name);
-    is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
-                             [&](routing::Address pmid) { return pmid == from; }));
-    if (current_pmid_nodes.size() > Parameters::min_pmid_holders) {
-      if (is_holder)
-        db_.RemovePmid(name, from);
-      return boost::make_unexpected(MakeError(CommonErrors::success));
-    }
-
-    new_pmid_nodes = GetClosestNodes(name, current_pmid_nodes);
-    if (new_pmid_nodes.empty()) {
-      if (is_holder)
-        db_.RemovePmid(name, from);
-      LOG(kError) << "Failed to find a valid close pmid node";
-      return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
-    }
-    current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
-                                         from),
-                             current_pmid_nodes.end());
-    current_pmid_nodes.insert(current_pmid_nodes.end(), new_pmid_nodes.begin(),
-                              new_pmid_nodes.end());
-    db_.ReplacePmidNodes(name, current_pmid_nodes);
+  current_pmid_nodes = db_.GetPmids(name).value();
+  is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
+                           [&](routing::Address pmid) { return pmid == from; }));
+  if (current_pmid_nodes.size() > Parameters::min_pmid_holders) {
+    if (is_holder)
+      db_.RemovePmid(name, from);
+    return boost::make_unexpected(MakeError(CommonErrors::success));
   }
-  catch (const maidsafe_error& error) {
-    if (error.code() == make_error_code(CommonErrors::no_such_element))
-      return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
 
-    throw;
+  new_pmid_nodes = GetClosestNodes(name, current_pmid_nodes);
+  if (new_pmid_nodes.empty()) {
+    if (is_holder)
+      db_.RemovePmid(name, from);
+    LOG(kError) << "Failed to find a valid close pmid node";
+    return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
   }
+  current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
+                                       from),
+                           current_pmid_nodes.end());
+  current_pmid_nodes.insert(current_pmid_nodes.end(), new_pmid_nodes.begin(),
+                            new_pmid_nodes.end());
+  db_.ReplacePmidNodes(name, current_pmid_nodes);
 
   std::vector<routing::DestinationAddress> dest_addresses;
   for (const auto& pmid_address : new_pmid_nodes)

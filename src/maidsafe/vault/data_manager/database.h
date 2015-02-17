@@ -46,8 +46,8 @@ class DataManagerDatabase {
                         const std::vector<routing::Address>& pmid_nodes);
 
   template <typename DataType>
-  void RemovePmid(const typename DataType::Name& name,
-                  const routing::Address& remove_pmid);
+  maidsafe_error RemovePmid(const typename DataType::Name& name,
+                            const routing::Address& remove_pmid);
 
   template <typename DataType>
   GetPmidsResult GetPmids(const typename DataType::Name& name);
@@ -88,9 +88,13 @@ void DataManagerDatabase::ReplacePmidNodes(const typename DataType::Name& name,
 }
 
 template <typename DataType>
-void DataManagerDatabase::RemovePmid(const typename DataType::Name& name,
-                                     const routing::Address& remove_pmid) {
-  auto pmid_nodes(GetPmids<DataType>(name).value());
+maidsafe_error DataManagerDatabase::RemovePmid(const typename DataType::Name& name,
+                                               const routing::Address& remove_pmid) {
+  auto result(GetPmids<DataType>(name));
+  if (!result.valid())
+     return result.error();
+
+  auto pmid_nodes(result.value());
   if (std::any_of(pmid_nodes.begin(), pmid_nodes.end(),
                   [&](const routing::Address& pmid_node) {
                     return pmid_node == remove_pmid;
@@ -98,7 +102,9 @@ void DataManagerDatabase::RemovePmid(const typename DataType::Name& name,
     pmid_nodes.erase(std::remove(pmid_nodes.begin(), pmid_nodes.end(), remove_pmid),
                      pmid_nodes.end());
     ReplacePmidNodes<DataType>(name, pmid_nodes);
+    return maidsafe_error(CommonErrors::success);
   }
+  return maidsafe_error(CommonErrors::no_such_element);
 }
 
 template <typename DataType>
@@ -108,7 +114,6 @@ DataManagerDatabase::GetPmids(const typename DataType::Name& name) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
   std::vector<routing::Address> pmid_nodes;
-
   std::string query("SELECT PmidNodes FROM DataManagerAccounts WHERE ChunkName = ?");
   sqlite::Statement statement{*database_, query};
   statement.BindText(1, EncodeToString<DataType>(name));
@@ -120,7 +125,7 @@ DataManagerDatabase::GetPmids(const typename DataType::Name& name) {
       pmid_nodes.emplace_back(NodeId(statement.ColumnText(0).substr(index * NodeId::kSize,
                                                                     NodeId::kSize)));
   } else {
-    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+    return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
   }
   return pmid_nodes;
 }
