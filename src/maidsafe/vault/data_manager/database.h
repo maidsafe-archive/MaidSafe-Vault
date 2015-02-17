@@ -94,7 +94,7 @@ maidsafe_error DataManagerDatabase::RemovePmid(const typename DataType::Name& na
   if (!result.valid())
      return result.error();
 
-  auto pmid_nodes(result.value());
+  auto& pmid_nodes(*result);
   if (std::any_of(pmid_nodes.begin(), pmid_nodes.end(),
                   [&](const routing::Address& pmid_node) {
                     return pmid_node == remove_pmid;

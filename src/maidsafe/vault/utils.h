@@ -25,6 +25,7 @@
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/routing/types.h"
+#include "maidsafe/routing/source_address.h"
 
 namespace maidsafe {
 

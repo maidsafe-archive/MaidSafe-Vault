@@ -34,12 +34,11 @@
 
 namespace fs = boost::filesystem;
 
-fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
+static fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
 
 namespace maidsafe {
 
 namespace vault {
-
 
 // Helper function to parse data name and contents
 // FIXME this need discussion, adding it temporarily to progress
@@ -92,79 +91,6 @@ class VaultFacade : public MaidManager<VaultFacade>,
   bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage);
   void HandleChurn(routing::CloseGroupDifference diff);
 };
-
-routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
-    routing::Authority /* from_authority */, routing::Authority authority, DataTagValue data_type,
-        Identity data_name) {
-  switch (authority) {
-    case routing::Authority::client_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        MaidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return MaidManager::template HandleGet<MutableData>(from, data_name);
-      break;
-    case routing::Authority::nae_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return DataManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return DataManager::template HandleGet<MutableData>(from, data_name);
-      break;
-    case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        PmidManager::template HandleGet<MutableData>(from, data_name);
-      break;
-    case routing::Authority::managed_node:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidNode::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return PmidNode::template HandleGet<MutableData>(from, data_name);
-      break;
-    default:
-      break;
-  }
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
-}
-
-routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
-    routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-        SerialisedData serialised_data) {
-  switch (authority) {
-    case routing::Authority::client_manager:
-      if (from_authority != routing::Authority::client)
-        break;
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return MaidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return MaidManager::HandlePut(from, ParseData<MutableData>(serialised_data));
-      else if (data_type == DataTagValue::kPmidValue)
-        return MaidManager::HandlePut(from, ParseData<passport::PublicPmid>(serialised_data));
-    case routing::Authority::nae_manager:
-      if (from_authority != routing::Authority::client_manager)
-        break;
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return DataManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return DataManager::HandlePut(from, ParseData<MutableData>(serialised_data));
-      break;
-    case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return PmidManager::template HandlePut<MutableData>(from, ParseData<MutableData>(serialised_data));
-      break;
-    case routing::Authority::managed_node:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidNode::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return PmidNode::HandlePut(from, ParseData<MutableData>(serialised_data));
-      break;
-    default:
-      break;
-  }
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
-}
 
 }  // namespace vault
 

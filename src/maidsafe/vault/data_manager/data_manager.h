@@ -21,8 +21,6 @@
 
 #include "maidsafe/common/types.h"
 
-#include "maidsafe/routing/types.h"
-
 #include "maidsafe/vault/utils.h"
 #include "maidsafe/vault/data_manager/database.h"
 
@@ -33,7 +31,7 @@ namespace vault {
 template <typename FacadeType>
 class DataManager {
  public:
-  DataManager(boost::filesystem::path vault_root_dir);
+  DataManager(const boost::filesystem::path& vault_root_dir);
 
   template <typename DataType>
   routing::HandleGetReturn HandleGet(const routing::SourceAddress& from, const Identity& name);
@@ -61,7 +59,7 @@ class DataManager {
 };
 
 template <typename FacadeType>
-DataManager<FacadeType>::DataManager(boost::filesystem::path vault_root_dir)
+DataManager<FacadeType>::DataManager(const boost::filesystem::path& vault_root_dir)
     : db_(UniqueDbPath(vault_root_dir)) {}
 
 template <typename FacadeType>
