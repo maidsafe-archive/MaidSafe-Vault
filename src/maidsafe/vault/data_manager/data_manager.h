@@ -162,8 +162,7 @@ routing::HandleGetReturn DataManager<FacadeType>::HandleGet(const routing::Sourc
   for (const auto& holder : *result)
     dest_pmids.emplace_back(routing::Destination(holder),
                             boost::optional<routing::ReplyToAddress>(from.node_address.data));
-  using GetVarType = boost::variant<std::vector<routing::DestinationAddress>, std::vector<byte>>;
-  return GetVarType(dest_pmids);
+  return routing::HandleGetReturn::value_type(dest_pmids);
 }
 
 }  // namespace vault
