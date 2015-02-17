@@ -89,7 +89,9 @@ TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
     pmid_nodes.emplace_back(NodeId(RandomString(NodeId::kSize)));
 
   db_.Put<ImmutableData>(data.name(), pmid_nodes);
-  db_.RemovePmid<ImmutableData>(data.name(), pmid_nodes.at(0));
+  db_.RemovePmid<ImmutableData>(data.name(),
+                                routing::DestinationAddress(
+                                    routing::Destination(pmid_nodes.at(0)), boost::none));
   auto pmids(db_.GetPmids<ImmutableData>(data.name()).value());
   EXPECT_EQ(std::find(pmids.begin(), pmids.end(), pmid_nodes.at(0)), pmids.end());
 }

@@ -47,7 +47,7 @@ class DataManagerDatabase {
 
   template <typename DataType>
   maidsafe_error RemovePmid(const typename DataType::Name& name,
-                            const routing::Address& remove_pmid);
+                            const routing::DestinationAddress& remove_pmid);
 
   template <typename DataType>
   GetPmidsResult GetPmids(const typename DataType::Name& name);
@@ -89,7 +89,7 @@ void DataManagerDatabase::ReplacePmidNodes(const typename DataType::Name& name,
 
 template <typename DataType>
 maidsafe_error DataManagerDatabase::RemovePmid(const typename DataType::Name& name,
-                                               const routing::Address& remove_pmid) {
+                                               const routing::DestinationAddress& remove_pmid) {
   auto result(GetPmids<DataType>(name));
   if (!result.valid())
      return result.error();
@@ -97,9 +97,9 @@ maidsafe_error DataManagerDatabase::RemovePmid(const typename DataType::Name& na
   auto& pmid_nodes(*result);
   if (std::any_of(pmid_nodes.begin(), pmid_nodes.end(),
                   [&](const routing::Address& pmid_node) {
-                    return pmid_node == remove_pmid;
+                    return pmid_node == remove_pmid.first.data;
                   })) {
-    pmid_nodes.erase(std::remove(pmid_nodes.begin(), pmid_nodes.end(), remove_pmid),
+    pmid_nodes.erase(std::remove(pmid_nodes.begin(), pmid_nodes.end(), remove_pmid.first.data),
                      pmid_nodes.end());
     ReplacePmidNodes<DataType>(name, pmid_nodes);
     return maidsafe_error(CommonErrors::success);

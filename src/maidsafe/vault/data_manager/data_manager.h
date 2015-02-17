@@ -50,9 +50,9 @@ class DataManager {
  private:
   template <typename DataType>
   routing::HandlePutPostReturn Replicate(const typename DataType::Name& name,
-                                         const routing::Address& exclude);
+                                         const routing::DestinationAddress& exclude);
 
-  void DownRank(const routing::Address& /*address*/) {}
+  void DownRank(const routing::DestinationAddress& /*address*/) {}
 
   DataManagerDatabase db_;
   routing::CloseGroupDifference close_group_;
@@ -67,7 +67,8 @@ template <typename DataType>
 routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
     const routing::SourceAddress& /*from*/, const DataType& data) {
   if (!db_.Exist<DataType>(data.name())) {
-    auto pmid_addresses(GetClosestNodes<DataType>(data.name()));
+     auto pmid_addresses(static_cast<FacadeType*>(this)
+                             ->template GetClosestNodes<DataType>(data.name()));
     db_.Put<DataType>(data.name(), pmid_addresses);
     std::vector<routing::DestinationAddress> dest_addresses;
     for (const auto& pmid_address : pmid_addresses)
@@ -85,38 +86,44 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
     const maidsafe_error& return_code) {
   assert(return_code.code() != make_error_code(CommonErrors::success));
   DownRank(from);  // failed to store
-  return Replicate(name, from);
+  return Replicate<DataType>(name, from);
 }
 
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn
 DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
-                                   const routing::Address& from) {
-  std::vector<routing::Address> current_pmid_nodes, new_pmid_nodes;
+                                   const routing::DestinationAddress& from) {
+  std::vector<routing::Address> new_pmid_nodes;
   bool is_holder(false);
-  current_pmid_nodes = db_.GetPmids(name).value();
+
+  auto result(db_.GetPmids<DataType>(name));
+  if (!result.valid())
+    return boost::make_unexpected(result.error());
+
+  auto& current_pmid_nodes(*result);
   is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
-                           [&](routing::Address pmid) { return pmid == from; }));
+                           [&](const routing::Address& pmid) { return pmid == from.first.data; }));
   if (current_pmid_nodes.size() > Parameters::min_pmid_holders) {
     if (is_holder)
-      db_.RemovePmid(name, from);
+      db_.RemovePmid<DataType>(name, from);
     return boost::make_unexpected(MakeError(CommonErrors::success));
   }
 
-  new_pmid_nodes = GetClosestNodes(name, current_pmid_nodes);
+  new_pmid_nodes = static_cast<FacadeType*>(this)
+                       ->template GetClosestNodes<DataType>(name, current_pmid_nodes);
   if (new_pmid_nodes.empty()) {
     if (is_holder)
-      db_.RemovePmid(name, from);
+      db_.RemovePmid<DataType>(name, from);
     LOG(kError) << "Failed to find a valid close pmid node";
     return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
   }
   current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
-                                       from),
+                                       from.first.data),
                            current_pmid_nodes.end());
   current_pmid_nodes.insert(current_pmid_nodes.end(), new_pmid_nodes.begin(),
                             new_pmid_nodes.end());
-  db_.ReplacePmidNodes(name, current_pmid_nodes);
+  db_.ReplacePmidNodes<DataType>(name, current_pmid_nodes);
 
   std::vector<routing::DestinationAddress> dest_addresses;
   for (const auto& pmid_address : new_pmid_nodes)

@@ -42,9 +42,9 @@ include(../../cmake_modules/standard_setup.cmake)
 set(VaultSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/vault)
 
 ms_glob_dir(DataManager ${VaultSourcesDir}/data_manager "Data Manager")
-ms_glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager\\\\")
-ms_glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager\\\\")
-ms_glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node\\\\")
+ms_glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager")
+ms_glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager")
+ms_glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node")
 
 ms_glob_dir(Vault ${VaultSourcesDir} Vault)
 

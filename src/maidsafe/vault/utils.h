@@ -62,13 +62,6 @@ std::string EncodeToString(typename DataType::Name name) {
                               static_cast<uint32_t>(DataType::Tag::kValue))).string();
 }
 
-template <typename DataType>
-std::vector<routing::Address> GetClosestNodes(
-    typename DataType::Name /*name*/,
-    std::vector<routing::Address> = std::vector<routing::Address>()) {
-  return std::vector<routing::Address>();
-}
-
 struct Parameters {
   static size_t min_pmid_holders;
 };
