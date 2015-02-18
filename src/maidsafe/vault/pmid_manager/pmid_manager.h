@@ -22,12 +22,14 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 
+#include "maidsafe/vault/pmid_manager/account.h"
+
 namespace maidsafe {
 
 namespace vault {
 
 
-template <typename Child>
+template <typename FacadeType>
 class PmidManager {
  public:
   PmidManager() {}
@@ -36,10 +38,42 @@ class PmidManager {
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
   template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
-                                         DataType data);
+  routing::HandlePutPostReturn HandlePut(const routing::DestinationAddress& dest,
+                                         const DataType& data);
+
   void HandleChurn(routing::CloseGroupDifference);
+
+ private:
+  std::mutex accounts_mutex_;
+  std::map<routing::Address, PmidManagerAccount> accounts_;
 };
+
+
+template <typename FacadeType>
+template <typename DataType>
+routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePut(
+    const routing::DestinationAddress& dest, const DataType& data) {
+  try {
+    std::lock_guard<std::mutex> lock(accounts_mutex_);
+    routing::Address pmid_node(dest.first);
+    auto itr(accounts_.find(pmid_node));
+    if (itr == std::end(accounts_)) {
+      // create an empty account for non-registered pmid_node
+      auto result(accounts_.insert(std::make_pair(pmid_node, PmidManagerAccount())));
+      if (result.second)
+        itr = result.first;
+      else
+        return boost::make_unexpected(MakeError(CommonErrors::unknown));
+    }
+    itr->second.PutData(data.Serialise()->string().size());
+    std::vector<routing::DestinationAddress> dest_addresses;
+    dest_addresses.emplace_back(dest);
+    return dest_addresses;
+  } catch (const maidsafe_error& error) {
+    LOG(kWarning) << "PmidManager::HandlePut caught an error during " << error.what();
+    return boost::make_unexpected(error);
+  }
+}
 
 
 }  // namespace vault
