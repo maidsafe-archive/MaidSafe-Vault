@@ -1,14 +1,46 @@
 
 # MaidSafe Language of the Network
 
+### general considerations
 
-The network allows
+Nodes and data both live in the same XOR space which is addressed with a 2^512 bit key; a Network-Addressable-Element (NAE).  A message flows from a NAE to a NAE.  An operation can be performed on a message flow by a manager group.
 
-legend:
+A message flow from start to end can be represented by
 
-    <      scatter
-    >      gather
-    |      sentinel
+    < NAE_1 | manager | NAE_2 >
+
+where the NAE can be a node (ie a vault or a client - Direct NAE) or a data element (Indirect NAE).  The manager group operating on the message flow will act forward `manager | NAE_2 >` under normal / successful conditions.  The manager group will act backwards `< NAE_1 | manager` upon error.
+
+If no operation is needed on the message flow then this special case is represented by
+
+    < NAE | NAE >
+
+For a given message type `ACTION` the functions shall be named
+
+    < A::ACTION | B::ActOnACTION | C::PerformACTION >
+
+The function `HandleACTION` is reserved for the VaultFacade.  Alternatively `HandleACTION` functions in VaultFacade can be, similarly to RoutingNode, overloaded on message type.  Currently these message types are Connect\*, ConnectResponse\*, FindGroup\*, FindGroupResponse\*, GetData, GetDataResponse, PutData, PostMessage, where message types with \* are completed in routing and exempt from this naming convention.
+
+For clarity a message is passed through RoutingNode and VaultFacade upto Persona according to following abstraction
+
+    RoutingNode::MessageReceived {
+      Parse; Filter; Cache; SendOn; Relay; Drop; Sentinel
+      Switch RoutingNode::HandleMessage(MessageType /* */) {
+        Completed in routing or
+        VaultFacade::HandleACTION {
+          Switch on Authority & Condition on DataType {
+            Persona::ActOnACTION or  // Currently also named HandleACTION
+            Persona::PerformACTION
+          }
+        }
+      }
+    }
+
+
+The triplet structure `< A | B | C >` captures the general characteristic of every message flow.  The structure is event-driven  `A` corresponds to a physical 
+
+Remaining conventions:
+
     D      data
     H()    Hash512
     H^n()  n-th Hash512
@@ -22,9 +54,11 @@ all functions are templated on DataType
 
 MAID PUT and MAID PUT CONFIRM
 
-    < MaidNode::Put(D) | MaidManager::HandlePut(D)
-    | DataManager::InstantiateData (Maid, D)
-    | PmidManager::Store(D.name) | PmidNode::Persist(D) >
+    < MaidNode::Put(D)
+    | MaidManager::HandlePut(D)
+    | DataManager::HandlePut(D)
+    | PmidManager::HandlePut(D.name)
+    | PmidNode::Persist(D) >
 
     < PmidNode::Persist(D) | PmidManager:: ConfirmStoragePromise(D.name)
     | DataManager::PersistedInVault(D.name, Pmid.name)
