@@ -30,28 +30,42 @@ namespace maidsafe {
 namespace vault {
 
 
-template <typename Child>
+template <typename FacadeType>
 class PmidNode {
  public:
-  PmidNode() {}
+  PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
   template <typename DataType>
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
   template <typename DataType>
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from, DataType data);
   void HandleChurn(routing::CloseGroupDifference);
+
+ private:
+  boost::filesystem::space_info space_info_;
+  DiskUsage disk_total_;
+  DiskUsage permanent_size_;
+  ChunkStore chunk_store_;
 };
 
-template <typename Child>
+template <typename FacadeType>
+PmidNode::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage)
+    : space_info_(boost::filesystem::space(vault_root_dir)),
+      disk_total_(space_info_.available),
+      permanent_size_(disk_total_ * 4 / 5),
+      chunk_store_(vault_root_dir / "pmid_node" / "permanent", max_disk_usage) {}
+
+template <typename FacadeType>
 template <typename DataType>
-routing::HandleGetReturn PmidNode<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
+routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /*from*/,
+                                                         Identity /*data_name*/) {
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
 }
 
-template <typename Child>
+template <typename FacadeType>
 template <typename DataType>
-routing::HandlePutPostReturn PmidNode<Child>::HandlePut(routing::SourceAddress /* from */,
-                                                        DataType /* data */) {
+routing::HandlePutPostReturn PmidNode<FacadeType>::HandlePut(routing::SourceAddress /* from */,
+                                                             DataType /* data */) {
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
 }
 
