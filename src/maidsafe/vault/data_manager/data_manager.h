@@ -78,7 +78,7 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
                                                  boost::none));
     return dest_addresses;
   }
-  return boost::make_unexpected(MakeError(CommonErrors::success));
+  return MakePutPostReturnError(MakeError(CommonErrors::success));
 }
 
 template <typename FacadeType>
@@ -101,7 +101,7 @@ DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
 
   auto result(db_.GetPmids<DataType>(name));
   if (!result.valid())
-    return boost::make_unexpected(result.error());
+    return MakePutPostReturnError(result.error());
 
   auto& current_pmid_nodes(*result);
   is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
@@ -109,7 +109,7 @@ DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
   if (current_pmid_nodes.size() > Parameters::min_pmid_holders) {
     if (is_holder)
       db_.RemovePmid<DataType>(name, from);
-    return boost::make_unexpected(MakeError(CommonErrors::success));
+    return MakePutPostReturnError(MakeError(CommonErrors::success));
   }
 
   new_pmid_nodes = static_cast<FacadeType*>(this)
@@ -118,7 +118,7 @@ DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
     if (is_holder)
       db_.RemovePmid<DataType>(name, from);
     LOG(kError) << "Failed to find a valid close pmid node";
-    return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
+    return MakePutPostReturnError(MakeError(CommonErrors::unable_to_handle_request));
   }
   current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
                                        from.first.data),

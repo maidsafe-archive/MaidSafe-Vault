@@ -93,7 +93,7 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
     default:
       break;
   }
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+  return MakePutPostReturnError(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 }  // namespace vault

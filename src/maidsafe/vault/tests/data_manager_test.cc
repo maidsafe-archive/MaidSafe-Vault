@@ -70,7 +70,7 @@ TEST_F(DataManagerTest, BEH_HandlePostResponseNoAccount) {
   auto result(data_manager_.HandlePutResponse<ImmutableData>(
                   data.name(), destination, maidsafe_error(VaultErrors::data_already_exists)));
   EXPECT_FALSE(result.valid());
-  EXPECT_EQ(result.error().code(), make_error_code(VaultErrors::no_such_account));
+  EXPECT_EQ(result.error().first.code(), make_error_code(VaultErrors::no_such_account));
 }
 
 TEST_F(DataManagerTest, BEH_HandlePostResponse) {

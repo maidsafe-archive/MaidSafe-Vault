@@ -68,6 +68,9 @@ struct Parameters {
   static size_t min_pmid_holders;
 };
 
+routing::HandlePutPostReturn MakePutPostReturnError(
+    const maidsafe_error& error, boost::optional<routing::Address> address = boost::none);
+
 }  // namespace vault
 
 }  // namespace maidsafe

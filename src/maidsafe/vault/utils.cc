@@ -47,6 +47,12 @@ boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_d
 
 size_t Parameters::min_pmid_holders = 4;
 
+routing::HandlePutPostReturn MakePutPostReturnError(const maidsafe_error& error,
+                                                    boost::optional<routing::Address> address) {
+ return boost::make_unexpected(std::make_pair(error, address));
+}
+
+
 }  // namespace vault
 
 }  // namespace maidsafe

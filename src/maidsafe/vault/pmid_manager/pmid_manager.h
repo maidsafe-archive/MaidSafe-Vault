@@ -51,7 +51,7 @@ template <typename Child>
 template <typename DataType>
 routing::HandlePutPostReturn PmidManager<Child>::HandlePut(routing::SourceAddress /* from */,
                                                            DataType /* data */) {
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+  return MakePutPostReturnError(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 }  // namespace vault
