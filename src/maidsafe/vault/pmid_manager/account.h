@@ -47,7 +47,6 @@ struct PmidManagerAccount {
   void UpdateAccount(int64_t diff_size);
   std::string serialise() const;
 
- private:
   uint64_t stored_total_size;
   uint64_t lost_total_size;
   uint64_t offered_space;
