@@ -33,9 +33,9 @@ template <typename FacadeType>
 class PmidManager {
  public:
   PmidManager() {}
-
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+// Get doesn't go through PmidManager anymore
+//  template <typename DataType>
+//  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
   template <typename DataType>
   routing::HandlePutPostReturn HandlePut(const routing::DestinationAddress& dest,
@@ -48,6 +48,9 @@ class PmidManager {
   std::map<routing::Address, PmidManagerAccount> accounts_;
 };
 
+template <typename FacadeType>
+PmidManager<FacadeType>::PmidManager()
+    : accounts_mutex_(), accounts_() {}
 
 template <typename FacadeType>
 template <typename DataType>
