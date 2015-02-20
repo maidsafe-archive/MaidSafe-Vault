@@ -107,10 +107,11 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
         return DataManager::template HandleGet<MutableData>(from, data_name);
       break;
     case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        PmidManager::template HandleGet<MutableData>(from, data_name);
+      // Get doesn't go through PmidManager anymore
+//      if (data_type == DataTagValue::kImmutableDataValue)
+//        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
+//      else if (data_type == DataTagValue::kMutableDataValue)
+//        PmidManager::template HandleGet<MutableData>(from, data_name);
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTagValue::kImmutableDataValue)

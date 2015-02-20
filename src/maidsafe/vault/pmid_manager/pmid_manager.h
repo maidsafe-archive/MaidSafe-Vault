@@ -32,7 +32,7 @@ namespace vault {
 template <typename FacadeType>
 class PmidManager {
  public:
-  PmidManager() {}
+  PmidManager();
 // Get doesn't go through PmidManager anymore
 //  template <typename DataType>
 //  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
