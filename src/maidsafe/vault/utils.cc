@@ -16,44 +16,37 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_H_
+#include "maidsafe/vault/utils.h"
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/routing/types.h"
+#include <string>
 
 namespace maidsafe {
 
 namespace vault {
 
-
-template <typename Child>
-class DataManager {
- public:
-  DataManager() {}
-
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress /* from */, DataType /* data */);
-  void HandleChurn(routing::CloseGroupDifference);
-};
-
-template <typename Child>
-template <typename DataType>
-routing::HandleGetReturn DataManager<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+template <>
+std::string ToFixedWidthString<1>(uint32_t number) {
+  assert(number < 256);
+  return std::string(1, static_cast<char>(number));
 }
 
-template <typename Child>
-template <typename DataType>
-routing::HandlePutPostReturn DataManager<Child>::HandlePut(routing::SourceAddress /* from */,
-                                                           DataType /* data */) {
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+void InitialiseDirectory(const boost::filesystem::path& directory) {
+  if (boost::filesystem::exists(directory)) {
+    if (!boost::filesystem::is_directory(directory))
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::not_a_directory));
+  } else {
+    boost::filesystem::create_directory(directory);
+  }
 }
+
+boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_dir) {
+  boost::filesystem::path db_root_path(vault_root_dir / "db");
+  InitialiseDirectory(db_root_path);
+  return (db_root_path / boost::filesystem::unique_path());
+}
+
+size_t Parameters::min_pmid_holders = 4;
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif // MAIDSAFE_VAULT_DATA_MANAGER_H_
