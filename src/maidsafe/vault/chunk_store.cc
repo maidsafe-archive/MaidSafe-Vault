@@ -210,10 +210,14 @@ ChunkStore::GetResult ChunkStore::Get(const KeyType& key) const {
   auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
   try {
     auto content(ReadFile(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash))));
-    return crypto::DeobfuscateData(key_tag_and_id.second, crypto::CipherText(content));
+    auto deobfuscated_data(crypto::DeobfuscateData(key_tag_and_id.second,
+                                                   crypto::CipherText(content)));
+    std::vector<byte> get_bytes(std::begin(deobfuscated_data.string()),
+                                       std::end(deobfuscated_data.string()));
+    return get_bytes;
   }
   catch (const std::exception&) {
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
 }
 
