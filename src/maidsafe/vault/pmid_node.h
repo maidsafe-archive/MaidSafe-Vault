@@ -57,8 +57,11 @@ PmidNode::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_d
 
 template <typename FacadeType>
 template <typename DataType>
-routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /*from*/,
-                                                         Identity /*data_name*/) {
+routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress from,
+                                                         Identity data_name) {
+  DataNameVariant data_name_variant(const typename DataType::Name(data_name));
+  routing::HandleGetReturn GetReturn();
+    data(chunk_store_.Get()
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
 }
 
