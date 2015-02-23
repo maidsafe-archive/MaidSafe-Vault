@@ -31,6 +31,7 @@
 #include "maidsafe/vault/maid_manager.h"
 #include "maidsafe/vault/pmid_manager.h"
 #include "maidsafe/vault/pmid_node.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 
 namespace maidsafe {
@@ -47,6 +48,16 @@ ParsedType ParseData(const SerialisedData& serialised_data) {
   typename ParsedType::serialised_type contents;
   Parse(binary_input_stream, name, contents);
   return ParsedType(name, contents);
+}
+
+// Helper function to parse Mpid messaging related messages : message, alert, etc.
+// FIXME this need discussion, adding it temporarily to progress
+template <typename ParsedType>
+ParsedType ParseMpidMessaging(const SerialisedData& serialised_data) {
+  InputVectorStream binary_input_stream{serialised_data};
+  typename ParsedType parsed_message;
+  Parse(binary_input_stream, parsed_message);
+  return parsed_message;
 }
 
 class VaultFacade : public MaidManager<VaultFacade>,
@@ -76,6 +87,10 @@ class VaultFacade : public MaidManager<VaultFacade>,
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
       routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
           SerialisedData serialised_data);
+
+  routing::HandlePutPostReturn HandlePost(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority,
+          routing::SerialisedMessage message);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
@@ -157,6 +172,24 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
       else if (data_type == DataTagValue::kMutableDataValue)
         return PmidNode::HandlePut(from, ParseData<MutableData>(serialised_data));
       break;
+    default:
+      break;
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+}
+
+routing::HandlePutPostReturn VaultFacade::HandlePost(routing::SourceAddress from,
+    routing::Authority from_authority, routing::Authority authority,
+        routing::SerialisedMessage message) {
+  switch (authority) {
+    case routing::Authority::client_manager:
+      if (from_authority != routing::Authority::client)
+        break;
+      return MpidManager::HandlePost(from, ParseMpidMessaging<MpidMessage>(message));
+    case routing::Authority::nae_manager:
+      if (from_authority != routing::Authority::client_manager)
+        break;
+      return MpidManager::HandlePost(from, ParseMpidMessaging<MpidAlert>(message));
     default:
       break;
   }
