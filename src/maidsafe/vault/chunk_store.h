@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
+#include "boost/expected/expected.hpp"
 #include "boost/variant.hpp"
 
 #include "maidsafe/common/tagged_value.h"
@@ -48,7 +49,8 @@ class ChunkStoreTest;
 
 class ChunkStore {
  public:
-  typedef DataNameVariant KeyType;
+  using KeyType = DataNameVariant;
+  using GetResult = boost::expected<std::vector<byte>, maidsafe_error>;
 
   ChunkStore(const boost::filesystem::path& disk_path, DiskUsage max_disk_usage);
   ~ChunkStore();
@@ -57,7 +59,7 @@ class ChunkStore {
 
   void Put(const KeyType& key, const NonEmptyString& value);
   void Delete(const KeyType& key);
-  NonEmptyString Get(const KeyType& key) const;
+  GetResult Get(const KeyType& key) const;
 
   // Return list of elements that should have but not exists yet
   std::vector<KeyType> ElementsToStore(std::set<KeyType> element_list);

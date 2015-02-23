@@ -204,7 +204,7 @@ void ChunkStore::Delete(const KeyType& key) {
   current_disk_usage_.data -= file_size;
 }
 
-NonEmptyString ChunkStore::Get(const KeyType& key) const {
+ChunkStore::GetResult ChunkStore::Get(const KeyType& key) const {
   std::lock_guard<std::mutex> lock(mutex_);
   auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
   auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
