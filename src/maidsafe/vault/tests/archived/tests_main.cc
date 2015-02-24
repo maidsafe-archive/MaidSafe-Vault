@@ -1,4 +1,4 @@
-/*  Copyright 2015 MaidSafe.net limited
+/*  Copyright 2012 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,37 +16,11 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/utils.h"
+#include "maidsafe/common/test.h"
 
-#include <string>
+#include "maidsafe/vault/parameters.h"
 
-namespace maidsafe {
-
-namespace vault {
-
-template <>
-std::string ToFixedWidthString<1>(uint32_t number) {
-  assert(number < 256);
-  return std::string(1, static_cast<char>(number));
+int main(int argc, char** argv) {
+  //  maidsafe::vault::detail::Parameters::set_file_element_count_limits(1000, 5000);
+  return maidsafe::test::ExecuteMain(argc, argv);
 }
-
-void InitialiseDirectory(const boost::filesystem::path& directory) {
-  if (boost::filesystem::exists(directory)) {
-    if (!boost::filesystem::is_directory(directory))
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::not_a_directory));
-  } else {
-    boost::filesystem::create_directory(directory);
-  }
-}
-
-boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_dir) {
-  boost::filesystem::path db_root_path(vault_root_dir / "db");
-  InitialiseDirectory(db_root_path);
-  return (db_root_path / boost::filesystem::unique_path());
-}
-
-size_t Parameters::min_pmid_holders = 4;
-
-}  // namespace vault
-
-}  // namespace maidsafe

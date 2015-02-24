@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,58 +16,141 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_H_
 
-#include <functional>
-#include <map>
-#include <string>
-#include <utility>
-#include <vector>
+#include "maidsafe/common/types.h"
 
-#include "maidsafe/nfs/types.h"
-
-#include "maidsafe/vault/key.h"
-#include "maidsafe/vault/unresolved_action.h"
-#include "maidsafe/vault/unresolved_account_transfer_action.h"
-#include "maidsafe/vault/data_manager/value.h"
-#include "maidsafe/vault/data_manager/action_put.h"
-#include "maidsafe/vault/data_manager/action_delete.h"
-#include "maidsafe/vault/data_manager/action_add_pmid.h"
-#include "maidsafe/vault/data_manager/action_remove_pmid.h"
+#include "maidsafe/vault/utils.h"
+#include "maidsafe/vault/data_manager/database.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-struct ActionDataManagerAddPmid;
-struct ActionDataManagerPut;
+template <typename FacadeType>
+class DataManager {
+ public:
+  DataManager(const boost::filesystem::path& vault_root_dir);
 
-}  // namespace vault
+  template <typename DataType>
+  routing::HandleGetReturn HandleGet(const routing::SourceAddress& from, const Identity& name);
 
-namespace nfs {
+  template <typename DataType>
+  routing::HandlePutPostReturn HandlePut(const routing::SourceAddress& from,
+                                         const DataType& data);
 
-template <>
-struct PersonaTypes<Persona::kDataManager> {
-  static const Persona persona = Persona::kDataManager;
-  using Key = vault::Key;
-  using Value = vault::DataManagerValue;
-  using KvPair = std::pair<Key, Value>;
-  using TransferInfo = std::map<NodeId, std::vector<KvPair>>;
-  using UnresolvedPut = vault::UnresolvedAction<Key, vault::ActionDataManagerPut>;
-  using UnresolvedDelete = vault::UnresolvedAction<Key, vault::ActionDataManagerDelete>;
-  using UnresolvedAddPmid = vault::UnresolvedAction<Key, vault::ActionDataManagerAddPmid>;
-  using UnresolvedRemovePmid = vault::UnresolvedAction<Key, vault::ActionDataManagerRemovePmid>;
+  template <typename DataType>
+  routing::HandlePutPostReturn
+  HandlePutResponse(const typename DataType::Name& name, const routing::DestinationAddress& from,
+                    const maidsafe_error& return_code);
+
+  void HandleChurn(const routing::CloseGroupDifference& difference);
+
+ private:
+  template <typename DataType>
+  routing::HandlePutPostReturn Replicate(const typename DataType::Name& name,
+                                         const routing::DestinationAddress& exclude);
+
+  void DownRank(const routing::DestinationAddress& /*address*/) {}
+
+  DataManagerDatabase db_;
+  routing::CloseGroupDifference close_group_;
 };
 
-}  // namespace nfs
+template <typename FacadeType>
+DataManager<FacadeType>::DataManager(const boost::filesystem::path& vault_root_dir)
+    : db_(UniqueDbPath(vault_root_dir)) {}
 
-namespace vault {
+template <typename FacadeType>
+template <typename DataType>
+routing::HandlePutPostReturn DataManager<FacadeType>::HandlePut(
+    const routing::SourceAddress& /*from*/, const DataType& data) {
+  if (!db_.Exist<DataType>(data.name())) {
+     auto pmid_addresses(static_cast<FacadeType*>(this)
+                             ->template GetClosestNodes<DataType>(data.name()));
+    db_.Put<DataType>(data.name(), pmid_addresses);
+    std::vector<routing::DestinationAddress> dest_addresses;
+    for (const auto& pmid_address : pmid_addresses)
+      dest_addresses.emplace_back(std::make_pair(routing::Destination(pmid_address),
+                                                 boost::none));
+    return dest_addresses;
+  }
+  return boost::make_unexpected(MakeError(CommonErrors::success));
+}
 
-typedef nfs::PersonaTypes<nfs::Persona::kDataManager> DataManager;
+template <typename FacadeType>
+template <typename DataType>
+routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
+    const typename DataType::Name& name, const routing::DestinationAddress& from,
+    const maidsafe_error& return_code) {
+  assert(return_code.code() != make_error_code(CommonErrors::success));
+  DownRank(from);  // failed to store
+  return Replicate<DataType>(name, from);
+}
+
+template <typename FacadeType>
+template <typename DataType>
+routing::HandlePutPostReturn
+DataManager<FacadeType>::Replicate(const typename DataType::Name& name,
+                                   const routing::DestinationAddress& from) {
+  std::vector<routing::Address> new_pmid_nodes;
+  bool is_holder(false);
+
+  auto result(db_.GetPmids<DataType>(name));
+  if (!result.valid())
+    return boost::make_unexpected(result.error());
+
+  auto& current_pmid_nodes(*result);
+  is_holder = (std::any_of(current_pmid_nodes.begin(), current_pmid_nodes.end(),
+                           [&](const routing::Address& pmid) { return pmid == from.first.data; }));
+  if (current_pmid_nodes.size() > Parameters::min_pmid_holders) {
+    if (is_holder)
+      db_.RemovePmid<DataType>(name, from);
+    return boost::make_unexpected(MakeError(CommonErrors::success));
+  }
+
+  new_pmid_nodes = static_cast<FacadeType*>(this)
+                       ->template GetClosestNodes<DataType>(name, current_pmid_nodes);
+  if (new_pmid_nodes.empty()) {
+    if (is_holder)
+      db_.RemovePmid<DataType>(name, from);
+    LOG(kError) << "Failed to find a valid close pmid node";
+    return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
+  }
+  current_pmid_nodes.erase(std::remove(current_pmid_nodes.begin(), current_pmid_nodes.end(),
+                                       from.first.data),
+                           current_pmid_nodes.end());
+  current_pmid_nodes.insert(current_pmid_nodes.end(), new_pmid_nodes.begin(),
+                            new_pmid_nodes.end());
+  db_.ReplacePmidNodes<DataType>(name, current_pmid_nodes);
+
+  std::vector<routing::DestinationAddress> dest_addresses;
+  for (const auto& pmid_address : new_pmid_nodes)
+    dest_addresses.emplace_back(std::make_pair(routing::Destination(pmid_address), boost::none));
+  return dest_addresses;
+}
+
+template <typename FacadeType>
+template <typename DataType>
+routing::HandleGetReturn DataManager<FacadeType>::HandleGet(const routing::SourceAddress& from,
+                                                            const Identity& name) {
+  DataManagerDatabase::GetPmidsResult result;
+  result = db_.GetPmids<DataType>(typename DataType::Name(name));
+  if (!result.valid())
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+  if (result.value().empty())
+    return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
+
+  std::vector<routing::DestinationAddress> dest_pmids;
+  for (const auto& holder : *result)
+    dest_pmids.emplace_back(routing::Destination(holder),
+                            boost::optional<routing::ReplyToAddress>(from.node_address.data));
+  return routing::HandleGetReturn::value_type(dest_pmids);
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
+#endif // MAIDSAFE_VAULT_DATA_MANAGER_H_
