@@ -75,7 +75,7 @@ void DataManagerDatabase::Put(const typename DataType::Name& name,
   sqlite::Statement statement{*database_, query};
   statement.BindText(1, EncodeToString<DataType>(name));
   for (const auto& pmid_node : pmid_nodes)
-    pmids_str += NodeId(pmid_node.string()).string();
+    pmids_str += pmid_node.string();
   statement.BindText(2, pmids_str);
   statement.Step();
   transaction.Commit();

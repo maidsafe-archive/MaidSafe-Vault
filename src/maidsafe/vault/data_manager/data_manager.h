@@ -52,8 +52,6 @@ class DataManager {
   routing::HandlePutPostReturn Replicate(const typename DataType::Name& name,
                                          const routing::DestinationAddress& exclude);
 
-  void DownRank(const routing::DestinationAddress& /*address*/) {}
-
   DataManagerDatabase db_;
   routing::CloseGroupDifference close_group_;
 };
@@ -85,7 +83,6 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
     const typename DataType::Name& name, const routing::DestinationAddress& from,
     const maidsafe_error& return_code) {
   assert(return_code.code() != make_error_code(CommonErrors::success));
-  DownRank(from);  // failed to store
   return Replicate<DataType>(name, from);
 }
 
