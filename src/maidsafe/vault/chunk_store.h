@@ -32,11 +32,13 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
+#include "boost/expected/expected.hpp"
 #include "boost/variant.hpp"
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
+
 
 namespace maidsafe {
 
@@ -48,7 +50,7 @@ class ChunkStoreTest;
 
 class ChunkStore {
  public:
-  typedef DataNameVariant KeyType;
+  using KeyType = DataNameVariant;
 
   ChunkStore(const boost::filesystem::path& disk_path, DiskUsage max_disk_usage);
   ~ChunkStore();
