@@ -1,4 +1,4 @@
-/*  Copyright 2013 MaidSafe.net limited
+/*  Copyright 2015 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,69 +16,44 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
-#define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_H_
 
-#include <map>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/passport/types.h"
-
-#include "maidsafe/vault/key.h"
-#include "maidsafe/vault/group_key.h"
-#include "maidsafe/vault/metadata_key.h"
-#include "maidsafe/vault/unresolved_action.h"
-#include "maidsafe/vault/unresolved_account_transfer_action.h"
-#include "maidsafe/vault/pmid_manager/action_put.h"
-#include "maidsafe/vault/pmid_manager/action_update_account.h"
-#include "maidsafe/vault/pmid_manager/action_create_account.h"
-#include "maidsafe/vault/pmid_manager/value.h"
-#include "maidsafe/vault/types.h"
+#include "maidsafe/common/types.h"
+#include "maidsafe/routing/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-struct ActionPmidManagerPut;
-struct ActionPmidManagerDelete;
-struct ActionPmidManagerCreateAccount;
-struct PmidManagerValue;
-struct ActionCreatePmidAccount;
-struct ActionPmidManagerUpdateAccount;
 
-}  // namespace vault
+template <typename Child>
+class PmidManager {
+ public:
+  PmidManager() {}
 
-namespace nfs {
+  template <typename DataType>
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
-template <>
-struct PersonaTypes<Persona::kPmidManager> {
-  static const Persona persona = Persona::kPmidManager;
-  using Key = vault::PmidName;
-  using GroupName = Key;
-  using SyncKey = vault::GroupKey<Key>;
-  using Value = vault::PmidManagerValue;
-  using SyncGroupKey = vault::MetadataKey<Key>;
-  using KvPair = std::pair<Key, Value>;
-  using TransferInfo = std::map<NodeId, std::vector<KvPair>>;
-  using UnresolvedPut = vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerPut>;
-  using UnresolvedDelete = vault::UnresolvedAction<SyncKey, vault::ActionPmidManagerDelete>;
-  using UnresolvedCreateAccount = vault::UnresolvedAction<SyncGroupKey,
-                                                          vault::ActionCreatePmidAccount>;
-  using UnresolvedUpdateAccount = vault::UnresolvedAction<SyncGroupKey,
-                                                          vault::ActionPmidManagerUpdateAccount>;
+  template <typename DataType>
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , DataType data);
+  void HandleChurn(routing::CloseGroupDifference);
 };
 
-}  // namespace nfs
+template <typename Child>
+template <typename DataType>
+routing::HandleGetReturn PmidManager<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+}
 
-namespace vault {
-
-using  PmidManager = nfs::PersonaTypes<nfs::Persona::kPmidManager>;
+template <typename Child>
+template <typename DataType>
+routing::HandlePutPostReturn PmidManager<Child>::HandlePut(routing::SourceAddress /* from */, DataType /* data */) {
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
+#endif // MAIDSAFE_VAULT_PMID_MANAGER_H_
