@@ -39,6 +39,7 @@
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
 
+
 namespace maidsafe {
 
 namespace vault {
@@ -50,7 +51,6 @@ class ChunkStoreTest;
 class ChunkStore {
  public:
   using KeyType = DataNameVariant;
-  using GetResult = boost::expected<std::vector<byte>, maidsafe_error>;
 
   ChunkStore(const boost::filesystem::path& disk_path, DiskUsage max_disk_usage);
   ~ChunkStore();
@@ -59,7 +59,7 @@ class ChunkStore {
 
   void Put(const KeyType& key, const NonEmptyString& value);
   void Delete(const KeyType& key);
-  GetResult Get(const KeyType& key) const;
+  NonEmptyString Get(const KeyType& key) const;
 
   // Return list of elements that should have but not exists yet
   std::vector<KeyType> ElementsToStore(std::set<KeyType> element_list);

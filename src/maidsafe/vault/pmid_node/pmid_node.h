@@ -49,7 +49,7 @@ class PmidNode {
 };
 
 template <typename FacadeType>
-PmidNode::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage)
+PmidNode<FacadeType>::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage)
     : space_info_(boost::filesystem::space(vault_root_dir)),
       disk_total_(space_info_.available),
       permanent_size_(disk_total_ * 4 / 5),
@@ -57,11 +57,19 @@ PmidNode::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_d
 
 template <typename FacadeType>
 template <typename DataType>
-routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress from,
+routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /*from*/,
                                                          Identity data_name) {
-  const DataNameVariant data_name_variant(const typename DataType::Name(data_name));
-  return chunk_store_.Get(data_name_variant);
-  // return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+  const typename DataType::Name NameVariant(data_name);
+  DataNameVariant data_name_variant(NameVariant);
+  try {
+    auto deobfuscated_data(chunk_store_.Get(data_name_variant));
+
+    return routing::HandleGetReturn::value_type(
+                std::vector<byte>(std::begin(deobfuscated_data.string()),
+                                  std::end(deobfuscated_data.string())));
+  } catch (const std::exception& e) {
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+  }
 }
 
 template <typename FacadeType>
