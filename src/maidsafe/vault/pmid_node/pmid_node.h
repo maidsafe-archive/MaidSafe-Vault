@@ -57,13 +57,12 @@ PmidNode<FacadeType>::PmidNode(const boost::filesystem::path vault_root_dir, Dis
 
 template <typename FacadeType>
 template <typename DataType>
-routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /*from*/,
+routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /* from */,
                                                          Identity data_name) {
   const typename DataType::Name NameVariant(data_name);
   DataNameVariant data_name_variant(NameVariant);
   try {
     auto deobfuscated_data(chunk_store_.Get(data_name_variant));
-
     return routing::HandleGetReturn::value_type(
                 std::vector<byte>(std::begin(deobfuscated_data.string()),
                                   std::end(deobfuscated_data.string())));
@@ -75,8 +74,20 @@ routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress 
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn PmidNode<FacadeType>::HandlePut(routing::SourceAddress /* from */,
-                                                             DataType /* data */) {
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+                                                             DataType data) {
+  try {
+    chunk_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
+    return boost::make_unexpected(MakeError(CommonErrors::success));
+  } catch (const maidsafe_error& e) {
+    if (e.code() == make_error_code(CommonErrors::cannot_exceed_limit))
+      return boost::make_unexpected(e);
+      // Only specify CommonErrors::cannot_exceed_limit onwards
+      // to PmidManagers so they know PmidNode has run out of space.
+      // All other errors collapsed into VaultErrors::failed_to_handle_request.
+  } catch (const std::exception& e) {
+    return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 }  // namespace vault
