@@ -16,32 +16,46 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_H_
+#include <string>
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/routing/types.h"
+#include "boost/filesystem.hpp"
+
+#include "maidsafe/vault/data_manager/database.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+DataManagerDatabase::DataManagerDatabase(boost::filesystem::path db_path)
+    : database_(), kDbPath_(db_path), write_operations_(0) {
+  database_.reset(new sqlite::Database(kDbPath_,
+                                        sqlite::Mode::kReadWriteCreate));
+  std::string query(
+      "CREATE TABLE IF NOT EXISTS DataManagerAccounts ("
+      "ChunkName TEXT  PRIMARY KEY NOT NULL, PmidNodes TEXT NOT NULL);");
+  sqlite::Transaction transaction{*database_};
+  sqlite::Statement statement{*database_, query};
+  statement.Step();
+  transaction.Commit();
+}
 
-template <typename Child>
-class DataManager {
- public:
-  DataManager() {}
+DataManagerDatabase::~DataManagerDatabase() {
+  try {
+    database_.reset();
+    boost::filesystem::remove_all(kDbPath_);
+  }
+  catch (std::exception e) {
+    LOG(kError) << "Failed to remove db : " << boost::diagnostic_information(e);
+  }
+}
 
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress /* from */, Identity /* data_name */,
-                                         DataType /* data */);
-  void HandleChurn(routing::CloseGroupDifference);
-};
+void DataManagerDatabase::CheckPoint() {
+  if (++write_operations_ > 1000) {
+    database_->CheckPoint();
+    write_operations_ = 0;
+  }
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif // MAIDSAFE_VAULT_DATA_MANAGER_H_

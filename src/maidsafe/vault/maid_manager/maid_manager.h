@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 
 #include <set>
 #include <string>
@@ -26,6 +26,7 @@
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/types.h"
+#include "maidsafe/routing/source_address.h"
 #include "maidsafe/vault/maid_manager/account.h"
 
 
@@ -104,7 +105,7 @@ routing::HandlePutPostReturn MaidManager<Facade>::HandlePut(
     std::lock_guard<std::mutex> lock(accounts_mutex_);
     auto it(std::find_if(std::begin(accounts_), std::end(accounts_),
       [=](const MaidManagerAccount& account) {
-        return account.name().value.string() == std::get<0>(source_address).data.string();
+        return account.name().value.string() == source_address.node_address.data.string();
       }));
 
     if (it == std::end(accounts_))
@@ -162,4 +163,4 @@ bool MaidManager<Facade>::HasAccount(const AccountName& account_name) {
 }  // namespace vault
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_MAID_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_

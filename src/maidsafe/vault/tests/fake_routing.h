@@ -20,6 +20,8 @@
 #define MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
 
 #include "maidsafe/common/utils.h"
+
+#include "maidsafe/routing/source_address.h"
 #include "maidsafe/routing/types.h"
 
 namespace maidsafe {
@@ -54,9 +56,22 @@ class FakeRouting {
     else
       token(MakeError(CommonErrors::defaulted));
   }
+
+  template <typename DataType>
+  std::vector<routing::Address> GetClosestNodes(
+      typename DataType::Name /*name*/,
+      const std::vector<routing::Address>& /*exclude*/ = std::vector<routing::Address>()) {
+    std::vector<routing::Address> close_nodes;
+    while (close_nodes.size() < 4)
+      close_nodes.emplace_back(RandomString(NodeId::kSize));
+    return close_nodes;
+  }
 };
 
 }  // namespace test
+
 }  // namespace routing
+
 } // namespace maidsafe
+
 #endif  // MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_

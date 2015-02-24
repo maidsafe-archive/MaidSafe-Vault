@@ -16,14 +16,11 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_NODE_H_
-#define MAIDSAFE_VAULT_PMID_NODE_H_
+#ifndef MAIDSAFE_VAULT_PMID_MANAGER_H_
+#define MAIDSAFE_VAULT_PMID_MANAGER_H_
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
-
-#include "maidsafe/vault/chunk_store.h"
-
 
 namespace maidsafe {
 
@@ -31,21 +28,32 @@ namespace vault {
 
 
 template <typename Child>
-class PmidNode {
+class PmidManager {
  public:
-  PmidNode() {}
+  PmidManager() {}
+
   template <typename DataType>
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
   template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , Identity data_name,
-                                         DataType data);
+  routing::HandlePutPostReturn HandlePut(routing::SourceAddress from , DataType data);
   void HandleChurn(routing::CloseGroupDifference);
 };
 
+template <typename Child>
+template <typename DataType>
+routing::HandleGetReturn PmidManager<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+}
+
+template <typename Child>
+template <typename DataType>
+routing::HandlePutPostReturn PmidManager<Child>::HandlePut(routing::SourceAddress /* from */, DataType /* data */) {
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_PMID_NODE_H_
+#endif // MAIDSAFE_VAULT_PMID_MANAGER_H_
