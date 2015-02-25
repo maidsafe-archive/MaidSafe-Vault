@@ -1,355 +1,289 @@
 [/==============================================================================
-    Copyright (C) 2007-2013 Hartmut Kaiser
+    Copyright (C) 2007-2014 Hartmut Kaiser
+    Copyright (C) 2011 Bryce Lelbach
+    Copyright (C) 2013 Pyry Jahkola
+    Copyright (C) 2013 Thomas Heller
 
     Distributed under the Boost Software License, Version 1.0. (See accompanying
     file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 ===============================================================================/]
 
-[section:intro Introduction]
-
-Current advances in high performance computing (HPC) continue to suffer from the
-issues plaguing parallel computation. These issues include, but are not limited
-to, ease of programming, inability to handle dynamically changing workloads,
-scalability, and efficient utilization of system resources.  Emerging
-technological trends such as multi-core processors further highlight
-limitations of existing parallel computation models. To mitigate the
-aforementioned problems, it is necessary to rethink the approach to
-parallelization models. ParalleX contains mechanisms such as multi-threading,
-parcels, global name space support, percolation and local control objects
-(LCO). By design, ParalleX overcomes limitations of current models of
-parallelism by alleviating contention, latency, overhead and starvation. With
-ParalleX, it is further possible to increase performance by at least an order
-of magnitude on challenging parallel algorithms, e.g., dynamic directed graph
-algorithms and adaptive mesh refinement methods for astrophysics. An additional
-benefit of ParalleX is fine-grained control of power usage, enabling reductions
-in power consumption.
-
-[heading ParalleX - a new Execution Model for Future Architectures]
-
-ParalleX is a new parallel execution model that offers an alternative to
-the conventional computation models, such as message passing. ParalleX
-distinguishes itself by:
-
-* Split-phase transaction model
-* Message-driven
-* Distributed shared memory (not cache coherent)
-* Multi-threaded
-* Futures synchronization
-* Local Control Objects (LCOs)
-* Synchronization for anonymous producer-consumer scenarios
-* Percolation (pre-staging of task data)
-
-The ParalleX model is intrinsically latency hiding, delivering an abundance of
-variable-grained parallelism within a hierarchical namespace environment. The
-goal of this innovative strategy is to enable future systems delivering very
-high efficiency, increased scalability and ease of programming. ParalleX can
-contribute to significant improvements in the design of all levels of computing
-systems and their usage from application algorithms and their programming
-languages to system architecture and hardware design together with their
-supporting compilers and operating system software.
-
-[heading What is __hpx__]
-
-High Performance ParalleX (__hpx__) is the first runtime system implementation of
-the ParalleX execution model. The __hpx__ runtime software package is a modular,
-feature-complete, and performance oriented representation of the ParalleX
-execution model targeted at conventional parallel computing architectures such
-as SMP nodes and commodity clusters. It is academically developed and freely
-available under an open source license. We provide __hpx__ to the community for
-experimentation and application to achieve high efficiency and scalability for
-dynamic adaptive and irregular computational problems. __hpx__ is a C++ library
-that supports a set of critical mechanisms for dynamic adaptive resource
-management and lightweight task scheduling within the context of a global
-address space. It is solidly based on many years of experience in writing
-highly parallel applications for HPC systems.
-
-The two-decade success of the communicating sequential processes (CSP)
-execution model and its message passing interface (MPI) programming model has
-been seriously eroded by challenges of power, processor core complexity,
-multi-core sockets, and heterogeneous structures of GPUs. Both efficiency and
-scalability for some current (strong scaled) applications and future Exascale
-applications demand new techniques to expose new sources of algorithm
-parallelism and exploit unused resources through adaptive use of runtime
-information.
-
-The ParalleX execution model replaces CSP to provide a new computing paradigm
-embodying the governing principles for organizing and conducting highly
-efficient scalable computations greatly exceeding the capabilities of today's
-problems. __hpx__ is the first practical, reliable, and performance-oriented
-runtime system incorporating the principal concepts of the ParalleX model
-publicly provided in open source release form.
-
-__hpx__ is designed by the __stellar__ Group ([*S]ystems [*T]echnology,
-[*E]mergent Para[*ll]elism, and [*A]lgorithm [*R]esearch) at __lsu__'s __cct__
-to enable developers to exploit the full processing power of many-core systems
-with an unprecedented degree of parallelism. __stellar__ is a research group
-focusing on system software solutions and scientific application development
-for hybrid and many-core hardware architectures.
-
-For more information about the __stellar__ Group, see __people__.
-
 [/////////////////////////////////////////////////////////////////////////////]
-[section:slow What makes our Systems Slow?]
+[section:getting_started Getting Started]
 
-Estimates say that we currently run our computers at way below 100% efficiency.
-The theoretical peak performance (usually measured in
-[@http://en.wikipedia.org/wiki/FLOPS FLOPS] - floating point
-operations per second) is much higher than any practical peak performance
-reached by any application. This is particularly true for highly parallel
-hardware. The more hardware parallelism we provide to an application, the
-better the application must scale in order to efficiently use all the
-resources of the machine. Roughly speaking, we distinguish two forms of
-scalability: strong scaling (see [@http://en.wikipedia.org/wiki/Amdahl%27s_law Amdahl's Law]) and weak scaling
-(see [@http://en.wikipedia.org/wiki/Gustafson%27s_law Gustafson's Law]).
-Strong scaling is defined as how the solution time
-varies with the number of processors for a fixed [*total] problem size. It
-gives an estimate of how much faster can we solve a particular problem by
-throwing more resources at it. Weak scaling is defined as how the solution
-time varies with the number of processors for a fixed problem size [*per processor].
-In other words, it defines how much more data can we process by
-using more hardware resources.
+[heading Welcome]
 
-In order to utilize as much hardware parallelism as possible an application
-must exhibit excellent strong and weak scaling characteristics, which requires
-a high percentage of work executed in parallel, i.e. using multiple threads of
-execution. Optimally, if you execute an application on a hardware resource with
-N processors it either runs N times faster or it can handle N times more data.
-Both cases imply 100% of the work is executed on all available processors in
-parallel. However, this is just a theoretical limit. Unfortunately, there are
-more things which limit scalability, mostly inherent to the hardware
-architectures and the programming models we use. We break these limitations
-into four fundamental factors which make our systems *SLOW*:
+Welcome to the __hpx__ runtime system libraries! By the time you've completed this
+tutorial, you'll be at least somewhat comfortable with __hpx__ and how to go about
+using it.
 
-* ['[*S]tarvation] occurs when there is insufficient concurrent work available to
-  maintain high utilization of all resources.
-* ['[*L]atencies] are imposed by the time-distance delay intrinsic to accessing
-  remote resources and services.
-* ['[*O]verhead] is work required for the management of parallel actions and
-  resources on the critical execution path which is not necessary in a
-  sequential variant.
-* ['[*W]aiting] for contention resolution is the delay due to the lack of
-  availability of oversubscribed shared resources.
+[heading What's Here]
 
-Each of those four factors manifests itself in multiple and different ways; each
-of the hardware architectures and programming models expose specific forms.
-However the interesting part is that all of them are limiting the scalability
-of applications no matter what part of the hardware jungle we look at.
-Hand-helds, PCs, supercomputers, or the cloud, all suffer from the reign of the
-4 horsemen: [*S]tarvation, [*L]atency, [*O]verhead, and [*C]ontention. This
-realization is very important as it allows us to derive the criteria for
-solutions to the scalability problem from first principles, it allows us to
-focus our analysis on very concrete patterns and measurable metrics. Moreover,
-any derived results will be applicable to a wide variety of targets.
-
-[endsect] [/ What makes our Systems Slow?]
-
-[/////////////////////////////////////////////////////////////////////////////]
-[section:new_response Technology Demands New Response]
-
-Today's computer systems are designed based on the initial ideas of
-[@http://qss.stanford.edu/~godfrey/vonNeumann/vnedvac.pdf John von Neumann],
-as published back in 1945, and later extended by the
-[@http://en.wikipedia.org/wiki/Harvard_architecture Harvard architecture].
-These ideas form the foundation, the execution model of computer
-systems we use currently. But apparently a new response is required in the
-light of the demands created by today's technology.
-
-So, what are the overarching objectives for designing systems allowing for
-applications to scale as they should? In our opinion, the main objectives are:
-
-* ['Performance]: as mentioned, scalable and efficiency are the main criteria
-  people are interested in
-* ['Fault tolerance]: the low expected mean time between failures
-  ([@http://en.wikipedia.org/wiki/Mean_time_between_failures MTBF]) of
-  future systems requires to embrace faults, not trying to avoid them
-* ['Power]: minimizing energy consumption is a must as it is one of the major
-  cost factors today, even more so in the future
-* ['Generality]: any system should be usable for a broad set of use cases
-* ['Programmability]: for me as a programmer this is a very important objective,
-  ensuring long term platform stability and portability
-
-What needs to be done to meet those objectives, to make applications scale
-better on tomorrow's architectures? Well, the answer is almost obvious: we need
-to devise a new execution model - a set of governing principles for the holistic
-design of future systems - targeted at minimizing the effect of the outlined
-[*SLOW] factors. Everything we create for future systems, every design decision
-we make, every criteria we apply, has to be validated against this single,
-uniform metric. This includes changes in the hardware architecture we
-prevalently use today, and it certainly involves new ways of writing software,
-starting from the operating system, runtime system, compilers, and at the
-application level. However the key point is that all those layers have to be
-co-designed, they are interdependent and cannot be seen as separate facets.
-The systems we have today have been evolving for over 50 years now. All
-layers function in a certain way relying on the other layers to do so as well.
-However, we do not have the time to wait for a coherent system to evolve for
-another 50 years. The new paradigms are needed now - therefore, co-design is
-the key.
-
-[endsect] [/ Technology Demands New Response]
-
-[/////////////////////////////////////////////////////////////////////////////]
-[section:principles Governing Principles applied while Developing __hpx__]
-
-As it turn out, we do not have to start from scratch. Not everything has to be
-invented and designed anew. Many of the ideas needed to combat the 4 horsemen
-have already been had, often more than 30 years ago. All it takes is to gather
-them into a coherent approach. So please let me highlight some of the derived
-principles we think to be crucial for defeating [*SLOW]. Some of those are
-focused on high-performance computing, others are more general.
-
-[heading:latency_hiding Focus on Latency Hiding instead of Latency Avoidance]
-
-It is impossible to design a system exposing zero latencies. In an effort to
-come as close as possible to this goal many optimizations are mainly targeted
-towards minimizing latencies. Examples for this can be seen everywhere, for
-instance low latency network technologies like
-[@http://en.wikipedia.org/wiki/InfiniBand InfiniBand], caching memory
-hierarchies in all modern processors, the constant optimization of existing
-__mpi__ implementations to reduce related latencies, or the data transfer
-latencies intrinsic to the way we use
-[@http://en.wikipedia.org/wiki/GPGPU GPGPUs] today. It is important to note,
-that existing latencies are often tightly related to some resource having to
-wait for the operation to be completed. At the same time it would be perfectly
-fine to do some other, unrelated work in the meantime, allowing to hide the
-latencies by filling the idle-time with useful work. Modern system already
-employ similar techniques (pipelined instruction execution in the processor
-cores, asynchronous input/output operations, and many more). What we propose
-is to go beyond anything we know today and to make latency hiding an intrinsic
-concept of the operation of the whole system stack.
-
-[heading:parallelism Embrace Fine-grained Parallelism instead of Heavyweight Threads]
-
-If we plan to hide latencies even for very short operations, such as fetching
-the contents of a memory cell from main memory (if it is not already cached),
-we need to have very lightweight threads with extremely short context switching
-times, optimally executable within one cycle. Granted, for mainstream
-architectures this is not possible today (even if we already have special
-machines supporting this mode of operation, such as the
-[@http://en.wikipedia.org/wiki/Cray_XMT Cray XMT]). For
-conventional systems however, the smaller the overhead of a context switch and
-the finer the granularity of the threading system, the better will be the
-overall system utilization and its efficiency. For today's architectures we
-already see a flurry of libraries providing exactly this type of functionality:
-non-preemptive, task-queue based parallelization solutions, such as
-__tbb__, __ppl__, __cilk_pp__, and many others. The possibility to suspend a
-current task if some preconditions for its execution are not met (such as
-waiting for I/O or the result of a different task), seamlessly switching to
-any other task which can continue, and to reschedule the initial task after
-the required result has been calculated, which makes the implementation of
-latency hiding almost trivial.
-
-[heading:synchronization Rediscover Constrained Based Synchronization to replace Global Barriers]
-
-The code we write today is riddled with implicit (and explicit) global barriers.
-When I say global barrier I mean the synchronization of the control flow between
-several (very often all) threads (when using __openmp__) or processes (__mpi__).
-For instance, an implicit global barrier is inserted after each loop parallelized
-using __openmp__ as the system synchronizes the threads used to execute the
-different iterations in parallel. In __mpi__ each of the communication steps
-imposes an explicit barrier onto the execution flow as (often all) nodes have be
-synchronized. Each of those barriers acts as an eye of the needle the overall
-execution is forced to be squeezed through. Even minimal fluctuations in the
-execution times of the parallel threads (jobs) causes them to wait. Additionally
-it is often only one of the threads executing doing the actual reduce operation,
-which further impedes parallelism. A closer analysis of a couple of key algorithms
-used in science applications reveals that these global barriers are not always
-necessary. In many cases it is sufficient to synchronize a small subset of the
-threads. Any operation should proceed whenever the preconditions for its
-execution are met, and only those. Usually there is no need to wait for
-iterations of a loop  to finish before you could continue calculating other
-things, all you need is to have those iterations done which were producing the
-required results for a particular next operation. Good bye global barriers,
-hello constraint based synchronization! People have been trying to build this
-type of computing (and even computers) already back in the 1970's. The theory
-behind what they did is based on ideas around static and dynamic dataflow.
-There are certain attempts today to get back to those ideas and to incorporate
-them with modern architectures. For instance, a lot of work is being done in
-the area of constructing dataflow oriented execution trees. Our results show
-that employing dataflow techniques in combination with the other ideas, as
-outlined herein, considerabley improves scalability for many problems.
-
-[heading:locality_control Adaptive Locality Control instead of Static Data Distribution]
-
-While this principle seems to be a given for single desktop or laptop computers
-(the operating system is your friend), it is everything but ubiquitous on modern
-supercomputers, which are usually built from a large number of separate nodes
-(i.e. Beowulf clusters), tightly interconnected by a high bandwidth, low latency
-network. Today's prevalent programming model for those is __mpi__ which does not
-directly help with proper data distribution, leaving it to the programmer to
-decompose the data to all of the nodes the application is running on. There are
-a couple of specialized languages and programming environments based on __pgas__
-(Partitioned Global Address Space) designed to overcome this limitation, such
-as __chapel__, __x10__, __upc__, or __fortress__. However all systems based on __pgas__ rely on
-static data distribution. This works fine as long as such a static data
-distribution does not result in inhomogeneous workload distributions or other
-resource utilization imbalances. In a distributed system these imbalances can
-be mitigated by migrating part of the application data to different localities
-(nodes). The only framework supporting (limited) migration today is
-__charm_pp__. The first attempts towards solving related problem go back
-decades as well, a good example is the
-[@http://en.wikipedia.org/wiki/Linda_(coordination_language) Linda coordination language].
-Nevertheless, none of the other mentioned systems support data migration today,
-which forces the users to either rely on static data distribution and live
-with the related performance hits or to implement everything themselves, which
-is very tedious and difficult. We believe that the only viable way to flexibly
-support dynamic and adaptive locality control is to provide a global, uniform
-address space to the applications, even on distributed systems.
-
-[heading:move_work Prefer Moving Work to the Data over Moving Data to the Work]
-
-For best performance it seems obvious to minimize the amount of bytes transferred
-from one part of the system to another. This is true on all levels. At the
-lowest level we try to take advantage of processor memory caches, thus
-minimizing memory latencies. Similarly, we try to amortize the data transfer
-time to and from [@http://en.wikipedia.org/wiki/GPGPU GPGPUs] as much as possible.
-At high levels we try to minimize
-data transfer between different nodes of a cluster or between different virtual
-machines on the cloud. Our experience (well, it's almost common wisdom) show
-that the amount of bytes necessary to encode a certain operation is very often
-much smaller than the amount of bytes encoding the data the operation is
-performed upon. Nevertheless we still often transfer the data to a particular
-place where we execute the operation just to bring the data back to where it
-came from afterwards. As an example let me look at the way we usually write our
-applications for clusters using __mpi__. This programming model is all about
-data transfer between nodes. __mpi__ is the prevalent programming model for
-clusters, it is fairly straightforward to understand and to use. Therefore, we
-often write the applications in a way accommodating this model, centered around
-data transfer. These applications usually work well for smaller problem sizes
-and for regular data structures. The larger the amount of data we have to churn
-and the more irregular the problem domain becomes, the worse are the overall
-machine utilization and the (strong) scaling characteristics. While it is not
-impossible to implement more dynamic, data driven, and asynchronous applications
-using __mpi__, it is overly difficult to so. At the same time, if we look at
-applications preferring to execute the code close the locality where the data
-was placed, i.e. utilizing active messages (for instance based on __charm_pp__),
-we see better asynchrony, simpler application codes, and improved scaling.
-
-[heading:message_driven Favor Message Driven Computation over Message Passing]
-
-Today's prevalently used programming model on parallel (multi-node) systems is
-__mpi__. It is based on message passing (as the name implies), which means that the
-receiver has to be aware of a message about to come in. Both codes, the sender
-and the receiver, have to synchronize in order to perform the communication
-step. Even the newer, asynchronous interfaces require to explicitly code the
-algorithms around the required communication scheme. As a result, any more
-than trivial __mpi__ application spends a considerable amount of time waiting for
-incoming messages, thus causing starvation and latencies to impede full resource
-utilization. The more complex and more dynamic the data structures and
-algorithms become, the larger are the adverse effects. The community has
-discovered message-driven and (data-driven) methods of implementing algorithms
-a long time ago, and systems such as __charm_pp__ already have integrated active
-messages demonstrating the validity of the concept. Message driven computation
-allows to send messages without that the receiver has to actively wait for
-them. Any incoming message is handled asynchronously and triggers the encoded
-action by passing along arguments and - possibly - continuations. __hpx__ combines
-this scheme with work queue based scheduling as described above, which allows
-to almost completely overlap any communication with useful work, reducing
-latencies to a minimum.
-
-[endsect] [/ Governing Principles applied while Developing __hpx__]
-
-[endsect] [/ Introduction]
+This document is designed to be an extremely gentle introduction, so we
+included a fair amount of material that may already be very familiar to you.
+To keep things simple, we also left out some information intermediate and
+advanced users will probably want. At the end of this document, we'll refer
+you to resources that can help you pursue these topics further.
 
 [/Proofread by:]
 [/Adrian Serio 3-13-12]
 [/Phillip LeBlanc 3-13-12]
+
+
+[/////////////////////////////////////////////////////////////////////////////]
+[section:unix_pbs How to Use __hpx__ Applications with PBS]
+
+[teletype]
+
+Most __hpx__ applications are executed on parallel computers.  These platforms
+typically provide integrated job management services that facilitate the
+allocation of computing resources for each parallel program. __hpx__ includes out of
+the box support for one of the most common job management systems, the Portable
+Batch System (PBS).
+
+All PBS jobs require a script to specify the resource requirements and other
+parameters associated with a parallel job. The PBS script is basically a shell
+script with PBS directives placed within commented sections at the beginning of
+the file. The remaining (not commented-out) portions of the file executes just
+like any other regular shell script. While the description of all available PBS
+options is outside the scope of this tutorial (the interested reader may refer
+to in-depth [@http://www.clusterresources.com/torquedocs21/ documentation] for
+more information), below is a minimal example to illustrate the approach. As a
+test application we will use the multithreaded [^hello_world] program, explained
+in the section __hello_world_example__.
+
+```
+    #!/bin/bash
+    #
+    #PBS -l nodes=2:ppn=4
+
+    APP_PATH=~/packages/hpx/bin/hello_world
+    APP_OPTIONS=
+
+    __pbsdsh__ -u $APP_PATH $APP_OPTIONS ``[hpx_cmdline --hpx:nodes]``=`cat $PBS_NODEFILE`
+```
+
+
+[caution If the first application specific argument (inside `$APP_OPTIONS`)
+         is a non-option (i.e. does not start with a '`-`' or a '`--`', then those
+         have to be placed before the option [hpx_cmdline --hpx:nodes], which
+         in this case should be the last option on the command line.
+
+         Alternatively, use the option [hpx_cmdline --hpx:endnodes] to explicitly
+         mark the end of the list of node names:
+         ```
+         __pbsdsh__ -u $APP_PATH ``[hpx_cmdline --hpx:nodes]``=`cat $PBS_NODEFILE` ``[hpx_cmdline --hpx:endnodes] ``$APP_OPTIONS
+         ```
+         ]
+
+The [^#PBS -l nodes=2:ppn=4] directive will cause two compute nodes to be
+allocated for the application, as specified in the option [^nodes]. Each of the
+nodes will dedicate four cores to the program, as per the option [^ppn], short
+for "processors per node" (PBS does not distinguish between processors and
+cores). Note that requesting more cores per node than physically available is
+pointless and may prevent PBS from accepting the script.
+
+On newer PBS versions the PBS command syntax might be different. For instance,
+the PBS script above would look like:
+
+```
+    #!/bin/bash
+    #
+    #PBS -l select=2:ncpus=4
+
+    APP_PATH=~/packages/hpx/bin/hello_world
+    APP_OPTIONS=
+
+    __pbsdsh__ -u $APP_PATH $APP_OPTIONS ``[hpx_cmdline --hpx:nodes]``=`cat $PBS_NODEFILE`
+```
+
+[^APP_PATH] and [^APP_OPTIONS] are shell variables that respectively specify
+the correct path to the executable ([^hello_world] in this case) and the
+command line options. Since the [^hello_world] application doesn't need any
+command line options, [^APP_OPTIONS] has been left empty. Unlike in other
+execution environments, there is no need to use the [hpx_cmdline
+[^--hpx:threads]] option to indicate the required number of OS threads per
+node; the __hpx__ library will derive this parameter automatically from PBS.
+
+Finally, __pbsdsh__ is a PBS command that starts tasks to the resources allocated
+to the current job. It is recommended to leave this line as shown and modify
+only the PBS options and shell variables as needed for a specific application.
+
+[important A script invoked by __pbsdsh__ starts in a very basic environment:
+           the user's `$HOME` directory is defined and is the current directory,
+           the `LANG` variable is set to `C`, and the `PATH` is set to the basic
+           `/usr/local/bin:/usr/bin:/bin` as defined in a system-wide file
+           pbs_environment. Nothing that would normally be set up by a system
+           shell profile or user shell profile is defined, unlike the
+           environment for the main job script.]
+
+Another choice is for the __pbsdsh__ command in your main job script to invoke
+your program via a shell, like `sh` or `bash`, so that it gives an initialized
+environment for each instance. We create a small script `runme.sh` which is
+used to invoke the program:
+
+``
+    #!/bin/bash
+    # Small script which invokes the program based on what was passed on its
+    # command line.
+    #
+    # This script is executed by the bash shell which will initialize all
+    # environment variables as usual.
+    $@
+``
+
+Now, we invoke this script using the __pbsdsh__ tool:
+
+```
+    #!/bin/bash
+    #
+    #PBS -l nodes=2:ppn=4
+
+    APP_PATH=~/packages/hpx/bin/hello_world
+    APP_OPTIONS=
+
+    __pbsdsh__ -u runme.sh $APP_PATH $APP_OPTIONS ``[hpx_cmdline --hpx:nodes]``=`cat $PBS_NODEFILE`
+```
+
+All that remains now is submitting the job to the queuing system. Assuming that
+the contents of the PBS script were saved in file [^pbs_hello_world.sh] in the
+current directory, this is accomplished by typing:
+
+``
+    __qsub__ ./pbs_hello_world_pbs.sh
+``
+
+If the job is accepted, __qsub__ will print out the assigned job ID, which may
+look like:
+
+``
+    $ 42.supercomputer.some.university.edu
+``
+
+To check the status of your job, issue the following command:
+
+``
+    __qstat__ 42.supercomputer.some.university.edu
+``
+
+and look for a single-letter job status symbol. The common cases include:
+
+* *Q* - signifies that the job is queued and awaiting its turn to be executed.
+* *R* - indicates that the job is currently running.
+* *C* - means that the job has completed.
+
+The example __qstat__ output below shows a job waiting for execution resources
+to become available:
+
+``
+    Job id                    Name             User            Time Use S Queue
+    ------------------------- ---------------- --------------- -------- - -----
+    42.supercomputer          ...ello_world.sh joe_user               0 Q batch
+``
+
+After the job completes, PBS will place two files, [^pbs_hello_world.sh.o42] and
+[^pbs_hello_world.sh.e42], in the directory where the job was submitted. The
+first contains the standard output and the second contains the standard error
+from all the nodes on which the application executed. In our example, the error
+output file should be empty and standard output file should contain something
+similar to:
+
+``
+    hello world from OS-thread 3 on locality 0
+    hello world from OS-thread 2 on locality 0
+    hello world from OS-thread 1 on locality 1
+    hello world from OS-thread 0 on locality 0
+    hello world from OS-thread 3 on locality 1
+    hello world from OS-thread 2 on locality 1
+    hello world from OS-thread 1 on locality 0
+    hello world from OS-thread 0 on locality 1
+``
+
+Congratulations! You have just run your first distributed __hpx__ application!
+
+[c++]
+
+[endsect] [/ How to Use __hpx__ Applications with PBS]
+
+[section:unix_slurm How to Use __hpx__ Applications with SLURM]
+
+Just like PBS (described in section __using_pbs__), __slurm__ is a job management
+system which is widely used on large supercomputing systems. Any __hpx__
+application can easily be run using SLURM. This section describes how this can
+be done.
+
+The easiest way to run an __hpx__ application using SLURM is to utilize the
+command line tool __srun__ which interacts with the SLURM batch scheduling
+system.
+
+```
+    srun -p <partition> -N <number-of-nodes> hpx-application <application-arguments>
+```
+
+Here, `<partition>` is one of the node partitions existing on the target machine
+(consult the machines documentation to get a list of existing partitions) and
+`<number-of-nodes>` is the number of compute nodes you want to use. By default,
+the HPX application is started with one locality per node and uses all available
+cores on a node. You can change the number of localities started per node (for
+example to account for NUMA effects) by specifying the `-n` option of srun. The
+number of cores per locality can be set by `-c`. The `<application-arguments>`
+are any application specific arguments which need to passed on to the
+application.
+
+[note There is no need to use any of the __hpx__ command line options related to
+      the number of localities, number of threads, or related to networking
+      ports. All of this information is automatically extracted from the SLURM
+      environment by the __hpx__ startup code.]
+
+[important The __srun__ documentation explicitly states: "If `-c` is specified
+      without `-n`, as many tasks will be allocated per node as possible while
+      satisfying the `-c` restriction. For instance on a cluster with 8 CPUs per
+      node, a job request for 4 nodes and 3 CPUs per task may be allocated 3 or
+      6 CPUs per node (1 or 2 tasks per node) depending upon resource consumption
+      by other jobs."
+      For this reason, we suggest to always specify `-n <number-of-instances>`,
+      even if `<number-of-instances>` is equal to one (`1`).]
+
+[heading Interactive Shells]
+
+To get an interactive development shell on one of the nodes you can issue the
+following command:
+
+```
+     srun -p <node-type> -N <number-of-nodes> --pty /bin/bash -l
+```
+
+After the shell has been opened, you can run your HPX application. By default,
+it uses all available cores. Note that if you requested one node, you don't
+need to do `srun` again. However, if you requested more than one nodes, and want
+to run your distributed application, you can use `srun` again to start up the
+distributed HPX application. It will use the resources that have been requested
+for the interactive shell.
+
+[heading Scheduling Batch Jobs]
+
+The above mentioned method of running __hpx__ applications is fine for
+development purposes. The disadvantage that comes with `srun` is that it only
+returns once the application is finished. This might not be appropriate for
+longer running applications (for example benchmarks or larger scale simulations).
+In order to cope with that limitation you can use the __sbatch__ command.
+
+The `sbatch` command expects a script that it can run once the requested
+resources are available. In order to request resources you need to add
+`#SBATCH` comments in your script or provide the necessary parameters to
+`sbatch` directly. The parameters are the same as with `srun`. The commands you
+need to execute are the same you would need to start your application as if you
+were in an interactive shell.
+
+[endsect]
+
+[/Proofread by:]
+[/Adrian Serio 3-13-12]
+[/Phillip LeBlanc 3-13-12]
+
+[endsect] [/ Getting Started]
+
+[/Proofread by:]
+[/Adrian Serio 3-13-12]
+[/Thomas Heller 07-26-13]
+
