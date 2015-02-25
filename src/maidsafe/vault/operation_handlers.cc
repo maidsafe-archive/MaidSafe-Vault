@@ -650,11 +650,20 @@ void DoOperation(
     const PutResponseFromDataManagerToMpidManager& message,
     const typename PutResponseFromDataManagerToMpidManager::Sender& /*sender*/,
     const typename PutResponseFromDataManagerToMpidManager::Receiver& receiver) {
-  LOG(kVerbose) << "DoOperation PutResponseFromDataManagerToMpidManager";
   auto data_name(GetNameVariant(*message.contents));
   PutResponseVisitor<MpidManagerService, MpidName> put_response_visitor(
       service, Identity(receiver.data.string()), message.contents->cost, message.id);
   boost::apply_visitor(put_response_visitor, data_name);
+}
+
+template <>
+void DoOperation(MpidManagerService* service,
+                 const AccountQueryFromMpidManagerToMpidManager& message,
+                 const AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+                 const AccountQueryFromMpidManagerToMpidManager::Receiver& receiver) {
+  assert(message.contents->type == ImmutableData::Tag::kValue);
+  service->HandleAccountQuery(ImmutableData::Name(message.contents->raw_name), sender.data,
+                              receiver.data);
 }
 
 }  // namespace detail

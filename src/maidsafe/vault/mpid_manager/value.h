@@ -16,16 +16,41 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-option optimize_for = LITE_RUNTIME;
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_
 
-package maidsafe.vault.protobuf;
+#include <string>
+#include <vector>
 
-message MpidManagerValue {
-  required bytes data = 1;
-}
+#include "maidsafe/common/data_types/immutable_data.h"
 
-message MpidManagerKeyValuePair {
-  required bytes key = 1;
-  required bytes value = 2;
-}
+namespace maidsafe {
 
+namespace vault {
+
+class MpidManagerValue {
+ public:
+  explicit MpidManagerValue(ImmutableData data_in);
+  MpidManagerValue(const MpidManagerValue& other);
+  MpidManagerValue(MpidManagerValue&& other);
+  MpidManagerValue& operator=(MpidManagerValue other);
+  explicit MpidManagerValue(const std::string& serialised_value);
+
+  std::string Serialise() const;
+
+  static MpidManagerValue Resolve(const std::vector<MpidManagerValue>& values);
+
+  friend void swap(MpidManagerValue& lhs, MpidManagerValue& rhs);
+  friend bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
+
+  ImmutableData data;
+};
+
+bool operator==(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
+bool operator!=(const MpidManagerValue& lhs, const MpidManagerValue& rhs);
+
+}  // namespace vault
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_VALUE_H_

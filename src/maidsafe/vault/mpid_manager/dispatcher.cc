@@ -71,10 +71,12 @@ void MpidManagerDispatcher::SendGetMessageResponse(const DbMessageQueryResult& q
                                                    const MpidName& sender,
                                                    const MpidName& receiver,
                                                    nfs::MessageId message_id) {
+  if (!query_result.valid())
+    return;
   using  VaultMessage = GetResponseFromMpidManagerToMpidManager;
   CheckSourcePersonaType<VaultMessage>();
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  VaultMessage vault_message(message_id, VaultMessage::Contents(query_result));
+  VaultMessage vault_message(message_id, VaultMessage::Contents(query_result.value()));
   RoutingMessage message(vault_message.Serialise(),
                          VaultMessage::Sender(routing::GroupId(NodeId(sender->string())),
                                               routing::SingleId(routing_.kNodeId())),
@@ -129,6 +131,44 @@ void MpidManagerDispatcher::SendSync(const MpidManager::SyncGroupKey& key,
   CheckSourcePersonaType<VaultMessage>();
   SendSyncMessage<VaultMessage> sync_sender;
   sync_sender(routing_, VaultMessage((nfs_vault::Content(serialised_sync))), key.group_name());
+}
+
+void MpidManagerDispatcher::SendAccountTransfer(const NodeId& peer,
+                                                const std::string& serialised_account) {
+  typedef AccountTransferFromMpidManagerToMpidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message{ nfs_vault::Content(serialised_account) };
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing::SingleId(peer)));
+  routing_.Send(message);
+}
+
+void MpidManagerDispatcher::SendAccountQuery(const MpidName& receiver,
+                                             const ImmutableData::Name account_name) {
+  typedef AccountQueryFromMpidManagerToMpidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message(VaultMessage::Contents(ImmutableData::Tag::kValue, account_name));
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing_.kNodeId()),
+                         VaultMessage::Receiver(routing::GroupId(NodeId(receiver->string()))));
+  routing_.Send(message);
+}
+
+void MpidManagerDispatcher::SendAccountQueryResponse(const std::string& serialised_account,
+                                                     const routing::GroupId& group_id,
+                                                     const NodeId& sender) {
+  typedef AccountQueryResponseFromMpidManagerToMpidManager VaultMessage;
+  CheckSourcePersonaType<VaultMessage>();
+  typedef routing::Message<VaultMessage::Sender, VaultMessage::Receiver> RoutingMessage;
+  VaultMessage vault_message{ VaultMessage::Contents{ serialised_account } };
+  RoutingMessage message(vault_message.Serialise(),
+                         VaultMessage::Sender(routing::GroupId(group_id),
+                                              routing::SingleId(routing_.kNodeId())),
+                         VaultMessage::Receiver(sender));
+  routing_.Send(message);
 }
 
 void MpidManagerDispatcher::SendCreateAccountResponse(const MpidName& mpid_name,

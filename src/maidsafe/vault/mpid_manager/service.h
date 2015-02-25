@@ -21,6 +21,7 @@
 
 #include <map>
 #include <vector>
+#include <string>
 
 #include "boost/expected/expected.hpp"
 #include "boost/mpl/vector.hpp"
@@ -33,15 +34,16 @@
 
 #include "maidsafe/nfs/client/data_getter.h"
 
-#include "maidsafe/vault/message_types.h"
 #include "maidsafe/vault/account_transfer_handler.h"
 #include "maidsafe/vault/accumulator.h"
 #include "maidsafe/vault/mpid_manager/handler.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 #include "maidsafe/vault/mpid_manager/dispatcher.h"
+#include "maidsafe/vault/message_types.h"
+#include "maidsafe/vault/operation_visitors.h"
 #include "maidsafe/vault/sync.h"
 #include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/operation_visitors.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.pb.h"
 
 namespace maidsafe {
 
@@ -134,14 +136,25 @@ class MpidManagerService {
   void HandleSyncedRemoveAccount(
            std::unique_ptr<MpidManager::UnresolvedRemoveAccount>&& synced_action);
 
+// =============== Account Transfer ==============================================================
+  void TransferAccount(const NodeId& destination,
+                       const std::vector<MpidManager::KVPair>& accounts);
+  void HandleAccountTransferEntry(const std::string& serialised_account,
+                                  const routing::SingleSource& sender);
+  void HandleAccountTransfer(const MpidManager::KVPair& account);
+  void HandleAccountQuery(const ImmutableData::Name& name,
+                          const NodeId& sender,
+                          const NodeId& receiver);
+
   routing::Routing& routing_;
-  mutable std::mutex accumulator_mutex_, nodes_change_mutex_, pending_account_mutex_;
+  mutable std::mutex accumulator_mutex_, nodes_change_mutex_, pending_account_mutex_, mutex_;
+  bool stopped_;
   Accumulator<Messages> accumulator_;
   routing::CloseNodesChange close_nodes_change_;
   routing::ClientNodesChange client_nodes_change_;
   MpidManagerDispatcher dispatcher_;
   MpidManagerHandler handler_;
-//  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
+  AccountTransferHandler<nfs::PersonaTypes<nfs::Persona::kMpidManager>> account_transfer_;
   Sync<MpidManager::UnresolvedPutAlert> sync_put_alerts_;
   Sync<MpidManager::UnresolvedDeleteAlert> sync_delete_alerts_;
   Sync<MpidManager::UnresolvedPutMessage> sync_put_messages_;
@@ -232,6 +245,24 @@ void MpidManagerService::HandleMessage(
     const SynchroniseFromMpidManagerToMpidManager& message,
     const typename SynchroniseFromMpidManagerToMpidManager::Sender& sender,
     const typename SynchroniseFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+  const AccountTransferFromMpidManagerToMpidManager& message,
+  const typename AccountTransferFromMpidManagerToMpidManager::Sender& sender,
+  const typename AccountTransferFromMpidManagerToMpidManager::Receiver& /*receiver*/);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const AccountQueryFromMpidManagerToMpidManager& message,
+    const typename AccountQueryFromMpidManagerToMpidManager::Sender& sender,
+    const typename AccountQueryFromMpidManagerToMpidManager::Receiver& receiver);
+
+template <>
+void MpidManagerService::HandleMessage(
+    const AccountQueryResponseFromMpidManagerToMpidManager& message,
+    const typename AccountQueryResponseFromMpidManagerToMpidManager::Sender& sender,
+    const typename AccountQueryResponseFromMpidManagerToMpidManager::Receiver& /*receiver*/);
 
 template <typename Data>
 void MpidManagerService::HandlePutResponse(const MpidName&, const typename Data::Name&,

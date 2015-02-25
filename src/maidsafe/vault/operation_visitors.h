@@ -356,7 +356,7 @@ template <typename ServiceHandlerType>
 class DataManagerAccountQueryVisitor : public boost::static_visitor<> {
  public:
   DataManagerAccountQueryVisitor(ServiceHandlerType* service,
-                                   const NodeId& sender_node_id)
+                                 const NodeId& sender_node_id)
       : kService_(service), kDataManagerNodeId_(sender_node_id) {}
 
   template <typename Name>
@@ -368,6 +368,7 @@ class DataManagerAccountQueryVisitor : public boost::static_visitor<> {
   ServiceHandlerType* const kService_;
   const NodeId kDataManagerNodeId_;
 };
+
 
 template <typename ServiceHandlerType>
 class PmidNodeIntegrityCheckVisitor : public boost::static_visitor<> {
