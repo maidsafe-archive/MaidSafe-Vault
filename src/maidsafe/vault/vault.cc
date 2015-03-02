@@ -78,11 +78,12 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
         return DataManager::HandlePut(from, ParseData<MutableData>(serialised_data));
       break;
     case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return PmidManager::template HandlePut<MutableData>(
-                   from, ParseData<MutableData>(serialised_data));
+      // Get doesn't go through PmidManager anymore
+//      if (data_type == DataTagValue::kImmutableDataValue)
+//        return PmidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
+//      else if (data_type == DataTagValue::kMutableDataValue)
+//        return PmidManager::template HandlePut<MutableData>(
+//                   from, ParseData<MutableData>(serialised_data));
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTagValue::kImmutableDataValue)
