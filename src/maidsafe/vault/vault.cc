@@ -39,10 +39,11 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
         return DataManager::template HandleGet<MutableData>(from, data_name);
       break;
     case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        PmidManager::template HandleGet<MutableData>(from, data_name);
+      // Get doesn't go through PmidManager anymore
+//      if (data_type == DataTagValue::kImmutableDataValue)
+//        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
+//      else if (data_type == DataTagValue::kMutableDataValue)
+//        PmidManager::template HandleGet<MutableData>(from, data_name);
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTagValue::kImmutableDataValue)
@@ -57,9 +58,9 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
 }
 
 routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
-    routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-        SerialisedData serialised_data) {
-  switch (authority) {
+    routing::DestinationAddress dest, routing::Authority from_authority,
+        routing::Authority to_authority, DataTagValue data_type, SerialisedData serialised_data) {
+  switch (to_authority) {
     case routing::Authority::client_manager:
       if (from_authority != routing::Authority::client)
         break;
@@ -78,12 +79,11 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
         return DataManager::HandlePut(from, ParseData<MutableData>(serialised_data));
       break;
     case routing::Authority::node_manager:
-      // Get doesn't go through PmidManager anymore
-//      if (data_type == DataTagValue::kImmutableDataValue)
-//        return PmidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-//      else if (data_type == DataTagValue::kMutableDataValue)
-//        return PmidManager::template HandlePut<MutableData>(
-//                   from, ParseData<MutableData>(serialised_data));
+      if (data_type == DataTagValue::kImmutableDataValue)
+        return PmidManager::HandlePut(dest, ParseData<ImmutableData>(serialised_data));
+      else if (data_type == DataTagValue::kMutableDataValue)
+        return PmidManager::template HandlePut<MutableData>(
+                   dest, ParseData<MutableData>(serialised_data));
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTagValue::kImmutableDataValue)

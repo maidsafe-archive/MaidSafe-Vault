@@ -76,8 +76,8 @@ class VaultFacade : public MaidManager<VaultFacade>,
                                      Identity data_name);
 
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
-      routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-          SerialisedData serialised_data);
+      routing::DestinationAddress dest, routing::Authority from_authority,
+          routing::Authority to_authority, DataTagValue data_type, SerialisedData serialised_data);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
