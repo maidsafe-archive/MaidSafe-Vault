@@ -42,9 +42,9 @@ class PmidManager {
                                          const DataType& data);
 
   template <typename DataType>
-  routing::HandlePutPostReturn HandlePutResponse(const typename DataType::Name& name,
-      const routing::SourceAddress& from, const maidsafe_error& return_code,
-      const uint64_t data_size, const uint64_t available_space);
+  routing::HandlePutPostReturn HandlePutResponse(const routing::SourceAddress& from,
+                                                 const maidsafe_error& return_code,
+                                                 const DataType& data);
 
   void HandleChurn(routing::CloseGroupDifference);
 
@@ -87,9 +87,7 @@ routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePut(
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePutResponse(
-    const typename DataType::Name& name, const routing::SourceAddress& from,
-    const maidsafe_error& return_code, const uint64_t data_size,
-    const uint64_t available_space) {
+    const routing::SourceAddress& from, const maidsafe_error& return_code, const DataType& data) {
   // There shall be no response from pmid_node in case of put success
   assert(return_code.code() != make_error_code(CommonErrors::success));
   std::lock_guard<std::mutex> lock(accounts_mutex_);
@@ -98,13 +96,12 @@ routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePutResponse(
   // for PmidManager, the HandlePutResponse shall never return with error,
   // as this may trigger the returned error_code to be sent back to pmid_node
   if (itr != std::end(accounts_)) {
-    itr->second.HandleFailure(data_size);
-    itr->second.SetAvailableSize(available_space);
+    itr->second.HandleFailure(data.Serialise()->string().size());
   } else {
     LOG(kError) << "PmidManager doesn't hold account for " << HexSubstr(pmid_node.string());
   }
   std::vector<routing::DestinationAddress> dest;
-  dest.push_back(std::make_pair(routing::Destination(routing::Address(name)),
+  dest.push_back(std::make_pair(routing::Destination(routing::Address(data.name())),
                                 boost::optional<routing::ReplyToAddress>()));
   return routing::HandlePutPostReturn(dest);
 }

@@ -79,6 +79,11 @@ class VaultFacade : public MaidManager<VaultFacade>,
       routing::DestinationAddress dest, routing::Authority from_authority,
           routing::Authority to_authority, DataTagValue data_type, SerialisedData serialised_data);
 
+  routing::HandlePutPostReturn HandlePutResponse(routing::SourceAddress from,
+      routing::DestinationAddress dest, routing::Authority from_authority,
+          routing::Authority to_authority, maidsafe_error return_code,
+              DataTagValue data_type, SerialisedData serialised_data);
+
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
    template <typename DataType>

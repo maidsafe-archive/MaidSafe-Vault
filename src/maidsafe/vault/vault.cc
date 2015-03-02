@@ -97,6 +97,37 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
 }
 
+routing::HandlePutPostReturn VaultFacade::HandlePutResponse(routing::SourceAddress from,
+    routing::DestinationAddress dest, routing::Authority from_authority,
+        routing::Authority to_authority, maidsafe_error return_code,
+            DataTagValue data_type, SerialisedData serialised_data) {
+  switch (to_authority) {
+    case routing::Authority::nae_manager:
+      if (from_authority != routing::Authority::node_manager)
+        break;
+      if (data_type == DataTagValue::kImmutableDataValue)
+        return DataManager::template HandlePutResponse<ImmutableData>(
+            ParseData<ImmutableData>(serialised_data).name(), dest, return_code);
+      else if (data_type == DataTagValue::kMutableDataValue)
+        return DataManager::template HandlePutResponse<MutableData>(
+            ParseData<MutableData>(serialised_data).name(), dest, return_code);
+      break;
+    case routing::Authority::node_manager:
+      if (from_authority != routing::Authority::managed_node)
+        break;
+      if (data_type == DataTagValue::kImmutableDataValue)
+        return PmidManager::HandlePutResponse(from, return_code,
+                                              ParseData<ImmutableData>(serialised_data));
+      else if (data_type == DataTagValue::kMutableDataValue)
+        return PmidManager::HandlePutResponse(from, return_code,
+                                              ParseData<MutableData>(serialised_data));
+      break;
+    default:
+      break;
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
