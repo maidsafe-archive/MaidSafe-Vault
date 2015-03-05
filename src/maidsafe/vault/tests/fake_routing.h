@@ -49,7 +49,7 @@ class FakeRouting {
   }
 
   template <typename DataType, typename CompletionToken>
-  PutReturn<CompletionToken> Put(Address to, DataType data, CompletionToken token) {
+  PutReturn<CompletionToken> Put(Address /*to*/, DataType /*data*/, CompletionToken token) {
     auto random(RandomInt32());
     if (random >= 0 || std::abs(random) % 2 == 0 || std::abs(random) % 5 == 0)
       token(MakeError(CommonErrors::success));
