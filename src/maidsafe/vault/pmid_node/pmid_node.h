@@ -84,7 +84,7 @@ routing::HandlePutPostReturn PmidNode<FacadeType>::HandlePut(routing::SourceAddr
       // Only specify CommonErrors::cannot_exceed_limit onwards
       // to PmidManagers so they know PmidNode has run out of space.
       // All other errors collapsed into VaultErrors::failed_to_handle_request.
-  } catch (const std::exception& e) {
+  } catch (const std::exception& /*e*/) {
     return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
   }
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
