@@ -121,7 +121,7 @@ routing::HandlePutPostReturn MaidManager<Facade>::HandlePut(
 
   std::vector<routing::DestinationAddress> result;
   result.push_back(std::make_pair(routing::Destination(routing::Address(data.name())),
-                                  boost::optional<routing::ReplyToAddress>()));
+                                  boost::none));
   return routing::HandlePutPostReturn(result);
 }
 
