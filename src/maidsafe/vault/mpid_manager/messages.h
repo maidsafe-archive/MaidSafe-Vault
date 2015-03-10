@@ -59,16 +59,15 @@ struct MpidMessageBase {
 bool operator==(const MpidMessageBase& lhs, const MpidMessageBase& rhs);
 void swap(MpidMessageBase& lhs, MpidMessageBase& rhs) MAIDSAFE_NOEXCEPT;
 
-// ================================= MpidMessageAlert =============================================
+// ================================= MpidAlert =============================================
 
-struct MpidMessageAlert {
-  MpidMessageAlert();
-  MpidMessageAlert(const MpidMessageBase& base_in,
-                   const MessageIdType& message_id_in);
-  explicit MpidMessageAlert(const std::string& serialised_copy);
-  MpidMessageAlert(const MpidMessageAlert& other);
-  MpidMessageAlert(MpidMessageAlert&& other);
-  MpidMessageAlert& operator=(MpidMessageAlert other);
+struct MpidAlert {
+  MpidAlert();
+  MpidAlert(const MpidMessageBase& base_in, const MessageIdType& message_id_in);
+  explicit MpidAlert(const std::string& serialised_copy);
+  MpidAlert(const MpidAlert& other);
+  MpidAlert(MpidAlert&& other);
+  MpidAlert& operator=(MpidAlert other);
 
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -79,8 +78,8 @@ struct MpidMessageAlert {
   MessageIdType message_id;
 };
 
-bool operator==(const MpidMessageAlert& lhs, const MpidMessageAlert& rhs);
-void swap(MpidMessageAlert& lhs, MpidMessageAlert& rhs) MAIDSAFE_NOEXCEPT;
+bool operator==(const MpidAlert& lhs, const MpidAlert& rhs);
+void swap(MpidAlert& lhs, MpidAlert& rhs) MAIDSAFE_NOEXCEPT;
 
 // ================================= MpidMessage ==================================================
 

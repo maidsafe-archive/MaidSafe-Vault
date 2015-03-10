@@ -61,28 +61,27 @@ void swap(MpidMessageBase& lhs, MpidMessageBase& rhs) MAIDSAFE_NOEXCEPT {
   swap(lhs.signed_header, rhs.signed_header);
 }
 
-// ================================= MpidMessageAlert ==================================================
+// ================================= MpidAlert ==================================================
 
-MpidMessageAlert::MpidMessageAlert(const MpidMessageBase& base_in,
-                                   const MessageIdType& message_id_in)
+MpidAlert::MpidAlert(const MpidMessageBase& base_in, const MessageIdType& message_id_in)
     : base(base_in), message_id(message_id_in) {}
 
-MpidMessageAlert::MpidMessageAlert(const MpidMessageAlert& other)
+MpidAlert::MpidAlert(const MpidAlert& other)
     : base(other.base), message_id(other.message_id){}
 
-MpidMessageAlert::MpidMessageAlert(MpidMessageAlert&& other)
+MpidAlert::MpidAlert(MpidAlert&& other)
     : base(std::move(other.base)), message_id(std::move(other.message_id)) {}
 
-MpidMessageAlert& MpidMessageAlert::operator=(MpidMessageAlert other) {
+MpidAlert& MpidAlert::operator=(MpidAlert other) {
   swap(*this, other);
   return *this;
 }
 
-bool operator==(const MpidMessageAlert& lhs, const MpidMessageAlert& rhs) {
+bool operator==(const MpidAlert& lhs, const MpidAlert& rhs) {
   return (lhs.base == rhs.base) && (lhs.message_id == rhs.message_id);
 }
 
-void swap(MpidMessageAlert& lhs, MpidMessageAlert& rhs) MAIDSAFE_NOEXCEPT {
+void swap(MpidAlert& lhs, MpidAlert& rhs) MAIDSAFE_NOEXCEPT {
   using std::swap;
   swap(lhs.base, rhs.base);
   swap(lhs.message_id, rhs.message_id);
