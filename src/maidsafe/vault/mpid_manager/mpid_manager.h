@@ -28,7 +28,6 @@ namespace maidsafe {
 
 namespace vault {
 
-
 template <typename FacadeType>
 class MpidManager {
  public:

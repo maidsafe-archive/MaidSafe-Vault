@@ -22,19 +22,23 @@
 #include <string>
 #include <vector>
 #include "boost/filesystem.hpp"
+#include "boost/expected/expected.hpp"
 
 #include "maidsafe/common/visualiser_log.h"
-#include "maidsafe/vault/memory_fifo.h"
-#include "maidsafe/vault/chunk_store.h"
 #include "maidsafe/common/data_types/data_name_variant.h"
-#include "maidsafe/nfs/types.h"
-#include "maidsafe/vault/types.h"
 
+#include "maidsafe/vault/chunk_store.h"
 #include "maidsafe/vault/mpid_manager/database.h"
+#include "maidsafe/vault/mpid_manager/messages.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+typedef passport::PublicMpid::Name MpidName;
+
+using DbMessageQueryResult = boost::expected<MpidMessage, maidsafe_error>;
+using DbDataQueryResult = boost::expected<ImmutableData, maidsafe_error>;
 
 class MpidManagerHandler {
  public:
@@ -52,8 +56,8 @@ class MpidManagerHandler {
   void UpdateAccount(const MpidName& mpid, const NonEmptyString& mpid_account);
   void RemoveAccount(const MpidName& mpid);
 
-  MpidManager::TransferInfo GetTransferInfo(
-      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+//  MpidManager::TransferInfo GetTransferInfo(
+//      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
  private:
   template <typename Data>
@@ -84,7 +88,7 @@ Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) const {
 
 template <typename Data>
 void MpidManagerHandler::PutChunk(const Data& data) {
-  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
+//  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
   chunk_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
 }
 

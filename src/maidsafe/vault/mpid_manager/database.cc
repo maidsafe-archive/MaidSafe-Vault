@@ -34,9 +34,9 @@ namespace vault {
 
 MpidManagerDatabase::MpidManagerDatabase() : container_(), mutex_() {}
 
-void MpidManagerDatabase::Put(const MpidManager::MessageKey& key,
+void MpidManagerDatabase::Put(const MessageKey& key,
                               const uint32_t size,
-                              const MpidManager::GroupName& group_name) {
+                              const GroupName& group_name) {
   std::unique_lock<std::mutex> lock(mutex_);
   EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
   auto iter(key_index.find(key));
@@ -47,20 +47,20 @@ void MpidManagerDatabase::Put(const MpidManager::MessageKey& key,
 //   BOOST_THROW_EXCEPTION(MakeError(VaultErrors::data_already_exists));
 }
 
-void MpidManagerDatabase::Delete(const MpidManager::MessageKey& key) {
+void MpidManagerDatabase::Delete(const MessageKey& key) {
   std::unique_lock<std::mutex> lock(mutex_);
   EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
   key_index.erase(key);
 }
 
-bool MpidManagerDatabase::Has(const MpidManager::MessageKey& key) {
+bool MpidManagerDatabase::Has(const MessageKey& key) {
   std::unique_lock<std::mutex> lock(mutex_);
   EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
   auto iter(key_index.find(key));
   return iter != std::end(key_index);
 }
 
-bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) {
+bool MpidManagerDatabase::HasGroup(const GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr(mpid_index.lower_bound(mpid));
@@ -70,8 +70,7 @@ bool MpidManagerDatabase::HasGroup(const MpidManager::GroupName& mpid) {
     return false;
 }
 
-MpidManager::MessageKey MpidManagerDatabase::GetAccountChunkName(
-    const MpidManager::GroupName& mpid) {
+MessageKey MpidManagerDatabase::GetAccountChunkName(const GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
@@ -84,8 +83,7 @@ MpidManager::MessageKey MpidManagerDatabase::GetAccountChunkName(
   BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
 }
 
-std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
-    const MpidManager::GroupName& mpid) {
+std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(const GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
   uint32_t num_of_messages(0), total_size(0);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
@@ -99,10 +97,9 @@ std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(
   return std::make_pair(num_of_messages, total_size);
 }
 
-std::vector<MpidManager::MessageKey> MpidManagerDatabase::GetEntriesForMPID(
-    const MpidManager::GroupName& mpid) {
+std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
-  std::vector<MpidManager::MessageKey> entries;
+  std::vector<MessageKey> entries;
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
@@ -113,50 +110,50 @@ std::vector<MpidManager::MessageKey> MpidManagerDatabase::GetEntriesForMPID(
   return entries;
 }
 
-MpidManager::DbTransferInfo MpidManagerDatabase::GetTransferInfo(
-    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-  std::vector<std::pair<NodeId, MpidManager::GroupName>> groups_to_be_transferred;
-  std::vector<MpidManager::GroupName> groups_to_be_removed;
-  {
-    std::unique_lock<std::mutex> lock(mutex_);
-    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
-    auto it0 = std::begin(mpid_index);
-    while (it0 != std::end(mpid_index)) {
-      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(it0->mpid->string()));
-      if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
-        if (check_holder_result.new_holder != NodeId())
-          groups_to_be_transferred.push_back(std::make_pair(check_holder_result.new_holder,
-                                                            it0->mpid));
-      } else {
-  //      VLOG(VisualiserAction::kRemoveAccount, key.name);
-        groups_to_be_removed.push_back(it0->mpid);
-        // empty NodeId indicates removing from local
-        groups_to_be_transferred.push_back(std::make_pair(NodeId(), it0->mpid));
-      }
-      it0 = mpid_index.upper_bound(it0->mpid);
-    }
-  }
-  MpidManager::DbTransferInfo transfer_info;
-  {
-    std::unique_lock<std::mutex> lock(mutex_);
-    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
-    for (const auto& transfer_entry : groups_to_be_transferred) {
-      auto itr0(mpid_index.lower_bound(transfer_entry.second));
-      auto itr1(mpid_index.upper_bound(transfer_entry.second));
-      while (itr0 != itr1) {
-        PutIntoTransferInfo(transfer_entry.first, transfer_entry.second,
-                            itr0->key, transfer_info);
-        ++itr0;
-      }
-    }
-  }
-  for (const auto& group_name : groups_to_be_removed)
-    DeleteGroup(group_name);
+//DbTransferInfo MpidManagerDatabase::GetTransferInfo(
+//    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//  std::vector<std::pair<NodeId, GroupName>> groups_to_be_transferred;
+//  std::vector<GroupName> groups_to_be_removed;
+//  {
+//    std::unique_lock<std::mutex> lock(mutex_);
+//    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+//    auto it0 = std::begin(mpid_index);
+//    while (it0 != std::end(mpid_index)) {
+//      auto check_holder_result = close_nodes_change->CheckHolders(NodeId(it0->mpid->string()));
+//      if (check_holder_result.proximity_status == routing::GroupRangeStatus::kInRange) {
+//        if (check_holder_result.new_holder != NodeId())
+//          groups_to_be_transferred.push_back(std::make_pair(check_holder_result.new_holder,
+//                                                            it0->mpid));
+//      } else {
+//  //      VLOG(VisualiserAction::kRemoveAccount, key.name);
+//        groups_to_be_removed.push_back(it0->mpid);
+//        // empty NodeId indicates removing from local
+//        groups_to_be_transferred.push_back(std::make_pair(NodeId(), it0->mpid));
+//      }
+//      it0 = mpid_index.upper_bound(it0->mpid);
+//    }
+//  }
+//  DbTransferInfo transfer_info;
+//  {
+//    std::unique_lock<std::mutex> lock(mutex_);
+//    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
+//    for (const auto& transfer_entry : groups_to_be_transferred) {
+//      auto itr0(mpid_index.lower_bound(transfer_entry.second));
+//      auto itr1(mpid_index.upper_bound(transfer_entry.second));
+//      while (itr0 != itr1) {
+//        PutIntoTransferInfo(transfer_entry.first, transfer_entry.second,
+//                            itr0->key, transfer_info);
+//        ++itr0;
+//      }
+//    }
+//  }
+//  for (const auto& group_name : groups_to_be_removed)
+//    DeleteGroup(group_name);
 
-  return transfer_info;
-}
+//  return transfer_info;
+//}
 
-void MpidManagerDatabase::DeleteGroup(const MpidManager::GroupName& mpid) {
+void MpidManagerDatabase::DeleteGroup(const GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
@@ -165,19 +162,19 @@ void MpidManagerDatabase::DeleteGroup(const MpidManager::GroupName& mpid) {
     itr0 = mpid_index.erase(itr0);
 }
 
-void MpidManagerDatabase::PutIntoTransferInfo(const NodeId& new_holder,
-                                              const MpidManager::GroupName& mpid,
-                                              const MpidManager::MessageKey& key,
-                                              MpidManager::DbTransferInfo& transfer_info) {
-  auto found_itr = transfer_info.find(new_holder);
-  if (found_itr != transfer_info.end()) {  // append
-    found_itr->second.push_back(std::make_pair(mpid, key));
-  } else {  // create
-    std::vector<MpidManager::GKPair> group_key_vector;
-    group_key_vector.push_back(std::make_pair(mpid, key));
-    transfer_info.insert(std::make_pair(new_holder, std::move(group_key_vector)));
-  }
-}
+//void MpidManagerDatabase::PutIntoTransferInfo(const NodeId& new_holder,
+//                                              const GroupName& mpid,
+//                                              const MessageKey& key,
+//                                              DbTransferInfo& transfer_info) {
+//  auto found_itr = transfer_info.find(new_holder);
+//  if (found_itr != transfer_info.end()) {  // append
+//    found_itr->second.push_back(std::make_pair(mpid, key));
+//  } else {  // create
+//    std::vector<GKPair> group_key_vector;
+//    group_key_vector.push_back(std::make_pair(mpid, key));
+//    transfer_info.insert(std::make_pair(new_holder, std::move(group_key_vector)));
+//  }
+//}
 
 }  // namespace vault
 

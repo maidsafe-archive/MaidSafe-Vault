@@ -30,23 +30,27 @@
 #include "boost/multi_index/ordered_index.hpp"
 #include "boost/multi_index/identity.hpp"
 
-#include "maidsafe/routing/routing_api.h"
-
-#include "maidsafe/vault/mpid_manager/mpid_manager.h"
+#include "maidsafe/common/data_types/immutable_data.h"
+#include "maidsafe/passport/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
+using GroupName = passport::PublicMpid::Name;
+using MessageKey = ImmutableData::Name;
+using GKPair = std::pair<GroupName, MessageKey>;
+using DbTransferInfo = std::map<NodeId, std::vector<GKPair>>;
+
 struct DatabaseEntry {
-  DatabaseEntry(const MpidManager::MessageKey& key_in,
+  DatabaseEntry(const MessageKey& key_in,
                 const uint32_t size_in,
-                const MpidManager::GroupName& mpid_in)
+                const GroupName& mpid_in)
       : key(key_in), size(size_in), mpid(mpid_in) {}
   DatabaseEntry Key() const { return *this; }
-  MpidManager::MessageKey key;
+  MessageKey key;
   uint32_t size;
-  MpidManager::GroupName mpid;
+  GroupName mpid;
 };
 
 struct EntryKey_Tag {};
@@ -56,9 +60,9 @@ typedef boost::multi_index_container<
     DatabaseEntry,
     boost::multi_index::indexed_by<
         boost::multi_index::ordered_unique<boost::multi_index::tag<EntryKey_Tag>,
-            BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, MpidManager::MessageKey, key)>,
+            BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, MessageKey, key)>,
         boost::multi_index::ordered_non_unique<boost::multi_index::tag<EntryMpid_Tag>,
-            BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, MpidManager::GroupName, mpid)>
+            BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, GroupName, mpid)>
     >
 > DatabaseEntrySet;
 
@@ -70,26 +74,23 @@ class MpidManagerDatabase {
  public:
   MpidManagerDatabase();
 
-  void Put(const MpidManager::MessageKey& key,
-           const uint32_t size,
-           const MpidManager::GroupName& mpid);
-  void Delete(const MpidManager::MessageKey& key);
-  bool Has(const MpidManager::MessageKey& key);
+  void Put(const MessageKey& key, const uint32_t size, const GroupName& mpid);
+  void Delete(const MessageKey& key);
+  bool Has(const MessageKey& key);
 
-  bool HasGroup(const MpidManager::GroupName& mpid);
-  MpidManager::MessageKey GetAccountChunkName(const MpidManager::GroupName& mpid);
-  std::pair<uint32_t, uint32_t> GetStatistic(const MpidManager::GroupName& mpid);
-  std::vector<MpidManager::MessageKey> GetEntriesForMPID(const MpidManager::GroupName& mpid);
+  bool HasGroup(const GroupName& mpid);
+  MessageKey GetAccountChunkName(const GroupName& mpid);
+  std::pair<uint32_t, uint32_t> GetStatistic(const GroupName& mpid);
+  std::vector<MessageKey> GetEntriesForMPID(const GroupName& mpid);
 
-  MpidManager::DbTransferInfo GetTransferInfo(
-      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
+//  DbTransferInfo GetTransferInfo(std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
  private:
-  void DeleteGroup(const MpidManager::GroupName& mpid);
-  void PutIntoTransferInfo(const NodeId& new_holder,
-                           const MpidManager::GroupName& mpid,
-                           const MpidManager::MessageKey& key,
-                           MpidManager::DbTransferInfo& transfer_info);
+  void DeleteGroup(const GroupName& mpid);
+//  void PutIntoTransferInfo(const NodeId& new_holder,
+//                           const GroupName& mpid,
+//                           const MessageKey& key,
+//                           DbTransferInfo& transfer_info);
 
   DatabaseEntrySet container_;
   mutable std::mutex mutex_;

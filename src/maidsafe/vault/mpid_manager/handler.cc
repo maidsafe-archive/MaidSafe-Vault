@@ -18,8 +18,6 @@
 
 #include "maidsafe/vault/mpid_manager/handler.h"
 
-#include "maidsafe/vault/utils.h"
-
 namespace maidsafe {
 
 namespace vault {
@@ -84,7 +82,7 @@ void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
 
 DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
   try {
-    return nfs_vault::MpidMessage(GetChunk<ImmutableData>(data_name).data().string());
+    return MpidMessage(GetChunk<ImmutableData>(data_name).data().string());
   }
   catch (const maidsafe_error& error) {
     return boost::make_unexpected(error);
@@ -100,38 +98,38 @@ DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_na
   }
 }
 
-MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
-    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
-  MpidManager::DbTransferInfo db_transfer_info(db_.GetTransferInfo(close_nodes_change));
-  auto prune_itr(db_transfer_info.find(NodeId()));
-  if (prune_itr != db_transfer_info.end()) {
-    for (const auto& prune_entry : prune_itr->second) {
-      try {
-        Delete(prune_entry.second);
-      } catch (const maidsafe_error& error) {
-        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
-                    << " when deleting chunk " << HexSubstr(prune_entry.second->string());
-      }
-    }
-    db_transfer_info.erase(prune_itr);
-  }
+//MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
+//    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
+//  MpidManager::DbTransferInfo db_transfer_info(db_.GetTransferInfo(close_nodes_change));
+//  auto prune_itr(db_transfer_info.find(NodeId()));
+//  if (prune_itr != db_transfer_info.end()) {
+//    for (const auto& prune_entry : prune_itr->second) {
+//      try {
+//        Delete(prune_entry.second);
+//      } catch (const maidsafe_error& error) {
+//        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
+//                    << " when deleting chunk " << HexSubstr(prune_entry.second->string());
+//      }
+//    }
+//    db_transfer_info.erase(prune_itr);
+//  }
 
-  MpidManager::TransferInfo transfer_info;
-  for (const auto& transfer : db_transfer_info) {
-    std::vector<MpidManager::KVPair> kv_pairs;
-    for (const auto& account_entry : transfer.second) {
-      try {
-        kv_pairs.push_back(std::make_pair(account_entry.first,
-            MpidManager::Value(GetChunk<ImmutableData>(account_entry.second))));
-      } catch (const maidsafe_error& error) {
-        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
-                    << " when fetching chunk " << HexSubstr(account_entry.second->string());
-      }
-    }
-    transfer_info.insert(std::make_pair(transfer.first, std::move(kv_pairs)));
-  }
-  return transfer_info;
-}
+//  MpidManager::TransferInfo transfer_info;
+//  for (const auto& transfer : db_transfer_info) {
+//    std::vector<MpidManager::KVPair> kv_pairs;
+//    for (const auto& account_entry : transfer.second) {
+//      try {
+//        kv_pairs.push_back(std::make_pair(account_entry.first,
+//            MpidManager::Value(GetChunk<ImmutableData>(account_entry.second))));
+//      } catch (const maidsafe_error& error) {
+//        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
+//                    << " when fetching chunk " << HexSubstr(account_entry.second->string());
+//      }
+//    }
+//    transfer_info.insert(std::make_pair(transfer.first, std::move(kv_pairs)));
+//  }
+//  return transfer_info;
+//}
 
 }  // namespace vault
 
