@@ -61,7 +61,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
     : MaidManager<VaultFacade>(),
       DataManager<VaultFacade>(vault_dir),
       PmidManager<VaultFacade>(),
-      PmidNode<VaultFacade>(),
+      PmidNode<VaultFacade>(vault_dir, DiskUsage(10000000000)),
       routing::test::FakeRouting<VaultFacade>() {
   }
 
