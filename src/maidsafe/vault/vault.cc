@@ -39,10 +39,11 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
         return DataManager::template HandleGet<MutableData>(from, data_name);
       break;
     case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        PmidManager::template HandleGet<MutableData>(from, data_name);
+      // Get doesn't go through PmidManager anymore
+//      if (data_type == DataTagValue::kImmutableDataValue)
+//        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
+//      else if (data_type == DataTagValue::kMutableDataValue)
+//        PmidManager::template HandleGet<MutableData>(from, data_name);
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTagValue::kImmutableDataValue)
@@ -57,9 +58,9 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
 }
 
 routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
-    routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-        SerialisedData serialised_data) {
-  switch (authority) {
+    routing::DestinationAddress dest, routing::Authority from_authority,
+        routing::Authority to_authority, DataTagValue data_type, SerialisedData serialised_data) {
+  switch (to_authority) {
     case routing::Authority::client_manager:
       if (from_authority != routing::Authority::client)
         break;
@@ -79,16 +80,47 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
       break;
     case routing::Authority::node_manager:
       if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
+        return PmidManager::HandlePut(dest, ParseData<ImmutableData>(serialised_data));
       else if (data_type == DataTagValue::kMutableDataValue)
         return PmidManager::template HandlePut<MutableData>(
-                   from, ParseData<MutableData>(serialised_data));
+                   dest, ParseData<MutableData>(serialised_data));
       break;
     case routing::Authority::managed_node:
       if (data_type == DataTagValue::kImmutableDataValue)
         return PmidNode::HandlePut(from, ParseData<ImmutableData>(serialised_data));
       else if (data_type == DataTagValue::kMutableDataValue)
         return PmidNode::HandlePut(from, ParseData<MutableData>(serialised_data));
+      break;
+    default:
+      break;
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+}
+
+routing::HandlePutPostReturn VaultFacade::HandlePutResponse(routing::SourceAddress from,
+    routing::DestinationAddress dest, routing::Authority from_authority,
+        routing::Authority to_authority, maidsafe_error return_code,
+            DataTagValue data_type, SerialisedData serialised_data) {
+  switch (to_authority) {
+    case routing::Authority::nae_manager:
+      if (from_authority != routing::Authority::node_manager)
+        break;
+      if (data_type == DataTagValue::kImmutableDataValue)
+        return DataManager::template HandlePutResponse<ImmutableData>(
+            ParseData<ImmutableData>(serialised_data).name(), dest, return_code);
+      else if (data_type == DataTagValue::kMutableDataValue)
+        return DataManager::template HandlePutResponse<MutableData>(
+            ParseData<MutableData>(serialised_data).name(), dest, return_code);
+      break;
+    case routing::Authority::node_manager:
+      if (from_authority != routing::Authority::managed_node)
+        break;
+      if (data_type == DataTagValue::kImmutableDataValue)
+        return PmidManager::HandlePutResponse(from, return_code,
+                                              ParseData<ImmutableData>(serialised_data));
+      else if (data_type == DataTagValue::kMutableDataValue)
+        return PmidManager::HandlePutResponse(from, return_code,
+                                              ParseData<MutableData>(serialised_data));
       break;
     default:
       break;
