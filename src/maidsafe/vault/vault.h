@@ -34,7 +34,12 @@
 
 namespace fs = boost::filesystem;
 
+#if defined(MAIDSAFE_WIN32)
+static fs::path vault_dir {
+    fs::path(std::getenv("HOMEDRIVE")) / std::getenv("HOMEPATH") / "MaidSafe-Vault" };
+#else
 static fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
+#endif
 
 namespace maidsafe {
 

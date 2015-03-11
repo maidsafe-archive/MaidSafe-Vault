@@ -48,6 +48,15 @@ class FakeRouting {
                                                 data_name);
   }
 
+  template <typename DataType, typename CompletionToken>
+  PutReturn<CompletionToken> Put(Address /*to*/, DataType /*data*/, CompletionToken token) {
+    auto random(RandomInt32());
+    if (random >= 0 || std::abs(random) % 2 == 0 || std::abs(random) % 5 == 0)
+      token(MakeError(CommonErrors::success));
+    else
+      token(MakeError(CommonErrors::defaulted));
+  }
+
   template <typename DataType>
   std::vector<routing::Address> GetClosestNodes(
       typename DataType::Name /*name*/,
