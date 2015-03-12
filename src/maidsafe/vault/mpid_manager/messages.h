@@ -71,7 +71,7 @@ struct MpidAlert {
 
   template <typename Archive>
   void serialize(Archive& archive) {
-    archive(message_id, base);
+    archive(base, message_id);
   }
 
   MpidMessageBase base;
