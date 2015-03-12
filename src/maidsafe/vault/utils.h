@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_UTILS_H_
 #define MAIDSAFE_VAULT_UTILS_H_
 
+#include <string>
+
 #include "boost/filesystem.hpp"
 
 #include "maidsafe/common/identity.h"
@@ -123,5 +125,5 @@ struct Parameters {
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_UTILS_H_
+#endif  // MAIDSAFE_VAULT_UTILS_H_
 

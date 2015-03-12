@@ -55,8 +55,6 @@ class VaultFacade : public MaidManager<VaultFacade>,
   ~VaultFacade() = default;
 
   enum class FunctorType { FunctionOne, FunctionTwo };
-  // enum class DataTypeEnum { ImmutableData, MutableData, End };
-  // using DataTagValue = DataTypeEnum;
 
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority from_authority,
                                      routing::Authority authority,

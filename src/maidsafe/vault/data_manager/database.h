@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/common/sqlite3_wrapper.h"
 
 #include "maidsafe/common/convert.h"
@@ -33,7 +36,7 @@ namespace vault {
 class DataManagerDatabase {
  public:
   using GetPmidsResult = boost::expected<std::vector<routing::Address>, maidsafe_error>;
-  DataManagerDatabase(boost::filesystem::path db_path);
+  explicit DataManagerDatabase(const boost::filesystem::path& db_path);
   ~DataManagerDatabase();
 
   template <typename DataType>
@@ -148,3 +151,4 @@ bool DataManagerDatabase::Exist(const Identity& name) {
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
+
