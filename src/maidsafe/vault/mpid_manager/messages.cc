@@ -27,6 +27,13 @@ namespace vault {
 MpidMessageBase::MpidMessageBase()
     : sender(), receiver(), id(), parent_id(), signed_header() {}
 
+MpidMessageBase::MpidMessageBase(const std::string& serialised_copy)
+    : sender(), receiver(), id(), parent_id(), signed_header() {
+  InputVectorStream binary_input_stream {
+      SerialisedData(serialised_copy.begin(), serialised_copy.end()) };
+  Parse(binary_input_stream, sender, receiver, id, parent_id, signed_header);
+}
+
 MpidMessageBase::MpidMessageBase(const passport::PublicMpid::Name& sender_in,
                                  const passport::PublicMpid::Name& receiver_in,
                                  int32_t id_in,
@@ -66,6 +73,12 @@ void swap(MpidMessageBase& lhs, MpidMessageBase& rhs) MAIDSAFE_NOEXCEPT {
 MpidAlert::MpidAlert(const MpidMessageBase& base_in, const MessageIdType& message_id_in)
     : base(base_in), message_id(message_id_in) {}
 
+MpidAlert::MpidAlert(const std::string& serialised_copy) : base(), message_id() {
+  InputVectorStream binary_input_stream {
+      SerialisedData(serialised_copy.begin(), serialised_copy.end()) };
+  Parse(binary_input_stream, base, message_id);
+}
+
 MpidAlert::MpidAlert(const MpidAlert& other)
     : base(other.base), message_id(other.message_id){}
 
@@ -91,6 +104,12 @@ void swap(MpidAlert& lhs, MpidAlert& rhs) MAIDSAFE_NOEXCEPT {
 
 MpidMessage::MpidMessage(const MpidMessageBase& base_in, MessageBodyType& signed_body_in)
     : base(base_in), signed_body(signed_body_in) {}
+
+MpidMessage::MpidMessage(const std::string& serialised_copy) : base(), signed_body(){
+  InputVectorStream binary_input_stream {
+      SerialisedData(serialised_copy.begin(), serialised_copy.end()) };
+  Parse(binary_input_stream, base, signed_body);
+}
 
 MpidMessage::MpidMessage(const MpidMessage& other)
     : base(other.base), signed_body(other.signed_body){}
