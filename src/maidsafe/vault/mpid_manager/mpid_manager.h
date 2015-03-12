@@ -40,6 +40,11 @@ class MpidManager {
   routing::HandlePutPostReturn HandlePut(const routing::DestinationAddress& dest,
                                          const DataType& data);
 
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
+                                       MpidMessage mpid_message);
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
+                                       MpidAlert mpid_message);
+
   void HandleChurn(routing::CloseGroupDifference);
 
  private:

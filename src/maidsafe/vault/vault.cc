@@ -96,6 +96,32 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
 }
 
+// MpidManager is ClientManager
+routing::HandlePostReturn VaultFacade::HandlePost(routing::SourceAddress from,
+    routing::Authority from_authority, routing::Authority authority,
+        routing::SerialisedMessage message) {
+  switch (authority) {
+    case routing::Authority::client_manager:
+      if (from_authority == routing::Authority::client) {
+        MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
+      } else {
+        // Mpid A -> Mpid B : post MpidAlert to notification
+        // Mpid B -> Mpid A : post MpidAlert to get the message
+        // Mpid A -> Mpid B : post MpidMessage
+        try {
+          MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
+          return MpidManager::HandlePost(from, mpid_message);
+        } catch (...) {
+          MpidAlert mpid_alert = ParseMpidMessaging<MpidAlert>(message);
+          return MpidManager::HandlePost(from, mpid_alert);
+        }
+      }
+    default:
+      break;
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

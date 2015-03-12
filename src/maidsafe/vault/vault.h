@@ -56,14 +56,14 @@ ParsedType ParseData(const SerialisedData& serialised_data) {
 // FIXME this need discussion, adding it temporarily to progress
 template <typename ParsedType>
 ParsedType ParseMpidMessaging(const SerialisedData& serialised_data) {
-  InputVectorStream binary_input_stream{serialised_data};
-  return Parse<ParsedType>(binary_input_stream);
+  return ParsedType(std::string(serialised_data.begin(), serialised_data.end()));
 }
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
+                    public MpidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
@@ -71,6 +71,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
       DataManager<VaultFacade>(vault_dir),
       PmidManager<VaultFacade>(),
       PmidNode<VaultFacade>(),
+      MpidManager<VaultFacade>(vault_dir, DiskUsage(10000000000)),
       routing::test::FakeRouting<VaultFacade>() {
   }
 
@@ -88,7 +89,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
       routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
           SerialisedData serialised_data);
 
-  routing::HandlePutPostReturn HandlePost(routing::SourceAddress from,
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
       routing::Authority from_authority, routing::Authority authority,
           routing::SerialisedMessage message);
 
