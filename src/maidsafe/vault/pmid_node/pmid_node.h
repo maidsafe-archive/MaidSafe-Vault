@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_PMID_NODE_H_
-#define MAIDSAFE_VAULT_PMID_NODE_H_
+#ifndef MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_
+#define MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
@@ -44,7 +44,8 @@ class PmidNode {
 
 template <typename Child>
 template <typename DataType>
-routing::HandleGetReturn PmidNode<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
+routing::HandleGetReturn PmidNode<Child>::HandleGet(routing::SourceAddress /*from*/,
+                                                    Identity /*data_name*/) {
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
 }
 
@@ -59,4 +60,4 @@ routing::HandlePutPostReturn PmidNode<Child>::HandlePut(routing::SourceAddress /
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_PMID_NODE_H_
+#endif  // MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_

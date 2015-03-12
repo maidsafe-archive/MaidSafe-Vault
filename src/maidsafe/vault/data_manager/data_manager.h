@@ -16,8 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_DATA_MANAGER_H_
-#define MAIDSAFE_VAULT_DATA_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
+#define MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_
+
+#include <vector>
 
 #include "maidsafe/common/types.h"
 
@@ -31,7 +33,7 @@ namespace vault {
 template <typename FacadeType>
 class DataManager {
  public:
-  DataManager(const boost::filesystem::path& vault_root_dir);
+  explicit DataManager(const boost::filesystem::path& vault_root_dir);
 
   template <typename DataType>
   routing::HandleGetReturn HandleGet(const routing::SourceAddress& from, const Identity& name);
@@ -154,4 +156,4 @@ routing::HandleGetReturn DataManager<FacadeType>::HandleGet(const routing::Sourc
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_DATA_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATA_MANAGER_H_

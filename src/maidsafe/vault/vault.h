@@ -68,8 +68,6 @@ class VaultFacade : public MaidManager<VaultFacade>,
   ~VaultFacade() = default;
 
   enum class FunctorType { FunctionOne, FunctionTwo };
-  //enum class DataTypeEnum { ImmutableData, MutableData, End };
-  //using DataTagValue = DataTypeEnum;
 
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority from_authority,
                                      routing::Authority authority, DataTagValue data_type,
@@ -81,7 +79,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
-   template <typename DataType>
+  template <typename DataType>
   boost::expected<routing::SerialisedMessage, maidsafe_error> HandleGet(routing::Address) {
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }

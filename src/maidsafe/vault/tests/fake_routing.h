@@ -16,8 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
-#define MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
+#ifndef MAIDSAFE_VAULT_TESTS_FAKE_ROUTING_H_
+#define MAIDSAFE_VAULT_TESTS_FAKE_ROUTING_H_
+
+#include <vector>
 
 #include "maidsafe/common/utils.h"
 
@@ -63,6 +65,6 @@ class FakeRouting {
 
 }  // namespace routing
 
-} // namespace maidsafe
+}  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
+#endif  // MAIDSAFE_VAULT_TESTS_FAKE_ROUTING_H_
