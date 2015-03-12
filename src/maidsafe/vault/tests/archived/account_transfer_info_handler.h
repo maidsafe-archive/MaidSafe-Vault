@@ -53,7 +53,7 @@ class  AccountTransferInfoHandler {
       kResolutionSize_(kAcceptSize_) {}
 
   KeyValuePair CreatePair() {
-    return std::make_pair(Key(Identity{ NodeId(RandomString(NodeId::kSize)).string() }),
+    return std::make_pair(Key(Identity{ NodeId(RandomString(identity_size)).string() }),
                           CreateValue());
   }
 

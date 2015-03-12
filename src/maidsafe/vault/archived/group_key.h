@@ -59,8 +59,8 @@ struct GroupKey {
   friend class GroupDb;
 
  private:
-  typedef maidsafe::detail::BoundedString<NodeId::kSize + detail::PaddedWidth::value,
-                                          NodeId::kSize + detail::PaddedWidth::value>
+  typedef maidsafe::detail::BoundedString<identity_size + detail::PaddedWidth::value,
+                                          identity_size + detail::PaddedWidth::value>
       FixedWidthString;
 
   GroupKey(const GroupName& group_name_in, const FixedWidthString& fixed_width_string);
@@ -93,9 +93,9 @@ template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupName& group_name_in,
                               const FixedWidthString& fixed_width_string)
     : metadata_key(group_name_in),
-      name(fixed_width_string.string().substr(0, NodeId::kSize)),
+      name(fixed_width_string.string().substr(0, identity_size)),
       type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(
-          fixed_width_string.string().substr(NodeId::kSize)))) {}
+          fixed_width_string.string().substr(identity_size)))) {}
 
 template <typename GroupName>
 GroupKey<GroupName>::GroupKey(const GroupKey& other)

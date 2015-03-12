@@ -62,8 +62,8 @@ struct Key {
   friend class DataManagerDatabase;
 
  private:
-  typedef maidsafe::detail::BoundedString<NodeId::kSize + detail::PaddedWidth::value,
-                                          NodeId::kSize + detail::PaddedWidth::value>
+  typedef maidsafe::detail::BoundedString<identity_size + detail::PaddedWidth::value,
+                                          identity_size + detail::PaddedWidth::value>
       FixedWidthString;
 
   explicit Key(const FixedWidthString& fixed_width_string);

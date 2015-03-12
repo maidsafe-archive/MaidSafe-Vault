@@ -89,7 +89,7 @@ TEST_F(PmidNodeServiceTest, BEH_IntegrityCheckRequestFromDataManagerToPmidNode) 
   auto integrity_check_request(
       CreateMessage<IntegrityCheckRequestFromDataManagerToPmidNode>(content));
   EXPECT_NO_THROW(SingleSendsToSingle(&pmid_node_service_, integrity_check_request,
-                                      routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                      routing::SingleSource(NodeId(RandomString(identity_size))),
                                       routing::SingleId(routing_.kNodeId())));
 }
 

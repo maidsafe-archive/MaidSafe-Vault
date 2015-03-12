@@ -84,7 +84,7 @@ template <typename Key, typename Value>
 void PopulateDbValues(Db<Key, Value>& db, const int& count) {
   for (auto i(0); i != count; ++i) {
     // need Random type
-    Key key(Identity(NodeId(RandomString(NodeId::kSize)).string()), DataTagValue::kMaidValue);
+    Key key(Identity(NodeId(RandomString(identity_size)).string()), DataTagValue::kMaidValue);
     db.Commit(key, TestDbActionPutValue("new_value"));
     EXPECT_TRUE(db.Get(key).value == "new_value");
   }
@@ -115,14 +115,14 @@ TEST(DbTest, BEH_DbConstructor) {
 TEST(DbTest, BEH_DbCommit) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_DbTest"));
   Db<Key, TestDbValue> db(UniqueDbPath(*test_path));
-  Key key(Identity(NodeId(RandomString(NodeId::kSize)).string()), DataTagValue::kMaidValue);
+  Key key(Identity(NodeId(RandomString(identity_size)).string()), DataTagValue::kMaidValue);
   for (auto i(0); i != 100; ++i)
     DbTests(db, key);
   // TODO(Prakash): Extend to all data types
   PopulateDbValues(db, 1000);
   for (auto i(0); i != 100; ++i) {
     DbTests(db,
-            Key(Identity(NodeId(RandomString(NodeId::kSize)).string()), DataTagValue::kMaidValue));
+            Key(Identity(NodeId(RandomString(identity_size)).string()), DataTagValue::kMaidValue));
   }
 }
 

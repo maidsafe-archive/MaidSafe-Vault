@@ -55,7 +55,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
         kResolutionSize_(routing::Parameters::group_size - 1) {}
 
   KeyValuePair CreatePair() {
-    return std::make_pair(Key(Identity { NodeId(RandomString(NodeId::kSize)).string() },
+    return std::make_pair(Key(Identity { NodeId(RandomString(identity_size)).string() },
                               ImmutableData::Tag::kValue),
                           CreateValue());
   }
@@ -140,7 +140,7 @@ class AccountTransferInfoHandler<DataManagerPersona> {
 
   Value CreateValue() {
     Value value(kDataSize_);
-    value.AddPmid(PmidName { Identity { NodeId(RandomString(NodeId::kSize)).string() } });
+    value.AddPmid(PmidName { Identity { NodeId(RandomString(identity_size)).string() } });
     return value;
   }
 

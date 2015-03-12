@@ -46,7 +46,7 @@ class DataManagerTest : public testing::Test {
 
 TEST_F(DataManagerTest, BEH_HandlePutGet) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  routing::SourceAddress from(routing::NodeAddress(NodeId(RandomString(NodeId::kSize))),
+  routing::SourceAddress from(routing::NodeAddress(NodeId(RandomString(identity_size))),
                               boost::none, boost::none);
   auto put_result(data_manager_.HandlePut(from, data));
   EXPECT_TRUE(put_result.valid());
@@ -65,7 +65,7 @@ TEST_F(DataManagerTest, BEH_HandlePutGet) {
 
 TEST_F(DataManagerTest, BEH_HandlePostResponseNoAccount) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  routing::DestinationAddress destination(routing::Destination(NodeId(RandomString(NodeId::kSize))),
+  routing::DestinationAddress destination(routing::Destination(NodeId(RandomString(identity_size))),
                                           boost::none);
   auto result(data_manager_.HandlePutResponse<ImmutableData>(
                   data.name(), destination, maidsafe_error(VaultErrors::data_already_exists)));
@@ -75,7 +75,7 @@ TEST_F(DataManagerTest, BEH_HandlePostResponseNoAccount) {
 
 TEST_F(DataManagerTest, BEH_HandlePostResponse) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  routing::SourceAddress from(routing::NodeAddress(NodeId(RandomString(NodeId::kSize))),
+  routing::SourceAddress from(routing::NodeAddress(NodeId(RandomString(identity_size))),
                               boost::none, boost::none);
   auto put_result(data_manager_.HandlePut(from, data));
   EXPECT_TRUE(put_result.valid());

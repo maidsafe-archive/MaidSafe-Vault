@@ -81,7 +81,7 @@ class DemultiplexerTest : public testing::Test {
 TEST_F(DemultiplexerTest, BEH_HandleMaidManagerMessage) {
   using NfsMessage = nfs::PutRequestFromMaidNodeToMaidManager;
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
-  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto maid_node_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
       routing::SingleSource(maid_node_id), routing::GroupId(maid_node_id));
@@ -91,8 +91,8 @@ TEST_F(DemultiplexerTest, BEH_HandleMaidManagerMessage) {
 TEST_F(DemultiplexerTest, BEH_HandleDataGetterMessage) {
   using NfsMessage = nfs::GetResponseFromDataManagerToDataGetter;
   using RoutingMessage = routing::Message<NfsMessage::Sender, NfsMessage::Receiver>;
-  auto data_id(NodeId(RandomString(NodeId::kSize))),
-       data_manager_id(NodeId(RandomString(NodeId::kSize)));
+  auto data_id(NodeId(RandomString(identity_size))),
+       data_manager_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       CreateMessage<NfsMessage>(CreateContent<NfsMessage::Contents>()).Serialise(),
       routing::GroupSource(routing::GroupId(data_id),
@@ -104,9 +104,9 @@ TEST_F(DemultiplexerTest, BEH_HandleDataGetterMessage) {
 TEST_F(DemultiplexerTest, BEH_HandleDataManagerMessage) {
   using VaultMessage = PutRequestFromMaidManagerToDataManager;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto maid_node_id(NodeId(RandomString(NodeId::kSize))),
-       maid_manager_id(NodeId(RandomString(NodeId::kSize))),
-       data_manager_id(NodeId(RandomString(NodeId::kSize)));
+  auto maid_node_id(NodeId(RandomString(identity_size))),
+       maid_manager_id(NodeId(RandomString(identity_size))),
+       data_manager_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
       routing::GroupSource(routing::GroupId(maid_node_id),
@@ -118,9 +118,9 @@ TEST_F(DemultiplexerTest, BEH_HandleDataManagerMessage) {
 TEST_F(DemultiplexerTest, BEH_HandlePmidManagerMessage) {
   using VaultMessage = PutRequestFromDataManagerToPmidManager;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto data_id(NodeId(RandomString(NodeId::kSize))),
-       data_manager_id(NodeId(RandomString(NodeId::kSize))),
-       pmid_manager_id(NodeId(RandomString(NodeId::kSize)));
+  auto data_id(NodeId(RandomString(identity_size))),
+       data_manager_id(NodeId(RandomString(identity_size))),
+       pmid_manager_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
       routing::GroupSource(routing::GroupId(data_id),
@@ -132,8 +132,8 @@ TEST_F(DemultiplexerTest, BEH_HandlePmidManagerMessage) {
 TEST_F(DemultiplexerTest, BEH_HandlePmidNodeMessage) {
   using VaultMessage = PutRequestFromPmidManagerToPmidNode;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto pmid_manager_id(NodeId(RandomString(NodeId::kSize))),
-       pmid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto pmid_manager_id(NodeId(RandomString(identity_size))),
+       pmid_node_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
       routing::GroupSource(routing::GroupId(pmid_node_id),
@@ -145,9 +145,9 @@ TEST_F(DemultiplexerTest, BEH_HandlePmidNodeMessage) {
 TEST_F(DemultiplexerTest, BEH_HandleVersionHandlerMessage) {
   using VaultMessage = PutVersionRequestFromMaidManagerToVersionHandler;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto maid_node_id(NodeId(RandomString(NodeId::kSize))),
-       maid_manager_id(NodeId(RandomString(NodeId::kSize))),
-       version_handler_id(NodeId(RandomString(NodeId::kSize)));
+  auto maid_node_id(NodeId(RandomString(identity_size))),
+       maid_manager_id(NodeId(RandomString(identity_size))),
+       version_handler_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       CreateMessage<VaultMessage>(CreateContent<VaultMessage::Contents>()).Serialise(),
       routing::GroupSource(routing::GroupId(maid_node_id),
@@ -159,9 +159,9 @@ TEST_F(DemultiplexerTest, BEH_HandleVersionHandlerMessage) {
 TEST_F(DemultiplexerTest, BEH_HandleInvalidMessage) {
   using VaultMessage = PutVersionRequestFromMaidManagerToVersionHandler;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto maid_node_id(NodeId(RandomString(NodeId::kSize))),
-       maid_manager_id(NodeId(RandomString(NodeId::kSize))),
-       version_handler_id(NodeId(RandomString(NodeId::kSize)));
+  auto maid_node_id(NodeId(RandomString(identity_size))),
+       maid_manager_id(NodeId(RandomString(identity_size))),
+       version_handler_id(NodeId(RandomString(identity_size)));
   RoutingMessage routing_message(
       RandomAlphaNumericString(RandomUint32() % 256),
       routing::GroupSource(routing::GroupId(maid_node_id),

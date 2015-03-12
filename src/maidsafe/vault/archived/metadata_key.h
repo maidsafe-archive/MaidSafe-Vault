@@ -51,7 +51,7 @@ class MetadataKey {
     swap(lhs.group_name_, rhs.group_name_);
   }
 
-  typedef maidsafe::detail::BoundedString<NodeId::kSize, NodeId::kSize> FixedWidthString;
+  typedef maidsafe::detail::BoundedString<identity_size, identity_size> FixedWidthString;
   explicit MetadataKey(const FixedWidthString& fixed_width_string)
     : group_name_(fixed_width_string.string()) {}
   FixedWidthString ToFixedWidthString() const {

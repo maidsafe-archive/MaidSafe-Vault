@@ -52,7 +52,7 @@ TEST_F(VaultTest, FUNC_Constructor) {
 TEST_F(VaultTest, BEH_HandleDataManagerMessage) {
   using VaultMessage = vault::PutRequestFromMaidManagerToDataManager;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto maid_node_id(NodeId(RandomString(identity_size)));
   auto manager_index(env_->ManagerIndex(maid_node_id));
   auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
   RoutingMessage routing_message(
@@ -66,7 +66,7 @@ TEST_F(VaultTest, BEH_HandleDataManagerMessage) {
 TEST_F(VaultTest, BEH_HandleInvalidMessage) {
   using VaultMessage = vault::PutRequestFromMaidManagerToDataManager;
   using RoutingMessage = routing::Message<VaultMessage::Sender, VaultMessage::Receiver>;
-  auto maid_node_id(NodeId(RandomString(NodeId::kSize)));
+  auto maid_node_id(NodeId(RandomString(identity_size)));
   auto manager_index(env_->ManagerIndex(maid_node_id));
   auto data(env_->CreateDataForManager(env_->public_pmids().back().name()));
   RoutingMessage routing_message(

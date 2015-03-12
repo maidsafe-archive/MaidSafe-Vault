@@ -93,7 +93,7 @@ nfs_vault::MpidMessageAlert CreateContent<nfs_vault::MpidMessageAlert>() {
   return nfs_vault::MpidMessageAlert(
              nfs_vault::MpidMessageBase(source.name(), dest.name(), RandomInt32(), RandomInt32(),
                                         nfs_vault::MessageHeaderType(RandomString(128))),
-             nfs_vault::MessageIdType(RandomString(NodeId::kSize)));
+             nfs_vault::MessageIdType(RandomString(identity_size)));
 }
 
 template <>
@@ -160,7 +160,7 @@ std::vector<routing::GroupSource> CreateGroupSource(const NodeId& group_id) {
   std::vector<routing::GroupSource> group_source;
   for (auto index(0U); index < routing::Parameters::group_size; ++index) {
     group_source.push_back(routing::GroupSource(
-        routing::GroupId(group_id), routing::SingleId(NodeId(RandomString(NodeId::kSize)))));
+        routing::GroupId(group_id), routing::SingleId(NodeId(RandomString(identity_size)))));
   }
   return group_source;
 }

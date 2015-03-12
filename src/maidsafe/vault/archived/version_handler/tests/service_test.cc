@@ -110,8 +110,8 @@ void VersionHandlerServiceTest::SendSync<VersionHandler::UnresolvedDeleteBranchU
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_GetVersionsRequestFromMaidNodeToVersionHandler) {
-  routing::SingleSource maid_node((NodeId(RandomString(NodeId::kSize))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  routing::SingleSource maid_node((NodeId(RandomString(identity_size))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(CreateContent<nfs::GetVersionsRequestFromMaidNodeToVersionHandler::Contents>());
   auto get_version(CreateMessage<nfs::GetVersionsRequestFromMaidNodeToVersionHandler>(content));
   EXPECT_NO_THROW(
@@ -119,8 +119,8 @@ TEST_F(VersionHandlerServiceTest, BEH_GetVersionsRequestFromMaidNodeToVersionHan
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_GetVersionsRequestFromDataGetterToVersionHandler) {
-  routing::SingleSource data_getter_id((NodeId(RandomString(NodeId::kSize))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  routing::SingleSource data_getter_id((NodeId(RandomString(identity_size))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(CreateContent<nfs::GetVersionsRequestFromDataGetterToVersionHandler::Contents>());
   auto get_version(CreateMessage<nfs::GetVersionsRequestFromDataGetterToVersionHandler>(content));
   EXPECT_NO_THROW(
@@ -128,8 +128,8 @@ TEST_F(VersionHandlerServiceTest, BEH_GetVersionsRequestFromDataGetterToVersionH
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_GetBranchRequestFromMaidNodeToVersionHandler) {
-  routing::SingleSource maid_node((NodeId(RandomString(NodeId::kSize))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  routing::SingleSource maid_node((NodeId(RandomString(identity_size))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(CreateContent<nfs::GetBranchRequestFromMaidNodeToVersionHandler::Contents>());
   auto get_branch(CreateMessage<nfs::GetBranchRequestFromMaidNodeToVersionHandler>(content));
   EXPECT_NO_THROW(
@@ -137,8 +137,8 @@ TEST_F(VersionHandlerServiceTest, BEH_GetBranchRequestFromMaidNodeToVersionHandl
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_GetBranchRequestFromDataGetterToVersionHandler) {
-  routing::SingleSource data_getter_id((NodeId(RandomString(NodeId::kSize))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  routing::SingleSource data_getter_id((NodeId(RandomString(identity_size))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(CreateContent<nfs::GetBranchRequestFromDataGetterToVersionHandler::Contents>());
   auto get_branch(CreateMessage<nfs::GetBranchRequestFromDataGetterToVersionHandler>(content));
   EXPECT_NO_THROW(
@@ -146,8 +146,8 @@ TEST_F(VersionHandlerServiceTest, BEH_GetBranchRequestFromDataGetterToVersionHan
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_CreateVersioTreenRequestFromMaidManagerToVersionHandler) {
-  auto group_source(CreateGroupSource((NodeId(RandomString(NodeId::kSize)))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  auto group_source(CreateGroupSource((NodeId(RandomString(identity_size)))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(CreateContent<CreateVersionTreeRequestFromMaidManagerToVersionHandler::Contents>());
   auto create_version(
       CreateMessage<CreateVersionTreeRequestFromMaidManagerToVersionHandler>(content));
@@ -156,8 +156,8 @@ TEST_F(VersionHandlerServiceTest, BEH_CreateVersioTreenRequestFromMaidManagerToV
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_PutVersionRequestFromMaidManagerToVersionHandler) {
-  auto group_source(CreateGroupSource((NodeId(RandomString(NodeId::kSize)))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  auto group_source(CreateGroupSource((NodeId(RandomString(identity_size)))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(CreateContent<PutVersionRequestFromMaidManagerToVersionHandler::Contents>());
   auto put_version(CreateMessage<PutVersionRequestFromMaidManagerToVersionHandler>(content));
   EXPECT_NO_THROW(
@@ -165,8 +165,8 @@ TEST_F(VersionHandlerServiceTest, BEH_PutVersionRequestFromMaidManagerToVersionH
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler) {
-  auto group_source(CreateGroupSource((NodeId(RandomString(NodeId::kSize)))));
-  routing::GroupId version_group_id((NodeId(RandomString(NodeId::kSize))));
+  auto group_source(CreateGroupSource((NodeId(RandomString(identity_size)))));
+  routing::GroupId version_group_id((NodeId(RandomString(identity_size))));
   auto content(
       CreateContent<DeleteBranchUntilForkRequestFromMaidManagerToVersionHandler::Contents>());
   auto delete_branch(
@@ -176,7 +176,7 @@ TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilForkRequestFromMaidManage
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_SynchroniseFromVersionHandlerToVersionHandler) {
-  NodeId group_id(RandomString(NodeId::kSize));
+  NodeId group_id(RandomString(identity_size));
   auto group_source(CreateGroupSource(group_id));
   routing::GroupId version_group_id(group_id);
   SynchroniseFromVersionHandlerToVersionHandler::Contents content((std::string()));
@@ -186,8 +186,8 @@ TEST_F(VersionHandlerServiceTest, BEH_SynchroniseFromVersionHandlerToVersionHand
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_CreateVersionTree) {
-  NodeId sender_id(RandomString(NodeId::kSize));
-  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  NodeId sender_id(RandomString(identity_size));
+  Identity originator(NodeId(RandomString(identity_size)).string());
   auto content(CreateContent<nfs_vault::VersionTreeCreation>());
   nfs::MessageId message_id(RandomInt32());
   VersionHandler::Key key(content.data_name.raw_name, MutableData::Tag::kValue);
@@ -202,8 +202,8 @@ TEST_F(VersionHandlerServiceTest, BEH_CreateVersionTree) {
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_PutVersion) {
-  NodeId sender_id(RandomString(NodeId::kSize));
-  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  NodeId sender_id(RandomString(identity_size));
+  Identity originator(NodeId(RandomString(identity_size)).string());
   auto content(CreateContent<nfs_vault::DataNameOldNewVersion>());
   nfs::MessageId message_id(RandomInt32());
   VersionHandler::Key key(content.data_name.raw_name, MutableData::Tag::kValue);
@@ -220,8 +220,8 @@ TEST_F(VersionHandlerServiceTest, BEH_PutVersion) {
 }
 
 TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilFork) {
-  NodeId sender_id(RandomString(NodeId::kSize));
-  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  NodeId sender_id(RandomString(identity_size));
+  Identity originator(NodeId(RandomString(identity_size)).string());
   VersionHandler::Key key(Identity(RandomString(64)), MutableData::Tag::kValue);
   nfs::MessageId message_id(RandomUint32());
   VersionName v0_aaa(0, ImmutableData::Name(Identity(std::string(64, 'a'))));
@@ -249,7 +249,7 @@ TEST_F(VersionHandlerServiceTest, BEH_DeleteBranchUntilFork) {
   EXPECT_NO_THROW(Get(key).GetBranch(v2_ddd));
 
   ActionVersionHandlerDeleteBranchUntilFork action_delete_branch(v4_iii);
-  auto group_source(CreateGroupSource(NodeId(RandomString(NodeId::kSize))));
+  auto group_source(CreateGroupSource(NodeId(RandomString(identity_size))));
   auto group_unresolved_action(
       CreateGroupUnresolvedAction<VersionHandler::UnresolvedDeleteBranchUntilFork>(
           key, action_delete_branch, group_source));
@@ -271,7 +271,7 @@ TEST_F(VersionHandlerServiceTest, BEH_AccountTransferFromVersionHandlerToVersion
   auto account_transfer(CreateMessage<AccountTransferFromVersionHandlerToVersionHandler>(content));
   for (unsigned int index(0); index < routing::Parameters::group_size - 1; ++index) {
     EXPECT_NO_THROW(SingleSendsToSingle(&version_handler_service_, account_transfer,
-                                        routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                        routing::SingleSource(NodeId(RandomString(identity_size))),
                                         routing::SingleId(routing_.kNodeId())));
   }
   EXPECT_NO_THROW(Get(key));
@@ -285,15 +285,15 @@ TEST_F(VersionHandlerServiceTest, BEH_AccountQueryFromVersionHandlerToVersionHan
   auto account_query(CreateMessage<AccountQueryFromVersionHandlerToVersionHandler>(content));
   // query a non-existed account
   EXPECT_NO_THROW(SingleSendsToGroup(&version_handler_service_, account_query,
-                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::SingleSource(NodeId(RandomString(identity_size))),
                                      routing::GroupId(NodeId(sdv_name))));
   // query an existing account
-  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  Identity originator(NodeId(RandomString(identity_size)).string());
   nfs::MessageId message_id(RandomInt32());
   Store(key, ActionVersionHandlerCreateVersionTree(ori_content.old_version_name, originator,
                                                    10, 20, message_id));
   EXPECT_NO_THROW(SingleSendsToGroup(&version_handler_service_, account_query,
-                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::SingleSource(NodeId(RandomString(identity_size))),
                                      routing::GroupId(NodeId(sdv_name))));
 }
 
@@ -329,7 +329,7 @@ TEST_F(VersionHandlerServiceTest, BEH_HandleChurn) {
   EXPECT_NO_THROW(version_handler_service_.HandleChurnEvent(close_node_change_ptr));
 
   VersionHandler::Key key(sdv_name, MutableData::Tag::kValue);
-  Identity originator(NodeId(RandomString(NodeId::kSize)).string());
+  Identity originator(NodeId(RandomString(identity_size)).string());
   nfs::MessageId message_id(RandomInt32());
   Store(key, ActionVersionHandlerCreateVersionTree(ori_content.old_version_name, originator,
                                                    10, 20, message_id));
@@ -337,7 +337,7 @@ TEST_F(VersionHandlerServiceTest, BEH_HandleChurn) {
 
   auto new_content(CreateContent<nfs_vault::DataNameOldNewVersion>());
   VersionHandler::Key new_key(new_content.data_name.raw_name, MutableData::Tag::kValue);
-  Identity new_originator(NodeId(RandomString(NodeId::kSize)).string());
+  Identity new_originator(NodeId(RandomString(identity_size)).string());
   nfs::MessageId new_message_id(RandomInt32());
   Store(new_key, ActionVersionHandlerCreateVersionTree(new_content.old_version_name, new_originator,
                                                        10, 20, new_message_id));

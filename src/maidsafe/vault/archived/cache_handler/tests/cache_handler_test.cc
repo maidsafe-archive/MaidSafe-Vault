@@ -40,7 +40,7 @@ class CacheHandlerTest : public testing::Test {
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  NodeId random_id(RandomString(NodeId::kSize));
+  NodeId random_id(RandomString(identity_size));
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetResponseFromDataManagerToDataGetter NfsMessage;
   typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
@@ -60,7 +60,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
     routing::Parameters::max_route_history = kNetworkSize;
     env_->Send(0, message);
     Sleep(std::chrono::milliseconds(300));
-    random_id = NodeId(RandomString(NodeId::kSize));
+    random_id = NodeId(RandomString(identity_size));
   }
   LOG(kVerbose) << "Get attempt";
   EXPECT_NO_THROW(env_->Get<ImmutableData>(data.name()))
@@ -69,7 +69,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByGetResponseToDataGetter) {
 
 TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
   ImmutableData data(NonEmptyString(RandomString(kTestChunkSize)));
-  NodeId random_id(RandomString(NodeId::kSize));
+  NodeId random_id(RandomString(identity_size));
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;
   typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>
@@ -88,7 +88,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
     routing::Parameters::max_route_history = kNetworkSize;
     env_->Send(0, message);
     Sleep(std::chrono::milliseconds(300));
-    random_id = NodeId(RandomString(NodeId::kSize));
+    random_id = NodeId(RandomString(identity_size));
   }
   LOG(kVerbose) << "Get attempt";
   EXPECT_NO_THROW(env_->Get<ImmutableData>(data.name()))
@@ -98,7 +98,7 @@ TEST_F(CacheHandlerTest, FUNC_GetFromCacheStoredByCachedResponseToDataGetter) {
 TEST_F(CacheHandlerTest, FUNC_NonCacheableData) {
   passport::Anmaid anmaid;
   passport::PublicAnmaid public_anmaid(anmaid);
-  NodeId random_id(RandomString(NodeId::kSize));
+  NodeId random_id(RandomString(identity_size));
   nfs::MessageId message_id(RandomUint32());
   typedef nfs::GetCachedResponseFromCacheHandlerToDataGetter NfsMessage;
   typedef routing::Message<typename NfsMessage::Sender, typename NfsMessage::Receiver>

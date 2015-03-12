@@ -162,7 +162,7 @@ TEST_F(PmidManagerServiceTest, BEH_VariousRequests) {
     auto content(CreateContent<PutFailureFromPmidNodeToPmidManager::Contents>());
     auto put_failure(CreateMessage<PutFailureFromPmidNodeToPmidManager>(content));
     EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, put_failure,
-                                       routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                       routing::SingleSource(NodeId(RandomString(identity_size))),
                                        routing::GroupId(NodeId(pmid_.name()->string()))));
     EXPECT_TRUE(GetUnresolvedActions<PmidManager::UnresolvedPut>().size() == 0);
     auto value(GetValue(PmidName(pmid_.name())));
@@ -325,7 +325,7 @@ TEST_F(PmidManagerServiceTest, BEH_AccountTransferFromPmidManagerToPmidManager) 
   auto account_transfer(CreateMessage<AccountTransferFromPmidManagerToPmidManager>(content));
   for (unsigned int index(0); index < routing::Parameters::group_size - 1; ++index) {
     EXPECT_NO_THROW(SingleSendsToSingle(&pmid_manager_service_, account_transfer,
-                       routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                       routing::SingleSource(NodeId(RandomString(identity_size))),
                        routing::SingleId(routing_.kNodeId())));
   }
   auto result(GetValue(pmid_name));
@@ -338,12 +338,12 @@ TEST_F(PmidManagerServiceTest, BEH_AccountQueryFromPmidManagerToPmidManager) {
   auto account_query(CreateMessage<AccountQueryFromPmidManagerToPmidManager>(content));
   // query a non-existed account
   EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, account_query,
-                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::SingleSource(NodeId(RandomString(identity_size))),
                                      routing::GroupId(NodeId(pmid_name->string()))));
   // query an existing account
   AddGroup(pmid_name, PmidManagerValue());
   EXPECT_NO_THROW(SingleSendsToGroup(&pmid_manager_service_, account_query,
-                                     routing::SingleSource(NodeId(RandomString(NodeId::kSize))),
+                                     routing::SingleSource(NodeId(RandomString(identity_size))),
                                      routing::GroupId(NodeId(pmid_name->string()))));
 }
 

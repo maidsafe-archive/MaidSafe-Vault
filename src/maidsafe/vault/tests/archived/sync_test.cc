@@ -53,7 +53,7 @@ namespace test {
 
 template <typename UnresolvedActionType>
 struct PersonaNode {
-  PersonaNode() : node_id(RandomString(NodeId::kSize)), sync(node_id), resolved_count(0) {}
+  PersonaNode() : node_id(RandomString(identity_size)), sync(node_id), resolved_count(0) {}
 
   UnresolvedActionType CreateUnresolvedAction(
       const typename UnresolvedActionType::KeyType& key) const {
@@ -92,7 +92,7 @@ std::vector<MaidManager::SyncKey> CreateKeys(int count, int group_count = 20) {
   std::vector<MaidManager::SyncKey> keys;
   for (auto i(0); i < count; ++i) {
     MaidManager::SyncKey key(group_vector[i % group_count],
-                             Identity(NodeId(RandomString(NodeId::kSize)).string()),
+                             Identity(NodeId(RandomString(identity_size)).string()),
                              DataTagValue::kMaidValue);
     keys.push_back(key);
   }
@@ -101,11 +101,11 @@ std::vector<MaidManager::SyncKey> CreateKeys(int count, int group_count = 20) {
 
 
 TEST(SyncTest, BEH_Constructor) {
-  Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts((NodeId(RandomString(NodeId::kSize))));
+  Sync<MaidManager::UnresolvedPut> maid_manager_sync_puts((NodeId(RandomString(identity_size))));
   Sync<MaidManager::UnresolvedCreateAccount> maid_manager_sync_create_account(
-      (NodeId(RandomString(NodeId::kSize))));
-  Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(RandomString(NodeId::kSize))));
-  Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(RandomString(NodeId::kSize))));
+      (NodeId(RandomString(identity_size))));
+  Sync<PmidManager::UnresolvedPut> pmid_manager_sync_puts((NodeId(RandomString(identity_size))));
+  Sync<DataManager::UnresolvedPut> data_manager_sync_puts((NodeId(RandomString(identity_size))));
 }
 
 TEST(SyncTest, BEH_SingleAction) {
@@ -116,7 +116,7 @@ TEST(SyncTest, BEH_SingleAction) {
   std::generate(std::begin(persona_nodes), std::end(persona_nodes),
                 [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
-  MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
+  MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(identity_size)).string()),
                            DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
   for (const auto& persona_node : persona_nodes)
@@ -149,7 +149,7 @@ TEST(SyncTest, BEH_SingleActionRepeatedMessages) {
   std::generate(std::begin(persona_nodes), std::end(persona_nodes),
                 [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
-  MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
+  MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(identity_size)).string()),
                            DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions;
   for (const auto& persona_node : persona_nodes)
@@ -187,7 +187,7 @@ TEST(SyncTest, BEH_TwoActionSameKey) {
   std::generate(std::begin(persona_nodes), std::end(persona_nodes),
                 [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
-  MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
+  MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(identity_size)).string()),
                            DataTagValue::kMaidValue);
   std::vector<MaidManager::UnresolvedPut> unresolved_actions_1, unresolved_actions_2;
   for (const auto& persona_node : persona_nodes) {
@@ -221,7 +221,7 @@ TEST(SyncTest, BEH_MultipleSequentialAction) {
                 [] { return PersonaNodePtr(new PersonaNodePtr::element_type); });
 
   for (auto count(0U); count != 100; ++count) {
-    MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(NodeId::kSize)).string()),
+    MaidManager::SyncKey key(maid_name, Identity(NodeId(RandomString(identity_size)).string()),
                              DataTagValue::kMaidValue);
     std::vector<MaidManager::UnresolvedPut> unresolved_actions;
     for (const auto& persona_node : persona_nodes)
@@ -259,7 +259,7 @@ TEST(SyncTest, BEH_MultipleRandomAction) {
   std::vector<std::unique_ptr<MaidManager::UnresolvedPut>> unresolved_actions;
   for (auto count(0); count != kActionCount; ++count) {  // FIXME add random DataTagValue types
     keys.push_back(MaidManager::SyncKey(maid_name,
-                                        Identity(NodeId(RandomString(NodeId::kSize)).string()),
+                                        Identity(NodeId(RandomString(identity_size)).string()),
                                         DataTagValue::kMaidValue));
     for (const auto& persona_node : persona_nodes) {
       std::unique_ptr<MaidManager::UnresolvedPut> action(

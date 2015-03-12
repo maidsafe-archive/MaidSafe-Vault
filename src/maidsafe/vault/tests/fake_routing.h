@@ -50,11 +50,11 @@ class FakeRouting {
 
   template <typename DataType>
   std::vector<routing::Address> GetClosestNodes(
-      typename DataType::Name /*name*/,
+      Identity /*name*/,
       const std::vector<routing::Address>& /*exclude*/ = std::vector<routing::Address>()) {
     std::vector<routing::Address> close_nodes;
     while (close_nodes.size() < 4)
-      close_nodes.emplace_back(RandomString(NodeId::kSize));
+      close_nodes.emplace_back(RandomString(identity_size));
     return close_nodes;
   }
 };

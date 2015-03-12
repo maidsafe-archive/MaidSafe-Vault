@@ -64,17 +64,17 @@ class ContentStringVisitor : public boost::static_visitor<std::string> {
 //  nfs::PersonaId source;
 //  // matches Persona enum in types.h
 //  source.persona = static_cast<nfs::Persona>(RandomUint32() % 7);
-//  source.node_id = NodeId(RandomString(NodeId::kSize));
+//  source.node_id = NodeId(RandomString(identity_size));
 //  return source;
 // }
 //
 // nfs::Message MakeMessage() {
 //  nfs::Message::Data data(static_cast<DataTagValue>(RandomUint32() % 13),
-//                              Identity(RandomString(NodeId::kSize)),
+//                              Identity(RandomString(identity_size)),
 //                              NonEmptyString(RandomString(1 + RandomUint32() % 50)),
 //                              GenerateAction());
 //  return nfs::Message(static_cast<nfs::Persona>(RandomUint32() % 7), GenerateSource(), data,
-//                      passport::PublicPmid::Name(Identity(RandomString(NodeId::kSize))));
+//                      passport::PublicPmid::Name(Identity(RandomString(identity_size))));
 // }
 
 }  // unnamed namespace
@@ -85,10 +85,10 @@ TEST(AccumulatorTest, BEH_SuccessfulGroupRequest) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id(NodeId{RandomString(NodeId::kSize)});
-  routing::SingleId sender_id1(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id2(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id3(NodeId{RandomString(NodeId::kSize)});
+  routing::GroupId group_id(NodeId{RandomString(identity_size)});
+  routing::SingleId sender_id1(NodeId{RandomString(identity_size)}),
+                    sender_id2(NodeId{RandomString(identity_size)}),
+                    sender_id3(NodeId{RandomString(identity_size)});
 
   routing::GroupSource group_source1(group_id, sender_id1),
                        group_source2(group_id, sender_id2),
@@ -108,11 +108,11 @@ TEST(AccumulatorTest, BEH_HandledGroupRequest) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id(NodeId{RandomString(NodeId::kSize)});
-  routing::SingleId sender_id1(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id2(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id3(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id4(NodeId{RandomString(NodeId::kSize)});
+  routing::GroupId group_id(NodeId{RandomString(identity_size)});
+  routing::SingleId sender_id1(NodeId{RandomString(identity_size)}),
+                    sender_id2(NodeId{RandomString(identity_size)}),
+                    sender_id3(NodeId{RandomString(identity_size)}),
+                    sender_id4(NodeId{RandomString(identity_size)});
 
   routing::GroupSource group_source1(group_id, sender_id1),
                        group_source2(group_id, sender_id2),
@@ -136,13 +136,13 @@ TEST(AccumulatorTest, BEH_WaitingGroupRequestAfterEviction) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id1(NodeId{RandomString(NodeId::kSize)});
-  routing::SingleId sender_id10(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id11(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id12(NodeId{RandomString(NodeId::kSize)});
+  routing::GroupId group_id1(NodeId{RandomString(identity_size)});
+  routing::SingleId sender_id10(NodeId{RandomString(identity_size)}),
+                    sender_id11(NodeId{RandomString(identity_size)}),
+                    sender_id12(NodeId{RandomString(identity_size)});
 
-  routing::GroupId group_id2(NodeId{RandomString(NodeId::kSize)});
-  routing::SingleId sender_id20(NodeId{RandomString(NodeId::kSize)});
+  routing::GroupId group_id2(NodeId{RandomString(identity_size)});
+  routing::SingleId sender_id20(NodeId{RandomString(identity_size)});
 
   routing::GroupSource group_source10(group_id1, sender_id10),
                        group_source11(group_id1, sender_id11),
@@ -169,12 +169,12 @@ TEST(AccumulatorTest, BEH_TwoSuccessfulGroupRequestsDifferingByGroupId) {
       checker(routing::Parameters::group_size - 1);
   PutRequestFromPmidManagerToPmidNode message;
 
-  routing::GroupId group_id1(NodeId{RandomString(NodeId::kSize)});
-  routing::SingleId sender_id10(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id11(NodeId{RandomString(NodeId::kSize)}),
-                    sender_id12(NodeId{RandomString(NodeId::kSize)});
+  routing::GroupId group_id1(NodeId{RandomString(identity_size)});
+  routing::SingleId sender_id10(NodeId{RandomString(identity_size)}),
+                    sender_id11(NodeId{RandomString(identity_size)}),
+                    sender_id12(NodeId{RandomString(identity_size)});
 
-  routing::GroupId group_id2(NodeId{RandomString(NodeId::kSize)});
+  routing::GroupId group_id2(NodeId{RandomString(identity_size)});
 
   routing::GroupSource group_source10(group_id1, sender_id10),
                        group_source11(group_id1, sender_id11),

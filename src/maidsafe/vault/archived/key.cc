@@ -41,9 +41,9 @@ Key::Key(const std::string& serialised_key) : name(), type(DataTagValue::kMutabl
 }
 
 Key::Key(const FixedWidthString& fixed_width_string)
-    : name(fixed_width_string.string().substr(0, NodeId::kSize)),
+    : name(fixed_width_string.string().substr(0, identity_size)),
       type(static_cast<DataTagValue>(detail::FromFixedWidthString<detail::PaddedWidth::value>(
-          fixed_width_string.string().substr(NodeId::kSize)))) {}
+          fixed_width_string.string().substr(identity_size)))) {}
 
 Key::Key(const Key& other) : name(other.name), type(other.type) {}
 

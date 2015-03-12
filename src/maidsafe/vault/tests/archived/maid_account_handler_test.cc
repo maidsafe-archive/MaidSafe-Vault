@@ -33,7 +33,7 @@
 //  MaidAccountHandlerTest()
 //      : vault_root_directory_(maidsafe::test::CreateTestPath("MaidSafe_Test_MaidAccountHandler")),
 //        db_(),
-//        maid_account_handler_(db_, NodeId(RandomString(NodeId::kSize))) {}
+//        maid_account_handler_(db_, NodeId(RandomString(identity_size))) {}
 
 //  ~MaidAccountHandlerTest() {}
 
