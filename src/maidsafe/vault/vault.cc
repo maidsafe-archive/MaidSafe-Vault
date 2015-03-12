@@ -103,11 +103,19 @@ routing::HandlePostReturn VaultFacade::HandlePost(routing::SourceAddress from,
   switch (authority) {
     case routing::Authority::client_manager:
       if (from_authority == routing::Authority::client) {
-        MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
+        // mpid_node A -> MpidManagers A : post MpidMessage to send message
+        // mpid_node B -> MpidManagers B : post MpidAlert to get message
+        try {
+          MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
+          return MpidManager::HandlePost(from, mpid_message);
+        } catch (...) {
+          MpidAlert mpid_alert = ParseMpidMessaging<MpidAlert>(message);
+          return MpidManager::HandlePost(from, mpid_alert);
+        }
       } else {
-        // Mpid A -> Mpid B : post MpidAlert to notification
-        // Mpid B -> Mpid A : post MpidAlert to get the message
-        // Mpid A -> Mpid B : post MpidMessage
+        // MpidManagers A -> MpidManagers B : post MpidAlert to notification
+        // MpidManagers B -> MpidManagers A : post MpidAlert to get the message
+        // MpidManagers A -> MpidManagers B : post MpidMessage
         try {
           MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
           return MpidManager::HandlePost(from, mpid_message);
