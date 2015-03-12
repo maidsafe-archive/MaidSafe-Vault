@@ -87,6 +87,7 @@ routing::HandlePutPostReturn DataManager<FacadeType>::HandlePutResponse(
     const typename DataType::Name& name, const routing::DestinationAddress& from,
     const maidsafe_error& return_code) {
   assert(return_code.code() != make_error_code(CommonErrors::success));
+  static_cast<void>(return_code);
   DownRank(from);  // failed to store
   return Replicate<DataType>(name, from);
 }
