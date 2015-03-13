@@ -25,7 +25,7 @@ namespace vault {
 template <typename FacadeType>
 routing::HandlePostReturn MpidManager<FacadeType>::HandlePost(routing::SourceAddress from,
                                                               MpidMessage mpid_message) {
-  if (from.group_address.value().data() == mpid_message.base.sender) {
+  if (from.group_address->data == mpid_message.base.sender) {
     // MpidManagers B received a message from MpidManagers A
     if (!handler_.HasAccount(mpid_message.base.receiver))
       return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
@@ -55,7 +55,7 @@ routing::HandlePostReturn MpidManager<FacadeType>::HandlePost(routing::SourceAdd
 template <typename FacadeType>
 routing::HandlePostReturn MpidManager<FacadeType>::HandlePost(routing::SourceAddress from,
                                                               MpidAlert mpid_alert) {
-  if (from.group_address.value().data() == mpid_alert.base.sender) {
+  if (from.group_address->data == mpid_alert.base.sender) {
     // MpidManagers B received a notification from MpidManagers A
     if (!handler_.HasAccount(mpid_alert.base.receiver))
       return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
@@ -63,12 +63,12 @@ routing::HandlePostReturn MpidManager<FacadeType>::HandlePost(routing::SourceAdd
     handler_.Put(data, mpid_alert.base.receiver);
     // using pull model, return success which will be dropped in routing i.e. flow terminates
     return boost::make_unexpected(MakeError(CommonErrors::success));
-  } else if (from.group_address.value().data() == mpid_alert.base.receiver) {
+  } else if (from.group_address->data == mpid_alert.base.receiver) {
     // MpidManagers A received a get request from MpidManagers B
-    auto query_result(handler_.GetMessage(ImmutableData::Name(mpid_alert.message_id)));
+    auto query_result(handler_.GetMessage(mpid_alert.message_id));
     if (!query_result.valid())
       return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
-    handler_.Delete(ImmutableData::Name(mpid_alert.message_id));
+    handler_.Delete(mpid_alert.message_id);
     std::vector<routing::DestinationAddress> dest_mpid;
     dest_mpid.emplace_back(routing::Destination(mpid_alert.base.receiver),
                            boost::optional<routing::ReplyToAddress>());
