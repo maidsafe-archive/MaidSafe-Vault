@@ -31,16 +31,17 @@
 #include "boost/multi_index/identity.hpp"
 
 #include "maidsafe/common/data_types/immutable_data.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/passport/types.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-using GroupName = passport::PublicMpid::Name;
-using MessageKey = ImmutableData::Name;
+using GroupName = Identity;
+using MessageKey = Identity;
 using GKPair = std::pair<GroupName, MessageKey>;
-using DbTransferInfo = std::map<NodeId, std::vector<GKPair>>;
+using DbTransferInfo = std::map<Identity, std::vector<GKPair>>;
 
 struct DatabaseEntry {
   DatabaseEntry(const MessageKey& key_in,

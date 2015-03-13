@@ -21,6 +21,7 @@
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
+#include "maidsafe/routing/source_address.h"
 
 #include "maidsafe/vault/mpid_manager/handler.h"
 

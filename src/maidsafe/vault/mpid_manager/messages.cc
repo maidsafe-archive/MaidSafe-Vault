@@ -34,10 +34,11 @@ MpidMessageBase::MpidMessageBase(const std::string& serialised_copy)
   Parse(binary_input_stream, sender, receiver, id, parent_id, signed_header);
 }
 
-MpidMessageBase::MpidMessageBase(const passport::PublicMpid::Name& sender_in,
-                                 const passport::PublicMpid::Name& receiver_in,
+MpidMessageBase::MpidMessageBase(const Identity& sender_in,
+                                 const Identity& receiver_in,
                                  int32_t id_in,
-                                 int32_t parent_id_in, const MessageHeaderType& signed_header_in)
+                                 int32_t parent_id_in,
+                                 const MessageHeaderType& signed_header_in)
     : sender(sender_in), receiver(receiver_in), id(id_in), parent_id(parent_id_in),
       signed_header(signed_header_in) {}
 

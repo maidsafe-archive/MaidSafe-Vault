@@ -22,16 +22,19 @@ namespace maidsafe {
 
 namespace vault {
 
-routing::HandlePostReturn MpidManager::HandlePost(routing::SourceAddress /*from*/,
-                                                  MpidMessage mpid_message) {
-  if (from.group_address == mpid_message.base.sender) {
+template <typename FacadeType>
+routing::HandlePostReturn MpidManager<FacadeType>::HandlePost(routing::SourceAddress from,
+                                                              MpidMessage mpid_message) {
+  if (from.group_address.value().data() == mpid_message.base.sender) {
     // MpidManagers B received a message from MpidManagers A
     if (!handler_.HasAccount(mpid_message.base.receiver))
       return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
     ImmutableData data(NonEmptyString(Serialise(mpid_message)));
     handler_.Put(data, mpid_message.base.receiver);
+    // alert entry already got removed when received get request from the mpid_node B
+    // only need to forward the message to the mpid_node B
     std::vector<routing::DestinationAddress> dest_mpid;
-    dest_mpid.emplace_back(routing::Destination(mpid_alert.base.receiver),
+    dest_mpid.emplace_back(routing::Destination(mpid_message.base.receiver),
                            boost::optional<routing::ReplyToAddress>());
     return routing::HandlePostReturn::value_type(std::make_pair(dest_mpid,
                                                                 Serialise(mpid_message)));
@@ -41,7 +44,7 @@ routing::HandlePostReturn MpidManager::HandlePost(routing::SourceAddress /*from*
       return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
     ImmutableData data(NonEmptyString(Serialise(mpid_message)));
     handler_.Put(data, mpid_message.base.sender);
-    MpidAlert mpid_alert(mpid_message.base, MessageIdType(data.name().value.string()));
+    MpidAlert mpid_alert(mpid_message.base, MessageIdType(data.Name()));
     std::vector<routing::DestinationAddress> dest_mpid;
     dest_mpid.emplace_back(routing::Destination(mpid_alert.base.receiver),
                            boost::optional<routing::ReplyToAddress>());
@@ -49,9 +52,10 @@ routing::HandlePostReturn MpidManager::HandlePost(routing::SourceAddress /*from*
   }
 }
 
-routing::HandlePostReturn MpidManager::HandlePost(routing::SourceAddress from,
-                                                  MpidAlert mpid_alert) {
-  if (from.group_address == mpid_alert.base.sender) {
+template <typename FacadeType>
+routing::HandlePostReturn MpidManager<FacadeType>::HandlePost(routing::SourceAddress from,
+                                                              MpidAlert mpid_alert) {
+  if (from.group_address.value().data() == mpid_alert.base.sender) {
     // MpidManagers B received a notification from MpidManagers A
     if (!handler_.HasAccount(mpid_alert.base.receiver))
       return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
@@ -59,7 +63,7 @@ routing::HandlePostReturn MpidManager::HandlePost(routing::SourceAddress from,
     handler_.Put(data, mpid_alert.base.receiver);
     // using pull model, return success which will be dropped in routing i.e. flow terminates
     return boost::make_unexpected(MakeError(CommonErrors::success));
-  } else if (from.group_address == mpid_alert.base.receiver) {
+  } else if (from.group_address.value().data() == mpid_alert.base.receiver) {
     // MpidManagers A received a get request from MpidManagers B
     auto query_result(handler_.GetMessage(ImmutableData::Name(mpid_alert.message_id)));
     if (!query_result.valid())
@@ -73,9 +77,9 @@ routing::HandlePostReturn MpidManager::HandlePost(routing::SourceAddress from,
   } else {
     // MpidManagers B received a get request from mpid_node B
     ImmutableData data(NonEmptyString(Serialise(mpid_alert)));
-    if (!handler_.Has(data.name()))
+    if (!handler_.Has(data.Name()))
       return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
-    handler_.Delete(data.name());
+    handler_.Delete(data.Name());
     std::vector<routing::DestinationAddress> dest_mpid;
     dest_mpid.emplace_back(routing::Destination(mpid_alert.base.sender),
                            boost::optional<routing::ReplyToAddress>());

@@ -21,6 +21,7 @@
 
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/bounded_string.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/passport/types.h"
 
 namespace maidsafe {
@@ -30,16 +31,15 @@ namespace vault {
 const unsigned int kMaxHeaderSize = 128;
 const unsigned int kMaxBodySize = 1024 * 1024;
 const unsigned int kIdSize = 64;
-using  MessageIdType = detail::BoundedString<kIdSize, kIdSize>;
-using  MessageHeaderType = detail::BoundedString<0, kMaxHeaderSize>;
-using  MessageBodyType = detail::BoundedString<0, kMaxBodySize>;
+using  MessageIdType = maidsafe::detail::BoundedString<kIdSize, kIdSize>;
+using  MessageHeaderType = maidsafe::detail::BoundedString<0, kMaxHeaderSize>;
+using  MessageBodyType = maidsafe::detail::BoundedString<0, kMaxBodySize>;
 
 // ================================= MpidMessageBase =============================================
 
 struct MpidMessageBase {
   MpidMessageBase();
-  MpidMessageBase(const passport::PublicMpid::Name& sender_in,
-                  const passport::PublicMpid::Name& receiver_in, int32_t id_in,
+  MpidMessageBase(const Identity& sender_in, const Identity& receiver_in, int32_t id_in,
                   int32_t parent_id_in, const MessageHeaderType& signed_header_in);
   explicit MpidMessageBase(const std::string& serialised_copy);
   MpidMessageBase(const MpidMessageBase& other);
@@ -51,7 +51,7 @@ struct MpidMessageBase {
     archive(sender, receiver, id, parent_id, signed_header);
   }
 
-  passport::PublicMpid::Name sender, receiver;
+  Identity sender, receiver;
   int32_t id, parent_id;
   MessageHeaderType signed_header;
 };

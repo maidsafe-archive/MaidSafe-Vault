@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/mpid_manager/handler.h"
 
+#include "maidsafe/common/convert.h"
+
 namespace maidsafe {
 
 namespace vault {
@@ -29,22 +31,23 @@ MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_
 
 void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   PutChunk(data);
-  db_.Put(data.name(), static_cast<uint32_t>(data.data().string().size()), mpid);
+  db_.Put(data.Name(), static_cast<uint32_t>(data.Value().size()), mpid);
 }
 
-void MpidManagerHandler::Delete(const ImmutableData::Name& data_name) {
+void MpidManagerHandler::Delete(const Identity& data_name) {
   DeleteChunk(data_name);
   db_.Delete(data_name);
 }
 
-bool MpidManagerHandler::Has(const ImmutableData::Name& data_name) {
+bool MpidManagerHandler::Has(const Identity& data_name) {
   return db_.Has(data_name);
 }
 
 bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
   try {
-    auto account_name(db_.GetAccountChunkName(mpid));
-    NonEmptyString result(chunk_store_.Get(DataNameVariant(account_name)));
+    Identity account_name(db_.GetAccountChunkName(mpid));
+    typename Data::NameAndTypeId key(account_name, DataTypeId(0));
+    NonEmptyString result(chunk_store_.Get(key));
     return result.IsInitialised();
   }
   catch (...) {
@@ -61,7 +64,7 @@ void MpidManagerHandler::CreateAccount(const MpidName& mpid, const NonEmptyStrin
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::account_already_exists));
   ImmutableData data(mpid_account);
   PutChunk(data);
-  db_.Put(data.name(), 0, mpid);
+  db_.Put(data.Name(), 0, mpid);
 }
 
 void MpidManagerHandler::UpdateAccount(const MpidName& mpid, const NonEmptyString& mpid_account) {
@@ -71,7 +74,7 @@ void MpidManagerHandler::UpdateAccount(const MpidName& mpid, const NonEmptyStrin
   Delete(prev_account_name);
   ImmutableData data(mpid_account);
   PutChunk(data);
-  db_.Put(data.name(), 0, mpid);
+  db_.Put(data.Name(), 0, mpid);
 }
 
 void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
@@ -80,16 +83,16 @@ void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
     Delete(entry);
 }
 
-DbMessageQueryResult MpidManagerHandler::GetMessage(const ImmutableData::Name& data_name) const {
+DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& data_name) const {
   try {
-    return MpidMessage(GetChunk<ImmutableData>(data_name).data().string());
+    return MpidMessage(convert::ToString(GetChunk<ImmutableData>(data_name).Value().string()));
   }
   catch (const maidsafe_error& error) {
     return boost::make_unexpected(error);
   }
 }
 
-DbDataQueryResult MpidManagerHandler::GetData(const ImmutableData::Name& data_name) const {
+DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
   try {
     return GetChunk<ImmutableData>(data_name);
   }

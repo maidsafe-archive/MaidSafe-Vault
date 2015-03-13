@@ -25,7 +25,6 @@
 #include "boost/expected/expected.hpp"
 
 #include "maidsafe/common/visualiser_log.h"
-#include "maidsafe/common/data_types/data_name_variant.h"
 
 #include "maidsafe/vault/chunk_store.h"
 #include "maidsafe/vault/mpid_manager/database.h"
@@ -35,7 +34,7 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef passport::PublicMpid::Name MpidName;
+typedef Identity MpidName;
 
 using DbMessageQueryResult = boost::expected<MpidMessage, maidsafe_error>;
 using DbDataQueryResult = boost::expected<ImmutableData, maidsafe_error>;
@@ -45,11 +44,11 @@ class MpidManagerHandler {
   MpidManagerHandler(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
 
   void Put(const ImmutableData& data, const MpidName& mpid);
-  void Delete(const ImmutableData::Name& data_name);
+  void Delete(const Identity& data_name);
 
-  DbMessageQueryResult GetMessage(const ImmutableData::Name& data_name) const;
-  DbDataQueryResult GetData(const ImmutableData::Name& data_name) const;
-  bool Has(const ImmutableData::Name& data_name);
+  DbMessageQueryResult GetMessage(const Identity& data_name) const;
+  DbDataQueryResult GetData(const Identity& data_name) const;
+  bool Has(const Identity& data_name);
   bool HasAccount(const MpidName& mpid);
 
   void CreateAccount(const MpidName& mpid, const NonEmptyString& mpid_account);
@@ -61,7 +60,7 @@ class MpidManagerHandler {
 
  private:
   template <typename Data>
-  Data GetChunk(const typename Data::Name& data_name) const;
+  Data GetChunk(const Identity& data_name) const;
 
   template <typename Data>
   void PutChunk(const Data& data);
@@ -74,11 +73,10 @@ class MpidManagerHandler {
 };
 
 template <typename Data>
-Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) const {
-  DataNameVariant data_name_variant(data_name);
+Data MpidManagerHandler::GetChunk(const Identity& data_name) const {
+  typename Data::NameAndTypeId key(data_name, DataTypeId(0));
   try {
-    Data data(data_name,
-              typename Data::serialised_type(chunk_store_.Get(data_name_variant)));
+    Data data(chunk_store_.Get(key));
     return data;
   }
   catch (const maidsafe_error& /*error*/) {
@@ -89,12 +87,13 @@ Data MpidManagerHandler::GetChunk(const typename Data::Name& data_name) const {
 template <typename Data>
 void MpidManagerHandler::PutChunk(const Data& data) {
 //  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
-  chunk_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
+  chunk_store_.Put(data.NameAndType(), data.Value());
 }
 
 template <typename DataName>
 void MpidManagerHandler::DeleteChunk(const DataName& data_name) {
-  chunk_store_.Delete(DataNameVariant(data_name));
+  typename Data::NameAndTypeId key(data_name, DataTypeId(0));
+  chunk_store_.Delete(key);
 }
 
 }  // namespace vault
