@@ -25,6 +25,7 @@
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
+#include "maidsafe/common/convert.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
@@ -47,27 +48,6 @@ class ChunkStoreTest : public testing::Test {
  public:
   typedef ChunkStore::KeyType KeyType;
   typedef std::vector<std::pair<KeyType, NonEmptyString>> KeyValueContainer;
-
-  struct GenerateKeyValuePair : public boost::static_visitor<NonEmptyString> {
-    GenerateKeyValuePair() : size_(OneKB) {}
-    explicit GenerateKeyValuePair(uint32_t size) : size_(size) {}
-
-    template <typename T>
-    NonEmptyString operator()(T& key) {
-      NonEmptyString value = NonEmptyString(RandomAlphaNumericString(size_));
-      key.value = Identity(crypto::Hash<crypto::SHA512>(value));
-      return value;
-    }
-
-    uint32_t size_;
-  };
-
-  struct GetIdentity : public boost::static_visitor<Identity> {
-    template <typename T>
-    Identity operator()(T& key) {
-      return key.data;
-    }
-  };
 
  protected:
   ChunkStoreTest()
@@ -119,11 +99,6 @@ class ChunkStoreTest : public testing::Test {
     return key_value_pairs;
   }
 
-  NonEmptyString GenerateKeyValueData(KeyType& key, uint32_t size) {
-    GenerateKeyValuePair generate_key_value_pair_(size);
-    return boost::apply_visitor(generate_key_value_pair_, key);
-  }
-
   void PrintResult(const pt::ptime& start_time, const pt::ptime& stop_time) {
     uint64_t duration = (stop_time - start_time).total_microseconds();
     if (duration == 0)
@@ -145,7 +120,7 @@ TEST_F(ChunkStoreTest, BEH_Constructor) {
   maidsafe::test::TestPath test_path(maidsafe::test::CreateTestPath("MaidSafe_Test_ChunkStore"));
   ASSERT_FALSE(test_path->empty());
   boost::filesystem::path file_path(*test_path / "File");
-  EXPECT_TRUE(WriteFile(file_path, " "));
+  EXPECT_TRUE(WriteFile(file_path, convert::ToByteVector(" ")));
   ASSERT_THROW(ChunkStore(file_path, DiskUsage(200000)), std::exception);
   ASSERT_THROW(ChunkStore(file_path / "base", DiskUsage(200000)), std::exception);
   boost::filesystem::path directory_path(*test_path / "Directory");
@@ -159,14 +134,14 @@ TEST_F(ChunkStoreTest, BEH_RemoveDiskStore) {
   fs::path chunk_store_path(*test_path / "new_permanent_store");
   const uintmax_t kSize(1), kDiskSize(2);
   chunk_store_.reset(new ChunkStore(chunk_store_path, DiskUsage(kDiskSize)));
-  KeyType key(GetRandomDataNameType());
-  NonEmptyString small_value = GenerateKeyValueData(key, kSize);
+  KeyType key(MakeIdentity(), DataTypeId(RandomUint32()));
+  NonEmptyString small_value(RandomBytes(kSize));
   ASSERT_NO_THROW(chunk_store_->Put(key, small_value));
   ASSERT_NO_THROW(chunk_store_->Delete(key));
   EXPECT_TRUE(6 == fs::remove_all(chunk_store_path, error_code));
   ASSERT_FALSE(fs::exists(chunk_store_path, error_code));
-  KeyType key1(GetRandomDataNameType());
-  NonEmptyString large_value = GenerateKeyValueData(key1, kDiskSize);
+  KeyType key1(MakeIdentity(), DataTypeId(RandomUint32()));
+  NonEmptyString large_value(RandomBytes(kDiskSize));
   EXPECT_THROW(chunk_store_->Put(key, small_value), std::exception);
   EXPECT_THROW(chunk_store_->Get(key), std::exception);
   EXPECT_THROW(chunk_store_->Delete(key), std::exception);
@@ -181,9 +156,9 @@ TEST_F(ChunkStoreTest, BEH_RemoveDiskStore) {
 }
 
 TEST_F(ChunkStoreTest, BEH_SuccessfulStore) {
-  KeyType key1(GetRandomDataNameType()), key2(GetRandomDataNameType());
-  NonEmptyString value1 = GenerateKeyValueData(key1, static_cast<uint32_t>(2 * OneKB)),
-                 value2 = GenerateKeyValueData(key2, static_cast<uint32_t>(2 * OneKB)), recovered;
+  KeyType key1(MakeIdentity(), DataTypeId(RandomUint32()));
+  KeyType key2(MakeIdentity(), DataTypeId(RandomUint32()));
+  NonEmptyString value1(RandomBytes(2 * OneKB)), value2(RandomBytes(2 * OneKB)), recovered;
   ASSERT_NO_THROW(chunk_store_->Put(key1, value1));
   ASSERT_NO_THROW(chunk_store_->Put(key2, value2));
   ASSERT_NO_THROW(recovered = chunk_store_->Get(key1));
@@ -193,8 +168,8 @@ TEST_F(ChunkStoreTest, BEH_SuccessfulStore) {
 }
 
 TEST_F(ChunkStoreTest, BEH_UnsuccessfulStore) {
-  KeyType key(GetRandomDataNameType());
-  NonEmptyString value = GenerateKeyValueData(key, static_cast<uint32_t>(kDefaultMaxDiskUsage) + 1);
+  KeyType key(MakeIdentity(), DataTypeId(RandomUint32()));
+  NonEmptyString value(RandomBytes(kDefaultMaxDiskUsage + 1));
   EXPECT_THROW(chunk_store_->Put(key, value), std::exception);
 }
 
@@ -202,8 +177,8 @@ TEST_F(ChunkStoreTest, BEH_DeleteOnDiskStoreOverfill) {
   const size_t num_entries(4), num_disk_entries(4);
   KeyValueContainer key_value_pairs(
       PopulateChunkStore(num_entries, num_disk_entries, chunk_store_path_));
-  KeyType key(GetRandomDataNameType());
-  NonEmptyString value = GenerateKeyValueData(key, 2 * OneKB), recovered;
+  KeyType key(MakeIdentity(), DataTypeId(RandomUint32()));
+  NonEmptyString value(RandomBytes(2 * OneKB)), recovered;
   KeyType first_key(key_value_pairs[0].first), second_key(key_value_pairs[1].first);
   EXPECT_THROW(chunk_store_->Put(key, value), std::exception);
   EXPECT_THROW(recovered = chunk_store_->Get(key), std::exception);
@@ -215,9 +190,8 @@ TEST_F(ChunkStoreTest, BEH_DeleteOnDiskStoreOverfill) {
 }
 
 TEST_F(ChunkStoreTest, BEH_RepeatedlyStoreUsingSameKey) {
-  KeyType key(GetRandomDataNameType());
-  NonEmptyString value = GenerateKeyValueData(key, (RandomUint32() % 30) + 1), recovered,
-                 last_value;
+  KeyType key(MakeIdentity(), DataTypeId(RandomUint32()));
+  NonEmptyString value(RandomBytes(1, 30)), recovered, last_value;
   ASSERT_NO_THROW(chunk_store_->Put(key, value));
   ASSERT_NO_THROW(recovered = chunk_store_->Get(key));
   EXPECT_TRUE(recovered == value);

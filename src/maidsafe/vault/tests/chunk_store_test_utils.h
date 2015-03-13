@@ -23,8 +23,8 @@
 #include <utility>
 #include <vector>
 
-#include "maidsafe/common/data_types/data_name_variant.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/data.h"
 
 namespace maidsafe {
 
@@ -32,10 +32,10 @@ namespace vault {
 
 namespace test {
 
-void AddRandomKeyValuePairs(std::vector<std::pair<DataNameVariant, NonEmptyString>>& container,
+void AddRandomKeyValuePairs(std::vector<std::pair<Data::NameAndTypeId, NonEmptyString>>& container,
                             uint32_t number, uint32_t size);
 
-DataNameVariant GetRandomDataNameType();
+Data::NameAndTypeId GetRandomDataNameAndTypeId();
 
 }  // namespace test
 

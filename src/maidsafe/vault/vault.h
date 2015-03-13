@@ -23,8 +23,7 @@
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
-#include "maidsafe/common/data_types/data_type_values.h"
-
+#include "maidsafe/passport/types.h"
 
 #include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager/data_manager.h"
@@ -34,22 +33,11 @@
 
 namespace fs = boost::filesystem;
 
-static fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
+static fs::path vault_dir{fs::path(getenv("HOME")) / "MaidSafe-Vault"};
 
 namespace maidsafe {
 
 namespace vault {
-
-// Helper function to parse data name and contents
-// FIXME this need discussion, adding it temporarily to progress
-template <typename ParsedType>
-ParsedType ParseData(const SerialisedData& serialised_data) {
-  InputVectorStream binary_input_stream{serialised_data};
-  typename ParsedType::Name name;
-  typename ParsedType::serialised_type contents;
-  Parse(binary_input_stream, name, contents);
-  return ParsedType(name, contents);
-}
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
@@ -58,24 +46,24 @@ class VaultFacade : public MaidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
-    : MaidManager<VaultFacade>(),
-      DataManager<VaultFacade>(vault_dir),
-      PmidManager<VaultFacade>(),
-      PmidNode<VaultFacade>(),
-      routing::test::FakeRouting<VaultFacade>() {
-  }
+      : MaidManager<VaultFacade>(),
+        DataManager<VaultFacade>(vault_dir),
+        PmidManager<VaultFacade>(),
+        PmidNode<VaultFacade>(),
+        routing::test::FakeRouting<VaultFacade>() {}
 
   ~VaultFacade() = default;
 
   enum class FunctorType { FunctionOne, FunctionTwo };
 
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority from_authority,
-                                     routing::Authority authority, DataTagValue data_type,
-                                     Identity data_name);
+                                     routing::Authority authority,
+                                     Data::NameAndTypeId name_and_type_id);
 
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
-      routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-          SerialisedData serialised_data);
+                                         routing::Authority from_authority,
+                                         routing::Authority authority, DataTypeId data_type_id,
+                                         SerialisedData serialised_data);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)

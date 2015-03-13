@@ -23,8 +23,11 @@
 
 #include "boost/filesystem.hpp"
 
-#include "maidsafe/common/node_id.h"
+#include "maidsafe/common/identity.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/data_types/immutable_data.h"
+#include "maidsafe/common/data_types/mutable_data.h"
+#include "maidsafe/passport/types.h"
 
 #include "maidsafe/routing/types.h"
 #include "maidsafe/routing/source_address.h"
@@ -33,6 +36,54 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+// Workaround until new lib with all data types is available
+template <typename DataType>
+struct TypeId;
+
+template <>
+struct TypeId<ImmutableData> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<MutableData> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<passport::PublicAnmaid> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<passport::PublicMaid> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<passport::PublicAnpmid> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<passport::PublicPmid> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<passport::PublicAnmpid> {
+  static const DataTypeId value;
+};
+
+template <>
+struct TypeId<passport::PublicMpid> {
+  static const DataTypeId value;
+};
+
+}  // namespace detail
+
 void InitialiseDirectory(const boost::filesystem::path& directory);
 boost::filesystem::path UniqueDbPath(const boost::filesystem::path& vault_root_dir);
 
@@ -40,8 +91,9 @@ struct PaddedWidth {
   static const int value = 1;
 };
 
-using FixedWidthString = maidsafe::detail::BoundedString<NodeId::kSize + PaddedWidth::value,
-                                                         NodeId::kSize + PaddedWidth::value>;
+using FixedWidthString =
+    maidsafe::detail::BoundedString<identity_size + PaddedWidth::value,
+                                    identity_size + PaddedWidth::value, std::string>;
 template <int width>
 std::string ToFixedWidthString(uint32_t number) {
   static_assert(width > 0 && width < 5, "width must be 1, 2, 3, or 4.");
@@ -58,10 +110,11 @@ template <>
 std::string ToFixedWidthString<1>(uint32_t number);
 
 template <typename DataType>
-std::string EncodeToString(typename DataType::Name name) {
-  return FixedWidthString(name->string() +
+std::string EncodeToString(const Identity& name) {
+  const std::vector<byte>& raw_name(name.string());
+  return FixedWidthString(std::string(raw_name.begin(), raw_name.end()) +
                           ToFixedWidthString<PaddedWidth::value>(
-                              static_cast<uint32_t>(DataType::Tag::kValue))).string();
+                              detail::TypeId<DataType>::value.data)).string();
 }
 
 struct Parameters {
