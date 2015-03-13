@@ -18,37 +18,40 @@
 
 #include "maidsafe/vault/vault.h"
 
+#include "maidsafe/vault/utils.h"
+
 namespace maidsafe {
 
 namespace vault {
 
 routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
-    routing::Authority /* from_authority */, routing::Authority authority, DataTagValue data_type,
-        Identity data_name) {
+                                                routing::Authority /* from_authority */,
+                                                routing::Authority authority,
+                                                Data::NameAndTypeId name_and_type_id) {
   switch (authority) {
     case routing::Authority::client_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        MaidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return MaidManager::template HandleGet<MutableData>(from, data_name);
+      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
+        MaidManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
+      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
+        return MaidManager::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     case routing::Authority::nae_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return DataManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return DataManager::template HandleGet<MutableData>(from, data_name);
+      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
+        return DataManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
+      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
+        return DataManager::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        PmidManager::template HandleGet<MutableData>(from, data_name);
+      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
+        return PmidManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
+      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
+        PmidManager::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     case routing::Authority::managed_node:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidNode::template HandleGet<ImmutableData>(from, data_name);
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return PmidNode::template HandleGet<MutableData>(from, data_name);
+      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
+        return PmidNode::template HandleGet<ImmutableData>(from, name_and_type_id.name);
+      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
+        return PmidNode::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     default:
       break;
@@ -57,38 +60,40 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
 }
 
 routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
-    routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-        SerialisedData serialised_data) {
+                                                    routing::Authority from_authority,
+                                                    routing::Authority authority,
+                                                    DataTypeId data_type_id,
+                                                    SerialisedData serialised_data) {
   switch (authority) {
     case routing::Authority::client_manager:
       if (from_authority != routing::Authority::client)
         break;
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return MaidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return MaidManager::HandlePut(from, ParseData<MutableData>(serialised_data));
-      else if (data_type == DataTagValue::kPmidValue)
-        return MaidManager::HandlePut(from, ParseData<passport::PublicPmid>(serialised_data));
+      if (data_type_id == detail::TypeId<ImmutableData>::value)
+        return MaidManager::HandlePut(from, Parse<ImmutableData>(serialised_data));
+      else if (data_type_id == detail::TypeId<MutableData>::value)
+        return MaidManager::HandlePut(from, Parse<MutableData>(serialised_data));
+      else if (data_type_id == detail::TypeId<passport::PublicPmid>::value)
+        return MaidManager::HandlePut(from, Parse<passport::PublicPmid>(serialised_data));
     case routing::Authority::nae_manager:
       if (from_authority != routing::Authority::client_manager)
         break;
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return DataManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return DataManager::HandlePut(from, ParseData<MutableData>(serialised_data));
+      if (data_type_id == detail::TypeId<ImmutableData>::value)
+        return DataManager::HandlePut(from, Parse<ImmutableData>(serialised_data));
+      else if (data_type_id == detail::TypeId<MutableData>::value)
+        return DataManager::HandlePut(from, Parse<MutableData>(serialised_data));
       break;
     case routing::Authority::node_manager:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidManager::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
+      if (data_type_id == detail::TypeId<ImmutableData>::value)
+        return PmidManager::HandlePut(from, Parse<ImmutableData>(serialised_data));
+      else if (data_type_id == detail::TypeId<MutableData>::value)
         return PmidManager::template HandlePut<MutableData>(
-                   from, ParseData<MutableData>(serialised_data));
+                   from, Parse<MutableData>(serialised_data));
       break;
     case routing::Authority::managed_node:
-      if (data_type == DataTagValue::kImmutableDataValue)
-        return PmidNode::HandlePut(from, ParseData<ImmutableData>(serialised_data));
-      else if (data_type == DataTagValue::kMutableDataValue)
-        return PmidNode::HandlePut(from, ParseData<MutableData>(serialised_data));
+      if (data_type_id == detail::TypeId<ImmutableData>::value)
+        return PmidNode::HandlePut(from, Parse<ImmutableData>(serialised_data));
+      else if (data_type_id == detail::TypeId<MutableData>::value)
+        return PmidNode::HandlePut(from, Parse<MutableData>(serialised_data));
       break;
     default:
       break;

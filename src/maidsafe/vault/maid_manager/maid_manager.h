@@ -17,8 +17,8 @@
     use of the MaidSafe Software.                                                                 */
 
 
-#ifndef MAIDSAFE_VAULT_MAID_MANAGER_H_
-#define MAIDSAFE_VAULT_MAID_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
+#define MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
@@ -42,7 +42,8 @@ class MaidManager {
 
 template <typename Child>
 template <typename DataType>
-routing::HandleGetReturn MaidManager<Child>::HandleGet(routing::SourceAddress /*from*/, Identity /*data_name*/) {
+routing::HandleGetReturn MaidManager<Child>::HandleGet(routing::SourceAddress /*from*/,
+                                                       Identity /*data_name*/) {
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
 }
 
@@ -57,4 +58,4 @@ routing::HandlePutPostReturn MaidManager<Child>::HandlePut(routing::SourceAddres
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_MAID_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_MAID_MANAGER_MAID_MANAGER_H_

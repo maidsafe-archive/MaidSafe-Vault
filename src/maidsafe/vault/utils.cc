@@ -24,6 +24,25 @@ namespace maidsafe {
 
 namespace vault {
 
+namespace detail {
+
+const DataTypeId TypeId<ImmutableData>::value = DataTypeId(0);
+const DataTypeId TypeId<MutableData>::value = DataTypeId(1);
+const DataTypeId TypeId<passport::PublicAnmaid>::value =
+    DataTypeId(passport::PublicAnmaid::Tag::type_id);
+const DataTypeId TypeId<passport::PublicMaid>::value =
+    DataTypeId(passport::PublicMaid::Tag::type_id);
+const DataTypeId TypeId<passport::PublicAnpmid>::value =
+    DataTypeId(passport::PublicAnpmid::Tag::type_id);
+const DataTypeId TypeId<passport::PublicPmid>::value =
+    DataTypeId(passport::PublicPmid::Tag::type_id);
+const DataTypeId TypeId<passport::PublicAnmpid>::value =
+    DataTypeId(passport::PublicAnmpid::Tag::type_id);
+const DataTypeId TypeId<passport::PublicMpid>::value =
+    DataTypeId(passport::PublicMpid::Tag::type_id);
+
+}  // namespace detail
+
 template <>
 std::string ToFixedWidthString<1>(uint32_t number) {
   assert(number < 256);
