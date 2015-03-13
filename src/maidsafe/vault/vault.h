@@ -23,6 +23,7 @@
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
@@ -30,6 +31,7 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
 
 namespace fs = boost::filesystem;
 
@@ -43,6 +45,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
+                    public VersionHandler<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
@@ -50,6 +53,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
         DataManager<VaultFacade>(vault_dir),
         PmidManager<VaultFacade>(),
         PmidNode<VaultFacade>(),
+        VersionHandler<VaultFacade>(vault_dir, DiskUsage(10000000000)),
         routing::test::FakeRouting<VaultFacade>() {}
 
   ~VaultFacade() = default;

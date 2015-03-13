@@ -101,6 +101,11 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
 }
 
+bool VaultFacade::HandlePost(const routing::SerialisedMessage& message) {
+  auto sdv(Parse<StructuredDataVersions>(message));
+  return VersionHandler::HandlePost(sdv);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe
