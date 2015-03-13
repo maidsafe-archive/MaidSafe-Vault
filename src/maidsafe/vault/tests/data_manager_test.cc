@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 #include "boost/filesystem.hpp"
+#include "boost/variant.hpp"
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/data_types/immutable_data.h"
@@ -40,19 +41,18 @@ class DataManagerTest : public testing::Test {
   DataManagerTest() = default;
 
  protected:
-  DataManager<VaultFacade> data_manager_ {
-                               *maidsafe::test::CreateTestPath("MaidSafe_Vault_DataManager") };
+  DataManager<VaultFacade> data_manager_{
+      *maidsafe::test::CreateTestPath("MaidSafe_Vault_DataManager")};
 };
 
 TEST_F(DataManagerTest, BEH_HandlePutGet) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  routing::SourceAddress from(routing::NodeAddress(NodeId(RandomString(identity_size))),
-                              boost::none, boost::none);
+  routing::SourceAddress from(routing::NodeAddress(MakeIdentity()), boost::none, boost::none);
   auto put_result(data_manager_.HandlePut(from, data));
   EXPECT_TRUE(put_result.valid());
   auto& put_pmid_holder(put_result.value());
   EXPECT_EQ(put_result.value().size(), 4);
-  auto get_result(data_manager_.HandleGet<ImmutableData>(from, Identity(data.name()->string())));
+  auto get_result(data_manager_.HandleGet<ImmutableData>(from, data.Name()));
   EXPECT_TRUE(get_result.valid());
   auto& pmid_holders(boost::get<std::vector<routing::DestinationAddress>>(get_result.value()));
   EXPECT_EQ(pmid_holders.size(), put_result.value().size());
@@ -65,25 +65,22 @@ TEST_F(DataManagerTest, BEH_HandlePutGet) {
 
 TEST_F(DataManagerTest, BEH_HandlePostResponseNoAccount) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  routing::DestinationAddress destination(routing::Destination(NodeId(RandomString(identity_size))),
-                                          boost::none);
+  routing::DestinationAddress destination(routing::Destination(MakeIdentity()), boost::none);
   auto result(data_manager_.HandlePutResponse<ImmutableData>(
-                  data.name(), destination, maidsafe_error(VaultErrors::data_already_exists)));
+      data.Name(), destination, maidsafe_error(VaultErrors::data_already_exists)));
   EXPECT_FALSE(result.valid());
   EXPECT_EQ(result.error().code(), make_error_code(VaultErrors::no_such_account));
 }
 
 TEST_F(DataManagerTest, BEH_HandlePostResponse) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
-  routing::SourceAddress from(routing::NodeAddress(NodeId(RandomString(identity_size))),
-                              boost::none, boost::none);
+  routing::SourceAddress from(routing::NodeAddress(MakeIdentity()), boost::none, boost::none);
   auto put_result(data_manager_.HandlePut(from, data));
   EXPECT_TRUE(put_result.valid());
   auto put_response_result(data_manager_.HandlePutResponse<ImmutableData>(
-           data.name(), put_result.value().at(0),
-           maidsafe_error(VaultErrors::data_already_exists)));
+      data.Name(), put_result.value().at(0), maidsafe_error(VaultErrors::data_already_exists)));
   EXPECT_TRUE(put_response_result.valid());
-  auto get_result(data_manager_.HandleGet<ImmutableData>(from, Identity(data.name()->string())));
+  auto get_result(data_manager_.HandleGet<ImmutableData>(from, data.Name()));
   EXPECT_TRUE(get_result.valid());
   auto& pmid_holders(boost::get<std::vector<routing::DestinationAddress>>(get_result.value()));
   EXPECT_TRUE(std::none_of(pmid_holders.begin(), pmid_holders.end(),
