@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MESSAGES_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MESSAGES_H_
 
+#include <string>
+
 #include "maidsafe/common/config.h"
 #include "maidsafe/common/bounded_string.h"
 #include "maidsafe/common/identity.h"

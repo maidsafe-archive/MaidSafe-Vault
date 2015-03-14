@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
+#include <string>
+
 #include "boost/expected/expected.hpp"
 
 #include "maidsafe/common/data_types/immutable_data.h"
@@ -42,14 +44,14 @@ namespace vault {
 
 //// Helper function to parse data name and contents
 //// FIXME this need discussion, adding it temporarily to progress
-//template <typename ParsedType>
-//ParsedType ParseData(const SerialisedData& serialised_data) {
+// template <typename ParsedType>
+// ParsedType ParseData(const SerialisedData& serialised_data) {
 //  InputVectorStream binary_input_stream{serialised_data};
 //  typename ParsedType::Name name;
 //  typename ParsedType::serialised_type contents;
 //  Parse(binary_input_stream, name, contents);
 //  return ParsedType(name, contents);
-//}
+// }
 
 // Helper function to parse Mpid messaging related messages : message, alert, etc.
 // FIXME this need discussion, adding it temporarily to progress

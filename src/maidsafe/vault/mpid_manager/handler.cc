@@ -101,7 +101,7 @@ DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
   }
 }
 
-//MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
+// MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(
 //    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
 //  MpidManager::DbTransferInfo db_transfer_info(db_.GetTransferInfo(close_nodes_change));
 //  auto prune_itr(db_transfer_info.find(NodeId()));
@@ -132,7 +132,7 @@ DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
 //    transfer_info.insert(std::make_pair(transfer.first, std::move(kv_pairs)));
 //  }
 //  return transfer_info;
-//}
+// }
 
 }  // namespace vault
 

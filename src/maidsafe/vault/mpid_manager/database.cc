@@ -110,7 +110,7 @@ std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& 
   return entries;
 }
 
-//DbTransferInfo MpidManagerDatabase::GetTransferInfo(
+// DbTransferInfo MpidManagerDatabase::GetTransferInfo(
 //    std::shared_ptr<routing::CloseNodesChange> close_nodes_change) {
 //  std::vector<std::pair<NodeId, GroupName>> groups_to_be_transferred;
 //  std::vector<GroupName> groups_to_be_removed;
@@ -151,7 +151,7 @@ std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& 
 //    DeleteGroup(group_name);
 
 //  return transfer_info;
-//}
+// }
 
 void MpidManagerDatabase::DeleteGroup(const GroupName& mpid) {
   std::unique_lock<std::mutex> lock(mutex_);
@@ -162,7 +162,7 @@ void MpidManagerDatabase::DeleteGroup(const GroupName& mpid) {
     itr0 = mpid_index.erase(itr0);
 }
 
-//void MpidManagerDatabase::PutIntoTransferInfo(const NodeId& new_holder,
+// void MpidManagerDatabase::PutIntoTransferInfo(const NodeId& new_holder,
 //                                              const GroupName& mpid,
 //                                              const MessageKey& key,
 //                                              DbTransferInfo& transfer_info) {
@@ -174,7 +174,7 @@ void MpidManagerDatabase::DeleteGroup(const GroupName& mpid) {
 //    group_key_vector.push_back(std::make_pair(mpid, key));
 //    transfer_info.insert(std::make_pair(new_holder, std::move(group_key_vector)));
 //  }
-//}
+// }
 
 }  // namespace vault
 

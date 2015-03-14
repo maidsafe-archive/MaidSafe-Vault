@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_MPID_MANAGER_H_
-#define MAIDSAFE_VAULT_MPID_MANAGER_H_
+#ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
+#define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
@@ -62,4 +62,4 @@ MpidManager<FacadeType>::MpidManager(const boost::filesystem::path& vault_root_d
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_MPID_MANAGER_H_
+#endif  // MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
