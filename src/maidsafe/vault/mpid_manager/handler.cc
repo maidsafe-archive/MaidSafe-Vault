@@ -46,7 +46,7 @@ bool MpidManagerHandler::Has(const Identity& data_name) {
 bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
   try {
     Identity account_name(db_.GetAccountChunkName(mpid));
-    typename Data::NameAndTypeId key(account_name, DataTypeId(0));
+    Data::NameAndTypeId key(account_name, DataTypeId(0));
     NonEmptyString result(chunk_store_.Get(key));
     return result.IsInitialised();
   }

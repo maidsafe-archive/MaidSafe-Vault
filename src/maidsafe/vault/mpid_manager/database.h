@@ -67,9 +67,9 @@ typedef boost::multi_index_container<
     >
 > DatabaseEntrySet;
 
-using EntryByKey = typename boost::multi_index::index<DatabaseEntrySet, EntryKey_Tag>::type;
-using EntryByMpid = typename boost::multi_index::index<DatabaseEntrySet, EntryMpid_Tag>::type;
-using EntryByMpidIterator = typename DatabaseEntrySet::index<EntryMpid_Tag>::type::iterator;
+using EntryByKey = boost::multi_index::index<DatabaseEntrySet, EntryKey_Tag>::type;
+using EntryByMpid = boost::multi_index::index<DatabaseEntrySet, EntryMpid_Tag>::type;
+using EntryByMpidIterator = DatabaseEntrySet::index<EntryMpid_Tag>::type::iterator;
 
 class MpidManagerDatabase {
  public:
