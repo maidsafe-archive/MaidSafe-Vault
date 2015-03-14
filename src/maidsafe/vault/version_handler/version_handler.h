@@ -42,7 +42,7 @@ class VersionHandler {
   template <typename DataType>
   routing::HandlePutPostReturn HandlePut(const DataType& data);
 
-  bool HandlePost(const StructuredDataVersions& data);
+  bool HandlePost(const routing::SerialisedMessage& message);
 
   void HandleChurn(routing::CloseGroupDifference);
 

@@ -18,13 +18,30 @@
 
 #include "maidsafe/vault/version_handler/version_handler.h"
 
+#include "maidsafe/common/convert.h"
+
 namespace maidsafe {
 
 namespace vault {
 
 template <typename FacadeType>
-bool VersionHandler<FacadeType>::HandlePost(const StructuredDataVersions& /*data*/) {
-  return false;
+bool VersionHandler<FacadeType>::HandlePost(const routing::SerialisedMessage& message) {
+  InputVectorStream binary_input_stream { message };
+  Identity sdv_name;
+  StructuredDataVersions::VersionName new_version, old_version;
+  Parse(binary_input_stream, sdv_name, old_version, new_version);
+  std::string key(convert::ToString(sdv_name.string()));
+  try {
+    std::string serialised_sdv;
+    db_.Get(key, serialised_sdv);
+    MutableData sdv_wrapper(Parse<MutableData>(convert::ToByteVector(serialised_sdv)));
+    StructuredDataVersions sdv(20, 1);
+    sdv.ApplySerialised(StructuredDataVersions::serialised_type(sdv_wrapper.Value()));
+    sdv.Put(old_version, new_version);
+  } catch (...) {
+    return false;
+  }
+  return true;
 }
 
 }  // namespace vault
