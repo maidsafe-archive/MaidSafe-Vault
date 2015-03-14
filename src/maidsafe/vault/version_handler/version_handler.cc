@@ -16,40 +16,17 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_H_
-#define MAIDSAFE_VAULT_VERSION_HANDLER_H_
-
-#include "maidsafe/common/types.h"
-#include "maidsafe/common/data_types/structured_data_versions.h"
-#include "maidsafe/routing/types.h"
-#include "maidsafe/routing/source_address.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
 
 namespace maidsafe {
 
 namespace vault {
 
 template <typename FacadeType>
-class VersionHandler {
- public:
-  VersionHandler(const boost::filesystem::path& vault_root_dir,
-                 DiskUsage max_disk_usage);
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
-
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(const DataType& data);
-
-  bool HandlePost(const StructuredDataVersions& data);
-
-  void HandleChurn(routing::CloseGroupDifference);
-};
-
-template <typename FacadeType>
-VersionHandler<FacadeType>::VersionHandler(const boost::filesystem::path& /*vault_root_dir*/,
-                                           DiskUsage /*max_disk_usage*/) {}
+bool VersionHandler<FacadeType>::HandlePost(const StructuredDataVersions& /*data*/) {
+  return false;
+}
 
 }  // namespace vault
 
 }  // namespace maidsafe
-
-#endif // MAIDSAFE_VAULT_VERSION_HANDLER_H_

@@ -102,7 +102,9 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
 }
 
 bool VaultFacade::HandlePost(const routing::SerialisedMessage& message) {
-  auto sdv(Parse<StructuredDataVersions>(message));
+  MutableData sdv_wrapper(Parse<MutableData>(message));
+  StructuredDataVersions sdv(20, 1);
+  sdv.ApplySerialised(StructuredDataVersions::serialised_type(sdv_wrapper.Value()));
   return VersionHandler::HandlePost(sdv);
 }
 
