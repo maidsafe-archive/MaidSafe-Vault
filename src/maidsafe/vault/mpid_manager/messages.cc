@@ -43,11 +43,11 @@ MpidMessageBase::MpidMessageBase(const Identity& sender_in,
       signed_header(signed_header_in) {}
 
 MpidMessageBase::MpidMessageBase(const MpidMessageBase& other)
-    : sender(other.sender), receiver(), id(other.id), parent_id(other.parent_id),
+    : sender(other.sender), receiver(other.receiver), id(other.id), parent_id(other.parent_id),
       signed_header(other.signed_header) {}
 
 MpidMessageBase::MpidMessageBase(MpidMessageBase&& other)
-    : sender(std::move(sender)), receiver(std::move(receiver)), id(std::move(other.id)),
+    : sender(std::move(other.sender)), receiver(std::move(other.receiver)), id(std::move(other.id)),
       parent_id(std::move(other.parent_id)), signed_header(std::move(other.signed_header)) {}
 
 MpidMessageBase& MpidMessageBase::operator=(MpidMessageBase other) {
@@ -81,7 +81,7 @@ MpidAlert::MpidAlert(const std::string& serialised_copy) : base(), message_id() 
 }
 
 MpidAlert::MpidAlert(const MpidAlert& other)
-    : base(other.base), message_id(other.message_id){}
+    : base(other.base), message_id(other.message_id) {}
 
 MpidAlert::MpidAlert(MpidAlert&& other)
     : base(std::move(other.base)), message_id(std::move(other.message_id)) {}
@@ -106,14 +106,14 @@ void swap(MpidAlert& lhs, MpidAlert& rhs) MAIDSAFE_NOEXCEPT {
 MpidMessage::MpidMessage(const MpidMessageBase& base_in, MessageBodyType& signed_body_in)
     : base(base_in), signed_body(signed_body_in) {}
 
-MpidMessage::MpidMessage(const std::string& serialised_copy) : base(), signed_body(){
+MpidMessage::MpidMessage(const std::string& serialised_copy) : base(), signed_body() {
   InputVectorStream binary_input_stream {
       SerialisedData(serialised_copy.begin(), serialised_copy.end()) };
   Parse(binary_input_stream, base, signed_body);
 }
 
 MpidMessage::MpidMessage(const MpidMessage& other)
-    : base(other.base), signed_body(other.signed_body){}
+    : base(other.base), signed_body(other.signed_body) {}
 
 MpidMessage::MpidMessage(MpidMessage&& other)
     : base(std::move(other.base)), signed_body(std::move(other.signed_body)) {}
