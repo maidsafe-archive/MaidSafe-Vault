@@ -16,47 +16,41 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_H_
-#define MAIDSAFE_VAULT_VERSION_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_DATABASE_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_DATABASE_H_
 
-#include "maidsafe/common/types.h"
-#include "maidsafe/common/data_types/structured_data_versions.h"
-#include "maidsafe/routing/types.h"
-#include "maidsafe/routing/source_address.h"
+#include <string>
+#include <utility>
 
-#include "maidsafe/vault/utils.h"
-#include "maidsafe/vault/version_handler/database.h"
+#include "maidsafe/common/sqlite3_wrapper.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-template <typename FacadeType>
-class VersionHandler {
+class VersionHandlerDatabase {
+  typedef std::string VALUE;
  public:
-  VersionHandler(const boost::filesystem::path& vault_root_dir,
-                 DiskUsage max_disk_usage);
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+  typedef std::string KEY;
+  explicit VersionHandlerDatabase(const boost::filesystem::path& db_path);
+  ~VersionHandlerDatabase();
 
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(const DataType& data);
-
-  bool HandlePost(const StructuredDataVersions& data);
-
-  void HandleChurn(routing::CloseGroupDifference);
+  void Put(const KEY& key, const VALUE& value);
+  void Get(const KEY& key, VALUE& value);
+  void Delete(const KEY& key);
+  bool SeekNext(std::pair<KEY, VALUE>& result);
 
  private:
-  VersionHandlerDatabase db_;
-};
+  void CheckPoint();
 
-template <typename FacadeType>
-VersionHandler<FacadeType>::VersionHandler(const boost::filesystem::path& vault_root_dir,
-                                           DiskUsage /*max_disk_usage*/)
-  : db_(UniqueDbPath(vault_root_dir)) {}
+  std::unique_ptr<sqlite::Database> database_;
+  std::unique_ptr<sqlite::Statement> seeking_statement_;
+  const boost::filesystem::path kDbPath_;
+  int write_operations_;
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_VERSION_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_DATABASE_H_
