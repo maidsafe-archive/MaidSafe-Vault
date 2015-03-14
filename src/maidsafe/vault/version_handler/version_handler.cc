@@ -66,6 +66,22 @@ bool VersionHandler<FacadeType>::HandlePost(const routing::SerialisedMessage& me
   return true;
 }
 
+template <typename FacadeType>
+template <typename DataType>
+routing::HandleGetReturn VersionHandler<FacadeType>::HandleGet(
+    const routing::SourceAddress& /* from */, const Identity& sdv_name) {
+  try {
+    std::string serialised_sdv;
+    std::string key(convert::ToString(sdv_name.string()));
+    db_.Get(key, serialised_sdv);
+    return routing::HandleGetReturn::value_type(convert::ToByteVector(serialised_sdv));
+  } catch (const maidsafe_error& error) {
+    return boost::make_unexpected(error);
+  } catch (...) {
+    return boost::make_unexpected(MakeError(CommonErrors::unable_to_handle_request));
+  }
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

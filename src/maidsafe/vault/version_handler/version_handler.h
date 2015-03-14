@@ -37,7 +37,7 @@ class VersionHandler {
   VersionHandler(const boost::filesystem::path& vault_root_dir,
                  DiskUsage max_disk_usage);
   template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+  routing::HandleGetReturn HandleGet(const routing::SourceAddress& from, const Identity& sdv_name);
 
   bool HandlePut(const routing::SerialisedMessage& message);
 

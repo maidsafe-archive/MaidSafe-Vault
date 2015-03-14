@@ -39,7 +39,7 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
       if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
         return DataManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
       else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
-        return DataManager::template HandleGet<MutableData>(from, name_and_type_id.name);
+        return VersionHandler::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     case routing::Authority::node_manager:
       if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
