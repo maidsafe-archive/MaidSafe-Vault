@@ -105,6 +105,10 @@ bool VaultFacade::HandlePost(const routing::SerialisedMessage& message) {
   return VersionHandler::HandlePost(message);
 }
 
+bool VaultFacade::HandlePut(routing::Address /*from*/, routing::SerialisedMessage message) {
+  return VersionHandler::HandlePut(message);
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

@@ -25,6 +25,28 @@ namespace maidsafe {
 namespace vault {
 
 template <typename FacadeType>
+bool VersionHandler<FacadeType>::HandlePut(const routing::SerialisedMessage& message) {
+  InputVectorStream binary_input_stream { message };
+  Identity sdv_name;
+  StructuredDataVersions::VersionName version;
+  uint32_t max_versions, max_branches;
+  Parse(binary_input_stream, sdv_name, version, max_versions, max_branches);
+  std::string key(convert::ToString(sdv_name.string()));
+  try {
+    std::string serialised_sdv;
+    db_.Get(key, serialised_sdv);
+    return false;
+  } catch (const maidsafe_error& error) {
+    if (error.code() != make_error_code(VaultErrors::no_such_account))
+      return false;
+  }
+  StructuredDataVersions sdv(max_versions, max_branches);
+  sdv.Put(StructuredDataVersions::VersionName(), version);
+  db_.Put(key, convert::ToString(sdv.Serialise().data.string()));
+  return true;
+}
+
+template <typename FacadeType>
 bool VersionHandler<FacadeType>::HandlePost(const routing::SerialisedMessage& message) {
   InputVectorStream binary_input_stream { message };
   Identity sdv_name;

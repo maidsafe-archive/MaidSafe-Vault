@@ -39,8 +39,7 @@ class VersionHandler {
   template <typename DataType>
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
 
-  template <typename DataType>
-  routing::HandlePutPostReturn HandlePut(const DataType& data);
+  bool HandlePut(const routing::SerialisedMessage& message);
 
   bool HandlePost(const routing::SerialisedMessage& message);
 

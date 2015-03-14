@@ -76,7 +76,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
   // default put is allowed unless prevented by upper layers
-  bool HandlePut(routing::Address, routing::SerialisedMessage);
+  bool HandlePut(routing::Address from, routing::SerialisedMessage message);
   // if the implementation allows any put of data in unauthenticated mode
   bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage);
   void HandleChurn(routing::CloseGroupDifference diff);
