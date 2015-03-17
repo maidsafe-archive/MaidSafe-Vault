@@ -33,7 +33,7 @@ namespace test {
 TEST(VaultTest, FUNC_Constructor) {
   if (!boost::filesystem::exists(VaultDir()))
     boost::filesystem::create_directory(VaultDir());
-  
+
   VaultFacade vault;
 }
 

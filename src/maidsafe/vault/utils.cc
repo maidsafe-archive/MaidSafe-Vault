@@ -18,9 +18,9 @@
 
 #include "maidsafe/vault/utils.h"
 
-#include "boost/filesystem/operations.hpp"
-
 #include <string>
+
+#include "boost/filesystem/operations.hpp"
 
 namespace maidsafe {
 
