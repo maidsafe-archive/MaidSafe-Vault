@@ -33,7 +33,7 @@ namespace vault {
 boost::filesystem::path VaultDir() {
   static const boost::filesystem::path path(GetHomeDir() / "MaidSafe-Vault");
   return path;
-};
+}
 
 routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
                                                 routing::Authority /* from_authority */,
