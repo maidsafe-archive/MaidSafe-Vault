@@ -18,6 +18,12 @@
 
 #include "maidsafe/vault/vault.h"
 
+#define COMPANY_NAME DummyValue
+#define APPLICATION_NAME DummyValue
+#include "maidsafe/common/application_support_directories.h"
+#undef COMPANY_NAME
+#undef APPLICATION_NAME
+
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
@@ -25,8 +31,7 @@ namespace maidsafe {
 namespace vault {
 
 boost::filesystem::path VaultDir() {
-  static const boost::filesystem::path path(boost::filesystem::path(getenv("HOME")) /
-                                            "MaidSafe-Vault");
+  static const boost::filesystem::path path(GetHomeDir() / "MaidSafe-Vault");
   return path;
 };
 

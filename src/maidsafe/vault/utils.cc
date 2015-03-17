@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/utils.h"
 
+#include "boost/filesystem/operations.hpp"
+
 #include <string>
 
 namespace maidsafe {

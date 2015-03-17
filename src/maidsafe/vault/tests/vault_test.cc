@@ -18,6 +18,8 @@
 
 #include "maidsafe/vault/vault.h"
 
+#include "boost/filesystem/operations.hpp"
+
 #include "maidsafe/common/test.h"
 
 namespace fs = boost::filesystem;
@@ -28,8 +30,10 @@ namespace vault {
 
 namespace test {
 
-
 TEST(VaultTest, FUNC_Constructor) {
+  if (!boost::filesystem::exists(VaultDir()))
+    boost::filesystem::create_directory(VaultDir());
+  
   VaultFacade vault;
 }
 
