@@ -32,8 +32,8 @@ namespace vault {
 
 namespace test {
 
-void AddRandomKeyValuePairs(std::vector<std::pair<Data::NameAndTypeId, NonEmptyString>>& container,
-                            uint32_t number, uint32_t size);
+void AddRandomNameValuePairs(std::vector<std::pair<Data::NameAndTypeId, NonEmptyString>>& container,
+                             std::uint32_t number, std::uint32_t size);
 
 Data::NameAndTypeId GetRandomDataNameAndTypeId();
 
