@@ -20,24 +20,23 @@
 #define MAIDSAFE_VAULT_VAULT_H_
 
 #include "boost/expected/expected.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/passport/types.h"
 
-#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
-
-namespace fs = boost::filesystem;
-
-static fs::path vault_dir{fs::path(getenv("HOME")) / "MaidSafe-Vault"};
+#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 
 namespace maidsafe {
 
 namespace vault {
+
+boost::filesystem::path VaultDir();
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
@@ -47,7 +46,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
  public:
   VaultFacade()
       : MaidManager<VaultFacade>(),
-        DataManager<VaultFacade>(vault_dir),
+        DataManager<VaultFacade>(VaultDir()),
         PmidManager<VaultFacade>(),
         PmidNode<VaultFacade>(),
         routing::test::FakeRouting<VaultFacade>() {}
