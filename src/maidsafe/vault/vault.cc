@@ -18,11 +18,22 @@
 
 #include "maidsafe/vault/vault.h"
 
+#define COMPANY_NAME DummyValue
+#define APPLICATION_NAME DummyValue
+#include "maidsafe/common/application_support_directories.h"
+#undef COMPANY_NAME
+#undef APPLICATION_NAME
+
 #include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
 namespace vault {
+
+boost::filesystem::path VaultDir() {
+  static const boost::filesystem::path path(GetHomeDir() / "MaidSafe-Vault");
+  return path;
+}
 
 routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
                                                 routing::Authority /* from_authority */,
@@ -86,8 +97,8 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
       if (data_type_id == detail::TypeId<ImmutableData>::value)
         return PmidManager::HandlePut(from, Parse<ImmutableData>(serialised_data));
       else if (data_type_id == detail::TypeId<MutableData>::value)
-        return PmidManager::template HandlePut<MutableData>(
-                   from, Parse<MutableData>(serialised_data));
+        return PmidManager::template HandlePut<MutableData>(from,
+                                                            Parse<MutableData>(serialised_data));
       break;
     case routing::Authority::managed_node:
       if (data_type_id == detail::TypeId<ImmutableData>::value)
@@ -138,4 +149,3 @@ routing::HandlePostReturn VaultFacade::HandlePost(routing::SourceAddress from,
 }  // namespace vault
 
 }  // namespace maidsafe
-

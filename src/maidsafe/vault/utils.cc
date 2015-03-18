@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "boost/filesystem/operations.hpp"
+
 namespace maidsafe {
 
 namespace vault {

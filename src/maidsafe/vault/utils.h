@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "boost/filesystem.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/identity.h"
 #include "maidsafe/common/types.h"
