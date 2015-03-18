@@ -34,14 +34,14 @@ namespace maidsafe {
 
 namespace vault {
 
-typedef Identity MpidName;
+using MpidName = Identity;
 
 using DbMessageQueryResult = boost::expected<MpidMessage, maidsafe_error>;
 using DbDataQueryResult = boost::expected<ImmutableData, maidsafe_error>;
 
 class MpidManagerHandler {
  public:
-  MpidManagerHandler(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
+  MpidManagerHandler(const boost::filesystem::path& vault_root_dir, DiskUsage max_disk_usage);
 
   void Put(const ImmutableData& data, const MpidName& mpid);
   void Delete(const Identity& data_name);
@@ -59,8 +59,7 @@ class MpidManagerHandler {
 //      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
  private:
-  template <typename Data>
-  Data GetChunk(const Identity& data_name) const;
+  ImmutableData GetChunk(const Identity& data_name) const;
 
   template <typename Data>
   void PutChunk(const Data& data);
@@ -71,18 +70,6 @@ class MpidManagerHandler {
   ChunkStore chunk_store_;
   MpidManagerDatabase db_;
 };
-
-template <typename Data>
-Data MpidManagerHandler::GetChunk(const Identity& data_name) const {
-  typename Data::NameAndTypeId key(data_name, DataTypeId(0));
-  try {
-    Data data(chunk_store_.Get(key));
-    return data;
-  }
-  catch (const maidsafe_error& /*error*/) {
-    throw;
-  }
-}
 
 template <typename Data>
 void MpidManagerHandler::PutChunk(const Data& data) {

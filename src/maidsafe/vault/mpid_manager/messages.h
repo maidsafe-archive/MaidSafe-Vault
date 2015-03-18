@@ -44,9 +44,9 @@ struct MpidMessageBase {
   MpidMessageBase(const Identity& sender_in, const Identity& receiver_in, int32_t id_in,
                   int32_t parent_id_in, const MessageHeaderType& signed_header_in);
   explicit MpidMessageBase(const std::string& serialised_copy);
-  MpidMessageBase(const MpidMessageBase& other);
+  MpidMessageBase(const MpidMessageBase& other) = default;
   MpidMessageBase(MpidMessageBase&& other);
-  MpidMessageBase& operator=(MpidMessageBase other);
+  MpidMessageBase& operator=(const MpidMessageBase&) = default;
 
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -67,9 +67,9 @@ struct MpidAlert {
   MpidAlert();
   MpidAlert(const MpidMessageBase& base_in, const MessageIdType& message_id_in);
   explicit MpidAlert(const std::string& serialised_copy);
-  MpidAlert(const MpidAlert& other);
+  MpidAlert(const MpidAlert&) = default;
   MpidAlert(MpidAlert&& other);
-  MpidAlert& operator=(MpidAlert other);
+  MpidAlert& operator=(const MpidAlert&) = default;
 
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -88,9 +88,9 @@ void swap(MpidAlert& lhs, MpidAlert& rhs) MAIDSAFE_NOEXCEPT;
 struct MpidMessage {
   MpidMessage(const MpidMessageBase& base_in, MessageBodyType& signed_body_in);
   explicit MpidMessage(const std::string& serialised_copy);
-  MpidMessage(const MpidMessage& other);
+  MpidMessage(const MpidMessage&) = default;
   MpidMessage(MpidMessage&& other);
-  MpidMessage& operator=(MpidMessage other);
+  MpidMessage& operator=(const MpidMessage&) = default;
 
   template <typename Archive>
   void serialize(Archive& archive) {

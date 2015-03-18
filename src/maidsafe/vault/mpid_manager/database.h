@@ -45,7 +45,7 @@ using DbTransferInfo = std::map<Identity, std::vector<GKPair>>;
 
 struct DatabaseEntry {
   DatabaseEntry(const MessageKey& key_in,
-                const uint32_t size_in,
+                uint32_t size_in,
                 const GroupName& mpid_in)
       : key(key_in), size(size_in), mpid(mpid_in) {}
   DatabaseEntry Key() const { return *this; }
@@ -57,7 +57,7 @@ struct DatabaseEntry {
 struct EntryKey_Tag {};
 struct EntryMpid_Tag {};
 
-typedef boost::multi_index_container<
+using DatabaseEntrySet = boost::multi_index_container<
     DatabaseEntry,
     boost::multi_index::indexed_by<
         boost::multi_index::ordered_unique<boost::multi_index::tag<EntryKey_Tag>,
@@ -65,7 +65,7 @@ typedef boost::multi_index_container<
         boost::multi_index::ordered_non_unique<boost::multi_index::tag<EntryMpid_Tag>,
             BOOST_MULTI_INDEX_MEMBER(DatabaseEntry, GroupName, mpid)>
     >
-> DatabaseEntrySet;
+>;
 
 using EntryByKey = boost::multi_index::index<DatabaseEntrySet, EntryKey_Tag>::type;
 using EntryByMpid = boost::multi_index::index<DatabaseEntrySet, EntryMpid_Tag>::type;

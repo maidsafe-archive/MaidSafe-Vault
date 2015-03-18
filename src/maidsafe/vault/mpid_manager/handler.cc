@@ -24,7 +24,7 @@ namespace maidsafe {
 
 namespace vault {
 
-MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path vault_root_dir,
+MpidManagerHandler::MpidManagerHandler(const boost::filesystem::path& vault_root_dir,
                                        DiskUsage max_disk_usage)
     : chunk_store_(vault_root_dir / "mpid_manager" / "permanent", max_disk_usage),
       db_() {}
@@ -85,7 +85,7 @@ void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
 
 DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& data_name) const {
   try {
-    return MpidMessage(convert::ToString(GetChunk<ImmutableData>(data_name).Value().string()));
+    return MpidMessage(convert::ToString(GetChunk(data_name).Value().string()));
   }
   catch (const maidsafe_error& error) {
     return boost::make_unexpected(error);
@@ -94,10 +94,21 @@ DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& data_name) c
 
 DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
   try {
-    return GetChunk<ImmutableData>(data_name);
+    return GetChunk(data_name);
   }
   catch (const maidsafe_error& error) {
     return boost::make_unexpected(error);
+  }
+}
+
+ImmutableData MpidManagerHandler::GetChunk(const Identity& data_name) const {
+  typename ImmutableData::NameAndTypeId key(data_name, DataTypeId(0));
+  try {
+    ImmutableData data(chunk_store_.Get(key));
+    return data;
+  }
+  catch (const maidsafe_error& /*error*/) {
+    throw;
   }
 }
 
@@ -123,7 +134,7 @@ DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
 //    for (const auto& account_entry : transfer.second) {
 //      try {
 //        kv_pairs.push_back(std::make_pair(account_entry.first,
-//            MpidManager::Value(GetChunk<ImmutableData>(account_entry.second))));
+//            MpidManager::Value(GetChunk(account_entry.second))));
 //      } catch (const maidsafe_error& error) {
 //        LOG(kError) << "MpidManagerHandler::GetTransferInfo got error " << error.what()
 //                    << " when fetching chunk " << HexSubstr(account_entry.second->string());

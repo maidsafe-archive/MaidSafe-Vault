@@ -35,9 +35,9 @@ namespace vault {
 MpidManagerDatabase::MpidManagerDatabase() : container_(), mutex_() {}
 
 void MpidManagerDatabase::Put(const MessageKey& key,
-                              const uint32_t size,
+                              uint32_t size,
                               const GroupName& group_name) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
   auto iter(key_index.find(key));
   if (iter == std::end(key_index))
@@ -48,20 +48,20 @@ void MpidManagerDatabase::Put(const MessageKey& key,
 }
 
 void MpidManagerDatabase::Delete(const MessageKey& key) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
   key_index.erase(key);
 }
 
 bool MpidManagerDatabase::Has(const MessageKey& key) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   EntryByKey& key_index = boost::multi_index::get<EntryKey_Tag>(container_);
   auto iter(key_index.find(key));
   return iter != std::end(key_index);
 }
 
 bool MpidManagerDatabase::HasGroup(const GroupName& mpid) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr(mpid_index.lower_bound(mpid));
   if (itr != mpid_index.end())
@@ -71,7 +71,7 @@ bool MpidManagerDatabase::HasGroup(const GroupName& mpid) {
 }
 
 MessageKey MpidManagerDatabase::GetAccountChunkName(const GroupName& mpid) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
@@ -84,7 +84,7 @@ MessageKey MpidManagerDatabase::GetAccountChunkName(const GroupName& mpid) {
 }
 
 std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(const GroupName& mpid) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   uint32_t num_of_messages(0), total_size(0);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
@@ -98,7 +98,7 @@ std::pair<uint32_t, uint32_t> MpidManagerDatabase::GetStatistic(const GroupName&
 }
 
 std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& mpid) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   std::vector<MessageKey> entries;
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
@@ -115,7 +115,7 @@ std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& 
 //  std::vector<std::pair<NodeId, GroupName>> groups_to_be_transferred;
 //  std::vector<GroupName> groups_to_be_removed;
 //  {
-//    std::unique_lock<std::mutex> lock(mutex_);
+//    std::lock_guard<std::mutex> lock(mutex_);
 //    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
 //    auto it0 = std::begin(mpid_index);
 //    while (it0 != std::end(mpid_index)) {
@@ -135,7 +135,7 @@ std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& 
 //  }
 //  DbTransferInfo transfer_info;
 //  {
-//    std::unique_lock<std::mutex> lock(mutex_);
+//    std::lock_guard<std::mutex> lock(mutex_);
 //    EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
 //    for (const auto& transfer_entry : groups_to_be_transferred) {
 //      auto itr0(mpid_index.lower_bound(transfer_entry.second));
@@ -154,7 +154,7 @@ std::vector<MessageKey> MpidManagerDatabase::GetEntriesForMPID(const GroupName& 
 // }
 
 void MpidManagerDatabase::DeleteGroup(const GroupName& mpid) {
-  std::unique_lock<std::mutex> lock(mutex_);
+  std::lock_guard<std::mutex> lock(mutex_);
   EntryByMpid& mpid_index = boost::multi_index::get<EntryMpid_Tag>(container_);
   auto itr0(mpid_index.lower_bound(mpid));
   auto itr1(mpid_index.upper_bound(mpid));
