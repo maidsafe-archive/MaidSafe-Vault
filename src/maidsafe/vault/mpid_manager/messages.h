@@ -32,8 +32,7 @@ namespace vault {
 
 const unsigned int kMaxHeaderSize = 128;
 const unsigned int kMaxBodySize = 1024 * 1024;
-const unsigned int kIdSize = 64;
-using  MessageIdType = maidsafe::detail::BoundedString<kIdSize, kIdSize>;
+using  MessageIdType = Identity;
 using  MessageHeaderType = maidsafe::detail::BoundedString<0, kMaxHeaderSize>;
 using  MessageBodyType = maidsafe::detail::BoundedString<0, kMaxBodySize>;
 

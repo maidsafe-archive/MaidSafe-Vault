@@ -52,6 +52,9 @@ void swap(MpidMessageBase& lhs, MpidMessageBase& rhs) MAIDSAFE_NOEXCEPT {
 
 // ================================= MpidAlert ==================================================
 
+MpidAlert::MpidAlert(const MpidMessageBase& base_in, const MessageIdType& message_id_in)
+    : base(base_in), message_id(message_id_in) {}
+
 MpidAlert::MpidAlert(MpidAlert&& other)
     : base(std::move(other.base)), message_id(std::move(other.message_id)) {}
 
