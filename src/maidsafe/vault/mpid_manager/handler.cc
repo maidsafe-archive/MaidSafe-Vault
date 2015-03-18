@@ -34,13 +34,14 @@ void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   db_.Put(data.Name(), static_cast<uint32_t>(data.Value().size()), mpid);
 }
 
-void MpidManagerHandler::Delete(const Identity& data_name) {
+void MpidManagerHandler::Delete(const Identity& message_id) {
+  Data::NameAndTypeId data_name(message_id, DataTypeId(0));
   DeleteChunk(data_name);
-  db_.Delete(data_name);
+  db_.Delete(message_id);
 }
 
-bool MpidManagerHandler::Has(const Identity& data_name) {
-  return db_.Has(data_name);
+bool MpidManagerHandler::Has(const Identity& message_id) {
+  return db_.Has(message_id);
 }
 
 bool MpidManagerHandler::HasAccount(const MpidName& mpid) {
@@ -83,8 +84,9 @@ void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
     Delete(entry);
 }
 
-DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& data_name) const {
+DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& message_id) const {
   try {
+    Data::NameAndTypeId data_name(message_id, DataTypeId(0));
     return Parse<MpidMessage>(GetChunk(data_name).Value().string());
   }
   catch (const maidsafe_error& error) {
@@ -92,7 +94,7 @@ DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& data_name) c
   }
 }
 
-DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
+DbDataQueryResult MpidManagerHandler::GetData(const Data::NameAndTypeId& data_name) const {
   try {
     return GetChunk(data_name);
   }
@@ -101,15 +103,23 @@ DbDataQueryResult MpidManagerHandler::GetData(const Identity& data_name) const {
   }
 }
 
-ImmutableData MpidManagerHandler::GetChunk(const Identity& data_name) const {
-  typename ImmutableData::NameAndTypeId key(data_name, DataTypeId(0));
+ImmutableData MpidManagerHandler::GetChunk(const Data::NameAndTypeId& data_name) const {
   try {
-    ImmutableData data(chunk_store_.Get(key));
+    ImmutableData data(chunk_store_.Get(data_name));
     return data;
   }
   catch (const maidsafe_error& /*error*/) {
     throw;
   }
+}
+
+void MpidManagerHandler::PutChunk(const ImmutableData& data) {
+//  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
+  chunk_store_.Put(data.NameAndType(), data.Value());
+}
+
+void MpidManagerHandler::DeleteChunk(const Data::NameAndTypeId& data_name) {
+  chunk_store_.Delete(data_name);
 }
 
 // MpidManager::TransferInfo MpidManagerHandler::GetTransferInfo(

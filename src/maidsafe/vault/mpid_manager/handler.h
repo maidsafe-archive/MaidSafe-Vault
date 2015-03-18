@@ -44,11 +44,11 @@ class MpidManagerHandler {
   MpidManagerHandler(const boost::filesystem::path& vault_root_dir, DiskUsage max_disk_usage);
 
   void Put(const ImmutableData& data, const MpidName& mpid);
-  void Delete(const Identity& data_name);
+  void Delete(const Identity& message_id);
 
-  DbMessageQueryResult GetMessage(const Identity& data_name) const;
-  DbDataQueryResult GetData(const Identity& data_name) const;
-  bool Has(const Identity& data_name);
+  DbMessageQueryResult GetMessage(const Identity& message_id) const;
+  DbDataQueryResult GetData(const Data::NameAndTypeId& data_name) const;
+  bool Has(const Identity& message_id);
   bool HasAccount(const MpidName& mpid);
 
   void CreateAccount(const MpidName& mpid, const NonEmptyString& mpid_account);
@@ -59,29 +59,15 @@ class MpidManagerHandler {
 //      std::shared_ptr<routing::CloseNodesChange> close_nodes_change);
 
  private:
-  ImmutableData GetChunk(const Identity& data_name) const;
+  ImmutableData GetChunk(const Data::NameAndTypeId& data_name) const;
 
-  template <typename Data>
-  void PutChunk(const Data& data);
+  void PutChunk(const ImmutableData& data);
 
-  template <typename DataName>
-  void DeleteChunk(const DataName& data_name);
+  void DeleteChunk(const Data::NameAndTypeId& data_name);
 
   ChunkStore chunk_store_;
   MpidManagerDatabase db_;
 };
-
-template <typename Data>
-void MpidManagerHandler::PutChunk(const Data& data) {
-//  VLOG(nfs::Persona::kPmidNode, VisualiserAction::kStoreChunk, data.name().value);
-  chunk_store_.Put(data.NameAndType(), data.Value());
-}
-
-template <typename DataName>
-void MpidManagerHandler::DeleteChunk(const DataName& data_name) {
-  typename Data::NameAndTypeId key(data_name, DataTypeId(0));
-  chunk_store_.Delete(key);
-}
 
 }  // namespace vault
 
