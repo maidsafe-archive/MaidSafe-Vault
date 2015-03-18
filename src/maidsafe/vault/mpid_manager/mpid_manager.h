@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 #define MAIDSAFE_VAULT_MPID_MANAGER_MPID_MANAGER_H_
 
+#include <vector>
+
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 #include "maidsafe/routing/source_address.h"
