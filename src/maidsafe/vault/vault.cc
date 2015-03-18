@@ -111,10 +111,10 @@ routing::HandlePostReturn VaultFacade::HandlePost(routing::SourceAddress from,
         // mpid_node A -> MpidManagers A : post MpidMessage to send message
         // mpid_node B -> MpidManagers B : post MpidAlert to get message
         try {
-          MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
+          MpidMessage mpid_message = Parse<MpidMessage>(message);
           return MpidManager::HandlePost(from, mpid_message);
         } catch (...) {
-          MpidAlert mpid_alert = ParseMpidMessaging<MpidAlert>(message);
+          MpidAlert mpid_alert = Parse<MpidAlert>(message);
           return MpidManager::HandlePost(from, mpid_alert);
         }
       } else {
@@ -122,10 +122,10 @@ routing::HandlePostReturn VaultFacade::HandlePost(routing::SourceAddress from,
         // MpidManagers B -> MpidManagers A : post MpidAlert to get the message
         // MpidManagers A -> MpidManagers B : post MpidMessage
         try {
-          MpidMessage mpid_message = ParseMpidMessaging<MpidMessage>(message);
+          MpidMessage mpid_message = Parse<MpidMessage>(message);
           return MpidManager::HandlePost(from, mpid_message);
         } catch (...) {
-          MpidAlert mpid_alert = ParseMpidMessaging<MpidAlert>(message);
+          MpidAlert mpid_alert = Parse<MpidAlert>(message);
           return MpidManager::HandlePost(from, mpid_alert);
         }
       }

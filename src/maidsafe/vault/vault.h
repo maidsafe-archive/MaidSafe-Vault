@@ -42,24 +42,6 @@ namespace maidsafe {
 
 namespace vault {
 
-//// Helper function to parse data name and contents
-//// FIXME this need discussion, adding it temporarily to progress
-// template <typename ParsedType>
-// ParsedType ParseData(const SerialisedData& serialised_data) {
-//  InputVectorStream binary_input_stream{serialised_data};
-//  typename ParsedType::Name name;
-//  typename ParsedType::serialised_type contents;
-//  Parse(binary_input_stream, name, contents);
-//  return ParsedType(name, contents);
-// }
-
-// Helper function to parse Mpid messaging related messages : message, alert, etc.
-// FIXME this need discussion, adding it temporarily to progress
-template <typename ParsedType>
-ParsedType ParseMpidMessaging(const SerialisedData& serialised_data) {
-  return ParsedType(std::string(serialised_data.begin(), serialised_data.end()));
-}
-
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,

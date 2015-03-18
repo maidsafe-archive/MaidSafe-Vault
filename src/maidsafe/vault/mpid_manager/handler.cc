@@ -85,7 +85,7 @@ void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
 
 DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& data_name) const {
   try {
-    return MpidMessage(convert::ToString(GetChunk(data_name).Value().string()));
+    return Parse<MpidMessage>(GetChunk(data_name).Value().string());
   }
   catch (const maidsafe_error& error) {
     return boost::make_unexpected(error);

@@ -40,10 +40,9 @@ using  MessageBodyType = maidsafe::detail::BoundedString<0, kMaxBodySize>;
 // ================================= MpidMessageBase =============================================
 
 struct MpidMessageBase {
-  MpidMessageBase();
+  MpidMessageBase() = default;
   MpidMessageBase(const Identity& sender_in, const Identity& receiver_in, int32_t id_in,
                   int32_t parent_id_in, const MessageHeaderType& signed_header_in);
-  explicit MpidMessageBase(const std::string& serialised_copy);
   MpidMessageBase(const MpidMessageBase& other) = default;
   MpidMessageBase(MpidMessageBase&& other);
   MpidMessageBase& operator=(const MpidMessageBase&) = default;
@@ -64,9 +63,8 @@ void swap(MpidMessageBase& lhs, MpidMessageBase& rhs) MAIDSAFE_NOEXCEPT;
 // ================================= MpidAlert =============================================
 
 struct MpidAlert {
-  MpidAlert();
+  MpidAlert() = default;
   MpidAlert(const MpidMessageBase& base_in, const MessageIdType& message_id_in);
-  explicit MpidAlert(const std::string& serialised_copy);
   MpidAlert(const MpidAlert&) = default;
   MpidAlert(MpidAlert&& other);
   MpidAlert& operator=(const MpidAlert&) = default;
@@ -86,8 +84,8 @@ void swap(MpidAlert& lhs, MpidAlert& rhs) MAIDSAFE_NOEXCEPT;
 // ================================= MpidMessage ==================================================
 
 struct MpidMessage {
+  MpidMessage() = default;
   MpidMessage(const MpidMessageBase& base_in, MessageBodyType& signed_body_in);
-  explicit MpidMessage(const std::string& serialised_copy);
   MpidMessage(const MpidMessage&) = default;
   MpidMessage(MpidMessage&& other);
   MpidMessage& operator=(const MpidMessage&) = default;
