@@ -36,6 +36,15 @@ MpidMessageBase::MpidMessageBase(MpidMessageBase&& other)
     : sender(std::move(other.sender)), receiver(std::move(other.receiver)), id(std::move(other.id)),
       parent_id(std::move(other.parent_id)), signed_header(std::move(other.signed_header)) {}
 
+MpidMessageBase& MpidMessageBase::operator=(MpidMessageBase&& other) {
+  sender = std::move(other.sender);
+  receiver = std::move(other.receiver);
+  id = std::move(other.id);
+  parent_id = std::move(other.parent_id);
+  signed_header = std::move(other.signed_header);
+  return *this;
+}
+
 bool operator==(const MpidMessageBase& lhs, const MpidMessageBase& rhs) {
   return (lhs.sender == rhs.sender) && (lhs.receiver == rhs.receiver) &&  (lhs.id == rhs.id) &&
          (lhs.parent_id == rhs.parent_id) && (lhs.signed_header == rhs.signed_header);
@@ -58,6 +67,12 @@ MpidAlert::MpidAlert(const MpidMessageBase& base_in, const MessageIdType& messag
 MpidAlert::MpidAlert(MpidAlert&& other)
     : base(std::move(other.base)), message_id(std::move(other.message_id)) {}
 
+MpidAlert& MpidAlert::operator=(MpidAlert&& other) {
+  base = std::move(other.base);
+  message_id = std::move(other.message_id);
+  return *this;
+}
+
 bool operator==(const MpidAlert& lhs, const MpidAlert& rhs) {
   return (lhs.base == rhs.base) && (lhs.message_id == rhs.message_id);
 }
@@ -75,6 +90,12 @@ MpidMessage::MpidMessage(const MpidMessageBase& base_in, MessageBodyType& signed
 
 MpidMessage::MpidMessage(MpidMessage&& other)
     : base(std::move(other.base)), signed_body(std::move(other.signed_body)) {}
+
+MpidMessage& MpidMessage::operator=(MpidMessage&& other) {
+  base = std::move(other.base);
+  signed_body = std::move(other.signed_body);
+  return *this;
+}
 
 bool operator==(const MpidMessage& lhs, const MpidMessage& rhs) {
   return (lhs.base == rhs.base) && (lhs.signed_body == rhs.signed_body);

@@ -45,6 +45,7 @@ struct MpidMessageBase {
   MpidMessageBase(const MpidMessageBase& other) = default;
   MpidMessageBase(MpidMessageBase&& other);
   MpidMessageBase& operator=(const MpidMessageBase&) = default;
+  MpidMessageBase& operator=(MpidMessageBase&& other);
 
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -67,6 +68,7 @@ struct MpidAlert {
   MpidAlert(const MpidAlert&) = default;
   MpidAlert(MpidAlert&& other);
   MpidAlert& operator=(const MpidAlert&) = default;
+  MpidAlert& operator=(MpidAlert&& other);
 
   template <typename Archive>
   void serialize(Archive& archive) {
@@ -88,6 +90,7 @@ struct MpidMessage {
   MpidMessage(const MpidMessage&) = default;
   MpidMessage(MpidMessage&& other);
   MpidMessage& operator=(const MpidMessage&) = default;
+  MpidMessage& operator=(MpidMessage&& other);
 
   template <typename Archive>
   void serialize(Archive& archive) {
