@@ -44,11 +44,11 @@ class MpidManagerHandler {
   MpidManagerHandler(const boost::filesystem::path& vault_root_dir, DiskUsage max_disk_usage);
 
   void Put(const ImmutableData& data, const MpidName& mpid);
-  void Delete(const Identity& message_id);
+  void Delete(const MessageIdType& message_id);
 
-  DbMessageQueryResult GetMessage(const Identity& message_id) const;
+  DbMessageQueryResult GetMessage(const MessageIdType& message_id) const;
   DbDataQueryResult GetData(const Data::NameAndTypeId& data_name) const;
-  bool Has(const Identity& message_id);
+  bool Has(const MessageIdType& message_id);
   bool HasAccount(const MpidName& mpid);
 
   void CreateAccount(const MpidName& mpid, const NonEmptyString& mpid_account);

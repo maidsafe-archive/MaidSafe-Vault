@@ -34,13 +34,13 @@ void MpidManagerHandler::Put(const ImmutableData& data, const MpidName& mpid) {
   db_.Put(data.Name(), static_cast<uint32_t>(data.Value().size()), mpid);
 }
 
-void MpidManagerHandler::Delete(const Identity& message_id) {
+void MpidManagerHandler::Delete(const MessageIdType& message_id) {
   Data::NameAndTypeId data_name(message_id, DataTypeId(0));
   DeleteChunk(data_name);
   db_.Delete(message_id);
 }
 
-bool MpidManagerHandler::Has(const Identity& message_id) {
+bool MpidManagerHandler::Has(const MessageIdType& message_id) {
   return db_.Has(message_id);
 }
 
@@ -68,7 +68,8 @@ void MpidManagerHandler::CreateAccount(const MpidName& mpid, const NonEmptyStrin
   db_.Put(data.Name(), 0, mpid);
 }
 
-void MpidManagerHandler::UpdateAccount(const MpidName& mpid, const NonEmptyString& mpid_account) {
+void MpidManagerHandler::UpdateAccount(const MpidName& mpid,
+                                       const NonEmptyString& mpid_account) {
   if (!HasAccount(mpid))
     BOOST_THROW_EXCEPTION(MakeError(VaultErrors::no_such_account));
   auto prev_account_name(db_.GetAccountChunkName(mpid));
@@ -84,7 +85,7 @@ void MpidManagerHandler::RemoveAccount(const MpidName& mpid) {
     Delete(entry);
 }
 
-DbMessageQueryResult MpidManagerHandler::GetMessage(const Identity& message_id) const {
+DbMessageQueryResult MpidManagerHandler::GetMessage(const MessageIdType& message_id) const {
   try {
     Data::NameAndTypeId data_name(message_id, DataTypeId(0));
     return Parse<MpidMessage>(GetChunk(data_name).Value().string());
