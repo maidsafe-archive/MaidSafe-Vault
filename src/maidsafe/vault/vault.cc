@@ -112,6 +112,40 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
   return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
 }
 
+// MpidManager is ClientManager
+routing::HandlePostReturn VaultFacade::HandlePost(routing::SourceAddress from,
+    routing::Authority from_authority, routing::Authority authority,
+        routing::SerialisedMessage message) {
+  switch (authority) {
+    case routing::Authority::client_manager:
+      if (from_authority == routing::Authority::client) {
+        // mpid_node A -> MpidManagers A : post MpidMessage to send message
+        // mpid_node B -> MpidManagers B : post MpidAlert to get message
+        try {
+          MpidMessage mpid_message = Parse<MpidMessage>(message);
+          return MpidManager::HandlePost(from, mpid_message);
+        } catch (...) {
+          MpidAlert mpid_alert = Parse<MpidAlert>(message);
+          return MpidManager::HandlePost(from, mpid_alert);
+        }
+      } else {
+        // MpidManagers A -> MpidManagers B : post MpidAlert to notification
+        // MpidManagers B -> MpidManagers A : post MpidAlert to get the message
+        // MpidManagers A -> MpidManagers B : post MpidMessage
+        try {
+          MpidMessage mpid_message = Parse<MpidMessage>(message);
+          return MpidManager::HandlePost(from, mpid_message);
+        } catch (...) {
+          MpidAlert mpid_alert = Parse<MpidAlert>(message);
+          return MpidManager::HandlePost(from, mpid_alert);
+        }
+      }
+    default:
+      break;
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+}
+
 }  // namespace vault
 
 }  // namespace maidsafe

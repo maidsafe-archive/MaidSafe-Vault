@@ -19,6 +19,8 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
+#include <string>
+
 #include "boost/expected/expected.hpp"
 #include "boost/filesystem/path.hpp"
 
@@ -30,6 +32,8 @@
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
+
 #include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 
 namespace maidsafe {
@@ -42,6 +46,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
+                    public MpidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
@@ -49,6 +54,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
         DataManager<VaultFacade>(VaultDir()),
         PmidManager<VaultFacade>(),
         PmidNode<VaultFacade>(),
+        MpidManager<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
         routing::test::FakeRouting<VaultFacade>() {}
 
   ~VaultFacade() = default;
@@ -63,6 +69,10 @@ class VaultFacade : public MaidManager<VaultFacade>,
                                          routing::Authority from_authority,
                                          routing::Authority authority, DataTypeId data_type_id,
                                          SerialisedData serialised_data);
+
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority,
+          routing::SerialisedMessage message);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
