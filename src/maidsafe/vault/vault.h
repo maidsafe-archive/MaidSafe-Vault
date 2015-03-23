@@ -19,41 +19,46 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
+#include <string>
+
 #include "boost/expected/expected.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/passport/types.h"
 
-#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
 #include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
-namespace fs = boost::filesystem;
-
-static fs::path vault_dir{fs::path(getenv("HOME")) / "MaidSafe-Vault"};
+#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 
 namespace maidsafe {
 
 namespace vault {
+
+boost::filesystem::path VaultDir();
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
                     public VersionHandler<VaultFacade>,
+                    public MpidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
       : MaidManager<VaultFacade>(),
-        DataManager<VaultFacade>(vault_dir),
+        DataManager<VaultFacade>(VaultDir()),
         PmidManager<VaultFacade>(),
         PmidNode<VaultFacade>(),
-        VersionHandler<VaultFacade>(vault_dir, DiskUsage(10000000000)),
+        VersionHandler<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
+        MpidManager<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
         routing::test::FakeRouting<VaultFacade>() {}
 
   ~VaultFacade() = default;
@@ -68,6 +73,10 @@ class VaultFacade : public MaidManager<VaultFacade>,
                                          routing::Authority from_authority,
                                          routing::Authority authority, DataTypeId data_type_id,
                                          SerialisedData serialised_data);
+
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority,
+          routing::SerialisedMessage message);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
