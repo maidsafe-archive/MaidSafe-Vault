@@ -16,8 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_H_
-#define MAIDSAFE_VAULT_VERSION_HANDLER_H_
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
+
+#include <string>
 
 #include "maidsafe/common/convert.h"
 #include "maidsafe/common/types.h"
@@ -117,4 +119,4 @@ bool VersionHandler<FacadeType>::HandlePost(const routing::SerialisedMessage& me
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_VERSION_HANDLER_H_
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_VERSION_HANDLER_H_
