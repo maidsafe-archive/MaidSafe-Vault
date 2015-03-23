@@ -19,8 +19,12 @@
 #ifndef MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 #define MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/common/sqlite3_wrapper.h"
 
+#include "maidsafe/common/convert.h"
 #include "maidsafe/routing/types.h"
 
 #include "maidsafe/vault/utils.h"
@@ -32,25 +36,23 @@ namespace vault {
 class DataManagerDatabase {
  public:
   using GetPmidsResult = boost::expected<std::vector<routing::Address>, maidsafe_error>;
-  DataManagerDatabase(boost::filesystem::path db_path);
+  explicit DataManagerDatabase(const boost::filesystem::path& db_path);
   ~DataManagerDatabase();
 
   template <typename DataType>
-  bool Exist(const typename DataType::Name& name);
+  bool Exist(const Identity& name);
 
   template <typename DataType>
-  void Put(const typename DataType::Name& name, const std::vector<routing::Address>& pmid_nodes);
+  void Put(const Identity& name, const std::vector<routing::Address>& pmid_nodes);
 
   template <typename DataType>
-  void ReplacePmidNodes(const typename DataType::Name& name,
-                        const std::vector<routing::Address>& pmid_nodes);
+  void ReplacePmidNodes(const Identity& name, const std::vector<routing::Address>& pmid_nodes);
 
   template <typename DataType>
-  maidsafe_error RemovePmid(const typename DataType::Name& name,
-                            const routing::DestinationAddress& remove_pmid);
+  maidsafe_error RemovePmid(const Identity& name, const routing::DestinationAddress& remove_pmid);
 
   template <typename DataType>
-  GetPmidsResult GetPmids(const typename DataType::Name& name);
+  GetPmidsResult GetPmids(const Identity& name);
 
  private:
   void CheckPoint();
@@ -61,7 +63,7 @@ class DataManagerDatabase {
 };
 
 template <typename DataType>
-void DataManagerDatabase::Put(const typename DataType::Name& name,
+void DataManagerDatabase::Put(const Identity& name,
                               const std::vector<routing::Address>& pmid_nodes) {
   if (!database_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
@@ -75,30 +77,29 @@ void DataManagerDatabase::Put(const typename DataType::Name& name,
   sqlite::Statement statement{*database_, query};
   statement.BindText(1, EncodeToString<DataType>(name));
   for (const auto& pmid_node : pmid_nodes)
-    pmids_str += NodeId(pmid_node.string()).string();
+    pmids_str += convert::ToString(pmid_node.string());
   statement.BindText(2, pmids_str);
   statement.Step();
   transaction.Commit();
 }
 
 template <typename DataType>
-void DataManagerDatabase::ReplacePmidNodes(const typename DataType::Name& name,
+void DataManagerDatabase::ReplacePmidNodes(const Identity& name,
                                            const std::vector<routing::Address>& pmid_nodes) {
   Put<DataType>(name, pmid_nodes);
 }
 
 template <typename DataType>
-maidsafe_error DataManagerDatabase::RemovePmid(const typename DataType::Name& name,
+maidsafe_error DataManagerDatabase::RemovePmid(const Identity& name,
                                                const routing::DestinationAddress& remove_pmid) {
   auto result(GetPmids<DataType>(name));
   if (!result.valid())
-     return result.error();
+    return result.error();
 
   auto& pmid_nodes(*result);
-  if (std::any_of(pmid_nodes.begin(), pmid_nodes.end(),
-                  [&](const routing::Address& pmid_node) {
-                    return pmid_node == remove_pmid.first.data;
-                  })) {
+  if (std::any_of(pmid_nodes.begin(), pmid_nodes.end(), [&](const routing::Address& pmid_node) {
+        return pmid_node == remove_pmid.first.data;
+      })) {
     pmid_nodes.erase(std::remove(pmid_nodes.begin(), pmid_nodes.end(), remove_pmid.first.data),
                      pmid_nodes.end());
     ReplacePmidNodes<DataType>(name, pmid_nodes);
@@ -108,8 +109,7 @@ maidsafe_error DataManagerDatabase::RemovePmid(const typename DataType::Name& na
 }
 
 template <typename DataType>
-DataManagerDatabase::GetPmidsResult
-DataManagerDatabase::GetPmids(const typename DataType::Name& name) {
+DataManagerDatabase::GetPmidsResult DataManagerDatabase::GetPmids(const Identity& name) {
   if (!database_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
@@ -119,11 +119,10 @@ DataManagerDatabase::GetPmids(const typename DataType::Name& name) {
   statement.BindText(1, EncodeToString<DataType>(name));
 
   if (statement.Step() == sqlite::StepResult::kSqliteRow) {
-    assert(statement.ColumnText(0).size() % NodeId::kSize == 0);
-    size_t pmids_count(statement.ColumnText(0).size() / NodeId::kSize);
+    assert(statement.ColumnText(0).size() % identity_size == 0);
+    size_t pmids_count(statement.ColumnText(0).size() / identity_size);
     for (size_t index(0); index < pmids_count; ++index)
-      pmid_nodes.emplace_back(NodeId(statement.ColumnText(0).substr(index * NodeId::kSize,
-                                                                    NodeId::kSize)));
+      pmid_nodes.emplace_back(statement.ColumnText(0).substr(index * identity_size, identity_size));
   } else {
     return boost::make_unexpected(MakeError(VaultErrors::no_such_account));
   }
@@ -131,7 +130,7 @@ DataManagerDatabase::GetPmids(const typename DataType::Name& name) {
 }
 
 template <typename DataType>
-bool DataManagerDatabase::Exist(const typename DataType::Name& name) {
+bool DataManagerDatabase::Exist(const Identity& name) {
   if (!database_)
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::db_not_present));
 
@@ -151,5 +150,5 @@ bool DataManagerDatabase::Exist(const typename DataType::Name& name) {
 
 }  // namespace maidsafe
 
-#endif // MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
+#endif  // MAIDSAFE_VAULT_DATA_MANAGER_DATABASE_H_
 
