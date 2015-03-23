@@ -18,16 +18,15 @@
 
 #include "maidsafe/vault/chunk_store.h"
 
-#include <string>
-#include <vector>
 #include <algorithm>
+#include <future>
 
 #include "boost/filesystem/convenience.hpp"
 #include "boost/lexical_cast.hpp"
 
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/crypto.h"
 
 namespace fs = boost::filesystem;
 
@@ -38,7 +37,7 @@ namespace vault {
 namespace {
 
 struct UsedSpace {
-  UsedSpace() {}
+  UsedSpace() : directories(), disk_usage(0) {}
   UsedSpace(UsedSpace&& other)
       : directories(std::move(other.directories)), disk_usage(std::move(other.disk_usage)) {}
 
@@ -76,7 +75,7 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
     dirs_to_do.push_back(disk_root);
     while (!dirs_to_do.empty()) {
       std::vector<std::future<UsedSpace>> futures;
-      for (uint32_t i = 0; i < 16 && !dirs_to_do.empty(); ++i) {
+      for (std::uint32_t i = 0; i < 16 && !dirs_to_do.empty(); ++i) {
         auto temp_copy(dirs_to_do.back());
         auto future = std::async(&GetUsedSpace, temp_copy);
         dirs_to_do.pop_back();
@@ -91,14 +90,12 @@ DiskUsage InitialiseDiskRoot(const fs::path& disk_root) {
           std::move(result.directories.begin(), result.directories.end(),
                     std::back_inserter(dirs_to_do));
         }
-      }
-      catch (const std::system_error& exception) {
+      } catch (const std::system_error& exception) {
         LOG(kError) << boost::diagnostic_information(exception);
         BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
-      }
-      catch (...) {
+      } catch (...) {
         LOG(kError) << "exception during InitialiseDiskRoot";
-        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
       }
     }
   }
@@ -112,8 +109,7 @@ ChunkStore::ChunkStore(const fs::path& disk_path, DiskUsage max_disk_usage)
       max_disk_usage_(std::move(max_disk_usage)),
       current_disk_usage_(InitialiseDiskRoot(kDiskPath_)),
       kDepth_(5),
-      mutex_(),
-      get_identity_visitor_() {
+      mutex_() {
   if (current_disk_usage_ > max_disk_usage_) {
     LOG(kError) << "current disk usage " << current_disk_usage_
                 << " is greater than max disk usage " << max_disk_usage_;
@@ -123,20 +119,20 @@ ChunkStore::ChunkStore(const fs::path& disk_path, DiskUsage max_disk_usage)
 
 ChunkStore::~ChunkStore() {}
 
-void ChunkStore::Put(const KeyType& key, const NonEmptyString& value) {
-  std::unique_lock<std::mutex> lock(mutex_);
+void ChunkStore::Put(const NameType& name, const NonEmptyString& value) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (!fs::exists(kDiskPath_)) {
     LOG(kError) << "ChunkStore::Put kDiskPath_ " << kDiskPath_ << " doesn't exists";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   }
 
-  auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  auto content(crypto::ObfuscateData(key_tag_and_id.second, value));
-  auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
-  auto file_path(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash)));
-  LOG(kVerbose) << "ChunkStore::Put file_path " << file_path;
-  uint32_t value_size(static_cast<uint32_t>(content.data.string().size()));
-  uint64_t file_size(0), size(0);
+  const auto& name_str(name.name.string());
+  crypto::AES256KeyAndIV key_and_iv(std::vector<byte>(
+      name_str.begin(), name_str.begin() + crypto::AES256_KeySize + crypto::AES256_IVSize));
+  auto content(crypto::SymmEncrypt(value, key_and_iv));
+  auto file_path(NameToFilePath(name));
+  std::uint32_t value_size(static_cast<std::uint32_t>(content.data.string().size()));
+  std::uint64_t file_size(0), size(0);
   bool increment(true);
   boost::system::error_code error_code;
 
@@ -165,17 +161,13 @@ void ChunkStore::Put(const KeyType& key, const NonEmptyString& value) {
 
   if (increment) {
     if (!HasDiskSpace(size)) {
-      LOG(kError) << "Cannot store "
-                  << HexSubstr(boost::apply_visitor(get_identity_visitor_, key).string())
-                  << " since the addition of " << size << " bytes exceeds max of "
-                  << max_disk_usage_ << " bytes.";
+      LOG(kError) << "Cannot store " << name.name << " since the addition of " << size
+                  << " bytes exceeds max of " << max_disk_usage_ << " bytes.";
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::cannot_exceed_limit));
     }
   }
   if (!WriteFile(file_path, content.data.string())) {
-    LOG(kError) << "Failed to write "
-                << HexSubstr(boost::apply_visitor(get_identity_visitor_, key).string())
-                << " to disk.";
+    LOG(kError) << "Failed to write " << name.name << " to disk.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
   }
 
@@ -186,13 +178,11 @@ void ChunkStore::Put(const KeyType& key, const NonEmptyString& value) {
   }
 }
 
-void ChunkStore::Delete(const KeyType& key) {
+void ChunkStore::Delete(const NameType& name) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
-  auto path(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash)));
+  auto path(NameToFilePath(name));
   boost::system::error_code error_code;
-  uint64_t file_size(fs::file_size(path, error_code));
+  std::uint64_t file_size(fs::file_size(path, error_code));
   if (error_code) {
     LOG(kError) << "Error getting file size of " << path << ": " << error_code.message();
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::filesystem_io_error));
@@ -204,15 +194,17 @@ void ChunkStore::Delete(const KeyType& key) {
   current_disk_usage_.data -= file_size;
 }
 
-NonEmptyString ChunkStore::Get(const KeyType& key) const {
+NonEmptyString ChunkStore::Get(const NameType& name) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto key_tag_and_id(boost::apply_visitor(GetTagValueAndIdentityVisitor(), key));
-  auto hash(crypto::Hash<crypto::SHA512>(key_tag_and_id.second));
+  auto content(ReadFile(NameToFilePath(name)));
+  if (!content)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   try {
-    auto content(ReadFile(KeyToFilePath(GetDataNameVariant(key_tag_and_id.first, hash))));
-    return crypto::DeobfuscateData(key_tag_and_id.second, crypto::CipherText(content));
-  }
-  catch (const std::exception&) {
+    const auto& name_str(name.name.string());
+    crypto::AES256KeyAndIV key_and_iv(std::vector<byte>(
+        name_str.begin(), name_str.begin() + crypto::AES256_KeySize + crypto::AES256_IVSize));
+    return crypto::SymmDecrypt(crypto::CipherText(NonEmptyString(*content)), key_and_iv);
+  } catch (const std::exception&) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
   }
 }
@@ -221,68 +213,64 @@ void ChunkStore::SetMaxDiskUsage(DiskUsage max_disk_usage) {
   if (current_disk_usage_ > max_disk_usage) {
     LOG(kError) << "current_disk_usage_ " << current_disk_usage_.data
                 << " exceeds target max_disk_usage " << max_disk_usage.data;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   max_disk_usage_ = max_disk_usage;
 }
 
-std::vector<ChunkStore::KeyType> ChunkStore::GetKeys() const {
-  std::vector<DataNameVariant> keys;
+std::vector<ChunkStore::NameType> ChunkStore::Names() const {
+  std::vector<NameType> names;
   fs::directory_iterator end_iter;
 
   if (fs::exists(kDiskPath_) && fs::is_directory(kDiskPath_)) {
     for (fs::directory_iterator dir_iter(kDiskPath_); dir_iter != end_iter; ++dir_iter) {
       if (fs::is_regular_file(dir_iter->status()))
-        keys.push_back(detail::GetDataNameVariant(*dir_iter));
+        names.push_back(detail::GetDataNameAndTypeId(*dir_iter));
       else
-        GetKeys(dir_iter->path(), dir_iter->path().filename().string(), keys);
+        GetNames(dir_iter->path(), dir_iter->path().filename().string(), names);
     }
   }
-  return keys;
+  return names;
 }
 
-void ChunkStore::GetKeys(const boost::filesystem::path& path,
-                         std::string prefix,
-                         std::vector<DataNameVariant>& keys) const {
+void ChunkStore::GetNames(const boost::filesystem::path& path, std::string prefix,
+                          std::vector<NameType>& names) const {
   fs::directory_iterator end_iter;
   for (fs::directory_iterator dir_iter(path); dir_iter != end_iter; ++dir_iter) {
     if (fs::is_regular_file(dir_iter->status()))
-      keys.push_back(ComposeDataNameVariant(prefix + dir_iter->path().filename().string()));
+      names.push_back(ComposeName(prefix + dir_iter->path().filename().string()));
     else
-      GetKeys(dir_iter->path(), prefix + dir_iter->path().filename().string(), keys);
+      GetNames(dir_iter->path(), prefix + dir_iter->path().filename().string(), names);
   }
 }
 
-DataNameVariant ChunkStore::ComposeDataNameVariant(std::string file_name_str) const {
+ChunkStore::NameType ChunkStore::ComposeName(std::string file_name_str) const {
   size_t index(file_name_str.rfind('_'));
-  auto id(static_cast<DataTagValue>(std::stoul(file_name_str.substr(index + 1))));
-  Identity key_id(HexDecode(file_name_str.substr(0, index)));
-  return GetDataNameVariant(id, key_id);
+  auto type(static_cast<DataTypeId>(std::stoul(file_name_str.substr(index + 1))));
+  Identity id(hex::DecodeToBytes(file_name_str.substr(0, index)));
+  return NameType(id, type);
 }
 
-fs::path ChunkStore::GetFilePath(const KeyType& key) const {
-  return kDiskPath_ / detail::GetFileName(key);
-}
-
-bool ChunkStore::HasDiskSpace(uint64_t required_space) const {
+bool ChunkStore::HasDiskSpace(std::uint64_t required_space) const {
   return current_disk_usage_ + required_space <= max_disk_usage_;
 }
 
-fs::path ChunkStore::KeyToFilePath(const KeyType& key) const {
-  NonEmptyString file_name(GetFilePath(key).filename().string());
+fs::path ChunkStore::NameToFilePath(NameType name) const {
+  name.name = crypto::Hash<crypto::SHA512>(name.name);
+  std::string file_name(detail::GetFileName(name).string());
 
-  uint32_t directory_depth = kDepth_;
-  if (file_name.string().length() < directory_depth)
-    directory_depth = static_cast<uint32_t>(file_name.string().length() - 1);
+  std::uint32_t directory_depth = kDepth_;
+  if (file_name.size() < directory_depth)
+    directory_depth = static_cast<std::uint32_t>(file_name.size() - 1);
 
   fs::path disk_path(kDiskPath_);
-  for (uint32_t i = 0; i < directory_depth; ++i)
-    disk_path /= file_name.string().substr(i, 1);
+  for (std::uint32_t i = 0; i < directory_depth; ++i)
+    disk_path /= file_name.substr(i, 1);
 
   boost::system::error_code ec;
   fs::create_directories(disk_path, ec);
 
-  return fs::path(disk_path / file_name.string().substr(directory_depth));
+  return fs::path(disk_path / file_name.substr(directory_depth));
 }
 
 }  // namespace vault

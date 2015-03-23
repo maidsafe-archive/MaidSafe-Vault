@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
   try {
     auto unuseds(maidsafe::log::Logging::Instance().Initialise(argc, argv));
     if (unuseds.size() != 2U)
-      BOOST_THROW_EXCEPTION(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
+      BOOST_THROW_EXCEPTION(maidsafe::MakeError(maidsafe::CommonErrors::invalid_argument));
 //    uint16_t port{static_cast<uint16_t>(std::stoi(std::string{&unuseds[1][0]}))};
 //    maidsafe::vault_manager::VaultInterface vault_interface{port};
 //    VaultConfig vault_config{vault_interface.GetConfiguration()};
@@ -49,18 +49,7 @@ int main(int argc, char* argv[]) {
   catch (const std::exception& /*e*/) {
 //    LOG(kError) << "This is only designed to be invoked by VaultManager: " << e.what();
     exit_code =
-        maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_parameter));
+        maidsafe::ErrorToInt(maidsafe::MakeError(maidsafe::CommonErrors::invalid_argument));
   }
-//  try {
-//    VLOG(maidsafe::vault::VisualiserAction::kVaultStopped, exit_code);
-//  }
-//  catch (const maidsafe::maidsafe_error& err) {
-//    if (err.code() == maidsafe::make_error_code(maidsafe::CommonErrors::unable_to_handle_request)) {
-//      LOG(kWarning) << "Visualiser logging has not been initialised.";
-//    } else {
-//      LOG(kError) << boost::diagnostic_information(err);
-//      throw;
-//    }
-//  }
   return exit_code;
 }

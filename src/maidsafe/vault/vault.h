@@ -19,74 +19,64 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
+#include <string>
+
 #include "boost/expected/expected.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
-#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/passport/types.h"
 
-
-#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
-namespace fs = boost::filesystem;
-
-#if defined(MAIDSAFE_WIN32)
-static fs::path vault_dir {
-    fs::path(std::getenv("HOMEDRIVE")) / std::getenv("HOMEPATH") / "MaidSafe-Vault" };
-#else
-static fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
-#endif
+#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 
 namespace maidsafe {
 
 namespace vault {
 
-// Helper function to parse data name and contents
-// FIXME this need discussion, adding it temporarily to progress
-template <typename ParsedType>
-ParsedType ParseData(const SerialisedData& serialised_data) {
-  InputVectorStream binary_input_stream{serialised_data};
-  typename ParsedType::Name name;
-  typename ParsedType::serialised_type contents;
-  Parse(binary_input_stream, name, contents);
-  return ParsedType(name, contents);
-}
+boost::filesystem::path VaultDir();
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
+                    public MpidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
-    : MaidManager<VaultFacade>(),
-      DataManager<VaultFacade>(vault_dir),
-      PmidManager<VaultFacade>(),
-      PmidNode<VaultFacade>(),
-      routing::test::FakeRouting<VaultFacade>() {
-  }
+      : MaidManager<VaultFacade>(),
+        DataManager<VaultFacade>(VaultDir()),
+        PmidManager<VaultFacade>(),
+        PmidNode<VaultFacade>(),
+        MpidManager<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
+        routing::test::FakeRouting<VaultFacade>() {}
 
   ~VaultFacade() = default;
 
   enum class FunctorType { FunctionOne, FunctionTwo };
-  //enum class DataTypeEnum { ImmutableData, MutableData, End };
-  //using DataTagValue = DataTypeEnum;
 
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority from_authority,
-                                     routing::Authority authority, DataTagValue data_type,
-                                     Identity data_name);
+                                     routing::Authority authority,
+                                     Data::NameAndTypeId name_and_type_id);
 
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
-      routing::Authority from_authority, routing::Authority authority, DataTagValue data_type,
-          SerialisedData serialised_data);
+                                         routing::Authority from_authority,
+                                         routing::Authority authority, DataTypeId data_type_id,
+                                         SerialisedData serialised_data);
+
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority,
+          routing::SerialisedMessage message);
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
-   template <typename DataType>
+  template <typename DataType>
   boost::expected<routing::SerialisedMessage, maidsafe_error> HandleGet(routing::Address) {
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
