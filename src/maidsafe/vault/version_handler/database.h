@@ -16,29 +16,41 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include "maidsafe/vault/vault.h"
+#ifndef MAIDSAFE_VAULT_VERSION_HANDLER_DATABASE_H_
+#define MAIDSAFE_VAULT_VERSION_HANDLER_DATABASE_H_
 
-#include "boost/filesystem/operations.hpp"
+#include <string>
+#include <utility>
 
-#include "maidsafe/common/test.h"
-
-namespace fs = boost::filesystem;
+#include "maidsafe/common/sqlite3_wrapper.h"
 
 namespace maidsafe {
 
 namespace vault {
 
-namespace test {
+class VersionHandlerDatabase {
+  typedef std::string VALUE;
+ public:
+  typedef std::string KEY;
+  explicit VersionHandlerDatabase(const boost::filesystem::path& db_path);
+  ~VersionHandlerDatabase();
 
-TEST(VaultTest, FUNC_Constructor) {
-  if (!boost::filesystem::exists(VaultDir()))
-    boost::filesystem::create_directory(VaultDir());
+  void Put(const KEY& key, const VALUE& value);
+  void Get(const KEY& key, VALUE& value);
+  void Delete(const KEY& key);
+  bool SeekNext(std::pair<KEY, VALUE>& result);
 
-  VaultFacade vault;
-}
+ private:
+  void CheckPoint();
 
-}  // namespace test
+  std::unique_ptr<sqlite::Database> database_;
+  std::unique_ptr<sqlite::Statement> seeking_statement_;
+  const boost::filesystem::path kDbPath_;
+  int write_operations_;
+};
 
 }  // namespace vault
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_VAULT_VERSION_HANDLER_DATABASE_H_
