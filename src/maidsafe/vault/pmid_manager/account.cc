@@ -65,7 +65,7 @@ void PmidManagerAccount::PutData(uint64_t size) {
 void PmidManagerAccount::DeleteData(uint64_t size) {
   if (stored_total_size < size) {
     LOG(kError) << "invalid stored_total_size " << stored_total_size;
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_argument));
   }
   stored_total_size -= size;
 }

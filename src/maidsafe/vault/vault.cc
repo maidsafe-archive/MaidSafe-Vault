@@ -124,10 +124,10 @@ routing::HandlePutPostReturn VaultFacade::HandlePutResponse(routing::SourceAddre
         break;
       if (data_type_id == detail::TypeId<ImmutableData>::value)
         return DataManager::template HandlePutResponse<ImmutableData>(
-            Parse<ImmutableData>(serialised_data).name(), dest, return_code);
+            Parse<ImmutableData>(serialised_data).Name(), dest, return_code);
       else if (data_type_id == detail::TypeId<MutableData>::value)
         return DataManager::template HandlePutResponse<MutableData>(
-            Parse<MutableData>(serialised_data).name(), dest, return_code);
+            Parse<MutableData>(serialised_data).Name(), dest, return_code);
       break;
     case routing::Authority::node_manager:
       if (from_authority != routing::Authority::managed_node)

@@ -73,7 +73,7 @@ routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePut(
       else
         return boost::make_unexpected(MakeError(CommonErrors::unknown));
     }
-    itr->second.PutData(data.Serialise()->string().size());
+    itr->second.PutData(data.Value().size());
     std::vector<routing::DestinationAddress> dest_addresses;
     dest_addresses.emplace_back(dest);
     return dest_addresses;
@@ -96,12 +96,13 @@ routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePutResponse(
   // for PmidManager, the HandlePutResponse shall never return with error,
   // as this may trigger the returned error_code to be sent back to pmid_node
   if (itr != std::end(accounts_)) {
-    itr->second.HandleFailure(data.Serialise()->string().size());
-  } else {
-    LOG(kError) << "PmidManager doesn't hold account for " << HexSubstr(pmid_node.string());
-  }
+    itr->second.HandleFailure(data.Value().size());
+  }/* else {
+    LOG(kError) << "PmidManager doesn't hold account for "
+                << maidsafe::detail::GetSubstr(pmid_node.string());
+  }*/
   std::vector<routing::DestinationAddress> dest;
-  dest.push_back(std::make_pair(routing::Destination(routing::Address(data.name())),
+  dest.push_back(std::make_pair(routing::Destination(routing::Address(data.Name())),
                                 boost::optional<routing::ReplyToAddress>()));
   return routing::HandlePutPostReturn(dest);
 }
