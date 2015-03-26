@@ -42,11 +42,10 @@ class PmidNodeTest : public testing::Test {
  protected:
   PmidNode<VaultFacade> pmid_node_ {
       *maidsafe::test::CreateTestPath("MaidSafe_Vault_PmidNode") , DiskUsage(1024 * 1024 * 1024) };
-
 };
 
-}
+}  // namespace test
 
-} // namespace vault
+}  // namespace vault
 
-} // namespace maidsafe
+}  // namespace maidsafe

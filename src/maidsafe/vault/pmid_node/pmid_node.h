@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_
 #define MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 
@@ -49,7 +52,8 @@ class PmidNode {
 };
 
 template <typename FacadeType>
-PmidNode<FacadeType>::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage)
+PmidNode<FacadeType>::PmidNode(const boost::filesystem::path vault_root_dir,
+                               DiskUsage max_disk_usage)
     : /*space_info_(boost::filesystem::space(vault_root_dir)),*/
 //      disk_total_(space_info_.available),
       disk_total_(max_disk_usage),
