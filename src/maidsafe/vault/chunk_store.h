@@ -26,11 +26,9 @@
 #include <vector>
 
 #include "boost/filesystem/path.hpp"
-<<<<<<< HEAD
+
 #include "boost/expected/expected.hpp"
 #include "boost/variant.hpp"
-=======
->>>>>>> next
 
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"

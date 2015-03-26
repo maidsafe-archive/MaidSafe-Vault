@@ -59,10 +59,7 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
         PmidManager::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     case routing::Authority::managed_node:
-      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
-        return PmidNode::template HandleGet<ImmutableData>(from, name_and_type_id.name);
-      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
-        return PmidNode::template HandleGet<MutableData>(from, name_and_type_id.name);
+      PmidNode::HandleGet(from, name_and_type_id);
       break;
     default:
       break;

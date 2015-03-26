@@ -29,20 +29,20 @@ namespace maidsafe {
 
 namespace vault {
 
-
 template <typename FacadeType>
 class PmidNode {
  public:
   PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from,
+                                     Data::NameAndTypeId name_and_type_id);
 
   template <typename DataType>
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from, DataType data);
   void HandleChurn(routing::CloseGroupDifference);
 
  private:
-  boost::filesystem::space_info space_info_;
+//  boost::filesystem::space_info space_info_;
   DiskUsage disk_total_;
   DiskUsage permanent_size_;
   ChunkStore chunk_store_;
@@ -50,23 +50,21 @@ class PmidNode {
 
 template <typename FacadeType>
 PmidNode<FacadeType>::PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage)
-    : space_info_(boost::filesystem::space(vault_root_dir)),
-      disk_total_(space_info_.available),
+    : /*space_info_(boost::filesystem::space(vault_root_dir)),*/
+//      disk_total_(space_info_.available),
+      disk_total_(max_disk_usage),
       permanent_size_(disk_total_ * 4 / 5),
       chunk_store_(vault_root_dir / "pmid_node" / "permanent", max_disk_usage) {}
 
 template <typename FacadeType>
-template <typename DataType>
 routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /* from */,
-                                                         Identity data_name) {
-  const typename DataType::Name NameVariant(data_name);
-  DataNameVariant data_name_variant(NameVariant);
+                                                         Data::NameAndTypeId name_and_type_id) {
   try {
-    auto deobfuscated_data(chunk_store_.Get(data_name_variant));
+    auto deobfuscated_data(chunk_store_.Get(name_and_type_id));
     return routing::HandleGetReturn::value_type(
                 std::vector<byte>(std::begin(deobfuscated_data.string()),
                                   std::end(deobfuscated_data.string())));
-  } catch (const std::exception& e) {
+  } catch (const std::exception& /*e*/) {
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
 }
@@ -76,7 +74,7 @@ template <typename DataType>
 routing::HandlePutPostReturn PmidNode<FacadeType>::HandlePut(routing::SourceAddress /* from */,
                                                              DataType data) {
   try {
-    chunk_store_.Put(DataNameVariant(data.name()), data.Serialise().data);
+    chunk_store_.Put(data.NameAndType(), NonEmptyString{Serialise(data)});
     return boost::make_unexpected(MakeError(CommonErrors::success));
   } catch (const maidsafe_error& e) {
     if (e.code() == make_error_code(CommonErrors::cannot_exceed_limit))
