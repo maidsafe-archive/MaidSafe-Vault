@@ -19,63 +19,58 @@
 #ifndef MAIDSAFE_VAULT_VAULT_H_
 #define MAIDSAFE_VAULT_VAULT_H_
 
+#include <string>
+
 #include "boost/expected/expected.hpp"
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
-#include "maidsafe/common/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
+#include "maidsafe/passport/types.h"
 
-
-#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
+#include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
-namespace fs = boost::filesystem;
-
-static fs::path vault_dir { fs::path(getenv("HOME")) /  "MaidSafe-Vault" };
+#include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
 
 namespace maidsafe {
 
 namespace vault {
 
-// Helper function to parse data name and contents
-// FIXME this need discussion, adding it temporarily to progress
-template <typename ParsedType>
-ParsedType ParseData(const SerialisedData& serialised_data) {
-  InputVectorStream binary_input_stream{serialised_data};
-  typename ParsedType::Name name;
-  typename ParsedType::serialised_type contents;
-  Parse(binary_input_stream, name, contents);
-  return ParsedType(name, contents);
-}
+boost::filesystem::path VaultDir();
 
 class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
+                    public VersionHandler<VaultFacade>,
+                    public MpidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
   VaultFacade()
-    : MaidManager<VaultFacade>(),
-      DataManager<VaultFacade>(vault_dir),
-      PmidManager<VaultFacade>(),
-      PmidNode<VaultFacade>(),
-      routing::test::FakeRouting<VaultFacade>() {
-  }
+      : MaidManager<VaultFacade>(),
+        DataManager<VaultFacade>(VaultDir()),
+        PmidManager<VaultFacade>(),
+        PmidNode<VaultFacade>(),
+        VersionHandler<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
+        MpidManager<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
+        routing::test::FakeRouting<VaultFacade>() {}
 
   ~VaultFacade() = default;
 
   enum class FunctorType { FunctionOne, FunctionTwo };
-  //enum class DataTypeEnum { ImmutableData, MutableData, End };
-  //using DataTagValue = DataTypeEnum;
 
   routing::HandleGetReturn HandleGet(routing::SourceAddress from, routing::Authority from_authority,
-                                     routing::Authority authority, DataTagValue data_type,
-                                     Identity data_name);
+                                     routing::Authority authority,
+                                     Data::NameAndTypeId name_and_type_id);
 
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
+<<<<<<< HEAD
       routing::DestinationAddress dest, routing::Authority from_authority,
           routing::Authority to_authority, DataTagValue data_type, SerialisedData serialised_data);
 
@@ -83,15 +78,24 @@ class VaultFacade : public MaidManager<VaultFacade>,
       routing::DestinationAddress dest, routing::Authority from_authority,
           routing::Authority to_authority, maidsafe_error return_code,
               DataTagValue data_type, SerialisedData serialised_data);
+=======
+                                         routing::Authority from_authority,
+                                         routing::Authority authority, DataTypeId data_type_id,
+                                         SerialisedData serialised_data);
+
+  routing::HandlePostReturn HandlePost(routing::SourceAddress from,
+      routing::Authority from_authority, routing::Authority authority,
+          routing::SerialisedMessage message);
+>>>>>>> next
 
   bool HandlePost(const routing::SerialisedMessage& message);
   // not in local cache do upper layers have it (called when we are in target group)
-   template <typename DataType>
+  template <typename DataType>
   boost::expected<routing::SerialisedMessage, maidsafe_error> HandleGet(routing::Address) {
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
   // default put is allowed unless prevented by upper layers
-  bool HandlePut(routing::Address, routing::SerialisedMessage);
+  bool HandlePut(routing::Address from, routing::SerialisedMessage message);
   // if the implementation allows any put of data in unauthenticated mode
   bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage);
   void HandleChurn(routing::CloseGroupDifference diff);

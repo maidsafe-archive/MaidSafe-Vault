@@ -16,8 +16,10 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
-#define MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
+#ifndef MAIDSAFE_VAULT_TESTS_FAKE_ROUTING_H_
+#define MAIDSAFE_VAULT_TESTS_FAKE_ROUTING_H_
+
+#include <vector>
 
 #include "maidsafe/common/utils.h"
 
@@ -50,11 +52,11 @@ class FakeRouting {
 
   template <typename DataType>
   std::vector<routing::Address> GetClosestNodes(
-      typename DataType::Name /*name*/,
+      Identity /*name*/,
       const std::vector<routing::Address>& /*exclude*/ = std::vector<routing::Address>()) {
     std::vector<routing::Address> close_nodes;
     while (close_nodes.size() < 4)
-      close_nodes.emplace_back(RandomString(NodeId::kSize));
+      close_nodes.emplace_back(RandomString(identity_size));
     return close_nodes;
   }
 };
@@ -63,6 +65,6 @@ class FakeRouting {
 
 }  // namespace routing
 
-} // namespace maidsafe
+}  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_TEST_FAKE_ROUTING_H_
+#endif  // MAIDSAFE_VAULT_TESTS_FAKE_ROUTING_H_

@@ -46,23 +46,23 @@ TEST_F(DataManagerDatabaseTest, BEH_Exist) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   std::vector<routing::Address> pmid_nodes;
   for (int index(0); index < 4; ++index)
-    pmid_nodes.emplace_back(NodeId(RandomString(NodeId::kSize)));
+    pmid_nodes.emplace_back(MakeIdentity());
 
-  EXPECT_FALSE(db_.Exist<ImmutableData>(data.name()));
-  db_.Put<ImmutableData>(data.name(), pmid_nodes);
-  EXPECT_TRUE(db_.Exist<ImmutableData>(data.name()));
+  EXPECT_FALSE(db_.Exist<ImmutableData>(data.Name()));
+  db_.Put<ImmutableData>(data.Name(), pmid_nodes);
+  EXPECT_TRUE(db_.Exist<ImmutableData>(data.Name()));
 }
 
 TEST_F(DataManagerDatabaseTest, BEH_Put) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   std::vector<routing::Address> pmid_nodes;
   for (int index(0); index < 4; ++index)
-    pmid_nodes.emplace_back(NodeId(RandomString(NodeId::kSize)));
+    pmid_nodes.emplace_back(MakeIdentity());
 
-  auto pmids(db_.GetPmids<ImmutableData>(data.name()));
+  auto pmids(db_.GetPmids<ImmutableData>(data.Name()));
   EXPECT_FALSE(pmids.valid());
-  db_.Put<ImmutableData>(data.name(), pmid_nodes);
-  pmids = db_.GetPmids<ImmutableData>(data.name());
+  db_.Put<ImmutableData>(data.Name(), pmid_nodes);
+  pmids = db_.GetPmids<ImmutableData>(data.Name());
   EXPECT_EQ(pmids->size(), pmid_nodes.size());
 }
 
@@ -70,14 +70,14 @@ TEST_F(DataManagerDatabaseTest, BEH_ReplacePmids) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   std::vector<routing::Address> pmid_nodes, new_pmid_nodes;
   for (int index(0); index < 4; ++index)
-    pmid_nodes.emplace_back(NodeId(RandomString(NodeId::kSize)));
+    pmid_nodes.emplace_back(MakeIdentity());
 
   for (int index(0); index < 4; ++index)
-    new_pmid_nodes.emplace_back(NodeId(RandomString(NodeId::kSize)));
+    new_pmid_nodes.emplace_back(MakeIdentity());
 
-  db_.Put<ImmutableData>(data.name(), pmid_nodes);
-  db_.ReplacePmidNodes<ImmutableData>(data.name(), new_pmid_nodes);
-  auto pmids(db_.GetPmids<ImmutableData>(data.name()));
+  db_.Put<ImmutableData>(data.Name(), pmid_nodes);
+  db_.ReplacePmidNodes<ImmutableData>(data.Name(), new_pmid_nodes);
+  auto pmids(db_.GetPmids<ImmutableData>(data.Name()));
   for (const auto& pmid : *pmids)
      EXPECT_NE(std::find(new_pmid_nodes.begin(), new_pmid_nodes.end(), pmid), new_pmid_nodes.end());
 }
@@ -86,13 +86,13 @@ TEST_F(DataManagerDatabaseTest, BEH_RemovePmid) {
   ImmutableData data(NonEmptyString(RandomString(1024)));
   std::vector<routing::Address> pmid_nodes;
   for (int index(0); index < 4; ++index)
-    pmid_nodes.emplace_back(NodeId(RandomString(NodeId::kSize)));
+    pmid_nodes.emplace_back(MakeIdentity());
 
-  db_.Put<ImmutableData>(data.name(), pmid_nodes);
-  db_.RemovePmid<ImmutableData>(data.name(),
+  db_.Put<ImmutableData>(data.Name(), pmid_nodes);
+  db_.RemovePmid<ImmutableData>(data.Name(),
                                 routing::DestinationAddress(
                                     routing::Destination(pmid_nodes.at(0)), boost::none));
-  auto pmids(db_.GetPmids<ImmutableData>(data.name()).value());
+  auto pmids(db_.GetPmids<ImmutableData>(data.Name()).value());
   EXPECT_EQ(std::find(pmids.begin(), pmids.end(), pmid_nodes.at(0)), pmids.end());
 }
 

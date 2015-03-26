@@ -19,11 +19,8 @@
 #include "maidsafe/vault/tests/chunk_store_test_utils.h"
 
 #include "maidsafe/common/utils.h"
-#include "maidsafe/common/data_types/data_type_values.h"
-#include "maidsafe/common/data_types/immutable_data.h"
-#include "maidsafe/common/data_types/mutable_data.h"
 
-#include "maidsafe/passport/types.h"
+#include "maidsafe/vault/utils.h"
 
 namespace maidsafe {
 
@@ -31,81 +28,17 @@ namespace vault {
 
 namespace test {
 
-void AddRandomKeyValuePairs(std::vector<std::pair<DataNameVariant, NonEmptyString>>& container,
-                            uint32_t number, uint32_t size) {
-  NonEmptyString value;
-  for (uint32_t i = 0; i != number; ++i) {
-    auto type_number = static_cast<DataTagValue>(RandomUint32() % MAIDSAFE_DATA_TYPES_SIZE);
-    value = NonEmptyString(RandomAlphaNumericString(size));
-    switch (type_number) {
-      case DataTagValue::kAnmaidValue: {
-        passport::PublicAnmaid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kMaidValue: {
-        passport::PublicMaid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kAnpmidValue: {
-        passport::PublicAnpmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kPmidValue: {
-        passport::PublicPmid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kAnmpidValue: {
-        passport::PublicAnmpid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kMpidValue: {
-        passport::PublicMpid::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kImmutableDataValue: {
-        ImmutableData::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-      case DataTagValue::kMutableDataValue: {
-        MutableData::Name key(Identity(crypto::Hash<crypto::SHA512>(value)));
-        container.push_back(std::make_pair(key, value));
-        break;
-      }
-    }
+void AddRandomNameValuePairs(std::vector<std::pair<Data::NameAndTypeId, NonEmptyString>>& container,
+                             std::uint32_t number, std::uint32_t size) {
+  for (std::uint32_t i = 0; i != number; ++i) {
+    container.push_back(
+        std::make_pair(GetRandomDataNameAndTypeId(), NonEmptyString(RandomBytes(size))));
   }
 }
 
-DataNameVariant GetRandomDataNameType() {
-  auto type_number = static_cast<DataTagValue>(RandomUint32() % MAIDSAFE_DATA_TYPES_SIZE);
-  switch (type_number) {
-    case DataTagValue::kAnmaidValue:
-      return passport::PublicAnmaid::Name();
-    case DataTagValue::kMaidValue:
-      return passport::PublicMaid::Name();
-    case DataTagValue::kAnpmidValue:
-      return passport::PublicAnpmid::Name();
-    case DataTagValue::kPmidValue:
-      return passport::PublicPmid::Name();
-    case DataTagValue::kAnmpidValue:
-      return passport::PublicAnmpid::Name();
-    case DataTagValue::kMpidValue:
-      return passport::PublicMpid::Name();
-    case DataTagValue::kImmutableDataValue:
-      return ImmutableData::Name();
-    case DataTagValue::kMutableDataValue:
-      return MutableData::Name();
-    default:
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::unknown));
-  }
+Data::NameAndTypeId GetRandomDataNameAndTypeId() {
+  return Data::NameAndTypeId(MakeIdentity(), DataTypeId(RandomUint32() % 8));
 }
-
 
 }  // namespace test
 

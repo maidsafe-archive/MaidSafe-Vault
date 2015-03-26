@@ -26,7 +26,7 @@ namespace maidsafe {
 
 namespace vault {
 
-DataManagerDatabase::DataManagerDatabase(boost::filesystem::path db_path)
+DataManagerDatabase::DataManagerDatabase(const boost::filesystem::path& db_path)
     : database_(), kDbPath_(db_path), write_operations_(0) {
   database_.reset(new sqlite::Database(kDbPath_,
                                         sqlite::Mode::kReadWriteCreate));
