@@ -19,6 +19,10 @@
 #ifndef MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
 #define MAIDSAFE_VAULT_PMID_MANAGER_PMID_MANAGER_H_
 
+#include <map>
+#include <string>
+#include <vector>
+
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 
@@ -27,7 +31,6 @@
 namespace maidsafe {
 
 namespace vault {
-
 
 template <typename FacadeType>
 class PmidManager {
@@ -97,10 +100,11 @@ routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePutResponse(
   // as this may trigger the returned error_code to be sent back to pmid_node
   if (itr != std::end(accounts_)) {
     itr->second.HandleFailure(data.Value().size());
-  }/* else {
-    LOG(kError) << "PmidManager doesn't hold account for "
-                << maidsafe::detail::GetSubstr(pmid_node.string());
-  }*/
+  }
+//  else {
+//    LOG(kError) << "PmidManager doesn't hold account for "
+//                << maidsafe::detail::GetSubstr(pmid_node.string());
+//  }
   std::vector<routing::DestinationAddress> dest;
   dest.push_back(std::make_pair(routing::Destination(routing::Address(data.Name())),
                                 boost::optional<routing::ReplyToAddress>()));

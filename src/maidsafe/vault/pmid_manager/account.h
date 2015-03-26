@@ -58,4 +58,4 @@ bool operator==(const PmidManagerAccount& lhs, const PmidManagerAccount& rhs);
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_VAULT_PMID_MANAGER_Account_H_
+#endif  // MAIDSAFE_VAULT_PMID_MANAGER_ACCOUNT_H_
