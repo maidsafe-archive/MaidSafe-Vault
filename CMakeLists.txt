@@ -46,6 +46,7 @@ ms_glob_dir(MaidManager ${VaultSourcesDir}/maid_manager "Maid Manager")
 ms_glob_dir(PmidManager ${VaultSourcesDir}/pmid_manager "Pmid Manager")
 ms_glob_dir(PmidNode ${VaultSourcesDir}/pmid_node "Pmid Node")
 ms_glob_dir(MpidManager ${VaultSourcesDir}/mpid_manager "Mpid Manager")
+ms_glob_dir(VersionHandler ${VaultSourcesDir}/version_handler "Version Handler")
 
 ms_glob_dir(Vault ${VaultSourcesDir} Vault)
 
@@ -58,7 +59,9 @@ ms_glob_dir(VaultTests ${VaultSourcesDir}/tests "Tests")
 #==================================================================================================#
 ms_add_static_library(maidsafe_vault ${VaultAllFiles} ${DataManagerAllFiles}
                                      ${MaidManagerAllFiles} ${PmidManagerAllFiles}
-                                     ${PmidNodeAllFiles} ${MpidManagerAllFiles})
+                                     ${PmidNodeAllFiles} ${MpidManagerAllFiles}
+                                     ${VersionHandlerAllFiles})
+
 target_include_directories(maidsafe_vault PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(maidsafe_vault maidsafe_routing)
 

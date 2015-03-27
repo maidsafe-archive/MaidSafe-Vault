@@ -26,12 +26,14 @@
 
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
+#include "maidsafe/common/data_types/structured_data_versions.h"
 #include "maidsafe/passport/types.h"
 
 #include "maidsafe/vault/data_manager/data_manager.h"
 #include "maidsafe/vault/maid_manager/maid_manager.h"
 #include "maidsafe/vault/pmid_manager/pmid_manager.h"
 #include "maidsafe/vault/pmid_node/pmid_node.h"
+#include "maidsafe/vault/version_handler/version_handler.h"
 #include "maidsafe/vault/mpid_manager/mpid_manager.h"
 
 #include "maidsafe/vault/tests/fake_routing.h"  // FIXME(Prakash) replace fake routing with real routing
@@ -46,6 +48,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
                     public DataManager<VaultFacade>,
                     public PmidManager<VaultFacade>,
                     public PmidNode<VaultFacade>,
+                    public VersionHandler<VaultFacade>,
                     public MpidManager<VaultFacade>,
                     public routing::test::FakeRouting<VaultFacade> {
  public:
@@ -54,6 +57,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
         DataManager<VaultFacade>(VaultDir()),
         PmidManager<VaultFacade>(),
         PmidNode<VaultFacade>(),
+        VersionHandler<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
         MpidManager<VaultFacade>(VaultDir(), DiskUsage(10000000000)),
         routing::test::FakeRouting<VaultFacade>() {}
 
@@ -81,7 +85,7 @@ class VaultFacade : public MaidManager<VaultFacade>,
     return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
   }
   // default put is allowed unless prevented by upper layers
-  bool HandlePut(routing::Address, routing::SerialisedMessage);
+  bool HandlePut(routing::Address from, routing::SerialisedMessage message);
   // if the implementation allows any put of data in unauthenticated mode
   bool HandleUnauthenticatedPut(routing::Address, routing::SerialisedMessage);
   void HandleChurn(routing::CloseGroupDifference diff);
