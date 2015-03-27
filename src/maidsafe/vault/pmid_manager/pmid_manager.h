@@ -90,7 +90,8 @@ routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePut(
 template <typename FacadeType>
 template <typename DataType>
 routing::HandlePutPostReturn PmidManager<FacadeType>::HandlePutResponse(
-    const routing::SourceAddress& from, const maidsafe_error& /*return_code*/, const DataType& data) {
+    const routing::SourceAddress& from, const maidsafe_error& /*return_code*/,
+        const DataType& data) {
   // There shall be no response from pmid_node in case of put success
 //  assert(return_code.code() != make_error_code(CommonErrors::success));
   std::lock_guard<std::mutex> lock(accounts_mutex_);
