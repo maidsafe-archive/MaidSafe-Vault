@@ -64,10 +64,10 @@ void MaidManager<Facade>::HandleCreateAccount(const passport::PublicMaid& public
     std::lock_guard<std::mutex> lock(accounts_mutex_);
     if (std::any_of(std::begin(accounts_), std::end(accounts_),
             [=](const MaidManagerAccount& account) {
-              return account.name() == public_maid.name();
+              return account.name() == public_maid.Name();
             }))
       BOOST_THROW_EXCEPTION(MakeError(VaultErrors::account_already_exists));
-    accounts_.insert(MaidManagerAccount(public_maid.name(), 0, space_offered));
+    accounts_.insert(MaidManagerAccount(public_maid.Name(), 0, space_offered));
   }
 
   auto remove_account([=]{
@@ -75,7 +75,7 @@ void MaidManager<Facade>::HandleCreateAccount(const passport::PublicMaid& public
       std::lock_guard<std::mutex> lock(accounts_mutex_);
       auto it(std::find_if(std::begin(accounts_), std::end(accounts_),
           [=](const MaidManagerAccount& account) {
-            return account.name() == public_maid.name();
+            return account.name() == public_maid.Name();
           }));
       if (it != std::end(accounts_))
         accounts_.erase(it);
@@ -84,14 +84,14 @@ void MaidManager<Facade>::HandleCreateAccount(const passport::PublicMaid& public
   });
 
   static_cast<Facade*>(this)->template
-    Put<passport::PublicMaid>(routing::Address(public_maid.name()), public_maid,
+    Put<passport::PublicMaid>(routing::Address(public_maid.Name()), public_maid,
       [=](maidsafe_error error) {
         if (error.code() != make_error_code(CommonErrors::success))
           remove_account();
       });
 
   static_cast<Facade*>(this)->template
-    Put<passport::PublicAnmaid>(routing::Address(public_anmaid.name()), public_anmaid,
+    Put<passport::PublicAnmaid>(routing::Address(public_anmaid.Name()), public_anmaid,
       [=](maidsafe_error error) {
         if (error.code() != make_error_code(CommonErrors::success))
           remove_account();
@@ -105,7 +105,7 @@ routing::HandlePutPostReturn MaidManager<Facade>::HandlePut(
     std::lock_guard<std::mutex> lock(accounts_mutex_);
     auto it(std::find_if(std::begin(accounts_), std::end(accounts_),
       [=](const MaidManagerAccount& account) {
-        return account.name().value.string() == source_address.node_address.data.string();
+        return account.name().string() == source_address.node_address.data.string();
       }));
 
     if (it == std::end(accounts_))
@@ -114,14 +114,14 @@ routing::HandlePutPostReturn MaidManager<Facade>::HandlePut(
       return boost::make_unexpected(maidsafe_error(CommonErrors::cannot_exceed_limit));
 
     auto account(*it);
-    account.PutData(MaidManagerAccount::kWeight * data.Serialise()->string().size());
+    account.PutData(MaidManagerAccount::kWeight * Serialise(data).size());
     it = accounts_.erase(it);
     accounts_.insert(it, account);
   }
 
   std::vector<routing::DestinationAddress> result;
-  result.push_back(std::make_pair(routing::Destination(routing::Address(data.name())),
-                                  boost::none));
+  result.push_back(std::make_pair(routing::Destination(routing::Address(data.Name())),
+                                  boost::optional<routing::ReplyToAddress>()));
   return routing::HandlePutPostReturn(result);
 }
 
@@ -133,7 +133,7 @@ void MaidManager<Facade>::HandleChurn(
   for (auto& old_account : old_accounts) {
     auto it(std::find_if(std::begin(accounts_), std::end(accounts_),
         [=](const MaidManagerAccount& account) {
-          return old_account.string() == account.name().value.string();
+          return old_account.string() == account.name().string();
         }));
     if (it != std::end(accounts_))
       accounts_.erase(it);
@@ -142,7 +142,7 @@ void MaidManager<Facade>::HandleChurn(
   for (auto& send_account : send_accounts) {
     auto it(std::find_if(std::begin(accounts_), std::end(accounts_),
         [=](const MaidManagerAccount& account) {
-          return send_account.string() == account.name().value.string();
+          return send_account.string() == account.name().string();
         }));
     if (it != std::end(accounts_)) {
       // TODO(team) send account
