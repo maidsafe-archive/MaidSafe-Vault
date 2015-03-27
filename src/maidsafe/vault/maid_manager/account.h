@@ -31,7 +31,7 @@ namespace vault {
 
 class MaidManagerAccount {
  public:
-  using AccountName = passport::PublicMaid::Name;
+  using AccountName = Identity;
 
   enum class Status { kOk, kLowSpace, kNoSpace };
   static const uint32_t kWeight = 4;
@@ -78,7 +78,7 @@ MaidManagerAccount::Status MaidManagerAccount::AllowPut(const passport::PublicAn
 
 template <typename Data>
 MaidManagerAccount::Status MaidManagerAccount::AllowPut(const Data& data) const {
-  auto size(data.Serialise()->string().size());
+  auto size(Serialise(data).size());
   if (space_available_ < (kWeight * size))
     return Status::kNoSpace;
   return (((space_available_ + data_stored_) / 100) * 90) < (data_stored_ + kWeight * size)

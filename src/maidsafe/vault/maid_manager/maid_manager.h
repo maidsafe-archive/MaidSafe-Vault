@@ -105,7 +105,7 @@ routing::HandlePutPostReturn MaidManager<Facade>::HandlePut(
     std::lock_guard<std::mutex> lock(accounts_mutex_);
     auto it(std::find_if(std::begin(accounts_), std::end(accounts_),
       [=](const MaidManagerAccount& account) {
-        return account.name().value.string() == source_address.node_address.data.string();
+        return account.name().string() == source_address.node_address.data.string();
       }));
 
     if (it == std::end(accounts_))
@@ -114,13 +114,13 @@ routing::HandlePutPostReturn MaidManager<Facade>::HandlePut(
       return boost::make_unexpected(maidsafe_error(CommonErrors::cannot_exceed_limit));
 
     auto account(*it);
-    account.PutData(MaidManagerAccount::kWeight * data.Serialise()->string().size());
+    account.PutData(MaidManagerAccount::kWeight * Serialise(data).size());
     it = accounts_.erase(it);
     accounts_.insert(it, account);
   }
 
   std::vector<routing::DestinationAddress> result;
-  result.push_back(std::make_pair(routing::Destination(routing::Address(data.name())),
+  result.push_back(std::make_pair(routing::Destination(routing::Address(data.Name())),
                                   boost::optional<routing::ReplyToAddress>()));
   return routing::HandlePutPostReturn(result);
 }
