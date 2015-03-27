@@ -39,16 +39,16 @@ MaidManager<VaultFacade>::AccountName CreateAccount(MaidManager<VaultFacade>& ma
   for (;;) {
     try {
       maid_manager.HandleCreateAccount(public_maid, public_anmaid, space_offered);
-      EXPECT_TRUE(maid_manager.HasAccount(public_maid.name()));
+      EXPECT_TRUE(maid_manager.HasAccount(public_maid.Name()));
       break;
     }
     catch (const maidsafe_error& error) {
       EXPECT_EQ(make_error_code(VaultErrors::failed_to_handle_request), error.code());
-      EXPECT_FALSE(maid_manager.HasAccount(public_maid.name()));
+      EXPECT_FALSE(maid_manager.HasAccount(public_maid.Name()));
     }
   }
 
-  return public_maid.name();
+  return public_maid.Name();
 }
 
 template <typename Data>
@@ -56,7 +56,7 @@ std::pair<routing::SourceAddress, Data> GetSourceAddressAndData(
     const MaidManager<VaultFacade>::AccountName account_name, uint32_t data_size) {
   Data data(NonEmptyString(RandomAlphaNumericString(data_size)));
 
-  auto node_address(routing::NodeAddress(routing::Address(account_name.value)));
+  auto node_address(routing::NodeAddress(routing::Address(account_name.string())));
   auto group_address = boost::optional<routing::GroupAddress>();
   auto reply_to_address = boost::optional<routing::ReplyToAddress>();
   auto source_address(routing::SourceAddress(node_address, group_address, reply_to_address));
@@ -76,7 +76,7 @@ TEST(MaidManagerTest, BEH_CreateAccount) {
   // FakeRouting has ~75% success rate for creating an account
   try {
     maid_manager.HandleCreateAccount(public_maid, public_anmaid);
-    ASSERT_TRUE(maid_manager.HasAccount(public_maid.name()));
+    ASSERT_TRUE(maid_manager.HasAccount(public_maid.Name()));
     try {
       // try creating an account for the same client
       maid_manager.HandleCreateAccount(public_maid, public_anmaid);
@@ -87,7 +87,7 @@ TEST(MaidManagerTest, BEH_CreateAccount) {
   }
   catch (const maidsafe_error& error) {
     ASSERT_EQ(make_error_code(VaultErrors::failed_to_handle_request), error.code());
-    ASSERT_FALSE(maid_manager.HasAccount(public_maid.name()));
+    ASSERT_FALSE(maid_manager.HasAccount(public_maid.Name()));
   }
 }
 
@@ -105,7 +105,7 @@ TEST(MaidManagerTest, BEH_Put) {
 
     ASSERT_TRUE(result.valid());
     ASSERT_EQ(1, result.value().size());
-    ASSERT_EQ(args.second.name().value.string(), result.value()[0].first.data.string());
+    ASSERT_EQ(args.second.Name().string(), result.value()[0].first.data.string());
   }
 }
 
@@ -121,7 +121,7 @@ TEST(MaidManagerTest, BEH_PutToLimit) {
 
     ASSERT_TRUE(result.valid());
     ASSERT_EQ(1, result.value().size());
-    ASSERT_EQ(args.second.name().value.string(), result.value()[0].first.data.string());
+    ASSERT_EQ(args.second.Name().string(), result.value()[0].first.data.string());
   }
 }
 
@@ -137,7 +137,7 @@ TEST(MaidManagerTest, BEH_PutPastLimit) {
 
     ASSERT_TRUE(result.valid());
     ASSERT_EQ(1, result.value().size());
-    ASSERT_EQ(args.second.name().value.string(), result.value()[0].first.data.string());
+    ASSERT_EQ(args.second.Name().string(), result.value()[0].first.data.string());
   }
 
   auto args(GetSourceAddressAndData<ImmutableData>(account_name, 10));
@@ -151,7 +151,7 @@ TEST(MaidManagerTest, BEH_PutWithoutAccount) {
   using AccountName = MaidManager<VaultFacade>::AccountName;
 
   MaidManager<VaultFacade> maid_manager;
-  AccountName account_name(Identity(RandomAlphaNumericString(64)));
+  AccountName account_name(Identity(RandomAlphaNumericBytes(64)));
 
   auto args(GetSourceAddressAndData<ImmutableData>(account_name, 10));
   auto result(maid_manager.HandlePut<ImmutableData>(args.first, args.second));

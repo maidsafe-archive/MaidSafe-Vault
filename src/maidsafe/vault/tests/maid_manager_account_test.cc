@@ -18,6 +18,7 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/data_types/immutable_data.h"
 
 #include "maidsafe/vault/maid_manager/account.h"
 
@@ -30,7 +31,7 @@ namespace test {
 
 TEST(MaidManagerAccountTest, BEH_Construct) {
   {
-    MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericString(64)));
+    MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericBytes(64)));
     uint64_t data_stored(1), space_available(1);
     MaidManagerAccount account(name, data_stored, space_available);
 
@@ -42,7 +43,7 @@ TEST(MaidManagerAccountTest, BEH_Construct) {
     ASSERT_NO_THROW(MaidManagerAccount(std::move(account)));
   }
   {
-    MaidManagerAccount::AccountName name1(Identity(RandomAlphaNumericString(64)));
+    MaidManagerAccount::AccountName name1(Identity(RandomAlphaNumericBytes(64)));
     uint64_t data1_stored(1), space1_available(1);
     MaidManagerAccount account1(name1, data1_stored, space1_available);
 
@@ -50,7 +51,7 @@ TEST(MaidManagerAccountTest, BEH_Construct) {
     ASSERT_EQ(data1_stored, account1.data_stored());
     ASSERT_EQ(space1_available, account1.space_available());
 
-    MaidManagerAccount::AccountName name2(Identity(RandomAlphaNumericString(64)));
+    MaidManagerAccount::AccountName name2(Identity(RandomAlphaNumericBytes(64)));
     uint64_t data2_stored(2), space2_available(2);
     MaidManagerAccount account2(name2, data2_stored, space2_available);
 
@@ -69,7 +70,7 @@ TEST(MaidManagerAccountTest, BEH_Construct) {
 }
 
 TEST(MaidManagerAccountTest, BEH_SerialiseParse) {
-  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericString(64)));
+  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericBytes(64)));
   uint64_t data_stored(0), space_available(100);
   MaidManagerAccount account1(name, data_stored, space_available);
 
@@ -87,7 +88,7 @@ TEST(MaidManagerAccountTest, BEH_SerialiseParse) {
 }
 
 TEST(MaidManagerAccountTest, BEH_EqualityInequality) {
-  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericString(64)));
+  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericBytes(64)));
   uint64_t data_stored(1), space_available(1);
   MaidManagerAccount account1(name, data_stored, space_available),
                      account2(name, data_stored, space_available),
@@ -100,8 +101,11 @@ TEST(MaidManagerAccountTest, BEH_EqualityInequality) {
 }
 
 TEST(MaidManagerAccountTest, BEH_Ordering) {
-  MaidManagerAccount::AccountName name1(Identity("A" + RandomAlphaNumericString(63))),
-                                  name2(Identity("B" + RandomAlphaNumericString(63)));
+  MaidManagerAccount::AccountName name1(Identity(RandomAlphaNumericBytes(64))),
+                                  name2(Identity(RandomAlphaNumericBytes(64)));
+  const_cast<std::vector<byte>&>(name1.string())[0] = 'A';
+  const_cast<std::vector<byte>&>(name2.string())[0] = 'B';
+
   uint64_t data_stored(1), space_available(1);
   MaidManagerAccount account1(name1, data_stored, space_available),
                      account2(name2, data_stored, space_available),
@@ -119,7 +123,7 @@ TEST(MaidManagerAccountTest, BEH_Ordering) {
 }
 
 TEST(MaidManagerAccountTest, BEH_AllowPut) {
-  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericString(64)));
+  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericBytes(64)));
   uint64_t data_stored(0), space_available(100);
   MaidManagerAccount account(name, data_stored, space_available);
 
@@ -135,8 +139,8 @@ TEST(MaidManagerAccountTest, BEH_AllowPut) {
   ASSERT_EQ(MaidManagerAccount::Status::kOk, account.AllowPut(public_anpmid));
   ASSERT_EQ(MaidManagerAccount::Status::kOk, account.AllowPut(public_pmid));
 
-  NonEmptyString content1(RandomString(2)), content2(RandomString(23)),
-                 content3(RandomString(26));
+  NonEmptyString content1(RandomBytes(2)), content2(RandomBytes(23)),
+                 content3(RandomBytes(26));
   ImmutableData data1(content1), data2(content2), data3(content3);
 
   ASSERT_EQ(MaidManagerAccount::Status::kOk, account.AllowPut(data1));
@@ -145,7 +149,7 @@ TEST(MaidManagerAccountTest, BEH_AllowPut) {
 }
 
 TEST(MaidManagerAccountTest, BEH_PutDelete) {
-  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericString(64)));
+  MaidManagerAccount::AccountName name(Identity(RandomAlphaNumericBytes(64)));
   uint64_t data_stored(0), space_available(100);
   const uint64_t kSize(100);
   MaidManagerAccount account(name, data_stored, space_available);
