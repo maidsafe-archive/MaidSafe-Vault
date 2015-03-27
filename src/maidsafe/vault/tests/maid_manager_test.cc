@@ -67,7 +67,7 @@ std::pair<routing::SourceAddress, Data> GetSourceAddressAndData(
 
 TEST(MaidManagerTest, BEH_CreateAccount) {
   MaidManager<VaultFacade> maid_manager;
- 
+
   passport::Anmaid anmaid;
   passport::Maid maid(anmaid);
   passport::PublicAnmaid public_anmaid(anmaid);
@@ -97,7 +97,7 @@ TEST(MaidManagerTest, BEH_Put) {
   MaidManager<VaultFacade> maid_manager;
   AccountName account_name(CreateAccount(maid_manager, std::numeric_limits<uint64_t>().max()));
 
-  // any reasonable number of puts should succeed 
+  // any reasonable number of puts should succeed
   uint32_t puts((RandomUint32() % 1000) + 1);
   for (size_t i = 0; i != puts; ++i) {
     auto args(GetSourceAddressAndData<ImmutableData>(account_name, 10));

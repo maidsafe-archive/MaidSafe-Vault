@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <limits>
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/routing/types.h"
