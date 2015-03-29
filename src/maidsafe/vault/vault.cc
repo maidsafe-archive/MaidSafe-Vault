@@ -53,10 +53,11 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
         return VersionHandler::HandleGet(from, name_and_type_id.name);
       break;
     case routing::Authority::node_manager:
-      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
-        return PmidManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
-      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
-        PmidManager::template HandleGet<MutableData>(from, name_and_type_id.name);
+      // Get doesn't go through PmidManager anymore
+//      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
+//        return PmidManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
+//      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
+//        PmidManager::template HandleGet<MutableData>(from, name_and_type_id.name);
       break;
     case routing::Authority::managed_node:
       if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
@@ -71,11 +72,12 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
 }
 
 routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
+                                                    routing::DestinationAddress dest,
                                                     routing::Authority from_authority,
-                                                    routing::Authority authority,
+                                                    routing::Authority to_authority,
                                                     DataTypeId data_type_id,
                                                     SerialisedData serialised_data) {
-  switch (authority) {
+  switch (to_authority) {
     case routing::Authority::client_manager:
       if (from_authority != routing::Authority::client)
         break;
@@ -95,16 +97,47 @@ routing::HandlePutPostReturn VaultFacade::HandlePut(routing::SourceAddress from,
       break;
     case routing::Authority::node_manager:
       if (data_type_id == detail::TypeId<ImmutableData>::value)
-        return PmidManager::HandlePut(from, Parse<ImmutableData>(serialised_data));
+        return PmidManager::HandlePut(dest, Parse<ImmutableData>(serialised_data));
       else if (data_type_id == detail::TypeId<MutableData>::value)
-        return PmidManager::template HandlePut<MutableData>(from,
-                                                            Parse<MutableData>(serialised_data));
+        return PmidManager::template HandlePut<MutableData>(
+                   dest, Parse<MutableData>(serialised_data));
       break;
     case routing::Authority::managed_node:
       if (data_type_id == detail::TypeId<ImmutableData>::value)
         return PmidNode::HandlePut(from, Parse<ImmutableData>(serialised_data));
       else if (data_type_id == detail::TypeId<MutableData>::value)
         return PmidNode::HandlePut(from, Parse<MutableData>(serialised_data));
+      break;
+    default:
+      break;
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+}
+
+routing::HandlePutPostReturn VaultFacade::HandlePutResponse(routing::SourceAddress from,
+    routing::DestinationAddress dest, routing::Authority from_authority,
+        routing::Authority to_authority, maidsafe_error return_code,
+            DataTypeId data_type_id, SerialisedData serialised_data) {
+  switch (to_authority) {
+    case routing::Authority::nae_manager:
+      if (from_authority != routing::Authority::node_manager)
+        break;
+      if (data_type_id == detail::TypeId<ImmutableData>::value)
+        return DataManager::template HandlePutResponse<ImmutableData>(
+            Parse<ImmutableData>(serialised_data).Name(), dest, return_code);
+      else if (data_type_id == detail::TypeId<MutableData>::value)
+        return DataManager::template HandlePutResponse<MutableData>(
+            Parse<MutableData>(serialised_data).Name(), dest, return_code);
+      break;
+    case routing::Authority::node_manager:
+      if (from_authority != routing::Authority::managed_node)
+        break;
+      if (data_type_id == detail::TypeId<ImmutableData>::value)
+        return PmidManager::HandlePutResponse(from, return_code,
+                                              Parse<ImmutableData>(serialised_data));
+      else if (data_type_id == detail::TypeId<MutableData>::value)
+        return PmidManager::HandlePutResponse(from, return_code,
+                                              Parse<MutableData>(serialised_data));
       break;
     default:
       break;

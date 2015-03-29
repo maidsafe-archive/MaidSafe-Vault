@@ -70,9 +70,13 @@ class VaultFacade : public MaidManager<VaultFacade>,
                                      Data::NameAndTypeId name_and_type_id);
 
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from,
-                                         routing::Authority from_authority,
-                                         routing::Authority authority, DataTypeId data_type_id,
-                                         SerialisedData serialised_data);
+      routing::DestinationAddress dest, routing::Authority from_authority,
+          routing::Authority to_authority, DataTypeId data_type_id, SerialisedData serialised_data);
+
+  routing::HandlePutPostReturn HandlePutResponse(routing::SourceAddress from,
+      routing::DestinationAddress dest, routing::Authority from_authority,
+          routing::Authority to_authority, maidsafe_error return_code,
+              DataTypeId data_type_id, SerialisedData serialised_data);
 
   routing::HandlePostReturn HandlePost(routing::SourceAddress from,
       routing::Authority from_authority, routing::Authority authority,
