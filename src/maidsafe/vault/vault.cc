@@ -40,12 +40,6 @@ routing::HandleGetReturn VaultFacade::HandleGet(routing::SourceAddress from,
                                                 routing::Authority authority,
                                                 Data::NameAndTypeId name_and_type_id) {
   switch (authority) {
-    case routing::Authority::client_manager:
-      if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
-        MaidManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
-      else if (name_and_type_id.type_id == detail::TypeId<MutableData>::value)
-        return MaidManager::template HandleGet<MutableData>(from, name_and_type_id.name);
-      break;
     case routing::Authority::nae_manager:
       if (name_and_type_id.type_id == detail::TypeId<ImmutableData>::value)
         return DataManager::template HandleGet<ImmutableData>(from, name_and_type_id.name);
