@@ -27,12 +27,16 @@
 
 #include "boost/filesystem/path.hpp"
 
+#include "boost/expected/expected.hpp"
+#include "boost/variant.hpp"
+
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 #include "maidsafe/common/data_types/data.h"
 #include "maidsafe/common/data_types/immutable_data.h"
 #include "maidsafe/common/data_types/mutable_data.h"
 #include "maidsafe/passport/types.h"
+
 
 namespace maidsafe {
 

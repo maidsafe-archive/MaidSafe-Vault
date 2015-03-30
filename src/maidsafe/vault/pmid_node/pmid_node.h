@@ -19,6 +19,9 @@
 #ifndef MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_
 #define MAIDSAFE_VAULT_PMID_NODE_PMID_NODE_H_
 
+#include <string>
+#include <vector>
+
 #include "maidsafe/common/types.h"
 #include "maidsafe/routing/types.h"
 
@@ -29,31 +32,64 @@ namespace maidsafe {
 
 namespace vault {
 
-
-template <typename Child>
+template <typename FacadeType>
 class PmidNode {
  public:
-  PmidNode() {}
-  template <typename DataType>
-  routing::HandleGetReturn HandleGet(routing::SourceAddress from, Identity data_name);
+  PmidNode(const boost::filesystem::path vault_root_dir, DiskUsage max_disk_usage);
+
+  routing::HandleGetReturn HandleGet(routing::SourceAddress from,
+                                     Data::NameAndTypeId name_and_type_id);
 
   template <typename DataType>
   routing::HandlePutPostReturn HandlePut(routing::SourceAddress from, DataType data);
   void HandleChurn(routing::CloseGroupDifference);
+
+ private:
+//  boost::filesystem::space_info space_info_;
+  DiskUsage disk_total_;
+  DiskUsage permanent_size_;
+  ChunkStore chunk_store_;
 };
 
-template <typename Child>
-template <typename DataType>
-routing::HandleGetReturn PmidNode<Child>::HandleGet(routing::SourceAddress /*from*/,
-                                                    Identity /*data_name*/) {
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+template <typename FacadeType>
+PmidNode<FacadeType>::PmidNode(const boost::filesystem::path vault_root_dir,
+                               DiskUsage max_disk_usage)
+    : /*space_info_(boost::filesystem::space(vault_root_dir)),*/
+//      disk_total_(space_info_.available),
+      disk_total_(max_disk_usage),
+      permanent_size_(disk_total_ * 4 / 5),
+      chunk_store_(vault_root_dir / "pmid_node" / "permanent", max_disk_usage) {}
+
+template <typename FacadeType>
+routing::HandleGetReturn PmidNode<FacadeType>::HandleGet(routing::SourceAddress /* from */,
+                                                         Data::NameAndTypeId name_and_type_id) {
+  try {
+    auto deobfuscated_data(chunk_store_.Get(name_and_type_id));
+    return routing::HandleGetReturn::value_type(
+                std::vector<byte>(std::begin(deobfuscated_data.string()),
+                                  std::end(deobfuscated_data.string())));
+  } catch (const std::exception& /*e*/) {
+    return boost::make_unexpected(MakeError(CommonErrors::no_such_element));
+  }
 }
 
-template <typename Child>
+template <typename FacadeType>
 template <typename DataType>
-routing::HandlePutPostReturn PmidNode<Child>::HandlePut(routing::SourceAddress /* from */,
-                                                        DataType /* data */) {
-  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));  // FIXME
+routing::HandlePutPostReturn PmidNode<FacadeType>::HandlePut(routing::SourceAddress /* from */,
+                                                             DataType data) {
+  try {
+    chunk_store_.Put(data.NameAndType(), NonEmptyString{Serialise(data)});
+    return boost::make_unexpected(MakeError(CommonErrors::success));
+  } catch (const maidsafe_error& e) {
+    if (e.code() == make_error_code(CommonErrors::cannot_exceed_limit))
+      return boost::make_unexpected(e);
+      // Only specify CommonErrors::cannot_exceed_limit onwards
+      // to PmidManagers so they know PmidNode has run out of space.
+      // All other errors collapsed into VaultErrors::failed_to_handle_request.
+  } catch (const std::exception& /*e*/) {
+    return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
+  }
+  return boost::make_unexpected(MakeError(VaultErrors::failed_to_handle_request));
 }
 
 }  // namespace vault
